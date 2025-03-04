@@ -19,6 +19,7 @@ const ContentHeaderContainer = styled.div`
   height: 5rem;
   background-color: #ffffff;
   padding: 0 1.25rem;
+  border-bottom: 3px solid #fafafb;
 `;
 
 const TitleStyle = styled.span`
