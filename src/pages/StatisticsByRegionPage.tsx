@@ -8,12 +8,18 @@ export default function StatisticsByRegionPage() {
     <DashBoardContainer>
       <ContentHeader title="지역 별 통계" />
       <DashBoardFilter />
-      <DashBoardTable />
+      <DashBoardTableContainer>
+        <DashBoardTable />
+      </DashBoardTableContainer>
     </DashBoardContainer>
   );
 }
 const DashBoardContainer = styled.div`
-  width: 100%;
   display: flex;
   flex-direction: column;
+  width: 100%;
+`;
+
+const DashBoardTableContainer = styled.div`
+  padding: 1rem;
 `;

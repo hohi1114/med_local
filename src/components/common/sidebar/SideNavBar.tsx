@@ -2,7 +2,7 @@ import { Menu, MenuProps } from "antd";
 import { MENUITEMS } from "./sidebarData";
 import styled from "styled-components";
 
-const SideBar = () => {
+const SideNavBar = () => {
   const onClick: MenuProps["onClick"] = (e) => {
     console.log("click ", e);
   };
@@ -59,6 +59,7 @@ const SidbarContainer = styled.div`
   flex-direction: column;
   position: "relative";
   box-shadow: "0px 4px 4px rgba(0, 0, 0, 0.25)";
+  background-color: #ffffff;
 `;
 
 const IconStyle = styled.img`
@@ -66,4 +67,4 @@ const IconStyle = styled.img`
   height: auto;
 `;
 
-export default SideBar;
+export default SideNavBar;

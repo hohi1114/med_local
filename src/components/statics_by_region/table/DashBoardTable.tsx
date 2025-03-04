@@ -170,6 +170,7 @@ const DashBoardTable = () => {
       pagination={{
         position: ["bottomCenter"],
       }}
+      scroll={{ x: "max-content" }}
     />
   );
 };
