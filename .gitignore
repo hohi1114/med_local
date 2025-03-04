@@ -23,4 +23,10 @@ dist-ssr
 *.sln
 *.sw?
 
+# Ignore Electron build output
+release/
+dist-electron/
+node_modules/
+*.env
+
 out/
