@@ -1,19 +1,34 @@
-import styled from "styled-components";
-import { Select, Input } from "antd";
 import { useState } from "react";
-import DurationDatePicker from "../datepicker/DurationDatePicker";
+import styled from "styled-components";
+import { Select } from "antd";
+import DurationDatePicker from "../common/datepicker/DurationDatePicker";
+import { RangePickerProps } from "antd/es/date-picker";
+import SearchInput from "../common/input/SearchInput";
 
 const LOCALSECTIONS = ["시", "구", "동"];
 const DashBoardFilter = () => {
   const [localSection, setlocalSection] = useState(LOCALSECTIONS[0]);
-  const [startDate, setStartDate] = useState(null);
-  const [endDate, setEndDate] = useState(null);
+  const [rangeDate, setRangeDate] = useState({
+    startDate: new Date(),
+    endDate: new Date(),
+  });
+  const [searchword, setSearchword] = useState<string | null>(null);
 
   const handleLocalSectionChange = (value: string) => {
     setlocalSection(value);
   };
 
-  const handleDateChange = () => {};
+  const handleDateChange: RangePickerProps["onChange"] = (dates, _) => {
+    if (dates && dates[0] && dates[1]) {
+      setRangeDate({
+        startDate: dates[0].toDate(),
+        endDate: dates[1].toDate(),
+      });
+    }
+  };
+  const handleSearchwordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchword(e.target.value);
+  };
 
   return (
     <FilterWrapper>
@@ -22,8 +37,7 @@ const DashBoardFilter = () => {
         <FilterItemContainer>
           <span className="title">분석기간</span>
           <DurationDatePicker
-            startDate={startDate}
-            endDate={endDate}
+            rangeDate={rangeDate}
             handleDateChange={handleDateChange}
           />
         </FilterItemContainer>
@@ -43,7 +57,7 @@ const DashBoardFilter = () => {
       {/* Right Filter Section */}
       <SearchContainer>
         <span className="title">검색하기</span>
-        <Input placeholder="Search" />
+        <SearchInput handleInputChange={handleSearchwordChange} />
       </SearchContainer>
     </FilterWrapper>
   );

@@ -163,7 +163,15 @@ const data: DataType[] = [
 ];
 
 const DashBoardTable = () => {
-  return <DashBoardTableContainer columns={columns} dataSource={data} />;
+  return (
+    <DashBoardTableContainer
+      columns={columns}
+      dataSource={data}
+      pagination={{
+        position: ["bottomCenter"],
+      }}
+    />
+  );
 };
 
 export default DashBoardTable;

@@ -1,32 +1,26 @@
 import { DatePicker } from "antd";
+import { RangePickerProps } from "antd/es/date-picker";
+import dayjs from "dayjs";
+
+const { RangePicker } = DatePicker;
 
 interface DurationDatePickerProps {
-  startDate: string | null;
-  endDate: string | null;
-  handleDateChange?: () => void;
+  rangeDate: { startDate: Date; endDate: Date };
+  handleDateChange?: RangePickerProps["onChange"];
 }
-
 /**
  * Start && End Date Picker
  */
 const DurationDatePicker = ({
-  startDate,
-  endDate,
+  rangeDate,
   handleDateChange,
 }: DurationDatePickerProps) => {
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "row",
-        alignItems: "center",
-        gap: "3px",
-      }}
-    >
-      <DatePicker defaultValue={startDate} onChange={handleDateChange} />
-      -
-      <DatePicker defaultValue={endDate} onChange={handleDateChange} />
-    </div>
+    <RangePicker
+      format={"YYYY-MM-DD"}
+      defaultValue={[dayjs(rangeDate.startDate), dayjs(rangeDate.endDate)]}
+      onChange={handleDateChange}
+    />
   );
 };
 
