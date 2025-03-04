@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import DashBoardPage from "./pages/DashBoardPage";
-import BaseLayout from "./components/common/BaseLayout";
+import BaseLayout from "./components/common/layout/BaseLayout";
 
 function App() {
   return (
@@ -15,4 +15,3 @@ function App() {
 }
 
 export default App;
-

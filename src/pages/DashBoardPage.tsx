@@ -1,3 +1,9 @@
+import ContentHeader from "../components/common/layout/ContentHeader";
+
 export default function DashBoardPage() {
-  return <div></div>;
+  return (
+    <>
+      <ContentHeader title="지역 별 통계" />
+    </>
+  );
 }
