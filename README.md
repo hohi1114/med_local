@@ -55,4 +55,3 @@ export default tseslint.config({
   },
 })
 ```
->>>>>>> 102e457 (initial)
