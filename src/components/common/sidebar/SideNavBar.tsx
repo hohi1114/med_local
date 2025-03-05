@@ -3,7 +3,7 @@ import { MENUITEMS } from "./sidebarData";
 import styled from "styled-components";
 import {useNavigate} from "react-router-dom";
 
-const SideBar = () => {
+const SideNavBar = () => {
 
     const navigate = useNavigate(); // ✅ 페이지 이동을 위한 훅
 

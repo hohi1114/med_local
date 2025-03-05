@@ -12,6 +12,7 @@ function App() {
           <Route index path="dashboard" element={<DashBoardPage />} />
           <Route path="statistics-by-region" element={<StatisticsByRegionPage />}/>
             <Route path="update_data" element={<UpdateDataPage />} /> {/* ✅ 추가 */}
+        </Route>
       </Routes>
     </BrowserRouter>
   );
