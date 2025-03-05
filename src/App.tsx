@@ -4,6 +4,7 @@ import BaseLayout from "./components/common/layout/BaseLayout";
 import StatisticsByRegionPage from "./pages/StatisticsByRegionPage";
 import UpdateDataPage from "./pages/UpdateDataPage.tsx";
 import MediMapPage from "./pages/MediMapPage";
+import NaverScriptLoader from "./utils/NaverScriptLoader.tsx";
 
 function App() {
   return (
@@ -20,7 +21,14 @@ function App() {
             path="statistics-by-region"
             element={<StatisticsByRegionPage />}
           />
-          <Route path="map" element={<MediMapPage />} />
+          <Route
+              path="map"
+              element={
+                <NaverScriptLoader>
+                  <MediMapPage />
+                </NaverScriptLoader>
+              }
+          />
         </Route>
       </Routes>
     </BrowserRouter>
