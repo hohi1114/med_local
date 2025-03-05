@@ -1,23 +1,7 @@
+import dayjs from "dayjs";
 import { VisitData, PatientData } from "../../utils/ExcelParser";
 import { getLatLonNaver } from "../../utils/NaverGeocode";
-
-export interface MergedData {
-  chartNumber: number;
-  visitDate: string;
-  totalCost: number;
-  age: string;
-  address: string;
-}
-
-export interface FilteredData {
-  chartNumber: number;
-  visitDate: string;
-  totalCost: number;
-  age: string;
-  address: string;
-  latitude: number | null;
-  longitude: number | null;
-}
+import { MergedData, FilteredData, UpdatedDates } from "../../types/medi-types";
 
 export const processData = async (
   visits: VisitData[],
@@ -36,7 +20,7 @@ export const processData = async (
       visitDate: visit.visitDate,
       totalCost: visit.totalCost,
       age: patient?.age || "N/D",
-      address: patient?.address || "N/D",
+      address: patient?.address || "N/D"
     };
   });
 
@@ -59,7 +43,7 @@ export const processData = async (
     .map((record) => ({
       ...record,
       latitude: null, // Initialize before updating
-      longitude: null,
+      longitude: null
     }));
 
   // ✅ Fetch latitude & longitude for each valid address
@@ -75,6 +59,10 @@ export const processData = async (
     console.log(i + " step done");
   }
 
+  let df_date: UpdatedDates[] = df_filtered.map((record) => ({
+    date: dayjs(record.visitDate).format("YYYY-MM-DD")
+  }));
+
   console.log("📊 Final df_filtered:", df_filtered);
-  return { df_merged, df_filtered };
+  return { df_merged, df_filtered, df_date };
 };

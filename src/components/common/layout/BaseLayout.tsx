@@ -4,10 +4,12 @@ import SideNavBar from "../sidebar/SideNavBar";
 
 const BaseLayout = () => {
   return (
-    <Container>
+    <div style={{ display: "flex" }}>
       <SideNavBar />
-      <Outlet />
-    </Container>
+      <Container>
+        <Outlet />
+      </Container>
+    </div>
   );
 };
 
@@ -15,6 +17,7 @@ export default BaseLayout;
 
 const Container = styled.div`
   display: flex;
+  flex-direction: column;
   width: 100%;
   background-color: #fafafb;
 `;

@@ -3,12 +3,13 @@ import FileUpload from "../components/data/FileUpload";
 import { parseDaysFiles, parsePlaceFiles } from "../utils/ExcelParser";
 import {
   saveToIndexedDB,
-  getDataFromIndexedDB,
+  getDataFromIndexedDB
 } from "../components/data/IndexedDB";
 import styled from "styled-components";
 import ContentHeader from "../components/common/layout/ContentHeader";
 import BaseButton from "../components/common/button/BaseButton";
-import { MergedData, processData } from "../components/data/DataProcessor";
+import { MergedData } from "../types/medi-types";
+import { processData } from "../components/data/DataProcessor";
 import { loadNaverMapsScript } from "../utils/NaverGeocode";
 import { useEffect } from "react";
 import { Progress } from "antd";
@@ -17,10 +18,7 @@ import UploadedCalendar from "../components/data/UploadedCalendar";
 const UpdateDataPage = () => {
   const [daysFiles, setDaysFiles] = useState<FileList | null>(null);
   const [placeFiles, setPlaceFiles] = useState<FileList | null>(null);
-  //   const [mergedData, setMergedData] = useState<any[]>([]);
-  //   const [filteredData, setFilteredData] = useState<any[]>([]);
   const [progress, setProgress] = useState<number>(0);
-  //   const [isScriptLoaded, setIsScriptLoaded] = useState<boolean>(false);
 
   // ✅ Load Naver Maps Script on Component Mount
   useEffect(() => {
@@ -36,13 +34,12 @@ const UpdateDataPage = () => {
     setProgress(0);
     if (!placeFiles || !daysFiles) return;
     const visits = await parseDaysFiles(daysFiles);
-
     const patients = await parsePlaceFiles(placeFiles);
 
     let existingMergedData: MergedData[] = [];
 
     try {
-      // ✅ Try fetching existing data (If database doesn't exist yet, handle gracefully)
+      // ✅ Try fetching existing data
       const dbData = await getDataFromIndexedDB();
       if (dbData && dbData.df_merged) {
         existingMergedData = dbData.df_merged;
@@ -50,8 +47,8 @@ const UpdateDataPage = () => {
     } catch (error) {
       console.warn("⚠️ IndexedDB not found. Skipping duplicate check.", error);
     }
-    // 🔹 Process Data inside DataProcessor (handles filtering and geocoding)
-    const { df_merged, df_filtered } = await processData(
+    // 🔹 Process Data inside DataProcessor
+    const { df_merged, df_filtered, df_date } = await processData(
       visits,
       patients,
       existingMergedData.length > 0 ? existingMergedData : [],
@@ -60,35 +57,23 @@ const UpdateDataPage = () => {
 
     setProgress(100);
 
-    console.log(df_merged, df_filtered);
+    console.log(df_merged, df_filtered, df_date);
 
-    await saveToIndexedDB(df_merged, df_filtered);
-
-    // const { df_merged: storedMerged, df_filtered: storedFiltered } =
-    //   await getDataFromIndexedDB();
-    // setMergedData(storedMerged);
-    // setFilteredData(storedFiltered);
+    await saveToIndexedDB(df_merged, df_filtered, df_date);
   };
 
   return (
-    <UpdateDataContainer>
+    <>
       <ContentHeader title={"데이터 업데이트"} />
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          height: "100%",
-        }}
-      >
+      <UpdateDataContainer>
+        {/**업데이트 데이터 현황 달력 */}
         <div style={{ marginBottom: "4rem" }}>
           <ContentContainer>
             <TitleStyle>저장한 데이터 현황</TitleStyle>
-            <UploadedCalendar />
+            <UploadedCalendar updated={progress === 100} />
           </ContentContainer>
         </div>
-
+        {/**파일 업로드 */}
         <ContentContainer>
           <FileUpload
             title="일일 수입 업로드"
@@ -100,6 +85,7 @@ const UpdateDataPage = () => {
             onFilesUploaded={(files) => setPlaceFiles(files)}
           />
         </ContentContainer>
+        {/**버튼 및 프로그래스바 */}
         <div style={{ marginTop: "2rem" }}>
           {progress > 0 ? (
             <Progress
@@ -118,8 +104,8 @@ const UpdateDataPage = () => {
             </BaseButton>
           )}
         </div>
-      </div>
-    </UpdateDataContainer>
+      </UpdateDataContainer>
+    </>
   );
 };
 
@@ -128,7 +114,9 @@ export default UpdateDataPage;
 const UpdateDataContainer = styled.div`
   display: flex;
   flex-direction: column;
-  width: 100%;
+  align-items: center;
+  padding: 50px 0px;
+  height: 100%;
 `;
 
 const TitleStyle = styled.span`

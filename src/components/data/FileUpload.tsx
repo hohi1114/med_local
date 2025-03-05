@@ -31,6 +31,7 @@ const FileUpload = ({ title, onFilesUploaded }: FileUploadProps) => {
         onChange={handleChange}
         multiple={false}
         accept=".xls,.xlsx"
+        height={150}
       >
         <p className="ant-upload-drag-icon">
           <InboxOutlined />
@@ -48,7 +49,7 @@ export default FileUpload;
 const FileUploadContainer = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
+  gap: 1rem;
 `;
 
 const TitleStyle = styled.span`
