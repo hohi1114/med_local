@@ -1,127 +1,152 @@
 import React, { useEffect, useRef, useState } from "react";
-import useMediData from "../hooks/useMediData";
 import useMediMapData from "../hooks/useMediMapData";
 
-const NaverMap: React.FC = ({ patientLocations }: any) => {
-  const mapElement = useRef<HTMLDivElement | null>(null);
-  const [isLoaded, setIsLoaded] = useState(false);
-  const polygonRef = useRef<naver.maps.Polygon | null>(null); // Use ref instead of state
-  const { locations } = useMediMapData();
+interface PatientData {
+  chartNumber: number;
+  visitDate: string;
+  totalCost: number;
+  age: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+}
 
-  const [filteredData, setFilteredData] = useState();
+/**
+ 특정 구역에 환자가 포함되는지
+ */
+function containsLocation(pointLat: number, pointLng: number, polygon: naver.maps.Polygon): boolean {
+  // Instead of getPath(), use getPaths() + getAt(0)
+  const ringArray = polygon.getPaths().getAt(0); // the first ring
+  if (!ringArray) return false; // no ring
 
+  let inside = false;
+  const len = ringArray.getLength();
+
+  for (let i = 0, j = len - 1; i < len; j = i++) {
+    const latI = ringArray.getAt(i).lat();
+    const lngI = ringArray.getAt(i).lng();
+    const latJ = ringArray.getAt(j).lat();
+    const lngJ = ringArray.getAt(j).lng();
+
+    const intersect =
+        (lngI > pointLng) !== (lngJ > pointLng) &&
+        pointLat < ((latJ - latI) * (pointLng - lngI)) / (lngJ - lngI) + latI;
+
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
+const NaverMap: React.FC<{ filtered_db: PatientData[] }> = ({ filtered_db }) => {
+  const mapElement = useRef<HTMLDivElement>(null);
+  const [map, setMap] = useState<naver.maps.Map | null>(null);
+
+  // Use your custom hook for polygon data
+  const { areas } = useMediMapData();
+
+  const [polygonStats, setPolygonStats] = useState<
+      Record<string, { totalCost: number; patientCount: number }>
+  >({});
+
+  // Create the map once
   useEffect(() => {
-    if (locations) {
-      const filteredData = Object.entries(locations)
-        .filter(([key, value]) => key.startsWith("B")) // 'B'로 시작하는 키만 선택
-        .reduce((acc, [key, value]) => {
-          try {
-            acc[key] = JSON.parse(value["h"]);
-          } catch (error) {
-            console.error("Parsing error:", error);
-            acc[key] = [];
-          }
-          return acc;
-        }, {});
-      setFilteredData(filteredData);
-    }
-  }, [locations]);
+    if (!mapElement.current || map) return;
 
-  useEffect(() => {
-    // Wait for the Naver Maps API to load
-    const checkNaverMaps = () => {
-      if (window.naver) {
-        setIsLoaded(true);
-      } else {
-        setTimeout(checkNaverMaps, 500);
-      }
-    };
-    checkNaverMaps();
-  }, []);
-
-  useEffect(() => {
-    if (!isLoaded || !mapElement.current) return;
-
-    // Initialize the map
-    const map = new window.naver.maps.Map(mapElement.current, {
-      center: new window.naver.maps.LatLng(37.51, 126.88), // Center near 신도림로 11라길
+    const newMap = new window.naver.maps.Map(mapElement.current, {
+      center: new window.naver.maps.LatLng(37.51, 126.88),
       zoom: 15,
+
     });
+    setMap(newMap);
+  }, [map]);
 
-    // Function to get polygon shape based on zoom level
-    const getPolygonShape = (zoomLevel: number) => {
-      if (zoomLevel >= 16) {
-        // High zoom: Detailed polygon
-        return [
-          new window.naver.maps.LatLng(126.851106, 37.522057),
-          new window.naver.maps.LatLng(126.85249, 37.521061),
-          new window.naver.maps.LatLng(126.854099, 37.517496),
-          new window.naver.maps.LatLng(126.850548, 37.51656),
-          new window.naver.maps.LatLng(126.849786, 37.51833),
-          new window.naver.maps.LatLng(126.850634, 37.518747),
-          new window.naver.maps.LatLng(126.850784, 37.519359),
-          new window.naver.maps.LatLng(126.850494, 37.521521),
-          new window.naver.maps.LatLng(126.851106, 37.522057),
-        ];
-      } else {
-        // Low zoom: Simplified polygon
-        return [
-          new window.naver.maps.LatLng(37.5075, 126.8755),
-          new window.naver.maps.LatLng(37.51, 126.879),
-          new window.naver.maps.LatLng(37.513, 126.884),
-          new window.naver.maps.LatLng(37.5075, 126.8755), // Closing the polygon
-        ];
-      }
-    };
+  // Draw polygons & markers whenever map, areas, or filtered_db changes
+  useEffect(() => {
+    if (!map) return;
 
-    // // Create initial polygon
-    polygonRef.current = new window.naver.maps.Polygon({
-      map,
-      paths: getPolygonShape(map.getZoom()),
-      fillColor: "rgba(255, 0, 0, 0.4)", // Semi-transparent red
-      strokeColor: "#7adf3f",
-      strokeWeight: 3,
-    });
+    // Store stats for each area
+    const stats: Record<string, { totalCost: number; patientCount: number }> = {};  //stats를 변형해서 띄운다
 
-    // Event listener for zoom changes
-    window.naver.maps.Event.addListener(map, "zoom_changed", () => {
-      if (polygonRef.current) {
-        const newShape = getPolygonShape(map.getZoom());
-        polygonRef.current.setPaths(newShape); // Update polygon shape
-        console.log("Zoom level changed:", map.getZoom());
-      }
-    });
-    if (filteredData) {
-      Object.entries(filteredData).forEach(([key, coords]) => {
-        const pathArray = [];
+    // 1. Draw polygons
+    areas.forEach((area) => {
+      if (!area.coords || area.coords.length === 0) return;
 
-        // Loop through each coordinate and push the corresponding LatLng object into pathArray
-        coords.forEach((coord: any) => {
-          pathArray.push(new window.naver.maps.LatLng(coord[0], coord[1]));
-        });
+      // Convert coords to naver LatLng
+      const latLngs = area.coords.map(
+          ([lng, lat]) => new window.naver.maps.LatLng(lat, lng)
+      );
 
-        console.log(pathArray); // Log to check if pathArray is correct
-
-        // Create the polygon with the pathArray
-        new window.naver.maps.Polygon({
-          map,
-          paths: pathArray,
-          fillColor: "rgba(0, 255, 0, 0.4)",
-          strokeColor: "#00FF00",
-          strokeWeight: 3,
-        });
+      const polygon = new window.naver.maps.Polygon({
+        map,
+        paths: latLngs,
+        fillColor: "rgba(0, 255, 0, 0.1)",
+        strokeColor: "#00ff00",
+        strokeWeight: 0.3,
       });
-      window.naver.maps.Event.addListener(map, "zoom_changed", () => {
-        if (polygonRef.current) {
-          const newShape = getPolygonShape(map.getZoom());
-          polygonRef.current.setPaths(newShape);
-          console.log("Zoom level changed:", map.getZoom());
+
+      // Initialize stats
+      stats[area.areaName] = { totalCost: 0, patientCount: 0 };
+
+      // 2. Count patients inside this polygon (using our custom function)
+      filtered_db.forEach((patient) => {
+        const { latitude, longitude, totalCost } = patient;
+
+        // Skip if lat/lng are missing
+        if (latitude == null || longitude == null) {
+          return; // do nothing for this patient
+        }
+
+        // Otherwise, call the "containsLocation" check
+        if (containsLocation(latitude, longitude, polygon)) {
+          stats[area.areaName].totalCost += totalCost;
+          stats[area.areaName].patientCount += 1;
         }
       });
-    }
-  }, [isLoaded, filteredData]);
 
-  return <div ref={mapElement} style={{ width: "100vw", height: "100vh" }} />;
+
+      // 그리는 곳
+      // 3. Show polygon stats with a Marker in the center 띄워놓은 박스들
+      const bounds = polygon.getBounds();
+      if (bounds) {
+        const center = bounds.getCenter();
+        new window.naver.maps.Marker({
+          map,
+          position: center,
+          icon: {
+            content: `
+              <div style="background:white; border:1px solid #ccc; padding:4px;">
+                <b>${area.areaName}</b><br>
+                총진료비: ${stats[area.areaName].totalCost.toLocaleString()}원<br>
+                방문환자수: ${stats[area.areaName].patientCount}명
+              </div>
+            `,
+          },
+        });
+      }
+    });
+
+    // 4. Set the stats in state
+    setPolygonStats(stats);
+
+    // 5. Place patient markers 점
+    filtered_db.forEach((patient) => {
+      new window.naver.maps.Marker({
+        map,
+        position: new window.naver.maps.LatLng(patient.latitude, patient.longitude),
+        icon: {
+          content:
+              '<div style="background:red; width:8px; height:8px; border-radius:50%;"></div>',
+        },
+      });
+    });
+  }, [map, areas, filtered_db]);
+
+  return (
+      <div
+          ref={mapElement}
+          style={{ width: "100vw", height: "100vh", backgroundColor: "#e0e0e0" }}
+      />
+  );
 };
 
 export default NaverMap;
