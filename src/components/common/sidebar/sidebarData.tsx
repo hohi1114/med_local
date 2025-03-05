@@ -1,10 +1,11 @@
 import { MenuProps } from "antd";
+import { Link } from "react-router-dom";
 
 type MenuItem = Required<MenuProps>["items"][number];
 export const MENUITEMS: MenuItem[] = [
   {
     key: "Dashboard",
-    label: "대시보드",
+    label: <Link to="/dashboard">대시보드</Link>,
     icon: (
       <img
         src="/images/pie.svg"
@@ -23,7 +24,10 @@ export const MENUITEMS: MenuItem[] = [
     ),
     children: [
       { key: "map", label: "지도" },
-      { key: "statists", label: "지역 별 통계" },
+      {
+        key: "statists",
+        label: <Link to="/statistics-by-region">지역 별 통계</Link>,
+      },
     ],
   },
   {
