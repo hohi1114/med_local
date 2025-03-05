@@ -1,4 +1,3 @@
-import { useState } from "react";
 import styled from "styled-components";
 import { InboxOutlined } from "@ant-design/icons";
 import { Upload } from "antd";
@@ -12,21 +11,16 @@ interface FileUploadProps {
 }
 
 const FileUpload = ({ title, onFilesUploaded }: FileUploadProps) => {
-  const [fileName, setFileName] = useState<string | null>(null);
-
   const handleChange = (info: UploadChangeParam) => {
-    if (info.fileList.length > 1) {
-      info.fileList = [info.fileList[info.fileList.length - 1]]; // 가장 마지막 파일만 유지
-    }
+    const fileList = info.fileList
+      .map((fileWrapper) => fileWrapper.originFileObj)
+      .filter(Boolean) as File[];
 
-    const latestFile = info.fileList[0]?.originFileObj;
-    if (latestFile) {
+    if (fileList.length > 0) {
       const dataTransfer = new DataTransfer();
-      dataTransfer.items.add(latestFile);
-      const fileList = dataTransfer.files;
+      fileList.forEach((file) => dataTransfer.items.add(file));
 
-      onFilesUploaded(fileList);
-      setFileName(latestFile.name);
+      onFilesUploaded(dataTransfer.files);
     }
   };
 
@@ -36,9 +30,7 @@ const FileUpload = ({ title, onFilesUploaded }: FileUploadProps) => {
       <StyledDragger
         onChange={handleChange}
         multiple={false}
-        accept=".xls"
-        showUploadList={false}
-        beforeUpload={() => false}
+        accept=".xls,.xlsx"
       >
         <p className="ant-upload-drag-icon">
           <InboxOutlined />
@@ -47,7 +39,6 @@ const FileUpload = ({ title, onFilesUploaded }: FileUploadProps) => {
           데이터를 담은 .xlsx 파일을 첨부해주세요.
         </p>
       </StyledDragger>
-      {fileName && <FileNameStyle>{fileName}</FileNameStyle>}
     </FileUploadContainer>
   );
 };
@@ -67,9 +58,4 @@ const TitleStyle = styled.span`
 
 const StyledDragger = styled(Dragger)`
   width: 50vh;
-`;
-
-const FileNameStyle = styled.span`
-  font-size: 1.2rem;
-  color: #9f9ff8;
 `;
