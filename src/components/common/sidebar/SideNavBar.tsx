@@ -1,11 +1,23 @@
 import { Menu, MenuProps } from "antd";
 import { MENUITEMS } from "./sidebarData";
 import styled from "styled-components";
+import {useNavigate} from "react-router-dom";
 
-const SideNavBar = () => {
+const SideBar = () => {
+
+    const navigate = useNavigate(); // ✅ 페이지 이동을 위한 훅
+
+    const onClick: MenuProps["onClick"] = (e) => {
+        console.log("click ", e);
+        navigate(`/${e.key}`); // ✅ 클릭한 메뉴의 key 값으로 이동
+    };
+
+  /*
   const onClick: MenuProps["onClick"] = (e) => {
     console.log("click ", e);
   };
+  */
+
 
   return (
     <SidbarContainer>
