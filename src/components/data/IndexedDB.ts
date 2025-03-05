@@ -1,25 +1,48 @@
 import { openDB } from "idb";
-import { MergedData } from "../components/DataProcessor";
+import { MergedData, SummaryData } from "./DataProcessor";
 
 const DB_NAME = "MedicalDB";
-const STORE_NAME = "SummaryData";
+const MERGED_STORE = "df_merged";
+const SUMMARY_STORE = "df_summary";
 
-export const saveToIndexedDB = async (data: MergedData[]) => {
+export const saveToIndexedDB = async (merged: MergedData[], summary: SummaryData[]) => {
     const db = await openDB(DB_NAME, 1, {
         upgrade(db) {
-            if (!db.objectStoreNames.contains(STORE_NAME)) {
-                db.createObjectStore(STORE_NAME, { keyPath: "anonymousId" });
-            }
+
+                db.createObjectStore(MERGED_STORE, { keyPath: "id", autoIncrement: true });  // 🔹 Auto-increment
+            
+
+                db.createObjectStore(SUMMARY_STORE, { keyPath: "chartNumber" });  // 🔹 Summary should stay unique
+
         },
     });
 
-    const tx = db.transaction(STORE_NAME, "readwrite");
-    const store = tx.objectStore(STORE_NAME);
-    data.forEach((item) => store.put(item));
-    await tx.done;
+    const mergedTx = db.transaction(MERGED_STORE, "readwrite");
+    const mergedStore = mergedTx.objectStore(MERGED_STORE);
+    merged.forEach((item) => mergedStore.put(item));  // 🔹 Use `add()` instead of `put()`
+    await mergedTx.done;
+
+    const summaryTx = db.transaction(SUMMARY_STORE, "readwrite");
+    const summaryStore = summaryTx.objectStore(SUMMARY_STORE);
+    summary.forEach((item) => summaryStore.put(item));
+    await summaryTx.done;
 };
 
-export const getDataFromIndexedDB = async (): Promise<MergedData[]> => {
+export const getDataFromIndexedDB = async () => {
     const db = await openDB(DB_NAME, 1);
-    return db.getAll(STORE_NAME);
+    const df_merged = await db.getAll(MERGED_STORE);
+    const df_summary = await db.getAll(SUMMARY_STORE);
+    return { df_merged, df_summary };
+};
+
+
+export const clearIndexedDB = async () => {
+    try {
+        const db = await openDB(DB_NAME, 1);
+        await db.clear(MERGED_STORE); // Clear specific object store
+        await db.clear(SUMMARY_STORE); // Clear specific object store
+        console.log("IndexedDB cleared successfully!");
+    } catch (error) {
+        console.error("Error clearing IndexedDB:", error);
+    }
 };
