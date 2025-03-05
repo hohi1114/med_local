@@ -3,7 +3,6 @@
   "private": true,
   "version": "0.0.0",
   "main": "dist-electron/main.js",
-  "type": "module",
   "scripts": {
     "dev": "cross-env NODE_ENV=development concurrently \"vite\" \"wait-on http://localhost:5173 && tsc -p tsconfig.electron.json && electron .\"",
     "build": "vite build && tsc -p tsconfig.electron.json && electron-builder",
@@ -23,10 +22,11 @@
     ]
   },
   "dependencies": {
+    "antd": "^5.24.2",
+    "date-fns": "^4.1.0",
     "dotenv": "^16.4.7",
     "electron-is-dev": "^3.0.1",
     "electron-squirrel-startup": "^1.0.1",
-    "antd": "^5.24.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.2.0",
