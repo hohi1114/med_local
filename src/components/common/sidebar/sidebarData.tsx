@@ -23,7 +23,7 @@ export const MENUITEMS: MenuItem[] = [
       />
     ),
     children: [
-      { key: "map", label: "지도" },
+      { key: "map", label: <Link to="/map">지도</Link> },
       {
         key: "statists",
         label: <Link to="/statistics-by-region">지역 별 통계</Link>,

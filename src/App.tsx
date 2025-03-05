@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import DashBoardPage from "./pages/DashBoardPage";
 import BaseLayout from "./components/common/layout/BaseLayout";
 import StatisticsByRegionPage from "./pages/StatisticsByRegionPage";
+import MediMapPage from "./pages/MediMapPage";
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
             path="statistics-by-region"
             element={<StatisticsByRegionPage />}
           />
+          <Route path="map" element={<MediMapPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
