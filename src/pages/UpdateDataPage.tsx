@@ -17,15 +17,15 @@ import UploadedCalendar from "../components/data/UploadedCalendar";
 const UpdateDataPage = () => {
   const [daysFiles, setDaysFiles] = useState<FileList | null>(null);
   const [placeFiles, setPlaceFiles] = useState<FileList | null>(null);
-  const [mergedData, setMergedData] = useState<any[]>([]);
-  const [filteredData, setFilteredData] = useState<any[]>([]);
+  //   const [mergedData, setMergedData] = useState<any[]>([]);
+  //   const [filteredData, setFilteredData] = useState<any[]>([]);
   const [progress, setProgress] = useState<number>(0);
-  const [isScriptLoaded, setIsScriptLoaded] = useState<boolean>(false);
+  //   const [isScriptLoaded, setIsScriptLoaded] = useState<boolean>(false);
 
   // ✅ Load Naver Maps Script on Component Mount
   useEffect(() => {
     loadNaverMapsScript(import.meta.env.VITE_NAVER_MAPS_CLIENT_ID)
-      .then(() => setIsScriptLoaded(true))
+      .then(() => {})
       .catch((error) =>
         console.error("❌ Failed to load Naver Maps script:", error)
       );
@@ -34,9 +34,10 @@ const UpdateDataPage = () => {
   // 🔹 Process and Store Data in IndexedDB
   const handleProcessData = async () => {
     setProgress(0);
-
+    if (!placeFiles || !daysFiles) return;
     const visits = await parseDaysFiles(daysFiles);
-    let patients = await parsePlaceFiles(placeFiles);
+
+    const patients = await parsePlaceFiles(placeFiles);
 
     let existingMergedData: MergedData[] = [];
 
@@ -63,10 +64,10 @@ const UpdateDataPage = () => {
 
     await saveToIndexedDB(df_merged, df_filtered);
 
-    const { df_merged: storedMerged, df_filtered: storedFiltered } =
-      await getDataFromIndexedDB();
-    setMergedData(storedMerged);
-    setFilteredData(storedFiltered);
+    // const { df_merged: storedMerged, df_filtered: storedFiltered } =
+    //   await getDataFromIndexedDB();
+    // setMergedData(storedMerged);
+    // setFilteredData(storedFiltered);
   };
 
   return (
