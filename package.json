@@ -27,6 +27,7 @@
     "dotenv": "^16.4.7",
     "electron-is-dev": "^3.0.1",
     "electron-squirrel-startup": "^1.0.1",
+    "exceljs": "^4.4.0",
     "idb": "^8.0.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

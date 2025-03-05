@@ -1,7 +1,6 @@
 import { useState } from "react";
 import FileUpload from "../components/data/FileUpload";
 import { parseDaysFiles, parsePlaceFiles } from "../utils/ExcelParser";
-import { processData } from "../components/data/DataProcessor";
 import {
   saveToIndexedDB,
   getDataFromIndexedDB,
@@ -13,6 +12,10 @@ import ContentHeader from "../components/common/layout/ContentHeader";
 import DurationDatePicker from "../components/common/datepicker/DurationDatePicker";
 import { RangePickerProps } from "antd/es/date-picker";
 import BaseButton from "../components/common/button/BaseButton";
+import { MergedData, processData } from "../components/data/DataProcessor";
+import { loadNaverMapsScript } from "../utils/NaverGeocode";
+import { useEffect } from "react";
+import { Progress } from "antd";
 
 const UpdateDataPage = () => {
   const [rangeDate, setRangeDate] = useState({
@@ -22,9 +25,20 @@ const UpdateDataPage = () => {
   const [daysFiles, setDaysFiles] = useState<FileList | null>(null);
   const [placeFiles, setPlaceFiles] = useState<FileList | null>(null);
   const [mergedData, setMergedData] = useState<any[]>([]);
-  const [summaryData, setSummaryData] = useState<any[]>([]);
+  const [filteredData, setFilteredData] = useState<any[]>([]);
   const [indexedMerged, setIndexedMerged] = useState<any[]>([]);
-  const [indexedSummary, setIndexedSummary] = useState<any[]>([]);
+  const [indexedFiltered, setIndexedFiltered] = useState<any[]>([]);
+  const [progress, setProgress] = useState<number>(0);
+  const [isScriptLoaded, setIsScriptLoaded] = useState<boolean>(false);
+
+  // ✅ Load Naver Maps Script on Component Mount
+  useEffect(() => {
+    loadNaverMapsScript(import.meta.env.VITE_NAVER_MAPS_CLIENT_ID)
+      .then(() => setIsScriptLoaded(true))
+      .catch((error) =>
+        console.error("❌ Failed to load Naver Maps script:", error)
+      );
+  }, []);
 
   // 🔹 Process and Store Data in IndexedDB
   const handleProcessData = async () => {
@@ -33,17 +47,45 @@ const UpdateDataPage = () => {
       return;
     }
 
+    if (!isScriptLoaded) {
+      alert("Naver Maps script is still loading. Please wait...");
+      return;
+    }
+
+    setProgress(0);
+
     const visits = await parseDaysFiles(daysFiles);
-    const patients = await parsePlaceFiles(placeFiles);
-    const { df_merged, df_summary } = processData(visits, patients);
-    console.log(df_merged, df_summary);
+    let patients = await parsePlaceFiles(placeFiles);
 
-    await saveToIndexedDB(df_merged, df_summary);
+    let existingMergedData: MergedData[] = []; // ✅ Default to empty arra
 
-    const { df_merged: storedMerged, df_summary: storedSummary } =
+    try {
+      // ✅ Try fetching existing data (If database doesn't exist yet, handle gracefully)
+      const dbData = await getDataFromIndexedDB();
+      if (dbData && dbData.df_merged) {
+        existingMergedData = dbData.df_merged;
+      }
+    } catch (error) {
+      console.warn("⚠️ IndexedDB not found. Skipping duplicate check.", error);
+    }
+    // 🔹 Process Data inside DataProcessor (handles filtering and geocoding)
+    const { df_merged, df_filtered } = await processData(
+      visits,
+      patients,
+      existingMergedData.length > 0 ? existingMergedData : [],
+      setProgress
+    );
+
+    setProgress(100);
+
+    console.log(df_merged, df_filtered);
+
+    await saveToIndexedDB(df_merged, df_filtered);
+
+    const { df_merged: storedMerged, df_filtered: storedFiltered } =
       await getDataFromIndexedDB();
     setMergedData(storedMerged);
-    setSummaryData(storedSummary);
+    setFilteredData(storedFiltered);
   };
 
   // 🔴 Clear IndexedDB & Reset UI
@@ -51,31 +93,22 @@ const UpdateDataPage = () => {
     console.log("🗑️ Clearing IndexedDB...");
     await clearIndexedDB();
     setMergedData([]);
-    setSummaryData([]);
+    setFilteredData([]);
     alert("IndexedDB cleared!");
   };
 
   // 🔹 Fetch & Show Top 100 IndexedDB Data
   const handleCheckIndexedDB = async () => {
-    const { df_merged, df_summary } = await getDataFromIndexedDB();
+    const { df_merged, df_filtered } = await getDataFromIndexedDB();
     setIndexedMerged(df_merged.slice(0, 100)); // Show only top 100
-    setIndexedSummary(df_summary.slice(0, 100));
+    setIndexedFiltered(df_filtered.slice(0, 100));
   };
 
   // 🔹 Convert JSON to Excel and Trigger Download
-  const downloadExcel = (data: any[], filename: string) => {
+  const downloadExcel = async (data: any[], filename: string) => {
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
-
-    const excelBuffer = XLSX.write(workbook, {
-      bookType: "xlsx",
-      type: "array",
-    });
-    const dataBlob = new Blob([excelBuffer], {
-      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    });
-    const url = URL.createObjectURL(dataBlob);
 
     const a = document.createElement("a");
     a.href = url;
@@ -128,13 +161,22 @@ const UpdateDataPage = () => {
           />
         </ContentContainer>
         <div style={{ marginTop: "2rem" }}>
-          <BaseButton
-            type="submit"
-            onClick={handleProcessData}
-            disabled={!daysFiles || !placeFiles}
-          >
-            데이터 처리하기
-          </BaseButton>
+          {progress > 0 ? (
+            <Progress
+              percent={progress}
+              percentPosition={{ align: "start", type: "inner" }}
+              size={[300, 20]}
+              strokeColor="#92BFFF"
+            />
+          ) : (
+            <BaseButton
+              type="submit"
+              onClick={handleProcessData}
+              disabled={!daysFiles || !placeFiles}
+            >
+              데이터 처리하기
+            </BaseButton>
+          )}
         </div>
       </div>
       {/* 
