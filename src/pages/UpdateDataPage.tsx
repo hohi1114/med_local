@@ -29,6 +29,7 @@ const UpdateDataPage = () => {
 
     // 🔹 Process and Store Data in IndexedDB
     const handleProcessData = async () => {
+        console.log("inside handleProcessData");
         if (!daysFiles || !placeFiles) {
             alert("Please upload both Days and Place files before processing.");
             return;
@@ -45,7 +46,7 @@ const UpdateDataPage = () => {
         const visits = await parseDaysFiles(daysFiles);
         let patients = await parsePlaceFiles(placeFiles);
 
-
+        console.log("visits and patient out");
         let existingMergedData: MergedData[] = [];  // ✅ Default to empty arra
 
         try {

@@ -25,6 +25,8 @@ export const processData = async (
     existingMergedData: MergedData[], // 🆕 Pass existing data from IndexedDB
     updateProgress: (progress: number) => void
 ) => {
+
+    console.log("inside DataProcess")
     const patientMap = new Map(patients.map((p) => [p.chartNumber, p]));
 
     // ✅ Generate df_merged (All patients, including "N/D" addresses)
@@ -39,7 +41,17 @@ export const processData = async (
         };
     });
 
-    // ✅ Remove duplicates (Keep only new records)
+    // ✅ Find removed duplicates
+    const removedDuplicatesArray = df_merged.filter((record) =>
+        existingMergedData.some(
+            (existing) =>
+                existing.chartNumber === record.chartNumber &&
+                existing.visitDate === record.visitDate &&
+                existing.totalCost === record.totalCost
+        )
+    );
+
+    // ✅ Actually remove duplicates
     df_merged = df_merged.filter(
         (record) =>
             !existingMergedData.some(
@@ -50,7 +62,14 @@ export const processData = async (
             )
     );
 
-    console.log(`📌 Removed duplicates. Remaining records: ${df_merged.length}`);
+    // ✅ Count remaining records and calculate removed duplicates
+    const removedDuplicates = removedDuplicatesArray.length;
+
+    console.log(`📌 Removed duplicates: ${removedDuplicates}`);
+    console.log(`📌 Remaining records after duplicate removal: ${df_merged.length}`);
+
+    // ✅ Log some removed duplicates (limit to first 10 for readability)
+    console.log("🔍 Sample removed duplicates:", removedDuplicatesArray.slice(0, 10));
 
     // ✅ Filter dataset to only include valid addresses (df_filtered)
     let df_filtered: FilteredData[] = df_merged

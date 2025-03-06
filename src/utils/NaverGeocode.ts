@@ -28,16 +28,23 @@ export const loadNaverMapsScript = (clientId: string): Promise<void> => {
 // ✅ Function to wait for Naver Maps to be available
 const waitForNaverMaps = (): Promise<void> => {
     return new Promise((resolve) => {
-        if (window.naver && window.naver.maps && naver.maps.Service) {
-            resolve();
-        } else {
-            const interval = setInterval(() => {
-                if (window.naver && window.naver.maps && naver.maps.Service) {
-                    clearInterval(interval);
-                    resolve();
-                }
-            }, 100);
-        }
+        const checkMapsReady = () => {
+            if (window.naver?.maps?.Service?.geocode) {
+                console.log("✅ Naver Maps Geocoder is ready.");
+                resolve();
+            }
+        };
+
+        // Check immediately in case it's already loaded
+        checkMapsReady();
+
+        // If not, check every 100ms until it is available
+        const interval = setInterval(() => {
+            if (window.naver?.maps?.Service?.geocode) {
+                clearInterval(interval);
+                resolve();
+            }
+        }, 100);
     });
 };
 
@@ -51,6 +58,7 @@ export const getLatLonNaver = async (
     await waitForNaverMaps(); // ✅ Ensure Naver Maps is ready before calling `geocode`
 
     return new Promise((resolve) => {
+        console.log("insidegetLatLonNaver");
         naver.maps.Service.geocode({ query: address }, (status: string, response: any) => {
             if (status === naver.maps.Service.Status.OK && response.v2.addresses.length > 0) {
                 updateProgress(((index + 1) / total) * 100);
