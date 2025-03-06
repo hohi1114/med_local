@@ -12,7 +12,7 @@ const useMediData = () => {
   /**GET DATA FROM INDEX DB */
   const getDataFromIndexDB = async () => {
     try {
-      const db = await openDB(DB_NAME, 1);
+      const db = await openDB(DB_NAME, 3);
       const df_merged = await db.getAll(MERGED_STORE);
       const df_filtered = await db.getAll(SUMMARY_STORE);
       return { df_merged, df_filtered };

@@ -14,6 +14,19 @@ export interface PatientData {
     longitude?: number | null;
 }
 
+/**
+ * Converts an Excel serial date (e.g. 45329) to a "YYYY-MM-DD" string.
+ * 엑셀 date 저장 오류 해결
+ */
+function excelSerialToDate(serial: number): string {
+    const baseDate = new Date(1900, 0, 1); // Excel starts from Jan 1, 1900
+    baseDate.setDate(baseDate.getDate() + serial - 2); // Adjust for Excel's leap year bug
+    return baseDate.toISOString().split("T")[0]; // Format as "YYYY-MM-DD"
+}
+
+/**
+ * Parses visit data from uploaded Excel files.
+ */
 export const parseDaysFiles = async (files: FileList): Promise<VisitData[]> => {
     let data: VisitData[] = [];
 
@@ -35,16 +48,27 @@ export const parseDaysFiles = async (files: FileList): Promise<VisitData[]> => {
 
         jsonData.forEach((row: any) => {
             if (row.length >= 4) {
+                let visitDate = row[2];
+
+                // ✅ Convert Excel serial date to string format
+                if (typeof visitDate === "number") {
+                    visitDate = excelSerialToDate(visitDate);
+                }
+
                 data.push({
                     chartNumber: Number(row[0]),
-                    visitDate: row[2],
+                    visitDate: visitDate,
                     totalCost: Number(row[3]),
                 });
             }
         });
     }
-    return data.filter((item) => !isNaN(item.chartNumber) && item.visitDate !== "내원/수납일");
+
+    return data.filter(
+        (item) => !isNaN(item.chartNumber) && item.visitDate !== "내원/수납일"
+    );
 };
+
 
 export const parsePlaceFiles = async (files: FileList): Promise<PatientData[]> => {
     let data: PatientData[] = [];

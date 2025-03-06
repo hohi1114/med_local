@@ -14,6 +14,8 @@ import { loadNaverMapsScript } from "../utils/NaverGeocode";
 import { useEffect } from "react";
 import { Progress } from "antd";
 import UploadedCalendar from "../components/data/UploadedCalendar";
+import useMediMapData from "../hooks/useMediMapData.tsx";
+import { storePatientsByRegion,updateRegionSums } from "../components/data/RegionDB";
 
 const UpdateDataPage = () => {
   const [daysFiles, setDaysFiles] = useState<FileList | null>(null);
@@ -28,6 +30,7 @@ const UpdateDataPage = () => {
         console.error("❌ Failed to load Naver Maps script:", error)
       );
   }, []);
+  const {areas} = useMediMapData();
 
   // 🔹 Process and Store Data in IndexedDB
   const handleProcessData = async () => {
@@ -37,6 +40,7 @@ const UpdateDataPage = () => {
     const patients = await parsePlaceFiles(placeFiles);
 
     let existingMergedData: MergedData[] = [];
+
 
     try {
       // ✅ Try fetching existing data
@@ -55,11 +59,17 @@ const UpdateDataPage = () => {
       setProgress
     );
 
-    setProgress(100);
 
     console.log(df_merged, df_filtered, df_date);
 
+
     await saveToIndexedDB(df_merged, df_filtered, df_date);
+
+    await storePatientsByRegion(df_filtered, areas);
+    await updateRegionSums();
+
+    setProgress(100);
+
   };
 
   return (
