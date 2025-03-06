@@ -92,7 +92,7 @@ const NaverMap: React.FC<{
         paths: latLngs,
         fillColor: "rgba(146, 191, 255, 0.1)",
         strokeColor: "#92BFFF",
-        strokeWeight: 0.3,
+        strokeWeight: 1.5,
         clickable: true,
       });
 
@@ -103,8 +103,6 @@ const NaverMap: React.FC<{
         console.log(`클릭한 구역: ${area.areaName}`);
         handleDrawerOpen();
       });
-
-      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
       if (
         Array.isArray(region_db[Number(area.areaName) - 1]) &&
         region_db[Number(area.areaName) - 1].length > 0
@@ -125,23 +123,24 @@ const NaverMap: React.FC<{
       const bounds = polygon.getBounds();
       if (bounds) {
         const center = bounds.getCenter();
-        new window.naver.maps.Marker({
+        const marker = new window.naver.maps.Marker({
           map,
           position: center,
           icon: {
             content: `
-              <div style="background:white; border:1px solid #ccc; padding:4px;">
-                <b>${area.areaName}</b><br>
-                총진료비: ${stats[
-                  area.areaName
-                ].totalCost.toLocaleString()}원<br>
-                방문환자수: ${stats[area.areaName].patientCount}명
-              </div>
-            `,
+        <div style="background: rgba(146, 191, 255, 0.3); padding: 2rem; border-radius: 100%; width: 2.5rem; height: 2.5rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 4px rgba(146, 191, 255, 0.5);">
+          <span style="font-size: 1.5rem; color: #ffffff; text-align: center;">${area.areaName}</span>
+        </div>
+      `,
           },
+        });
+
+        window.naver.maps.Event.addListener(marker, "click", () => {
+          handleDrawerOpen();
         });
       }
     });
+
     // 4. Set the stats in state
     setPolygonStats(stats);
 
@@ -159,7 +158,7 @@ const NaverMap: React.FC<{
     //     },
     //   });
     // });
-  }, [areas, region_db, map]);
+  }, [areas, region_db, map, handleDrawerOpen]);
 
   const [peopleShowButton, setPeopleShowButton] = useState(true);
 
