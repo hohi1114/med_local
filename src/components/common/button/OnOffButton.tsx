@@ -18,7 +18,12 @@ export default OnOffButton;
 const OnOffContainer = styled.div`
   background-color: white;
   border-radius: 100%;
-  padding: 0.8rem;
+  /* padding: 0.8rem; */
+  width: 4rem;
+  height: 4rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   cursor: pointer;
 `;

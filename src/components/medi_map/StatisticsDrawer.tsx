@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { RangePickerProps } from "antd/es/date-picker";
 import BaseButton from "../common/button/BaseButton";
 import styled from "styled-components";
-import { Line } from "@ant-design/plots";
+// import { Line } from "@ant-design/plots";
 import StatsBox, { STATSTYPE } from "./StatsBox";
 import mapStore from "../../store/mapStore";
 
@@ -14,18 +14,24 @@ interface StatisticsDrawerProps {
 }
 const StatisticsDrawer = ({
   open,
-  handleDrawerOpen,
+  handleDrawerOpen
 }: StatisticsDrawerProps) => {
   const [rangeDate, setRangeDate] = useState({
     startDate: new Date(),
-    endDate: new Date(),
+    endDate: new Date()
   });
-  const { areaName, totalCost, totalPatients } = mapStore();
+  const {
+    areaName,
+    totalCost,
+    totalPatients,
+    firstVisitPatients,
+    revisitedPatients
+  } = mapStore();
   const handleDateChange: RangePickerProps["onChange"] = (dates, _) => {
     if (dates && dates[0] && dates[1]) {
       setRangeDate({
         startDate: dates[0].toDate(),
-        endDate: dates[1].toDate(),
+        endDate: dates[1].toDate()
       });
     }
   };
@@ -58,18 +64,18 @@ const StatisticsDrawer = ({
     axis: {
       y: {
         labelFormatter: (v) =>
-          `${v}`.replace(/\d{1,3}(?=(\d{3})+$)/g, (s) => `${s},`),
-      },
+          `${v}`.replace(/\d{1,3}(?=(\d{3})+$)/g, (s) => `${s},`)
+      }
     },
     scale: {
-      color: { range: ["#000000", "rgba(0,0, 0, 0.2)", "#FAAD14"] },
+      color: { range: ["#000000", "rgba(0,0, 0, 0.2)", "#FAAD14"] }
     },
     style: {
       lineWidth: 1,
       lineDash: (data) => {
         if (data[0].type === "register") return [4, 4];
-      },
-    },
+      }
+    }
   };
 
   const handleStatsBoxData = (id: number) => {
@@ -79,23 +85,21 @@ const StatisticsDrawer = ({
       case 2:
         return totalCost;
       case 3:
-        return totalCost;
+        return firstVisitPatients;
       case 4:
-        return totalCost;
+        return revisitedPatients;
       case 5:
-        return totalCost;
+        return 0;
       case 6:
-        return totalCost;
+        return 0;
       case 7:
-        return totalCost;
+        return 0;
       case 8:
-        return totalCost;
+        return 0;
       default:
         return 0;
     }
   };
-
-  console.log(totalCost + "" + totalPatients);
 
   return (
     <Drawer
@@ -109,8 +113,8 @@ const StatisticsDrawer = ({
           display: "flex",
           flexDirection: "column",
           gap: "1rem",
-          backgroundColor: "#FAFAFB",
-        },
+          backgroundColor: "#FAFAFB"
+        }
       }}
       open={open}
     >
@@ -149,7 +153,7 @@ const StatisticsDrawer = ({
         })}
       </GridWrapper>
       {/** 그래프 */}
-      <GarpWrapper>
+      {/* <GarpWrapper>
         <Line {...config} />
       </GarpWrapper>
       <GarpWrapper>
@@ -157,7 +161,7 @@ const StatisticsDrawer = ({
       </GarpWrapper>
       <GarpWrapper>
         <Line {...config} />
-      </GarpWrapper>
+      </GarpWrapper> */}
     </Drawer>
   );
 };
