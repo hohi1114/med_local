@@ -11,6 +11,7 @@ const SideNavBar = () => {
     navigate(`/${e.key}`);
   };
 
+
   return (
     <SidbarContainer>
       <LogoContainer>

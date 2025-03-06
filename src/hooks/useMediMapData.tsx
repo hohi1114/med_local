@@ -13,7 +13,7 @@ const useMediMapData = (): { areas: Area[] } => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch("365_right.xlsx");
+        const response = await fetch("right.xlsx");
 
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
@@ -32,6 +32,7 @@ const useMediMapData = (): { areas: Area[] } => {
         const parsedAreas: Area[] = rows.map((row) => {
           const [areaName, coordsStringRaw] = row;
           let coords: [number, number][] = [];
+          console.log(areaName, coordsStringRaw);
 
           if (typeof coordsStringRaw !== "string") {
             console.error(`Invalid JSON string for: ${areaName}`);
