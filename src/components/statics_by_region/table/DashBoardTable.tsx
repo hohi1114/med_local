@@ -59,11 +59,9 @@ const columns: TableColumnsType<MediDataType> = [
 const DashBoardTable = () => {
   const { mediData, loading } = useMediData();
 
-  useEffect(() => {
-    if (!loading) {
-      console.log(mediData);
-    }
-  }, [loading]);
+  // useEffect(() => {
+
+  // }, [loading]);
 
   return (
     <DashBoardTableContainer

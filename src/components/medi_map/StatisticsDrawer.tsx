@@ -5,6 +5,7 @@ import { RangePickerProps } from "antd/es/date-picker";
 import BaseButton from "../common/button/BaseButton";
 import styled from "styled-components";
 import { Line } from "@ant-design/plots";
+import StatsBox, { STATSTYPE } from "./StatsBox";
 
 interface StatisticsDrawerProps {
   open: boolean;
@@ -74,12 +75,9 @@ const StatisticsDrawer = ({
       width={"35rem"}
       placement="right"
       onClose={handleDrawerOpen}
-      maskStyle={{
-        backgroundColor: "rgba(0, 0, 0, 0)",
-        pointerEvents: "none",
-      }}
       style={{ backgroundColor: "#FAFAFB" }}
       styles={{
+        mask: { backgroundColor: "rgba(0, 0, 0, 0)", pointerEvents: "none" },
         body: {
           display: "flex",
           flexDirection: "column",
@@ -113,35 +111,9 @@ const StatisticsDrawer = ({
         <AddressTitleStyle>서울시 양천구 신정1동 -B</AddressTitleStyle>
       </div>
       <GridWrapper>
-        {Array(6)
-          .fill(0)
-          .map((_, idx) => {
-            return (
-              <div
-                style={{
-                  backgroundColor: "#E6F1FD",
-                  borderRadius: "16px",
-                  padding: "1.5rem",
-                  gap: "1rem",
-                  display: "flex",
-                  flexDirection: "column",
-                }}
-              >
-                <ChipTextStyle>전체 환자 수</ChipTextStyle>
-                <div
-                  style={{ display: "flex", gap: "1rem", alignItems: "center" }}
-                >
-                  <ChipTitleTextStyle>7,265</ChipTitleTextStyle>
-                  <ChipTextStyle>+11.01%</ChipTextStyle>
-                  <img
-                    src="/images/increase.svg"
-                    alt="increase"
-                    style={{ width: "1rem", height: "1rem" }}
-                  />
-                </div>
-              </div>
-            );
-          })}
+        {STATSTYPE.map((title, index) => {
+          return <StatsBox key={index} title={title} />;
+        })}
       </GridWrapper>
       {/** 그래프 */}
       <GarpWrapper>
@@ -169,13 +141,6 @@ const GridWrapper = styled.section`
   grid-template-columns: repeat(2, 1fr);
   gap: 1rem;
   width: 100%;
-`;
-
-const ChipTextStyle = styled.span`
-  font-size: 1rem;
-`;
-const ChipTitleTextStyle = styled.span`
-  font-size: 1.5rem;
 `;
 
 const GarpWrapper = styled.div`

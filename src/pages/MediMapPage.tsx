@@ -2,6 +2,10 @@ import { useEffect, useState } from "react";
 import StatisticsDrawer from "../components/medi_map/StatisticsDrawer";
 import NaverMap from "../components/NaverMap";
 import { getDataFromIndexedDB } from "../components/data/IndexedDB"; // ✅ Import IndexedDB function
+import {
+  getPatientsFromRegion,
+  getRegionDBCount,
+} from "../components/data/RegionDB";
 
 interface PatientData {
   chartNumber: number;
@@ -14,7 +18,7 @@ interface PatientData {
 }
 
 function MediMapPage() {
-  const [filtered_db, setFilteredDB] = useState<PatientData[]>([]);
+  const [regionDB, setRegionDB] = useState<PatientData[][]>([]);
   const [isOpenDrawer, setIsOpenDrawer] = useState<boolean>(false);
 
   const handleDrawerOpen = () => {
@@ -25,20 +29,28 @@ function MediMapPage() {
     // ✅ Fetch data from IndexedDB
     const fetchPatientData = async () => {
       try {
-        const { df_filtered } = await getDataFromIndexedDB(); // ✅ Get filtered data
+        const db_count = await getRegionDBCount();
 
-        // Ensure the data is in the correct format
-        const formattedData = df_filtered.map((item: any) => ({
-          chartNumber: item.chartNumber || 0,
-          visitDate: item.visitDate || "",
-          totalCost: item.totalCost || 0,
-          age: item.age || "",
-          address: item.address || "",
-          latitude: item.latitude ? Number(item.latitude) : 0,
-          longitude: item.longitude ? Number(item.longitude) : 0,
-        }));
+        const allData = [];
+        for (let i = 1; i <= db_count; i++) {
+          const region_db = await getPatientsFromRegion(i.toString());
+          allData.push(region_db);
+        }
+        setRegionDB(allData);
+        // const { df_filtered } = await getDataFromIndexedDB(); // ✅ Get filtered data
 
-        setFilteredDB(formattedData); // ✅ Save to state
+        // // Ensure the data is in the correct format
+        // const formattedData = df_filtered.map((item: any) => ({
+        //   chartNumber: item.chartNumber || 0,
+        //   visitDate: item.visitDate || "",
+        //   totalCost: item.totalCost || 0,
+        //   age: item.age || "",
+        //   address: item.address || "",
+        //   latitude: item.latitude ? Number(item.latitude) : 0,
+        //   longitude: item.longitude ? Number(item.longitude) : 0,
+        // }));
+
+        // setFilteredDB(formattedData); // ✅ Save to state
       } catch (error) {
         console.error("Error fetching patient data from IndexedDB:", error);
       }
@@ -49,8 +61,7 @@ function MediMapPage() {
 
   return (
     <>
-      <NaverMap filtered_db={filtered_db} handleDrawerOpen={handleDrawerOpen} />
-      {/* ✅ Pass IndexedDB data to NaverMap */}
+      <NaverMap region_db={regionDB} handleDrawerOpen={handleDrawerOpen} />
       <StatisticsDrawer
         open={isOpenDrawer}
         handleDrawerOpen={handleDrawerOpen}

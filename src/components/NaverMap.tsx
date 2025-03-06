@@ -44,9 +44,9 @@ function containsLocation(
 }
 
 const NaverMap: React.FC<{
-  filtered_db: PatientData[];
+  region_db: PatientData[][];
   handleDrawerOpen: () => void;
-}> = ({ filtered_db, handleDrawerOpen }) => {
+}> = ({ region_db, handleDrawerOpen }) => {
   const mapElement = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<naver.maps.Map | null>(null);
 
@@ -70,12 +70,14 @@ const NaverMap: React.FC<{
 
   // Draw polygons & markers whenever map, areas, or filtered_db changes
   useEffect(() => {
-    if (!map) return;
+    if (!map && region_db.length == 0) return;
 
     // Store stats for each area
     const stats: Record<string, { totalCost: number; patientCount: number }> =
       {}; //stats를 변형해서 띄운다
-
+    /**
+     * 구역 나누기
+     */
     // 1. Draw polygons
     areas.forEach((area) => {
       if (!area.coords || area.coords.length === 0) return;
@@ -102,23 +104,23 @@ const NaverMap: React.FC<{
         handleDrawerOpen();
       });
 
-      // 2. Count patients inside this polygon (using our custom function)
-      filtered_db.forEach((patient) => {
-        const { latitude, longitude, totalCost } = patient;
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+      if (
+        Array.isArray(region_db[Number(area.areaName) - 1]) &&
+        region_db[Number(area.areaName) - 1].length > 0
+      ) {
+        region_db[Number(area.areaName) - 1].forEach((patient) => {
+          const { latitude, longitude, totalCost } = patient;
 
-        // Skip if lat/lng are missing
-        if (latitude == null || longitude == null) {
-          return; // do nothing for this patient
-        }
-
-        // Otherwise, call the "containsLocation" check
-        if (containsLocation(latitude, longitude, polygon)) {
-          stats[area.areaName].totalCost += totalCost;
-          stats[area.areaName].patientCount += 1;
-        }
-      });
-
-      // 그리는 곳
+          if (latitude == null || longitude == null) {
+            return;
+          }
+          if (containsLocation(latitude, longitude, polygon)) {
+            stats[area.areaName].totalCost += totalCost;
+            stats[area.areaName].patientCount += 1;
+          }
+        });
+      }
       // 3. Show polygon stats with a Marker in the center 띄워놓은 박스들
       const bounds = polygon.getBounds();
       if (bounds) {
@@ -140,25 +142,24 @@ const NaverMap: React.FC<{
         });
       }
     });
-
     // 4. Set the stats in state
     setPolygonStats(stats);
 
     // 5. Place patient markers 점
-    filtered_db.forEach((patient) => {
-      new window.naver.maps.Marker({
-        map,
-        position: new window.naver.maps.LatLng(
-          patient.latitude,
-          patient.longitude
-        ),
-        icon: {
-          content:
-            '<div style="background:red; width:8px; height:8px; border-radius:50%;"></div>',
-        },
-      });
-    });
-  }, [map, areas, filtered_db]);
+    // filtered_db.forEach((patient) => {
+    //   new window.naver.maps.Marker({
+    //     map,
+    //     position: new window.naver.maps.LatLng(
+    //       patient.latitude,
+    //       patient.longitude
+    //     ),
+    //     icon: {
+    //       content:
+    //         '<div style="background:red; width:8px; height:8px; border-radius:50%;"></div>',
+    //     },
+    //   });
+    // });
+  }, [areas, region_db, map]);
 
   const [peopleShowButton, setPeopleShowButton] = useState(true);
 
