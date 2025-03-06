@@ -31,3 +31,4 @@ node_modules/
 *.env
 
 out/
+package-lock.json

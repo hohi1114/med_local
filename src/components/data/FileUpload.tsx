@@ -1,32 +1,62 @@
-import { useState } from "react";
+import styled from "styled-components";
+import { InboxOutlined } from "@ant-design/icons";
+import { Upload } from "antd";
+import { UploadChangeParam } from "antd/es/upload";
+
+const { Dragger } = Upload;
 
 interface FileUploadProps {
-    onFilesUploaded: (files: FileList) => void;
-    title: string;
+  title: string;
+  onFilesUploaded: (files: FileList) => void;
 }
 
-const FileUpload: React.FC<FileUploadProps> = ({ onFilesUploaded, title }) => {
-    const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+const FileUpload = ({ title, onFilesUploaded }: FileUploadProps) => {
+  const handleChange = (info: UploadChangeParam) => {
+    const fileList = info.fileList
+      .map((fileWrapper) => fileWrapper.originFileObj)
+      .filter(Boolean) as File[];
 
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        if (event.target.files) {
-            const filesArray = Array.from(event.target.files);
-            setSelectedFiles(filesArray);
-            onFilesUploaded(event.target.files);
-        }
-    };
+    if (fileList.length > 0) {
+      const dataTransfer = new DataTransfer();
+      fileList.forEach((file) => dataTransfer.items.add(file));
 
-    return (
-        <div>
-            <h3>{title}</h3>
-            <input type="file" multiple accept=".xls,.xlsx" onChange={handleFileChange} />
-            <ul>
-                {selectedFiles.map((file, index) => (
-                    <li key={index}>{file.name}</li>
-                ))}
-            </ul>
-        </div>
-    );
+      onFilesUploaded(dataTransfer.files);
+    }
+  };
+
+  return (
+    <FileUploadContainer>
+      <TitleStyle>{title}</TitleStyle>
+      <StyledDragger
+        onChange={handleChange}
+        multiple={false}
+        accept=".xls,.xlsx"
+        height={150}
+      >
+        <p className="ant-upload-drag-icon">
+          <InboxOutlined />
+        </p>
+        <p className="ant-upload-hint">
+          데이터를 담은 .xlsx 파일을 첨부해주세요.
+        </p>
+      </StyledDragger>
+    </FileUploadContainer>
+  );
 };
 
 export default FileUpload;
+
+const FileUploadContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+`;
+
+const TitleStyle = styled.span`
+  font-size: 1.2rem;
+  font-weight: bold;
+`;
+
+const StyledDragger = styled(Dragger)`
+  width: 50vh;
+`;

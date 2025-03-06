@@ -59,7 +59,7 @@ const SettingContainer = styled.div`
 
 const SidbarContainer = styled.div`
   width: 20rem;
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   position: "relative";
