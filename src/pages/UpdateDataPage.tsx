@@ -3,7 +3,7 @@ import FileUpload from "../components/data/FileUpload";
 import { parseDaysFiles, parsePlaceFiles } from "../utils/ExcelParser";
 import {
   saveToIndexedDB,
-  getDataFromIndexedDB
+  getDataFromIndexedDB,
 } from "../components/data/IndexedDB";
 import styled from "styled-components";
 import ContentHeader from "../components/common/layout/ContentHeader";
@@ -91,17 +91,19 @@ const UpdateDataPage = () => {
             <Progress
               percent={Math.ceil(progress)}
               percentPosition={{ align: "center", type: "inner" }}
-              size={["50vh", 20]}
+              size={["50vw", 20]}
               strokeColor="#92BFFF"
             />
           ) : (
-            <BaseButton
-              type="submit"
-              onClick={handleProcessData}
-              disabled={!daysFiles || !placeFiles}
-            >
-              데이터 처리하기
-            </BaseButton>
+            <div style={{ width: "50vh" }}>
+              <BaseButton
+                type="submit"
+                onClick={handleProcessData}
+                disabled={!daysFiles || !placeFiles}
+              >
+                데이터 처리하기
+              </BaseButton>
+            </div>
           )}
         </div>
       </UpdateDataContainer>

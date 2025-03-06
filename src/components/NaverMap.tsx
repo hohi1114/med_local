@@ -14,7 +14,11 @@ interface PatientData {
 /**
  특정 구역에 환자가 포함되는지
  */
-function containsLocation(pointLat: number, pointLng: number, polygon: naver.maps.Polygon): boolean {
+function containsLocation(
+  pointLat: number,
+  pointLng: number,
+  polygon: naver.maps.Polygon
+): boolean {
   // Instead of getPath(), use getPaths() + getAt(0)
   const ringArray = polygon.getPaths().getAt(0); // the first ring
   if (!ringArray) return false; // no ring
@@ -29,15 +33,17 @@ function containsLocation(pointLat: number, pointLng: number, polygon: naver.map
     const lngJ = ringArray.getAt(j).lng();
 
     const intersect =
-        (lngI > pointLng) !== (lngJ > pointLng) &&
-        pointLat < ((latJ - latI) * (pointLng - lngI)) / (lngJ - lngI) + latI;
+      lngI > pointLng !== lngJ > pointLng &&
+      pointLat < ((latJ - latI) * (pointLng - lngI)) / (lngJ - lngI) + latI;
 
     if (intersect) inside = !inside;
   }
   return inside;
 }
 
-const NaverMap: React.FC<{ filtered_db: PatientData[] }> = ({ filtered_db }) => {
+const NaverMap: React.FC<{ filtered_db: PatientData[] }> = ({
+  filtered_db,
+}) => {
   const mapElement = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<naver.maps.Map | null>(null);
 
@@ -45,7 +51,7 @@ const NaverMap: React.FC<{ filtered_db: PatientData[] }> = ({ filtered_db }) => 
   const { areas } = useMediMapData();
 
   const [polygonStats, setPolygonStats] = useState<
-      Record<string, { totalCost: number; patientCount: number }>
+    Record<string, { totalCost: number; patientCount: number }>
   >({});
 
   // Create the map once
@@ -55,7 +61,6 @@ const NaverMap: React.FC<{ filtered_db: PatientData[] }> = ({ filtered_db }) => 
     const newMap = new window.naver.maps.Map(mapElement.current, {
       center: new window.naver.maps.LatLng(37.51, 126.88),
       zoom: 15,
-
     });
     setMap(newMap);
   }, [map]);
@@ -65,7 +70,8 @@ const NaverMap: React.FC<{ filtered_db: PatientData[] }> = ({ filtered_db }) => 
     if (!map) return;
 
     // Store stats for each area
-    const stats: Record<string, { totalCost: number; patientCount: number }> = {};  //stats를 변형해서 띄운다
+    const stats: Record<string, { totalCost: number; patientCount: number }> =
+      {}; //stats를 변형해서 띄운다
 
     // 1. Draw polygons
     areas.forEach((area) => {
@@ -73,14 +79,14 @@ const NaverMap: React.FC<{ filtered_db: PatientData[] }> = ({ filtered_db }) => 
 
       // Convert coords to naver LatLng
       const latLngs = area.coords.map(
-          ([lng, lat]) => new window.naver.maps.LatLng(lat, lng)
+        ([lng, lat]) => new window.naver.maps.LatLng(lat, lng)
       );
 
       const polygon = new window.naver.maps.Polygon({
         map,
         paths: latLngs,
-        fillColor: "rgba(0, 255, 0, 0.1)",
-        strokeColor: "#00ff00",
+        fillColor: "rgba(146, 191, 255, 0.1)",
+        strokeColor: "#92BFFF",
         strokeWeight: 0.3,
       });
 
@@ -103,7 +109,6 @@ const NaverMap: React.FC<{ filtered_db: PatientData[] }> = ({ filtered_db }) => 
         }
       });
 
-
       // 그리는 곳
       // 3. Show polygon stats with a Marker in the center 띄워놓은 박스들
       const bounds = polygon.getBounds();
@@ -116,7 +121,9 @@ const NaverMap: React.FC<{ filtered_db: PatientData[] }> = ({ filtered_db }) => 
             content: `
               <div style="background:white; border:1px solid #ccc; padding:4px;">
                 <b>${area.areaName}</b><br>
-                총진료비: ${stats[area.areaName].totalCost.toLocaleString()}원<br>
+                총진료비: ${stats[
+                  area.areaName
+                ].totalCost.toLocaleString()}원<br>
                 방문환자수: ${stats[area.areaName].patientCount}명
               </div>
             `,
@@ -132,20 +139,23 @@ const NaverMap: React.FC<{ filtered_db: PatientData[] }> = ({ filtered_db }) => 
     filtered_db.forEach((patient) => {
       new window.naver.maps.Marker({
         map,
-        position: new window.naver.maps.LatLng(patient.latitude, patient.longitude),
+        position: new window.naver.maps.LatLng(
+          patient.latitude,
+          patient.longitude
+        ),
         icon: {
           content:
-              '<div style="background:red; width:8px; height:8px; border-radius:50%;"></div>',
+            '<div style="background:red; width:8px; height:8px; border-radius:50%;"></div>',
         },
       });
     });
   }, [map, areas, filtered_db]);
 
   return (
-      <div
-          ref={mapElement}
-          style={{ width: "100vw", height: "100vh", backgroundColor: "#e0e0e0" }}
-      />
+    <div
+      ref={mapElement}
+      style={{ width: "100%", height: "100%", backgroundColor: "#e0e0e0" }}
+    />
   );
 };
 
