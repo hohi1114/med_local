@@ -61,14 +61,14 @@ export const getLatLonNaver = async (
         console.log("insidegetLatLonNaver");
         naver.maps.Service.geocode({ query: address }, (status: string, response: any) => {
             if (status === naver.maps.Service.Status.OK && response.v2.addresses.length > 0) {
-                updateProgress(((index + 1) / total) * 100);
+                updateProgress(((index + 1) / total) * 99);
                 return resolve({
                     latitude: parseFloat(response.v2.addresses[0].y),
                     longitude: parseFloat(response.v2.addresses[0].x),
                 });
             } else {
                 console.error("❌ Error fetching geolocation:", status);
-                updateProgress(((index + 1) / total) * 100);
+                updateProgress(((index + 1) / total) * 99);
                 return resolve({ latitude: null, longitude: null });
             }
         });
