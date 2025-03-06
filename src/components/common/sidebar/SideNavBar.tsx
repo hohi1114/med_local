@@ -11,7 +11,6 @@ const SideNavBar = () => {
     navigate(`/${e.key}`);
   };
 
-
   return (
     <SidbarContainer>
       <LogoContainer>
@@ -46,7 +45,7 @@ const LogoContainer = styled.div`
 `;
 
 const SettingContainer = styled.div`
-  position: absolute;
+  position: fixed;
   bottom: 2.8rem;
   left: 1.5rem;
   width: 100%;

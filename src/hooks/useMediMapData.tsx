@@ -32,7 +32,6 @@ const useMediMapData = (): { areas: Area[] } => {
         const parsedAreas: Area[] = rows.map((row) => {
           const [areaName, coordsStringRaw] = row;
           let coords: [number, number][] = [];
-          console.log(areaName, coordsStringRaw);
 
           if (typeof coordsStringRaw !== "string") {
             console.error(`Invalid JSON string for: ${areaName}`);
@@ -42,7 +41,10 @@ const useMediMapData = (): { areas: Area[] } => {
           let coordsString = coordsStringRaw.trim();
 
           // Fix missing closing brackets
-          while ((coordsString.match(/\[/g) || []).length > (coordsString.match(/\]/g) || []).length) {
+          while (
+            (coordsString.match(/\[/g) || []).length >
+            (coordsString.match(/\]/g) || []).length
+          ) {
             coordsString += "]";
           }
 
@@ -52,30 +54,36 @@ const useMediMapData = (): { areas: Area[] } => {
             let parsedCoords = JSON.parse(coordsString);
 
             // **Unwrap extra array if necessary**
-            if (Array.isArray(parsedCoords) && parsedCoords.length === 1 && Array.isArray(parsedCoords[0])) {
+            if (
+              Array.isArray(parsedCoords) &&
+              parsedCoords.length === 1 &&
+              Array.isArray(parsedCoords[0])
+            ) {
               parsedCoords = parsedCoords[0]; // ✅ Fix the structure
             }
 
-
             // **Fix coordinate format**
-            coords = parsedCoords.map((point: any) => {
-              if (Array.isArray(point) && point.length === 2) {
-                return [Number(point[0]), Number(point[1])]; // ✅ Convert to numbers
-              } else if (typeof point === "object" && "x" in point && "y" in point) {
-                return [Number(point.x), Number(point.y)];
-              } else {
-                console.warn("⚠️ Unexpected coordinate format:", point);
-                return null;
-              }
-            }).filter(Boolean);
-
+            coords = parsedCoords
+              .map((point: any) => {
+                if (Array.isArray(point) && point.length === 2) {
+                  return [Number(point[0]), Number(point[1])]; // ✅ Convert to numbers
+                } else if (
+                  typeof point === "object" &&
+                  "x" in point &&
+                  "y" in point
+                ) {
+                  return [Number(point.x), Number(point.y)];
+                } else {
+                  console.warn("⚠️ Unexpected coordinate format:", point);
+                  return null;
+                }
+              })
+              .filter(Boolean);
           } catch (error) {
             console.error(`❌ JSON parse error for: ${areaName}`);
             console.error("❌ Raw string before fix:", coordsStringRaw);
             console.error("❌ Fixed string:", coordsString);
           }
-
-
 
           return { areaName, coords };
         });

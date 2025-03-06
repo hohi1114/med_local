@@ -3,47 +3,57 @@ import styled from "styled-components";
 export const STATSTYPE = [
   { id: 1, title: "전체 환자 수" },
   { id: 2, title: "누적 매출액" },
-  { id: 3, title: "재방문 환자수" },
+  { id: 3, title: "재방문 환자 수" },
   { id: 4, title: "초진 환자 수" },
   { id: 5, title: "전체 인구 수" },
-  { id: 6, title: "유입 비율" },
+  { id: 6, title: "유입 비율" }
 ];
 
 interface StatsBoxProps {
   title: string;
-  data: number;
+  data: string;
 }
+
 const StatsBox = ({ title, data }: StatsBoxProps) => {
+  /** If the data is too long, calculate font size */
+  const calculateFontsize = () => {
+    if (data.length > 13) {
+      return 1.5;
+    } else {
+      return 1.5;
+    }
+  };
+
   return (
-    <div
-      style={{
-        backgroundColor: "#E6F1FD",
-        borderRadius: "16px",
-        padding: "1.5rem",
-        gap: "1rem",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
+    <StatsBoxContainer>
       <ChipTextStyle>{title}</ChipTextStyle>
-      <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
-        <ChipTitleTextStyle>{data}</ChipTitleTextStyle>
-        <ChipTextStyle>+11.01%</ChipTextStyle>
-        <img
-          src="/images/increase.svg"
-          alt="increase"
-          style={{ width: "1rem", height: "1rem" }}
-        />
+      <div style={{ display: "flex", alignItems: "center" }}>
+        <ChipTitleTextStyle fontSize={calculateFontsize()}>
+          {data}
+        </ChipTitleTextStyle>
       </div>
-    </div>
+    </StatsBoxContainer>
   );
 };
 
 export default StatsBox;
 
+const StatsBoxContainer = styled.div`
+  background-color: #e6f1fd;
+  border-radius: 16px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  width: 100%;
+  max-width: 300px;
+  box-sizing: border-box;
+`;
+
 const ChipTextStyle = styled.span`
   font-size: 1rem;
 `;
-const ChipTitleTextStyle = styled.span`
-  font-size: 1.5rem;
+
+const ChipTitleTextStyle = styled.span<{ fontSize: number }>`
+  font-size: ${(props) => props.fontSize}rem;
 `;

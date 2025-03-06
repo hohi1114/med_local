@@ -27,6 +27,16 @@ const StatisticsDrawer = ({
     firstVisitPatients,
     revisitedPatients
   } = mapStore();
+
+  const statsData: { [key: number]: string } = {
+    1: `${totalPatients}명`,
+    2: `${totalCost.toLocaleString()} ₩`,
+    3: `${revisitedPatients}명`,
+    4: `${firstVisitPatients}명`,
+    5: `${0}명`,
+    6: `${0}명`
+  };
+
   const handleDateChange: RangePickerProps["onChange"] = (dates, _) => {
     if (dates && dates[0] && dates[1]) {
       setRangeDate({
@@ -35,79 +45,16 @@ const StatisticsDrawer = ({
       });
     }
   };
-
-  const [data, setData] = useState([]);
-
-  useEffect(() => {
-    asyncFetch();
-  }, []);
-
-  const asyncFetch = () => {
-    fetch(
-      "https://gw.alipayobjects.com/os/bmw-prod/c48dbbb1-fccf-4a46-b68f-a3ddb4908b68.json"
-    )
-      .then((response) => response.json())
-      .then((json) => setData(json))
-      .catch((error) => {
-        console.log("fetch data failed", error);
-      });
-  };
-
-  const config = {
-    data,
-    xField: "date",
-    yField: "value",
-    colorField: "type",
-    height: 380,
-    autoFit: true,
-    responsive: true,
-    axis: {
-      y: {
-        labelFormatter: (v) =>
-          `${v}`.replace(/\d{1,3}(?=(\d{3})+$)/g, (s) => `${s},`)
-      }
-    },
-    scale: {
-      color: { range: ["#000000", "rgba(0,0, 0, 0.2)", "#FAAD14"] }
-    },
-    style: {
-      lineWidth: 1,
-      lineDash: (data) => {
-        if (data[0].type === "register") return [4, 4];
-      }
-    }
-  };
-
-  const handleStatsBoxData = (id: number) => {
-    switch (id) {
-      case 1:
-        return totalPatients;
-      case 2:
-        return totalCost;
-      case 3:
-        return firstVisitPatients;
-      case 4:
-        return revisitedPatients;
-      case 5:
-        return 0;
-      case 6:
-        return 0;
-      case 7:
-        return 0;
-      case 8:
-        return 0;
-      default:
-        return 0;
-    }
-  };
-
   return (
     <Drawer
-      width={"35rem"}
+      width={"30rem"}
       placement="right"
       onClose={handleDrawerOpen}
       style={{ backgroundColor: "#FAFAFB" }}
       styles={{
+        header: {
+          padding: "0.8rem 1rem"
+        },
         mask: { backgroundColor: "rgba(0, 0, 0, 0)", pointerEvents: "none" },
         body: {
           display: "flex",
@@ -138,7 +85,7 @@ const StatisticsDrawer = ({
         </div>
       </DateFilterWrapper>
       {/** 증가&감소 지표 */}
-      <div style={{ padding: "1.5rem 0rem" }}>
+      <div style={{ padding: "0.8rem 0rem" }}>
         <AddressTitleStyle>{areaName}</AddressTitleStyle>
       </div>
       <GridWrapper>
@@ -147,21 +94,12 @@ const StatisticsDrawer = ({
             <StatsBox
               key={data.id}
               title={data.title}
-              data={handleStatsBoxData(data.id)}
+              data={statsData[data.id]}
             />
           );
         })}
       </GridWrapper>
-      {/** 그래프 */}
-      {/* <GarpWrapper>
-        <Line {...config} />
-      </GarpWrapper>
-      <GarpWrapper>
-        <Line {...config} />
-      </GarpWrapper>
-      <GarpWrapper>
-        <Line {...config} />
-      </GarpWrapper> */}
+      <span> 차트 그리는 중...</span>
     </Drawer>
   );
 };

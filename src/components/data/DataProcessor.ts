@@ -14,7 +14,6 @@ export const processData = async (
   // ✅ Generate df_merged (All patients, including "N/D" addresses)
   let df_merged = visits.map((visit) => {
     const patient = patientMap.get(visit.chartNumber);
-    console.log(visit.visitDate);
     return {
       chartNumber: visit.chartNumber,
       visitDate: visit.visitDate,
