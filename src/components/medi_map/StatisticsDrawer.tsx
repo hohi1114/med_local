@@ -6,6 +6,7 @@ import BaseButton from "../common/button/BaseButton";
 import styled from "styled-components";
 import { Line } from "@ant-design/plots";
 import StatsBox, { STATSTYPE } from "./StatsBox";
+import mapStore from "../../store/mapStore";
 
 interface StatisticsDrawerProps {
   open: boolean;
@@ -19,6 +20,7 @@ const StatisticsDrawer = ({
     startDate: new Date(),
     endDate: new Date(),
   });
+  const { areaName, totalCost, totalPatients } = mapStore();
   const handleDateChange: RangePickerProps["onChange"] = (dates, _) => {
     if (dates && dates[0] && dates[1]) {
       setRangeDate({
@@ -70,6 +72,31 @@ const StatisticsDrawer = ({
     },
   };
 
+  const handleStatsBoxData = (id: number) => {
+    switch (id) {
+      case 1:
+        return totalPatients;
+      case 2:
+        return totalCost;
+      case 3:
+        return totalCost;
+      case 4:
+        return totalCost;
+      case 5:
+        return totalCost;
+      case 6:
+        return totalCost;
+      case 7:
+        return totalCost;
+      case 8:
+        return totalCost;
+      default:
+        return 0;
+    }
+  };
+
+  console.log(totalCost + "" + totalPatients);
+
   return (
     <Drawer
       width={"35rem"}
@@ -108,11 +135,17 @@ const StatisticsDrawer = ({
       </DateFilterWrapper>
       {/** 증가&감소 지표 */}
       <div style={{ padding: "1.5rem 0rem" }}>
-        <AddressTitleStyle>서울시 양천구 신정1동 -B</AddressTitleStyle>
+        <AddressTitleStyle>{areaName}</AddressTitleStyle>
       </div>
       <GridWrapper>
-        {STATSTYPE.map((title, index) => {
-          return <StatsBox key={index} title={title} />;
+        {STATSTYPE.map((data) => {
+          return (
+            <StatsBox
+              key={data.id}
+              title={data.title}
+              data={handleStatsBoxData(data.id)}
+            />
+          );
         })}
       </GridWrapper>
       {/** 그래프 */}

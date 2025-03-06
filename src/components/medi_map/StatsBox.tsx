@@ -1,18 +1,19 @@
 import styled from "styled-components";
 
 export const STATSTYPE = [
-  "전체 환자 수",
-  "누적 매출액",
-  "재방문 환자수",
-  "초진 환자 수",
-  "전체 인구 수",
-  "유입 비율",
+  { id: 1, title: "전체 환자 수" },
+  { id: 2, title: "누적 매출액" },
+  { id: 3, title: "재방문 환자수" },
+  { id: 4, title: "초진 환자 수" },
+  { id: 5, title: "전체 인구 수" },
+  { id: 6, title: "유입 비율" },
 ];
 
 interface StatsBoxProps {
   title: string;
+  data: number;
 }
-const StatsBox = ({ title }: StatsBoxProps) => {
+const StatsBox = ({ title, data }: StatsBoxProps) => {
   return (
     <div
       style={{
@@ -26,7 +27,7 @@ const StatsBox = ({ title }: StatsBoxProps) => {
     >
       <ChipTextStyle>{title}</ChipTextStyle>
       <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
-        <ChipTitleTextStyle>7,265</ChipTitleTextStyle>
+        <ChipTitleTextStyle>{data}</ChipTitleTextStyle>
         <ChipTextStyle>+11.01%</ChipTextStyle>
         <img
           src="/images/increase.svg"

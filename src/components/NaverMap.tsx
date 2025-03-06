@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import useMediMapData from "../hooks/useMediMapData";
 import OnOffButton from "./common/button/OnOffButton";
 import styled from "styled-components";
+import mapStore from "../store/mapStore";
 
 interface PatientData {
   chartNumber: number;
@@ -49,6 +50,10 @@ const NaverMap: React.FC<{
 }> = ({ region_db, handleDrawerOpen }) => {
   const mapElement = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<naver.maps.Map | null>(null);
+  const { setAreaName, setTotalCost, setTotalPatients } = mapStore();
+  // Use useRef to store polygons and markers
+  const polygonsRef = useRef<Map<string, naver.maps.Polygon>>(new Map());
+  const markersRef = useRef<Map<string, naver.maps.Marker>>(new Map());
 
   // Use your custom hook for polygon data
   const { areas } = useMediMapData();
@@ -57,6 +62,7 @@ const NaverMap: React.FC<{
     Record<string, { totalCost: number; patientCount: number }>
   >({});
 
+  console.log(region_db);
   // Create the map once
   useEffect(() => {
     if (!mapElement.current || map) return;
@@ -75,6 +81,7 @@ const NaverMap: React.FC<{
     // Store stats for each area
     const stats: Record<string, { totalCost: number; patientCount: number }> =
       {}; //stats를 변형해서 띄운다
+
     /**
      * 구역 나누기
      */
@@ -96,12 +103,17 @@ const NaverMap: React.FC<{
         clickable: true,
       });
 
+      // Store the polygon in the ref to prevent redrawing
+      polygonsRef.current.set(area.areaName, polygon);
+
       // Initialize stats
       stats[area.areaName] = { totalCost: 0, patientCount: 0 };
 
       polygon.addListener("click", () => {
-        console.log(`클릭한 구역: ${area.areaName}`);
         handleDrawerOpen();
+        setAreaName(area.areaName);
+        setTotalCost(stats[area.areaName].totalCost);
+        setTotalPatients(stats[area.areaName].patientCount);
       });
       if (
         Array.isArray(region_db[Number(area.areaName) - 1]) &&
@@ -128,15 +140,18 @@ const NaverMap: React.FC<{
           position: center,
           icon: {
             content: `
-        <div style="background: rgba(146, 191, 255, 0.3); padding: 2rem; border-radius: 100%; width: 2.5rem; height: 2.5rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 4px rgba(146, 191, 255, 0.5);">
+        <div style="background: rgba(146, 191, 255, 0.4); padding: 2rem; border-radius: 100%; width: 2.5rem; height: 2.5rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 4px rgba(146, 191, 255, 0.5);">
           <span style="font-size: 1.5rem; color: #ffffff; text-align: center;">${area.areaName}</span>
         </div>
       `,
           },
         });
-
+        markersRef.current.set(area.areaName, marker);
         window.naver.maps.Event.addListener(marker, "click", () => {
           handleDrawerOpen();
+          setAreaName(area.areaName);
+          setTotalCost(stats[area.areaName].totalCost);
+          setTotalPatients(stats[area.areaName].patientCount);
         });
       }
     });
