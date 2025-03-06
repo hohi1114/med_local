@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import useMediMapData from "../hooks/useMediMapData";
+import OnOffButton from "./common/button/OnOffButton";
+import styled from "styled-components";
 
 interface PatientData {
   chartNumber: number;
@@ -41,9 +43,10 @@ function containsLocation(
   return inside;
 }
 
-const NaverMap: React.FC<{ filtered_db: PatientData[] }> = ({
-  filtered_db,
-}) => {
+const NaverMap: React.FC<{
+  filtered_db: PatientData[];
+  handleDrawerOpen: () => void;
+}> = ({ filtered_db, handleDrawerOpen }) => {
   const mapElement = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<naver.maps.Map | null>(null);
 
@@ -88,10 +91,16 @@ const NaverMap: React.FC<{ filtered_db: PatientData[] }> = ({
         fillColor: "rgba(146, 191, 255, 0.1)",
         strokeColor: "#92BFFF",
         strokeWeight: 0.3,
+        clickable: true,
       });
 
       // Initialize stats
       stats[area.areaName] = { totalCost: 0, patientCount: 0 };
+
+      polygon.addListener("click", () => {
+        console.log(`클릭한 구역: ${area.areaName}`);
+        handleDrawerOpen();
+      });
 
       // 2. Count patients inside this polygon (using our custom function)
       filtered_db.forEach((patient) => {
@@ -151,12 +160,46 @@ const NaverMap: React.FC<{ filtered_db: PatientData[] }> = ({
     });
   }, [map, areas, filtered_db]);
 
+  const [peopleShowButton, setPeopleShowButton] = useState(true);
+
+  const handleShowButton = () => {
+    setPeopleShowButton(!peopleShowButton);
+  };
+
   return (
     <div
       ref={mapElement}
-      style={{ width: "100%", height: "100%", backgroundColor: "#e0e0e0" }}
-    />
+      style={{
+        position: "relative",
+        width: "100%",
+        height: "100%",
+        backgroundColor: "#e0e0e0",
+      }}
+    >
+      <ButtonsContainer>
+        <div
+          style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}
+        >
+          {/* <OnOffButton imagePath={"/images/unactive_current.svg"} /> */}ㄷ
+          <OnOffButton
+            imagePath={
+              peopleShowButton
+                ? "/images/people.svg"
+                : "/images/unactive_people.svg"
+            }
+            handleClickButton={handleShowButton}
+          />
+        </div>
+      </ButtonsContainer>
+    </div>
   );
 };
 
 export default NaverMap;
+
+const ButtonsContainer = styled.div`
+  position: absolute;
+  bottom: 8%;
+  right: 5%;
+  z-index: 100;
+`;

@@ -6,7 +6,14 @@ import BaseButton from "../common/button/BaseButton";
 import styled from "styled-components";
 import { Line } from "@ant-design/plots";
 
-const StatisticsDrawer = () => {
+interface StatisticsDrawerProps {
+  open: boolean;
+  handleDrawerOpen: () => void;
+}
+const StatisticsDrawer = ({
+  open,
+  handleDrawerOpen,
+}: StatisticsDrawerProps) => {
   const [rangeDate, setRangeDate] = useState({
     startDate: new Date(),
     endDate: new Date(),
@@ -66,7 +73,11 @@ const StatisticsDrawer = () => {
     <Drawer
       width={"35rem"}
       placement="right"
-      //   onClose={onClose}
+      onClose={handleDrawerOpen}
+      maskStyle={{
+        backgroundColor: "rgba(0, 0, 0, 0)",
+        pointerEvents: "none",
+      }}
       style={{ backgroundColor: "#FAFAFB" }}
       styles={{
         body: {
@@ -76,7 +87,7 @@ const StatisticsDrawer = () => {
           backgroundColor: "#FAFAFB",
         },
       }}
-      open={false}
+      open={open}
     >
       {/** 날짜 필터 */}
       <DateFilterWrapper>
