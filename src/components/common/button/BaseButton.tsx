@@ -26,7 +26,7 @@ const BaseButton = memo(
     ) => {
       return (
         <ButtonContainer
-          color={color}
+          color={disabled ? "#F1F1F2" : color}
           textcolor={textcolor}
           type={type}
           ref={ref}
@@ -47,7 +47,6 @@ export default BaseButton;
 
 const ButtonContainer = styled.button<StyledButtonProps>`
   height: 3rem;
-  /* width: 19rem; */
   width: 100%;
   border: none;
   border-radius: 6px;

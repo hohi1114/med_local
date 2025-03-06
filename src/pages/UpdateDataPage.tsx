@@ -3,7 +3,7 @@ import FileUpload from "../components/data/FileUpload";
 import { parseDaysFiles, parsePlaceFiles } from "../utils/ExcelParser";
 import {
   saveToIndexedDB,
-  getDataFromIndexedDB,
+  getDataFromIndexedDB
 } from "../components/data/IndexedDB";
 import styled from "styled-components";
 import ContentHeader from "../components/common/layout/ContentHeader";
@@ -12,15 +12,30 @@ import { MergedData } from "../types/medi-types";
 import { processData } from "../components/data/DataProcessor";
 import { loadNaverMapsScript } from "../utils/NaverGeocode";
 import { useEffect } from "react";
-import { Progress } from "antd";
+import { Progress, notification } from "antd";
 import UploadedCalendar from "../components/data/UploadedCalendar";
 import useMediMapData from "../hooks/useMediMapData.tsx";
-import { storePatientsByRegion,updateRegionSums } from "../components/data/RegionDB";
+import {
+  storePatientsByRegion,
+  updateRegionSums
+} from "../components/data/RegionDB";
 
 const UpdateDataPage = () => {
   const [daysFiles, setDaysFiles] = useState<FileList | null>(null);
   const [placeFiles, setPlaceFiles] = useState<FileList | null>(null);
   const [progress, setProgress] = useState<number>(0);
+  const { areas } = useMediMapData();
+  const [api, contextHolder] = notification.useNotification();
+
+  const openNotification = () => {
+    api.info({
+      message: `데이터 업로드`,
+      description: <div>데이터가 성공적으로 업로드 되었습니다!</div>,
+      placement: "topRight",
+      duration: 0,
+      icon: null
+    });
+  };
 
   // ✅ Load Naver Maps Script on Component Mount
   useEffect(() => {
@@ -30,7 +45,6 @@ const UpdateDataPage = () => {
         console.error("❌ Failed to load Naver Maps script:", error)
       );
   }, []);
-  const {areas} = useMediMapData();
 
   // 🔹 Process and Store Data in IndexedDB
   const handleProcessData = async () => {
@@ -40,7 +54,6 @@ const UpdateDataPage = () => {
     const patients = await parsePlaceFiles(placeFiles);
 
     let existingMergedData: MergedData[] = [];
-
 
     try {
       // ✅ Try fetching existing data
@@ -59,9 +72,7 @@ const UpdateDataPage = () => {
       setProgress
     );
 
-
     console.log(df_merged, df_filtered, df_date);
-
 
     await saveToIndexedDB(df_merged, df_filtered, df_date);
 
@@ -69,11 +80,17 @@ const UpdateDataPage = () => {
     await updateRegionSums();
 
     setProgress(100);
-
   };
+
+  useEffect(() => {
+    if (progress === 100) {
+      openNotification();
+    }
+  }, [progress]);
 
   return (
     <>
+      {contextHolder}
       <ContentHeader title={"데이터 업데이트"} />
       <UpdateDataContainer>
         {/**업데이트 데이터 현황 달력 */}
@@ -107,9 +124,9 @@ const UpdateDataPage = () => {
           ) : (
             <div style={{ width: "50vh" }}>
               <BaseButton
-                type="submit"
+                type="button"
                 onClick={handleProcessData}
-                disabled={!daysFiles || !placeFiles}
+                disabled={!daysFiles || !placeFiles || progress > 0}
               >
                 데이터 처리하기
               </BaseButton>
