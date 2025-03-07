@@ -2,21 +2,40 @@ import { Menu, MenuProps } from "antd";
 import { MENUITEMS } from "./sidebarData";
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 
 const SideNavBar = () => {
   const navigate = useNavigate();
+  const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth <= 768) {
+        setCollapsed(true);
+      } else {
+        setCollapsed(false);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    handleResize();
+
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const onClick: MenuProps["onClick"] = (e) => {
-    console.log("click ", e);
     navigate(`/${e.key}`);
   };
 
   return (
-    <SidbarContainer>
-      <LogoContainer>
-        <IconStyle src="/images/defaultProfile.svg" alt="default_profile" />
-        <span>Logo</span>
-      </LogoContainer>
+    <SidbarContainer collapsed={collapsed}>
+      {!collapsed && (
+        <LogoContainer>
+          <IconStyle src="/images/defaultProfile.svg" alt="default_profile" />
+          <span>Logo</span>
+        </LogoContainer>
+      )}
 
       <Menu
         onClick={onClick}
@@ -24,13 +43,14 @@ const SideNavBar = () => {
         defaultOpenKeys={["sub1"]}
         mode="inline"
         items={MENUITEMS}
+        inlineCollapsed={collapsed}
         style={{ flex: 1, overflowY: "auto" }}
       />
 
-      <SettingContainer>
+      {/* <SettingContainer>
         <IconStyle src="/images/settings.svg" alt="settings" />
         설정
-      </SettingContainer>
+      </SettingContainer> */}
     </SidbarContainer>
   );
 };
@@ -56,14 +76,15 @@ const SettingContainer = styled.div`
   cursor: pointer;
 `;
 
-const SidbarContainer = styled.div`
-  width: 20rem;
+const SidbarContainer = styled.div<{ collapsed: boolean }>`
+  width: ${(props) => (props.collapsed ? "8rem" : "23rem")};
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  position: "relative";
-  box-shadow: "0px 4px 4px rgba(0, 0, 0, 0.25)";
+  position: relative;
+  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
   background-color: #ffffff;
+  transition: width 0.3s ease;
 `;
 
 const IconStyle = styled.img`
