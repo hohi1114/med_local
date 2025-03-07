@@ -1,7 +1,5 @@
 import { Drawer } from "antd";
 import DurationDatePicker from "../common/datepicker/DurationDatePicker";
-import { useState } from "react";
-import { RangePickerProps } from "antd/es/date-picker";
 import BaseButton from "../common/button/BaseButton";
 import styled from "styled-components";
 import StatsBox, { STATSTYPE } from "./StatsBox";
@@ -9,6 +7,7 @@ import mapStore from "../../store/mapStore";
 import BarChart from "./chart/BarChart";
 import BaseLineChart from "./chart/BaseLineChart";
 import dayjs from "dayjs";
+import useRangeDurationDatePicker from "../../hooks/useRangeDurationDatePicker";
 
 interface StatisticsDrawerProps {
   open: boolean;
@@ -18,10 +17,7 @@ const StatisticsDrawer = ({
   open,
   handleDrawerOpen
 }: StatisticsDrawerProps) => {
-  const [rangeDate, setRangeDate] = useState({
-    startDate: new Date(),
-    endDate: new Date()
-  });
+  const { rangeDate, handleDateChange } = useRangeDurationDatePicker();
   const {
     areaName,
     totalCost,
@@ -59,14 +55,6 @@ const StatisticsDrawer = ({
     6: `${0}명`
   };
 
-  const handleDateChange: RangePickerProps["onChange"] = (dates, _) => {
-    if (dates && dates[0] && dates[1]) {
-      setRangeDate({
-        startDate: dates[0].toDate(),
-        endDate: dates[1].toDate()
-      });
-    }
-  };
   return (
     <Drawer
       width={"35rem"}
