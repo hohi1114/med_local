@@ -50,6 +50,7 @@ const NaverMap: React.FC<{
 }> = ({ region_db, handleDrawerOpen }) => {
   const mapElement = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<naver.maps.Map | null>(null);
+  const [zoomLevel, setZoomLevel] = useState(15);
   const {
     setAreaName,
     setTotalCost,
@@ -64,7 +65,7 @@ const NaverMap: React.FC<{
   const markersRef = useRef<Map<string, naver.maps.Marker>>(new Map());
   const patientMarkersRef = useRef<Map<string, naver.maps.Marker>>(new Map());
   const [peopleShowButton, setPeopleShowButton] = useState(false);
-  const { areas } = useMediMapData();
+  const { areas, setFileName } = useMediMapData();
 
   // Create the map once
   useEffect(() => {
@@ -72,7 +73,7 @@ const NaverMap: React.FC<{
 
     const newMap = new window.naver.maps.Map(mapElement.current, {
       center: new window.naver.maps.LatLng(37.51, 126.88),
-      zoom: 15
+      zoom: zoomLevel
     });
     setMap(newMap);
   }, [map]);
@@ -96,9 +97,22 @@ const NaverMap: React.FC<{
     return ageYears + ageMonths / 12;
   };
 
+  useEffect(() => {
+    if (zoomLevel >= 16) {
+      setFileName("right.xlsx");
+    } else {
+      setFileName("small_db_revised.xlsx");
+    }
+  }, [zoomLevel]);
+
   // Draw polygons & markers whenever map, areas, or filtered_db changes
   useEffect(() => {
     if (!map && region_db.length == 0) return;
+
+    window.naver.maps.Event.addListener(map, "zoom_changed", () => {
+      const zoomLevel = map.getZoom();
+      setZoomLevel(zoomLevel);
+    });
 
     // Store stats for each area
     const stats: Record<
@@ -116,6 +130,13 @@ const NaverMap: React.FC<{
       }
     > = {};
 
+    /** 지도 Polygon & marker 다시 지우기 */
+    markersRef.current.forEach((polygon) => polygon.setMap(null));
+    markersRef.current.clear();
+
+    polygonsRef.current.forEach((polygon) => polygon.setMap(null));
+    polygonsRef.current.clear();
+
     /**
      * 구역 나누기
      */
@@ -128,15 +149,17 @@ const NaverMap: React.FC<{
         ([lng, lat]) => new window.naver.maps.LatLng(lat, lng)
       );
 
-      //check polygon exist
       let polygon = polygonsRef.current.get(area.areaName);
 
       if (!polygon) {
         polygon = new window.naver.maps.Polygon({
           map,
           paths: latLngs,
-          fillColor: "rgba(146, 191, 255, 0.1)",
-          strokeColor: "#92BFFF",
+          fillColor:
+            zoomLevel >= 16
+              ? "rgba(247, 127, 0, 0.1)"
+              : "rgba(146, 191, 255, 0.1)",
+          strokeColor: zoomLevel >= 16 ? "#f77f00" : "#92BFFF",
           strokeWeight: 1.5,
           clickable: true
         });
@@ -277,8 +300,20 @@ const NaverMap: React.FC<{
             position: center,
             icon: {
               content: `
-          <div style="background: rgba(146, 191, 255, 0.4); padding: 2rem; border-radius: 100%; width: 2.5rem; height: 2.5rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 4px rgba(146, 191, 255, 0.5);">
-            <span style="font-size: 1.5rem; color: #ffffff; text-align: center;">${area.areaName}</span>
+          <div style="background: ${
+            zoomLevel >= 16
+              ? "rgba(247, 127, 0, 0.4)"
+              : " rgba(146, 191, 255, 0.4)"
+          }; padding: 2rem; border-radius: 100%; width: ${
+                zoomLevel >= 16 ? "2.8rem" : "2.5rem"
+              }; height: ${
+                zoomLevel >= 16 ? "2.8rem" : "2.5rem"
+              }; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 4px rgba(146, 191, 255, 0.5);">
+            <span style="font-size:${
+              zoomLevel >= 16 ? "1.5rem" : "1rem"
+            }; color: ${
+                zoomLevel >= 16 ? "#ffffff" : "#ffffff"
+              }; text-align: center;">${area.areaName}</span>
           </div>
         `
             }

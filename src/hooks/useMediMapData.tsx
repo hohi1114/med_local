@@ -7,13 +7,16 @@ interface Area {
   coords: [number, number][]; // Array of [lng, lat] coordinates
 }
 
-const useMediMapData = (): { areas: Area[] } => {
+const useMediMapData = () => {
   const [areas, setAreas] = useState<Area[]>([]);
+  const [fileName, setFileName] = useState<string | null>(null);
+  console.log(fileName);
 
   useEffect(() => {
+    if (!fileName) return;
     const fetchData = async () => {
       try {
-        const response = await fetch("right.xlsx");
+        const response = await fetch(fileName);
 
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
@@ -95,9 +98,9 @@ const useMediMapData = (): { areas: Area[] } => {
     };
 
     fetchData();
-  }, []);
+  }, [fileName]);
 
-  return { areas };
+  return { areas, setFileName };
 };
 
 export default useMediMapData;
