@@ -4,12 +4,11 @@ import { useState } from "react";
 import { RangePickerProps } from "antd/es/date-picker";
 import BaseButton from "../common/button/BaseButton";
 import styled from "styled-components";
-// import { Line } from "@ant-design/plots";
 import StatsBox, { STATSTYPE } from "./StatsBox";
 import mapStore from "../../store/mapStore";
-import LineChart from "./chart/LineChart";
 import BarChart from "./chart/BarChart";
-import Line2Chart from "./chart/Line2Chart";
+import BaseLineChart from "./chart/BaseLineChart";
+import dayjs from "dayjs";
 
 interface StatisticsDrawerProps {
   open: boolean;
@@ -28,8 +27,28 @@ const StatisticsDrawer = ({
     totalCost,
     totalPatients,
     firstVisitPatients,
-    revisitedPatients
+    revisitedPatients,
+    dailyRevenue,
+    revenueTrend
   } = mapStore();
+
+  const formatData = (data: any) => {
+    return Object.entries(data).map(([date, value]) => {
+      const averageRevenue =
+        value.patientCount > 0 ? value.totalCost / value.patientCount : 0;
+      return {
+        date,
+        value: averageRevenue
+      };
+    });
+  };
+
+  const formatData2 = (data: any) => {
+    return Object.entries(revenueTrend).map(([date, value]) => ({
+      date,
+      value
+    }));
+  };
 
   const statsData: { [key: number]: string } = {
     1: `${totalPatients}명`,
@@ -105,7 +124,14 @@ const StatisticsDrawer = ({
       <GraphContainer>
         <GrapWrapper>
           <ChartTitleStyle>매출액 변화 추이</ChartTitleStyle>
-          <LineChart />
+          <BaseLineChart
+            data={revenueTrend}
+            xField="date"
+            yField="value"
+            labelFormatterY={(v: number) => `${v / 1000}K`}
+            labelFormatterX={(v: string) => dayjs(v).format("MM/DD")}
+            formatData={formatData2}
+          />
         </GrapWrapper>
         <GrapWrapper>
           <ChartTitleStyle>연령대 별 환자 분포</ChartTitleStyle>
@@ -113,7 +139,14 @@ const StatisticsDrawer = ({
         </GrapWrapper>
         <GrapWrapper>
           <ChartTitleStyle>1인당 평균 매출액</ChartTitleStyle>
-          <Line2Chart />
+          <BaseLineChart
+            data={dailyRevenue}
+            xField="date"
+            yField="value"
+            labelFormatterY={(v: number) => `${v / 1000}K`}
+            labelFormatterX={(v: string) => dayjs(v).format("MM/DD")}
+            formatData={formatData}
+          />
         </GrapWrapper>
       </GraphContainer>
     </Drawer>

@@ -1,6 +1,5 @@
 import { Line } from "@ant-design/plots";
 import dayjs from "dayjs";
-import mapStore from "../../../store/mapStore";
 import { useEffect, useState } from "react";
 import styled from "styled-components";
 
@@ -8,40 +7,50 @@ interface ILineData {
   date: string;
   value: number;
 }
-const Line2Chart = () => {
-  const { dailyRevenue } = mapStore();
+
+interface IBaseLineChartProps {
+  data:
+    | Record<string, { totalCost: number; patientCount: number }>
+    | Record<string, number>;
+  xField: string;
+  yField: string;
+  labelFormatterX?: (value: string) => string;
+  labelFormatterY?: (value: number) => string;
+  formatData: (data: any) => ILineData[];
+}
+
+const BaseLineChart = ({
+  data,
+  xField,
+  yField,
+  labelFormatterX,
+  labelFormatterY,
+  formatData
+}: IBaseLineChartProps) => {
   const [lineData, setLineData] = useState<ILineData[]>([]);
 
   useEffect(() => {
-    console.log(dailyRevenue);
-    if (dailyRevenue) {
-      const data = Object.entries(dailyRevenue).map(([date, value]) => {
-        const averageRevenue =
-          value.patientCount > 0 ? value.totalCost / value.patientCount : 0;
-        return {
-          date,
-          value: averageRevenue
-        };
-      });
-
-      setLineData(data);
+    if (data) {
+      const formattedData = formatData(data);
+      setLineData(formattedData);
     }
-  }, [dailyRevenue]);
+  }, [data, formatData]);
 
   const config = {
     data: lineData,
-    xField: "date",
-    yField: "value",
+    xField,
+    yField,
     smooth: true,
     autoFit: true,
     width: 350,
     height: 280,
     axis: {
       y: {
-        labelFormatter: (v: number) => `${v / 1000}K`
+        labelFormatter: labelFormatterY || ((v: number) => `${v / 1000}K`)
       },
       x: {
-        labelFormatter: (v: string) => dayjs(v).format("MM/DD")
+        labelFormatter:
+          labelFormatterX || ((v: string) => dayjs(v).format("MM/DD"))
       }
     },
     lineStyle: {
@@ -68,4 +77,4 @@ const EmptyDataContainer = styled.div`
   color: gray;
 `;
 
-export default Line2Chart;
+export default BaseLineChart;
