@@ -55,7 +55,10 @@ const NaverMap: React.FC<{
     setTotalCost,
     setTotalPatients,
     setFirstVisitPatients,
-    setRevisitedPatients
+    setRevisitedPatients,
+    setRevenueTrend,
+    setAgeGroups,
+    setDailyRevenue
   } = mapStore();
   const polygonsRef = useRef<Map<string, naver.maps.Polygon>>(new Map());
   const markersRef = useRef<Map<string, naver.maps.Marker>>(new Map());
@@ -78,6 +81,21 @@ const NaverMap: React.FC<{
     setPeopleShowButton(!peopleShowButton);
   };
 
+  // 연령을 숫자로 변환하는 함수
+  const parseAge = (ageString: string): number => {
+    const ageParts = ageString.split("세");
+    if (ageParts.length < 2) return 0;
+
+    const ageYears = parseInt(ageParts[0].trim(), 10);
+    const ageMonths =
+      ageParts[1] && ageParts[1].includes("개월")
+        ? parseInt(ageParts[1].replace("개월", "").trim(), 10)
+        : 0;
+
+    // 1년을 12개월로 보고, 월 단위로 계산하여 나이 계산
+    return ageYears + ageMonths / 12;
+  };
+
   // Draw polygons & markers whenever map, areas, or filtered_db changes
   useEffect(() => {
     if (!map && region_db.length == 0) return;
@@ -91,6 +109,10 @@ const NaverMap: React.FC<{
         firstTimeCount: number;
         revisitCount: number;
         revenuMap: { [key: string]: number };
+        ageGroupsMap: { [key: string]: number };
+        dailyRevenueMap: {
+          [key: string]: { totalCost: number; patientCount: number };
+        };
       }
     > = {};
 
@@ -133,6 +155,9 @@ const NaverMap: React.FC<{
             setTotalPatients(stats[area.areaName].patientCount);
             setFirstVisitPatients(stats[area.areaName].firstTimeCount);
             setRevisitedPatients(stats[area.areaName].revisitCount);
+            setRevenueTrend(stats[area.areaName].revenuMap);
+            setAgeGroups(stats[area.areaName].ageGroupsMap);
+            setDailyRevenue(stats[area.areaName].dailyRevenueMap);
           });
         }
       }
@@ -142,7 +167,19 @@ const NaverMap: React.FC<{
         patientCount: 0,
         firstTimeCount: 0,
         revisitCount: 0,
-        revenuMap: {}
+        revenuMap: {},
+        ageGroupsMap: {},
+        dailyRevenueMap: {}
+      };
+      //연령대 별 환자 분포
+      const ageGroups = {
+        아동: 0,
+        "10대": 0,
+        "20대": 0,
+        "30대": 0,
+        "40대": 0,
+        "50대": 0,
+        "60대": 0
       };
 
       if (
@@ -150,26 +187,72 @@ const NaverMap: React.FC<{
         region_db[Number(area.areaName) - 1].length > 0
       ) {
         region_db[Number(area.areaName) - 1].forEach((patient) => {
-          const { latitude, longitude, totalCost, chartNumber, visitDate } =
-            patient;
+          const {
+            latitude,
+            longitude,
+            totalCost,
+            chartNumber,
+            visitDate,
+            age
+          } = patient;
           const visitedPatients = new Set();
           const revenueMap = stats[area.areaName].revenuMap;
+          const dailyRevenueMap = stats[area.areaName].dailyRevenueMap;
           let firstTimeCount = 0;
           let revisitCount = 0;
           if (latitude == null || longitude == null || !polygon) {
             return;
           }
           if (containsLocation(latitude, longitude, polygon)) {
+            //재방문 환자수 & 초진 환자수
             if (visitedPatients.has(chartNumber)) {
               revisitCount++;
             } else {
               firstTimeCount++;
               visitedPatients.add(chartNumber);
             }
+            //매출액 변화 추이
             if (visitDate && revenueMap[visitDate]) {
               revenueMap[visitDate] += totalCost;
             } else {
               revenueMap[visitDate] = totalCost;
+            }
+
+            const ageInYears = parseAge(age);
+
+            // 연령대에 맞는 카운트 증가
+            if (ageInYears >= 0 && ageInYears <= 9) {
+              ageGroups["아동"]++;
+            } else if (ageInYears >= 10 && ageInYears <= 19) {
+              ageGroups["10대"]++;
+            } else if (ageInYears >= 20 && ageInYears <= 29) {
+              ageGroups["20대"]++;
+            } else if (ageInYears >= 30 && ageInYears <= 39) {
+              ageGroups["30대"]++;
+            } else if (ageInYears >= 40 && ageInYears <= 49) {
+              ageGroups["40대"]++;
+            } else if (ageInYears >= 50 && ageInYears <= 59) {
+              ageGroups["50대"]++;
+            } else {
+              ageGroups["60대"]++;
+            }
+
+            //1인당 평균 매출액
+            if (visitDate) {
+              // visitDate가 없으면 초기화
+              if (!dailyRevenueMap[visitDate]) {
+                dailyRevenueMap[visitDate] = {
+                  totalCost: 0,
+                  patientCount: 0
+                };
+              }
+            }
+            if (visitDate && dailyRevenueMap[visitDate].totalCost) {
+              dailyRevenueMap[visitDate].totalCost += totalCost;
+              dailyRevenueMap[visitDate].patientCount += 1;
+            } else {
+              dailyRevenueMap[visitDate].totalCost = totalCost;
+              dailyRevenueMap[visitDate].patientCount = 1;
             }
 
             stats[area.areaName].totalCost += totalCost;
@@ -177,6 +260,8 @@ const NaverMap: React.FC<{
             stats[area.areaName].firstTimeCount += firstTimeCount;
             stats[area.areaName].revisitCount += revisitCount;
             stats[area.areaName].revenuMap = revenueMap;
+            stats[area.areaName].ageGroupsMap = ageGroups;
+            stats[area.areaName].dailyRevenueMap = dailyRevenueMap;
           }
         });
       }
@@ -213,6 +298,9 @@ const NaverMap: React.FC<{
             setTotalPatients(stats[area.areaName].patientCount);
             setFirstVisitPatients(stats[area.areaName].firstTimeCount);
             setRevisitedPatients(stats[area.areaName].revisitCount);
+            setRevenueTrend(stats[area.areaName].revenuMap);
+            setAgeGroups(stats[area.areaName].ageGroupsMap);
+            setDailyRevenue(stats[area.areaName].dailyRevenueMap);
           });
         }
       }
