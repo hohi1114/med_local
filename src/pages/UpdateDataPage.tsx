@@ -19,6 +19,7 @@ import {
   storePatientsByRegion,
   updateRegionSums
 } from "../components/data/RegionDB";
+import Loading from "../components/common/Loading.tsx";
 
 const UpdateDataPage = () => {
   const [daysFiles, setDaysFiles] = useState<FileList | null>(null);
