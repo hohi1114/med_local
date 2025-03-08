@@ -7,7 +7,6 @@ export interface Area {
 }
 
 
-
 const DB_NAME = "MedicalDB";
 const DB_VERSION = 3; // Increment version to ensure upgrade
 const MERGED_STORE = "df_merged";
@@ -157,19 +156,53 @@ export const getGuAreas = async () => {
 };
 
 
-export const clearIndexedDB = async () => {
+async function calculateConsultationType() {
   try {
-    await initDatabase();
     const db = await openDB(DB_NAME, DB_VERSION);
+    const mergedData = await db.getAll(MERGED_STORE);
 
-    await db.clear(MERGED_STORE);
-    await db.clear(FILTERED_STORE);
-    await db.clear(DATE_STORE); // ✅ Clear date store too
+    // Sort by chart number and visit date
+    mergedData.sort((a, b) => {
+      if (a.chartNumber === b.chartNumber) {
+        return new Date(a.visitDate).getTime() - new Date(b.visitDate).getTime();
+      }
+      return a.chartNumber - b.chartNumber;
+    });
 
-    console.log("✅ IndexedDB stores cleared successfully");
+    // Track which chart numbers we've seen
+    const visitedPatients = new Set();
+
+    // Update consultation type for each record
+    const updatedData = mergedData.map(record => {
+      const isFirstVisit = !visitedPatients.has(record.chartNumber);
+
+      // Add to set after checking
+      visitedPatients.add(record.chartNumber);
+
+
+      return {
+        ...record,
+        consultationType: isFirstVisit ? '초진' : '재진'
+      };
+    });
+
+    const tx = db.transaction(MERGED_STORE, 'readwrite');
+    const store = tx.objectStore(MERGED_STORE);
+
+    await store.clear();
+
+    for (const record of updatedData) {
+      await store.add(record);
+    }
+
+    await tx.done;
+
+    console.log('Consultation types calculated and saved');
+
+    // The filtered data will automatically reflect these changes when retrieved
     return true;
   } catch (error) {
-    console.error("❌ Error clearing IndexedDB:", error);
-    throw error;
+    console.error('Error calculating consultation types:', error);
+    return false;
   }
-};
+}

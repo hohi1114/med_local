@@ -24,7 +24,6 @@ const UpdateDataPage = () => {
   const [daysFiles, setDaysFiles] = useState<FileList | null>(null);
   const [placeFiles, setPlaceFiles] = useState<FileList | null>(null);
   const [progress, setProgress] = useState<number>(0);
-  const { areas } = useMediMapData("right.xlsx");
   const [api, contextHolder] = notification.useNotification();
 
   const openNotification = () => {
@@ -50,11 +49,8 @@ const UpdateDataPage = () => {
         console.error("❌ Failed to load Naver Maps script:", error)
       );
   }, []);
-<<<<<<< HEAD
 
 
-=======
->>>>>>> 4f33a03251296a79407c31ff6fc858454b76660e
 
   // 🔹 Process and Store Data in IndexedDB
   const handleProcessData = async () => {
@@ -84,8 +80,6 @@ const UpdateDataPage = () => {
 
     console.log(df_merged, df_filtered, df_date);
 
-<<<<<<< HEAD
-
     await saveToIndexedDB(df_merged, df_filtered, df_date,areas_small, areas_dong, areas_gu);
 
     await storePatientsByRegion(df_filtered, areas_small, "small");
@@ -99,10 +93,6 @@ const UpdateDataPage = () => {
 // 4. Populate districts with neighborhood data
     await populateDistrictsFromNeighborhoods();
 
-=======
-    await saveToIndexedDB(df_merged, df_filtered, df_date);
->>>>>>> 4f33a03251296a79407c31ff6fc858454b76660e
-
 
     setProgress(100);
   };
@@ -115,11 +105,8 @@ const UpdateDataPage = () => {
 
   return (
     <>
-<<<<<<< HEAD
-      {/**업데이트 데이터 현황 달력 */}
-=======
+
       {contextHolder}
->>>>>>> 4f33a03251296a79407c31ff6fc858454b76660e
       <ContentHeader title={"데이터 업데이트"} />
       <UpdateDataContainer>
         <div style={{ marginBottom: "4rem" }}>

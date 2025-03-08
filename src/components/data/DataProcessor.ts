@@ -19,7 +19,8 @@ export const processData = async (
       visitDate: visit.visitDate,
       totalCost: visit.totalCost,
       age: patient?.age || "N/D",
-      address: patient?.address || "N/D"
+      address: patient?.address || "N/D",
+      visitType: undefined
     };
   });
 
@@ -35,6 +36,29 @@ export const processData = async (
   );
 
   console.log(`📌 Removed duplicates. Remaining records: ${df_merged.length}`);
+
+  // ✅ Calculate 초진 (first visit) or 재진 (follow-up) for each patient using chartNumber
+  const groupedByChartNumber = df_merged.reduce((acc, record) => {
+    if (!acc[record.chartNumber]) {
+      acc[record.chartNumber] = [];
+    }
+    acc[record.chartNumber].push(record);
+    return acc;
+  }, {} as Record<string, typeof df_merged[number][]>);
+
+  // For each group, sort by visitDate and assign visitType:
+  // The earliest visit becomes "초진" and the rest "재진".
+  for (const chartNumber in groupedByChartNumber) {
+    groupedByChartNumber[chartNumber].sort(
+        (a, b) => new Date(a.visitDate).getTime() - new Date(b.visitDate).getTime()
+    );
+    groupedByChartNumber[chartNumber].forEach((record, index) => {
+      record.visitType = index === 0 ? "초진" : "재진";
+    });
+  }
+  // Flatten the groups back into df_merged
+  df_merged = Object.values(groupedByChartNumber).flat();
+
 
   // ✅ Filter dataset to only include valid addresses (df_filtered)
   let df_filtered: FilteredData[] = df_merged
