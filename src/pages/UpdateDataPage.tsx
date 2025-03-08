@@ -16,8 +16,8 @@ import { Progress, notification } from "antd";
 import UploadedCalendar from "../components/data/UploadedCalendar";
 import useMediMapData from "../hooks/useMediMapData.tsx";
 import {
+  createDistrictDataFromNeighborhoods, populateDistrictsFromNeighborhoods,
   storePatientsByRegion,
-  updateRegionSums
 } from "../components/data/RegionDB";
 
 const UpdateDataPage = () => {
@@ -37,6 +37,11 @@ const UpdateDataPage = () => {
     });
   };
 
+  const {areas: areas_small} = useMediMapData("normalized_small_db.json");
+  const {areas: areas_dong} = useMediMapData("fixed_polygon.json");
+  const {areas: areas_gu} = useMediMapData("district_boundaries.json");
+
+
   // ✅ Load Naver Maps Script on Component Mount
   useEffect(() => {
     loadNaverMapsScript(import.meta.env.VITE_NAVER_MAPS_CLIENT_ID)
@@ -45,6 +50,11 @@ const UpdateDataPage = () => {
         console.error("❌ Failed to load Naver Maps script:", error)
       );
   }, []);
+<<<<<<< HEAD
+
+
+=======
+>>>>>>> 4f33a03251296a79407c31ff6fc858454b76660e
 
   // 🔹 Process and Store Data in IndexedDB
   const handleProcessData = async () => {
@@ -74,10 +84,25 @@ const UpdateDataPage = () => {
 
     console.log(df_merged, df_filtered, df_date);
 
-    await saveToIndexedDB(df_merged, df_filtered, df_date);
+<<<<<<< HEAD
 
-    await storePatientsByRegion(df_filtered, areas);
-    await updateRegionSums();
+    await saveToIndexedDB(df_merged, df_filtered, df_date,areas_small, areas_dong, areas_gu);
+
+    await storePatientsByRegion(df_filtered, areas_small, "small");
+
+// 2. Process neighborhoods
+    await storePatientsByRegion(df_filtered, areas_dong, "dong");
+
+// 3. Create district structure
+    await createDistrictDataFromNeighborhoods(areas_dong);
+
+// 4. Populate districts with neighborhood data
+    await populateDistrictsFromNeighborhoods();
+
+=======
+    await saveToIndexedDB(df_merged, df_filtered, df_date);
+>>>>>>> 4f33a03251296a79407c31ff6fc858454b76660e
+
 
     setProgress(100);
   };
@@ -90,10 +115,13 @@ const UpdateDataPage = () => {
 
   return (
     <>
+<<<<<<< HEAD
+      {/**업데이트 데이터 현황 달력 */}
+=======
       {contextHolder}
+>>>>>>> 4f33a03251296a79407c31ff6fc858454b76660e
       <ContentHeader title={"데이터 업데이트"} />
       <UpdateDataContainer>
-        {/**업데이트 데이터 현황 달력 */}
         <div style={{ marginBottom: "4rem" }}>
           <ContentContainer>
             <TitleStyle>저장한 데이터 현황</TitleStyle>

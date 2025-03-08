@@ -1,110 +1,126 @@
 import { useEffect, useState } from "react";
-import * as XLSX from "xlsx";
 
 // Define the expected shape of the data
 interface Area {
   areaName: string;
-  coords: [number, number][]; // Array of [lng, lat] coordinates
+  coords: [number, number][][]; // Array of polygons, each containing multiple [lng, lat] coordinates
 }
 
-const useMediMapData = (
-  file: string | null
-): {
-  areas: Area[];
-  setFileName: (fileName: string) => void;
-} => {
+const useMediMapData = (jsonFilePath: string): { areas: Area[] } => {
   const [areas, setAreas] = useState<Area[]>([]);
-  const [fileName, setFileName] = useState<string | null>(file);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (!fileName) return;
-    const fetchData = async () => {
-      try {
-        const response = await fetch(fileName);
+    // Track if the component is mounted to prevent setting state after unmount
+    let isMounted = true;
+    // Prevent duplicate fetches
+    if (isLoading) return;
 
+    const fetchData = async () => {
+      if (!jsonFilePath) {
+        console.error("No file path provided");
+        return;
+      }
+
+      setIsLoading(true);
+
+      try {
+        const response = await fetch(jsonFilePath);
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
 
-        const arrayBuffer = await response.arrayBuffer();
-        const workbook = XLSX.read(arrayBuffer, { type: "array" });
+        const jsonData = await response.json();
 
-        if (!workbook.SheetNames.length) {
-          throw new Error("No sheets found in the workbook.");
-        }
+        if (!isMounted) return;
 
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json<any[]>(sheet, { header: 1 });
+        const parsedAreas: Area[] = jsonData.map((entry: any) => {
+          const { area, polygon } = entry;
+          let coords: [number, number][][] = [];
 
-        const parsedAreas: Area[] = rows.map((row) => {
-          const [areaName, coordsStringRaw] = row;
-          let coords: [number, number][] = [];
-
-          if (typeof coordsStringRaw !== "string") {
-            console.error(`Invalid JSON string for: ${areaName}`);
-            return { areaName, coords };
+          if (typeof polygon !== "string") {
+            console.error(`Invalid polygon format for: ${area}`);
+            return { areaName: area, coords };
           }
 
-          let coordsString = coordsStringRaw.trim();
+          let fixedPolygon = polygon.trim();
 
           // Fix missing closing brackets
-          while (
-            (coordsString.match(/\[/g) || []).length >
-            (coordsString.match(/\]/g) || []).length
-          ) {
-            coordsString += "]";
+          while ((fixedPolygon.match(/\[/g) || []).length > (fixedPolygon.match(/\]/g) || []).length) {
+            fixedPolygon += "]";
           }
 
-          // Fix missing commas
-          coordsString = coordsString.replace(/(\d)\s+(\d)/g, "$1,$2");
+          // Fix missing commas between numbers
+          fixedPolygon = fixedPolygon.replace(/(\d)\s+(\d)/g, "$1,$2");
+
           try {
-            let parsedCoords = JSON.parse(coordsString);
+            let parsedCoords = JSON.parse(fixedPolygon);
 
-            // **Unwrap extra array if necessary**
-            if (
-              Array.isArray(parsedCoords) &&
-              parsedCoords.length === 1 &&
-              Array.isArray(parsedCoords[0])
-            ) {
-              parsedCoords = parsedCoords[0]; // ✅ Fix the structure
-            }
-
-            // **Fix coordinate format**
-            coords = parsedCoords
-              .map((point: any) => {
-                if (Array.isArray(point) && point.length === 2) {
-                  return [Number(point[0]), Number(point[1])]; // ✅ Convert to numbers
-                } else if (
-                  typeof point === "object" &&
-                  "x" in point &&
-                  "y" in point
-                ) {
-                  return [Number(point.x), Number(point.y)];
-                } else {
-                  console.warn("⚠️ Unexpected coordinate format:", point);
-                  return null;
+            // Ensure proper structure (array of polygons)
+            if (Array.isArray(parsedCoords) && parsedCoords.length > 0) {
+              coords = parsedCoords.flatMap((polygon: any, polygonIndex: number) => {
+                if (!Array.isArray(polygon)) {
+                  return [];
                 }
-              })
-              .filter(Boolean);
+
+                return polygon.map((ring: any, ringIndex: number) => {
+                  if (!Array.isArray(ring[0])) {
+                    // If ring contains numbers instead of arrays, fix structure
+                    const fixedRing = [];
+                    for (let i = 0; i < ring.length; i += 2) {
+                      if (ring[i + 1] !== undefined) {
+                        fixedRing.push([Number(ring[i]), Number(ring[i + 1])]);
+                      }
+                    }
+                    return fixedRing;
+                  }
+
+                  return ring.map((point: any, pointIndex: number) => {
+                    if (Array.isArray(point) && point.length === 2) {
+                      return [Number(point[0]), Number(point[1])];
+                    } else {
+                      return null;
+                    }
+                  }).filter(Boolean);
+                });
+              });
+            }
           } catch (error) {
-            console.error(`❌ JSON parse error for: ${areaName}`);
-            console.error("❌ Raw string before fix:", coordsStringRaw);
-            console.error("❌ Fixed string:", coordsString);
+            console.error(`JSON parse error for: ${area}`);
+            console.error("Raw string before fix:", polygon);
+            console.error("Fixed string:", fixedPolygon);
           }
 
-          return { areaName, coords };
+          return { areaName: area, coords };
         });
 
-        setAreas(parsedAreas);
+        // Only set state once after all processing is complete
+        if (isMounted) {
+          setAreas(parsedAreas);
+          // Add a single console log here if needed for debugging
+          console.log(`Loaded ${parsedAreas.length} areas`);
+        }
       } catch (error) {
-        console.error("Error loading Excel data:", error);
+        console.error("Error loading JSON data:", error);
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchData();
-  }, [fileName]);
 
-  return { areas, setFileName };
+    // Cleanup function to prevent setting state after unmount
+    return () => {
+      isMounted = false;
+    };
+  }, [jsonFilePath]); // Only depend on jsonFilePath
+
+  // Move console.log outside useEffect to avoid triggering re-renders
+  // Only log when needed, and consider using React DevTools instead
+
+  return { areas };
 };
 
 export default useMediMapData;

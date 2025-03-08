@@ -1,11 +1,21 @@
 import { openDB, IDBPDatabase } from "idb";
 import { MergedData, FilteredData, UpdatedDates } from "../../types/medi-types";
 
+export interface Area {
+  areaName: string;
+  coords: [number, number][][]; // [lng, lat] pairs
+}
+
+
+
 const DB_NAME = "MedicalDB";
 const DB_VERSION = 3; // Increment version to ensure upgrade
 const MERGED_STORE = "df_merged";
 const FILTERED_STORE = "df_filtered";
 const DATE_STORE = "df_date";
+const SMALL_AREA_STORE = "df_areas_small"; // ✅ Separate store for areas_small
+const DONG_AREA_STORE = "df_areas_dong";   // ✅ Separate store for areas_dong
+const GU_AREA_STORE = "df_areas_gu";       // ✅ Separate store for areas_gu
 
 // Initialize database without deleting existing data
 const initDatabase = async () => {
@@ -15,33 +25,14 @@ const initDatabase = async () => {
       upgrade(db, oldVersion, newVersion) {
         console.log(`Upgrade triggered: ${oldVersion} -> ${newVersion}`);
 
-        // Create stores if they don't exist
-        if (!db.objectStoreNames.contains(MERGED_STORE)) {
-          console.log(`Creating ${MERGED_STORE} store...`);
-          db.createObjectStore(MERGED_STORE, {
-            keyPath: "id",
-            autoIncrement: true
-          });
-        }
-
-        if (!db.objectStoreNames.contains(FILTERED_STORE)) {
-          console.log(`Creating ${FILTERED_STORE} store...`);
-          db.createObjectStore(FILTERED_STORE, {
-            keyPath: "id",
-            autoIncrement: true
-          });
-        }
-
-        if (!db.objectStoreNames.contains(DATE_STORE)) {
-          console.log(`Creating ${DATE_STORE} store...`);
-          db.createObjectStore(DATE_STORE, {
-            keyPath: "id",
-            autoIncrement: true
-          });
-        }
+        [MERGED_STORE, FILTERED_STORE, DATE_STORE, SMALL_AREA_STORE, DONG_AREA_STORE, GU_AREA_STORE].forEach(store => {
+          if (!db.objectStoreNames.contains(store)) {
+            console.log(`Creating ${store} store...`);
+            db.createObjectStore(store, { keyPath: "id",autoIncrement:true }); // "name" is the unique key for each area
+          }
+        });
       }
     });
-
     // Verify stores exist
     const storeNames = Array.from(db.objectStoreNames);
     console.log(
@@ -56,48 +47,73 @@ const initDatabase = async () => {
 };
 
 const saveDataToStore = async (
-  db: IDBPDatabase,
-  storeName: string,
-  data: any[]
+    db: IDBPDatabase,
+    storeName: string,
+    data: any[]
 ) => {
-  const tx = db.transaction(storeName, "readwrite");
-  const store = tx.objectStore(storeName);
+  console.log(storeName, data);
 
-  for (const item of data) {
-    await store.put({ ...item });
+  try {
+    const tx = db.transaction(storeName, "readwrite");
+    const store = tx.objectStore(storeName);
+
+    for (const item of data) {
+      await store.put({ ...item });
+    }
+
+    // 트랜잭션 완료 대기
+    return new Promise<void>((resolve, reject) => {
+      tx.oncomplete = () => {
+        console.log(`Transaction completed for store: ${storeName}`);
+        resolve();
+      };
+      tx.onerror = (event) => {
+        console.error(`Transaction failed for store: ${storeName}`, (event.target as IDBRequest).error);
+        reject((event.target as IDBRequest).error);
+      };
+    });
+  } catch (error) {
+    console.error(`Error saving data to store: ${storeName}`, error);
+    throw error;
   }
-
-  // 트랜잭션 완료 대기
-  return new Promise<void>((resolve, reject) => {
-    tx.oncomplete = () => {
-      resolve();
-    };
-    tx.onerror = (event) => {
-      reject((event.target as IDBRequest).error);
-    };
-  });
 };
 
+
 export const saveToIndexedDB = async (
-  merged: MergedData[],
-  filtered: FilteredData[],
-  df_date: UpdatedDates[]
+    merged: MergedData[],
+    filtered: FilteredData[],
+    df_date: UpdatedDates[],
+    areas_small: Area[],
+    areas_dong: Area[],
+    areas_gu: Area[]
 ) => {
   try {
-    // Initialize database first
+    // ✅ Initialize database
     const db = await initDatabase();
 
-    // Save merged data
+    // ✅ Save merged, filtered, and date data
     await saveDataToStore(db, MERGED_STORE, merged);
-    // Save filtered data
     await saveDataToStore(db, FILTERED_STORE, filtered);
-    // Save date data
     await saveDataToStore(db, DATE_STORE, df_date);
 
-    console.log("All data saved successfully to IndexedDB");
+    console.log("Small areas",areas_small);
+    // Log area names before saving
+    /*
+    console.log("Small areas:", areas_small.map(area => area.area));
+    console.log("Dong areas:", areas_dong.map(area => area.area));
+    console.log("Gu areas:", areas_gu.map(area => area.area));
+
+*/
+
+    // ✅ Save areas separately
+    await saveDataToStore(db, SMALL_AREA_STORE, areas_small.map((area) => ({ name: area.areaName })));
+    await saveDataToStore(db, DONG_AREA_STORE, areas_dong.map((area) => ({ name: area.areaName })));
+    await saveDataToStore(db, GU_AREA_STORE, areas_gu.map((area) => ({ name: area.areaName })));
+
+    console.log("✅ All data saved successfully, including separate area names!");
     return true;
   } catch (error) {
-    console.error("Error saving to IndexedDB:", error);
+    console.error("❌ Error saving to IndexedDB:", error);
     throw error;
   }
 };
@@ -124,6 +140,22 @@ export const getDataFromIndexedDB = async () => {
     return { df_merged: [], df_filtered: [] , df_data: []};
   }
 };
+
+export const getSmallAreas = async () => {
+  const db = await openDB(DB_NAME, DB_VERSION);
+  return db.getAll(SMALL_AREA_STORE);
+};
+
+export const getDongAreas = async () => {
+  const db = await openDB(DB_NAME, DB_VERSION);
+  return db.getAll(DONG_AREA_STORE);
+};
+
+export const getGuAreas = async () => {
+  const db = await openDB(DB_NAME, DB_VERSION);
+  return db.getAll(GU_AREA_STORE);
+};
+
 
 export const clearIndexedDB = async () => {
   try {
