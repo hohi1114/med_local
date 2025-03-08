@@ -15,12 +15,20 @@ import { useEffect } from "react";
 import { Progress } from "antd";
 import UploadedCalendar from "../components/data/UploadedCalendar";
 import useMediMapData from "../hooks/useMediMapData.tsx";
-import { storePatientsByRegion,updateRegionSums } from "../components/data/RegionDB";
+import {
+  createDistrictDataFromNeighborhoods, populateDistrictsFromNeighborhoods,
+  storePatientsByRegion,
+} from "../components/data/RegionDB";
 
 const UpdateDataPage = () => {
   const [daysFiles, setDaysFiles] = useState<FileList | null>(null);
   const [placeFiles, setPlaceFiles] = useState<FileList | null>(null);
   const [progress, setProgress] = useState<number>(0);
+
+  const {areas: areas_small} = useMediMapData("normalized_small_db.json");
+  const {areas: areas_dong} = useMediMapData("fixed_polygon.json");
+  const {areas: areas_gu} = useMediMapData("district_boundaries.json");
+
 
   // ✅ Load Naver Maps Script on Component Mount
   useEffect(() => {
@@ -30,7 +38,8 @@ const UpdateDataPage = () => {
         console.error("❌ Failed to load Naver Maps script:", error)
       );
   }, []);
-  const {areas} = useMediMapData();
+
+
 
   // 🔹 Process and Store Data in IndexedDB
   const handleProcessData = async () => {
@@ -63,10 +72,20 @@ const UpdateDataPage = () => {
     console.log(df_merged, df_filtered, df_date);
 
 
-    await saveToIndexedDB(df_merged, df_filtered, df_date);
+    await saveToIndexedDB(df_merged, df_filtered, df_date,areas_small, areas_dong, areas_gu);
 
-    await storePatientsByRegion(df_filtered, areas);
-    await updateRegionSums();
+    await storePatientsByRegion(df_filtered, areas_small, "small");
+
+// 2. Process neighborhoods
+    await storePatientsByRegion(df_filtered, areas_dong, "dong");
+
+// 3. Create district structure
+    await createDistrictDataFromNeighborhoods(areas_dong);
+
+// 4. Populate districts with neighborhood data
+    await populateDistrictsFromNeighborhoods();
+
+
 
     setProgress(100);
 
@@ -74,9 +93,9 @@ const UpdateDataPage = () => {
 
   return (
     <>
+      {/**업데이트 데이터 현황 달력 */}
       <ContentHeader title={"데이터 업데이트"} />
       <UpdateDataContainer>
-        {/**업데이트 데이터 현황 달력 */}
         <div style={{ marginBottom: "4rem" }}>
           <ContentContainer>
             <TitleStyle>저장한 데이터 현황</TitleStyle>
