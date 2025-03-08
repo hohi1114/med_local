@@ -34,7 +34,7 @@ function MediMapPage() {
         for (let i = 1; i <= db_count; i++) {
           const region_db = await getPatientsFromRegion(i.toString());
           allData.push(region_db);
-        }
+        }a
         setRegionDB(allData);
       } catch (error) {
         console.error("Error fetching patient data from IndexedDB:", error);
