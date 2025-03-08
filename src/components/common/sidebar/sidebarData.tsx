@@ -17,7 +17,7 @@ export const MENUITEMS: MenuItem[] = [
     label: "지역 별 분석",
     icon: (
       <img
-        src="/images/folder.svg"
+        src="/images/analysis.svg"
         style={{ width: "1.5rem", height: "1.5rem" }}
       />
     ),
@@ -34,7 +34,7 @@ export const MENUITEMS: MenuItem[] = [
     label: "데이터 업데이트",
     icon: (
       <img
-        src="/images/folder.svg"
+        src="/images/update.svg"
         style={{ width: "1.5rem", height: "1.5rem" }}
       />
     ),

@@ -4,20 +4,30 @@ import styled from "styled-components";
 interface StyledButtonProps {
   color?: string;
   children: React.ReactNode;
-  disabled: boolean;
+  disabled?: boolean;
   type: "button" | "submit" | "reset";
   onClick?: () => void;
+  textcolor?: string;
 }
 
 const BaseButton = memo(
   forwardRef<HTMLButtonElement, StyledButtonProps>(
     (
-      { children, type, disabled, color = "#9F9FF8", onClick, ...props },
+      {
+        children,
+        type,
+        disabled,
+        color = "#9F9FF8",
+        textcolor = "#ffffff",
+        onClick,
+        ...props
+      },
       ref
     ) => {
       return (
         <ButtonContainer
-          color={color}
+          color={disabled ? "#F1F1F2" : color}
+          textcolor={textcolor}
           type={type}
           ref={ref}
           disabled={disabled}
@@ -37,14 +47,15 @@ export default BaseButton;
 
 const ButtonContainer = styled.button<StyledButtonProps>`
   height: 3rem;
-  width: 19rem;
+  width: 100%;
   border: none;
   border-radius: 6px;
-  color: #ffffff;
+  color: ${({ textcolor }) => textcolor};
   display: flex;
   justify-content: center;
   align-items: center;
   text-align: center;
   cursor: pointer;
+  font-weight: bold;
   background-color: ${({ color }) => color};
 `;
