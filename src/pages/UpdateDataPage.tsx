@@ -24,7 +24,7 @@ const UpdateDataPage = () => {
   const [daysFiles, setDaysFiles] = useState<FileList | null>(null);
   const [placeFiles, setPlaceFiles] = useState<FileList | null>(null);
   const [progress, setProgress] = useState<number>(0);
-  const { areas } = useMediMapData();
+  const { areas } = useMediMapData("right.xlsx");
   const [api, contextHolder] = notification.useNotification();
 
   const openNotification = () => {
