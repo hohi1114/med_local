@@ -16,13 +16,8 @@ import { Progress, notification } from "antd";
 import UploadedCalendar from "../components/data/UploadedCalendar";
 import useMediMapData from "../hooks/useMediMapData.tsx";
 import {
-<<<<<<< HEAD
   createDistrictDataFromNeighborhoods, populateDistrictsFromNeighborhoods,
   storePatientsByRegion,
-=======
-  storePatientsByRegion,
-  updateRegionSums
->>>>>>> 4f33a03251296a79407c31ff6fc858454b76660e
 } from "../components/data/RegionDB";
 
 const UpdateDataPage = () => {
