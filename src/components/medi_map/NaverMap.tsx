@@ -65,7 +65,7 @@ const NaverMap: React.FC<{
   const markersRef = useRef<Map<string, naver.maps.Marker>>(new Map());
   const patientMarkersRef = useRef<Map<string, naver.maps.Marker>>(new Map());
   const [peopleShowButton, setPeopleShowButton] = useState(false);
-  const { areas, setFileName } = useMediMapData();
+  const { areas, setFileName } = useMediMapData(null);
 
   // Create the map once
   useEffect(() => {

@@ -7,10 +7,14 @@ interface Area {
   coords: [number, number][]; // Array of [lng, lat] coordinates
 }
 
-const useMediMapData = () => {
+const useMediMapData = (
+  file: string | null
+): {
+  areas: Area[];
+  setFileName: (fileName: string) => void;
+} => {
   const [areas, setAreas] = useState<Area[]>([]);
-  const [fileName, setFileName] = useState<string | null>(null);
-  console.log(fileName);
+  const [fileName, setFileName] = useState<string | null>(file);
 
   useEffect(() => {
     if (!fileName) return;
