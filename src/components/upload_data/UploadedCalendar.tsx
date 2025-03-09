@@ -1,7 +1,7 @@
 import { Calendar } from "antd";
 import { Dayjs } from "dayjs";
 import styled from "styled-components";
-import { getDataFromIndexedDB } from "./IndexedDB";
+import { getDataFromIndexedDB } from "../../store/indexded_db/IndexedDB";
 import { useEffect, useMemo, useState } from "react";
 import { UpdatedDates } from "../../types/medi-types";
 

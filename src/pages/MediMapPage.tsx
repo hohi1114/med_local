@@ -4,7 +4,7 @@ import NaverMap from "../components/medi_map/NaverMap";
 import {
   getPatientsFromRegion,
   getRegionDBCount
-} from "../components/data/RegionDB";
+} from "../store/indexded_db/RegionDB";
 
 interface PatientData {
   chartNumber: number;
@@ -26,27 +26,26 @@ function MediMapPage() {
 
   useEffect(() => {
     // ✅ Fetch data from IndexedDB
-    const fetchPatientData = async () => {
-      try {
-        const db_count = await getRegionDBCount();
-
-        const allData = [];
-        for (let i = 1; i <= db_count; i++) {
-          const region_db = await getPatientsFromRegion(i.toString());
-          allData.push(region_db);
-        }a
-        setRegionDB(allData);
-      } catch (error) {
-        console.error("Error fetching patient data from IndexedDB:", error);
-      }
-    };
-
-    fetchPatientData();
+    // const fetchPatientData = async () => {
+    //   try {
+    //     const db_count = await getRegionDBCount();
+    //     const allData = [];
+    //     for (let i = 1; i <= db_count; i++) {
+    //       const region_db = await getPatientsFromRegion(i.toString());
+    //       allData.push(region_db);
+    //     }
+    //     a;
+    //     setRegionDB(allData);
+    //   } catch (error) {
+    //     console.error("Error fetching patient data from IndexedDB:", error);
+    //   }
+    // };
+    // fetchPatientData();
   }, []);
 
   return (
     <>
-      <NaverMap region_db={regionDB} handleDrawerOpen={handleDrawerOpen} />
+      {/* <NaverMap region_db={regionDB} handleDrawerOpen={handleDrawerOpen} /> */}
       <StatisticsDrawer
         open={isOpenDrawer}
         handleDrawerOpen={handleDrawerOpen}
