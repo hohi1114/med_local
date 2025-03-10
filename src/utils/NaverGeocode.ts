@@ -60,7 +60,7 @@ export const getLatLonNaver = async (
     return new Promise((resolve) => {
         console.log("insidegetLatLonNaver");
         naver.maps.Service.geocode({ query: address }, (status: string, response: any) => {
-            if (status === naver.maps.Service.Status.OK && response.v2.addresses.length > 0) {
+            if (status === naver.maps.Service.Status.OK && response?.v2?.addresses?.length && response.v2.addresses.length > 0) {
                 updateProgress(((index + 1) / total) * 99);
                 return resolve({
                     latitude: parseFloat(response.v2.addresses[0].y),
