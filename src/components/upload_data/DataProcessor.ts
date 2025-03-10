@@ -20,7 +20,7 @@ export const processData = async (
       totalCost: visit.totalCost,
       age: patient?.age || "N/D",
       address: patient?.address || "N/D",
-      visitType: undefined
+      visitType: ""
     };
   });
 
@@ -36,29 +36,52 @@ export const processData = async (
   );
 
   console.log(`📌 Removed duplicates. Remaining records: ${df_merged.length}`);
+// Function to determine if two dates are more than a month apart
+// Create a map to track the last visit date for each patient
+const lastVisitMap = new Map<number, string>();
 
-  // ✅ Calculate 초진 (first visit) or 재진 (follow-up) for each patient using chartNumber
-  const groupedByChartNumber = df_merged.reduce((acc, record) => {
-    if (!acc[record.chartNumber]) {
-      acc[record.chartNumber] = [];
+// First add existing records to the lastVisitMap if there are any
+if (existingMergedData.length > 0) {
+  // Sort existing data by chart number and visit date for accurate "last visit" tracking
+  const sortedExistingData = [...existingMergedData].sort((a, b) => {
+    if (a.chartNumber === b.chartNumber) {
+      return new Date(a.visitDate).getTime() - new Date(b.visitDate).getTime();
     }
-    acc[record.chartNumber].push(record);
-    return acc;
-  }, {} as Record<string, typeof df_merged[number][]>);
+    return a.chartNumber-b.chartNumber;
+  });
 
-  // For each group, sort by visitDate and assign visitType:
-  // The earliest visit becomes "초진" and the rest "재진".
-  for (const chartNumber in groupedByChartNumber) {
-    groupedByChartNumber[chartNumber].sort(
-        (a, b) => new Date(a.visitDate).getTime() - new Date(b.visitDate).getTime()
-    );
-    groupedByChartNumber[chartNumber].forEach((record, index) => {
-      record.visitType = index === 0 ? "초진" : "재진";
-    });
+  // Process all existing records to build lastVisitMap with most recent visit dates
+  for (const record of sortedExistingData) {
+    lastVisitMap.set(record.chartNumber, record.visitDate);
   }
-  // Flatten the groups back into df_merged
-  df_merged = Object.values(groupedByChartNumber).flat();
+}
 
+// Sort new records by date for processing in chronological order
+df_merged.sort((a, b) => new Date(a.visitDate).getTime() - new Date(b.visitDate).getTime());
+
+// Process each new record
+for (const record of df_merged) {
+  // Check if we've seen this patient before (either in existing data or in previously processed new records)
+  console.log(lastVisitMap);
+  console.log(record.chartNumber);
+  if (!lastVisitMap.has(record.chartNumber)) {
+    // Case 1: First time seeing this chart number
+    record.visitType = "신환";
+  } else {
+    const lastVisitDate = lastVisitMap.get(record.chartNumber)!;
+    
+    if (isMoreThanOneMonthApart(lastVisitDate, record.visitDate)) {
+      // Case 3: Patient visited before but more than 1 month since last visit
+      record.visitType = "초진";
+    } else {
+      // Case 2: Patient visited before and within 1 month
+      record.visitType = "재진";
+    }
+  }
+  
+  // Update the last visit map with this record's date
+  lastVisitMap.set(record.chartNumber, record.visitDate);
+}
 
   // ✅ Filter dataset to only include valid addresses (df_filtered)
   let df_filtered: FilteredData[] = df_merged
@@ -89,3 +112,21 @@ export const processData = async (
   console.log("📊 Final df_filtered:", df_filtered);
   return { df_merged, df_filtered, df_date };
 };
+
+const isMoreThanOneMonthApart = (date1: string, date2: string): boolean => {
+  const firstDate = new Date(date1);
+  const secondDate = new Date(date2);
+  
+  // Get the difference in months
+  const months = (secondDate.getFullYear() - firstDate.getFullYear()) * 12 + 
+                 (secondDate.getMonth() - firstDate.getMonth());
+                 
+  // If exactly one month difference, check days
+  if (months === 1) {
+    return secondDate.getDate() > firstDate.getDate();
+  }
+  
+  // More than one month apart if months difference > 1
+  return months > 1;
+};
+
