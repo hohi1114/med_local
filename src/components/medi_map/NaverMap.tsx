@@ -267,7 +267,7 @@ const NaverMap: React.FC<{
               icon: {
                 content: `
           <div style="display: flex; align-items: center; justify-content: center;">
-            <span style="font-size:${fontSize}; color:#ffffff; text-align: center; font-weight:bold ">${
+            <span style="font-size:${fontSize}; color:#616161; text-align: center; font-weight:bold ">${
                   name === "dong" ? area.areaName.split(" ")[2] : area.areaName
                 }</span>
           </div>
