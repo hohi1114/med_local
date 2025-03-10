@@ -362,14 +362,7 @@ const NaverMap: React.FC<{
     window.naver.maps.Event.addListener(map, "idle", handleZoomChange);
     handleZoomChange();
 
-    return () => {
-      window.naver.maps.Event.removeListener(
-        map,
-        "zoom_changed",
-        handleZoomChange
-      );
-      window.naver.maps.Event.removeListener(map, "idle", handleZoomChange);
-    };
+    return () => {};
   }, [map, smallPolygons, dongPolygons]);
 
   // 연령을 숫자로 변환하는 함수
