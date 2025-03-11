@@ -204,12 +204,13 @@ const StatisticsDrawer = ({
     2: `${totalCost.toLocaleString()} ₩`,
     3:
       totalPatients > 0
-        ? `${Math.ceil(totalCost / totalPatients).toLocaleString()}`
+        ? `${Math.ceil(totalCost / totalPatients).toLocaleString()}` + " ₩"
         : 0 + " ₩", //1인당 평균 매출 = 총 매출 / 총 환자수
     4:
       totalPatients > 0
-        ? `${Math.ceil(totalCost / totalPatients).toLocaleString()}`
-        : 0 + " ₩", //객단가
+        ? `${Math.ceil(totalCost / selectedPatient.length).toLocaleString()}` +
+          " ₩"
+        : 0 + " ₩", //내원당 평균 매출액
     5: `${revisitedPatients}명`,
     6: `${firstVisitPatients}명`,
     7: `${0}명`,
