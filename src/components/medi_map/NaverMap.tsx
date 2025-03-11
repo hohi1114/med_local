@@ -27,7 +27,7 @@ const NaverMap: React.FC<{
   const [map, setMap] = useState<naver.maps.Map | null>(null);
   //**Drawer states
   const [peopleShowButton, setPeopleShowButton] = useState(false);
-
+  const MarkerClustering = makeMarkerClustering(window.naver) as any;
   //** Map Logic
   const { getRegionName, expandBounds, getBoundAreas, getPolyonColorOpacity } =
     useNaverMapData();
@@ -46,10 +46,33 @@ const NaverMap: React.FC<{
     setMap(newMap);
   }, [map]);
 
+  const clusterMarker1 = {
+    content: `<div class="cluster_marker1"></div>`,
+    size: new window.naver.maps.Size(40, 40),
+    anchor: new window.naver.maps.Point(20, 20)
+  };
   // ✅ Drawer handler
   const handleShowButton = () => {
     setPeopleShowButton(!peopleShowButton);
   };
+
+  const [cluster, setCluster] = useState(() => {
+    const markers: naver.maps.Marker[] = [];
+    const cluster = new MarkerClustering({
+      minClusterSize: 2,
+      maxZoom: 13,
+      map: map,
+      markers: markers,
+      disableClickZoom: false,
+      gridSize: 120,
+      icons: [clusterMarker1],
+      stylingFunction: function (clusterMarker: any, count: number) {
+        clusterMarker.getElement().querySelector("div:first-child").innerText =
+          count;
+      }
+    });
+    return cluster;
+  });
 
   // ✅ Handle zoom change
   useEffect(() => {
@@ -83,6 +106,61 @@ const NaverMap: React.FC<{
           : guPolygons;
 
       const { boundAreas } = getBoundAreas(polygonsToRender, mapBounds);
+
+      // 클러스터 및 마커 초기화
+      setCluster(null);
+      setCluster(() => {
+        const markers: naver.maps.Marker[] = [];
+
+        boundAreas.forEach((area) => {
+          const latlng = new window.naver.maps.LatLng(
+            area.coords[0][0],
+            area.coords[0][1]
+          );
+
+          const marker = new naver.maps.Marker({
+            position: latlng,
+            icon: {
+              content: ` 
+                      <div style="display: flex; align-items: center; justify-content: center;">
+              <span style="font-size:${fontSize}; color:#2c2c2c; text-align: center;
+                           text-shadow: -0.75px -0.75px 0 #fafaf8,
+                                        0.75px 0.75px 0 #fafaf8,
+                                        -0.75px -0.75px 0 #fafaf8,
+                                        0.75px 0.75px 0 #fafaf8;">
+                ${name === "dong" ? area.areaName.split(" ")[2] : area.areaName}
+              </span>
+            </div>
+                     `,
+              origin: new naver.maps.Point(0, 67),
+              anchor: new naver.maps.Point(20, 67)
+            }
+          });
+
+          markers.push(marker);
+        });
+
+        new MarkerClustering({
+          minClusterSize: 2,
+          maxZoom: 13,
+          map: map,
+          markers: markers,
+          disableClickZoom: false,
+          gridSize: 120,
+          icons: [
+            {
+              content: `<div></div>`,
+              size: new window.naver.maps.Size(40, 40),
+              anchor: new window.naver.maps.Point(20, 20)
+            }
+          ],
+          stylingFunction: function (clusterMarker: any, count: number) {
+            clusterMarker
+              .getElement()
+              .querySelector("div:first-child").innerText = count;
+          }
+        });
+      });
 
       if (boundAreas.length === 0) return;
 
@@ -120,23 +198,23 @@ const NaverMap: React.FC<{
           const bounds = polygon.getBounds();
           if (bounds) {
             const center = bounds.getCenter();
-            marker = new window.naver.maps.Marker({
-              map,
-              position: center,
-              icon: {
-                content: `
-          <div style="display: flex; align-items: center; justify-content: center;">
-  <span style="font-size:${fontSize}; color:#2c2c2c; text-align: center; 
-               text-shadow: -0.75px -0.75px 0 #fafaf8,  
-                            0.75px 0.75px 0 #fafaf8,  
-                            -0.75px -0.75px 0 #fafaf8,  
-                            0.75px 0.75px 0 #fafaf8;">
-    ${name === "dong" ? area.areaName.split(" ")[2] : area.areaName}
-  </span>
-</div>
-        `
-              }
-            });
+            //             marker = new window.naver.maps.Marker({
+            //               map,
+            //               position: center,
+            //               icon: {
+            //                 content: `
+            //           <div style="display: flex; align-items: center; justify-content: center;">
+            //   <span style="font-size:${fontSize}; color:#2c2c2c; text-align: center;
+            //                text-shadow: -0.75px -0.75px 0 #fafaf8,
+            //                             0.75px 0.75px 0 #fafaf8,
+            //                             -0.75px -0.75px 0 #fafaf8,
+            //                             0.75px 0.75px 0 #fafaf8;">
+            //     ${name === "dong" ? area.areaName.split(" ")[2] : area.areaName}
+            //   </span>
+            // </div>
+            //         `
+            //               }
+            //             });
           }
         }
 
