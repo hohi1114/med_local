@@ -28,7 +28,7 @@ export default function DashBoardPage() {
       <FilterContainer>
         {FILTERDATA.map((data, index) => {
           return (
-            <div style={{ width: "85px" }}>
+            <div style={{ width: "85px" }} key={index}>
               <CutomButton
                 type="button"
                 textcolor="#000000"
