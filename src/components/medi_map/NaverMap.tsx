@@ -166,10 +166,14 @@ const NaverMap: React.FC<{
               icon: {
                 content: `
           <div style="display: flex; align-items: center; justify-content: center;">
-            <span style="font-size:${fontSize}; color:#616161; text-align: center; font-weight:bold ">${
-                  name === "dong" ? area.areaName.split(" ")[2] : area.areaName
-                }</span>
-          </div>
+  <span style="font-size:${fontSize}; color:#2c2c2c; text-align: center; 
+               text-shadow: -0.75px -0.75px 0 #fafaf8,  
+                            0.75px 0.75px 0 #fafaf8,  
+                            -0.75px -0.75px 0 #fafaf8,  
+                            0.75px 0.75px 0 #fafaf8;">
+    ${name === "dong" ? area.areaName.split(" ")[2] : area.areaName}
+  </span>
+</div>
         `
               }
             });
