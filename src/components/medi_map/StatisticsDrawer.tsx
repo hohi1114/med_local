@@ -216,6 +216,10 @@ const StatisticsDrawer = ({
     8: `${0}명`
   };
 
+  const handleTodayButton = () => {
+    handleDateChange([dayjs(), dayjs()]);
+  };
+
   return (
     <Drawer
       width={"35rem"}
@@ -246,8 +250,8 @@ const StatisticsDrawer = ({
         </div>
         <div style={{ flex: 1 }}>
           <BaseButton
-            type="submit"
-            onClick={() => {}}
+            type="button"
+            onClick={handleTodayButton}
             color="#EDEEFC"
             textcolor="#000000"
           >
