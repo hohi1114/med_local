@@ -171,12 +171,15 @@ const NaverMap: React.FC<{
         }
 
         const patients = await getPatientsFromRegion(area.areaName, name);
+        let totalCost = 0;
+        patients.forEach((patient) => {
+          totalCost += patient.totalCost;
+        });
         patientTemp.push({ areaName: area.areaName, patients });
         polygon?.setOptions({
           paths: latLngs,
           fillColor: `rgba(${color_r}, ${color_g}, ${color_b}, ${getPolyonColorOpacity(
-            // stats[area.areaName].totalCost
-            100000
+            totalCost
           )})`
         });
         //📌 2. Show Markers
