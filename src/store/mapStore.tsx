@@ -1,16 +1,21 @@
 import { create } from "zustand";
+import { PatientData } from "../utils/ExcelParser";
+import dayjs from "dayjs";
 
 interface IMapStore {
-  areaName: string;
-  totalPatients: number;
-  totalCost: number;
-  revisitedPatients: number;
-  firstVisitPatients: number;
+  areaName: string; //지역이름
+  totalPatients: number; //전체 환자 수
+  totalCost: number; //누적 매출액
+  revisitedPatients: number; //재방문 환자수
+  firstVisitPatients: number; //신규 환자수
   totalPopulations: number;
-  inflowRate: number;
+  inflowRate: number; //유입비율
   revenueTrend: Record<string, number>;
   ageGroups: Record<string, number>;
-  dailyRevenue: Record<string, { totalCost: number; patientCount: number }>;
+  dailyRevenue: Record<string, { totalCost: number; patientCount: number }>; //객단가 = 총 매출 / 총 거래 수
+  patients: { areaName: string; patients: PatientData[] }[];
+  drawerDate: [Date, Date];
+  setDrawerDate: (drawerDate: [Date, Date]) => void;
 
   setAreaName: (areaName: string) => void;
   setTotalPatients: (totalPatients: number) => void;
@@ -23,6 +28,9 @@ interface IMapStore {
   setAgeGroups: (ageGroups: Record<string, number>) => void;
   setDailyRevenue: (
     dailyRevenue: Record<string, { totalCost: number; patientCount: number }>
+  ) => void;
+  setPatients: (
+    patients: { areaName: string; patients: PatientData[] }[]
   ) => void;
 }
 
@@ -37,6 +45,8 @@ const mapStore = create<IMapStore>((set) => ({
   revenueTrend: {},
   ageGroups: {},
   dailyRevenue: {},
+  patients: [],
+  drawerDate: [new Date(), dayjs().subtract(1, "year").toDate()],
 
   setAreaName: (areaName) => set({ areaName }),
   setTotalPatients: (totalPatients) => set({ totalPatients }),
@@ -47,7 +57,9 @@ const mapStore = create<IMapStore>((set) => ({
   setInflowRate: (inflowRate) => set({ inflowRate }),
   setRevenueTrend: (revenueTrend) => set({ revenueTrend }),
   setAgeGroups: (ageGroups) => set({ ageGroups }),
-  setDailyRevenue: (dailyRevenue) => set({ dailyRevenue })
+  setDailyRevenue: (dailyRevenue) => set({ dailyRevenue }),
+  setPatients: (patients) => set({ patients }),
+  setDrawerDate: (drawerDate) => set({ drawerDate })
 }));
 
 export default mapStore;

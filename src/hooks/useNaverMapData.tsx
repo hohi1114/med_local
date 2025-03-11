@@ -1,4 +1,4 @@
-import useMediMapData, { Area } from "./useMediMapData";
+import { Area } from "./useMediMapData";
 
 const useNaverMapData = () => {
   const getRegionName = (currentZoom: number) => {
@@ -94,53 +94,10 @@ const useNaverMapData = () => {
     return { boundAreas };
   };
 
-  //Check if a point is inside a polygon
-  const containsLocation = (
-    pointLat: number,
-    pointLng: number,
-    polygon: naver.maps.Polygon
-  ): boolean => {
-    const ringArray = polygon.getPaths().getAt(0);
-    if (!ringArray) return false; // no ring
-
-    let inside = false;
-    const len = ringArray.getLength();
-
-    for (let i = 0, j = len - 1; i < len; j = i++) {
-      const latI = ringArray.getAt(i).lat();
-      const lngI = ringArray.getAt(i).lng();
-      const latJ = ringArray.getAt(j).lat();
-      const lngJ = ringArray.getAt(j).lng();
-
-      const intersect =
-        lngI > pointLng !== lngJ > pointLng &&
-        pointLat < ((latJ - latI) * (pointLng - lngI)) / (lngJ - lngI) + latI;
-
-      if (intersect) inside = !inside;
-    }
-    return inside;
-  };
-
-  // 연령을 숫자로 변환하는 함수
-  const parseAge = (ageString: string): number => {
-    const ageParts = ageString.split("세");
-    if (ageParts.length < 2) return 0;
-
-    const ageYears = parseInt(ageParts[0].trim(), 10);
-    const ageMonths =
-      ageParts[1] && ageParts[1].includes("개월")
-        ? parseInt(ageParts[1].replace("개월", "").trim(), 10)
-        : 0;
-
-    // 1년을 12개월로 보고, 월 단위로 계산하여 나이 계산
-    return ageYears + ageMonths / 12;
-  };
   return {
     getRegionName,
     expandBounds,
-    parseAge,
     getBoundAreas,
-    containsLocation,
     getPolyonColorOpacity
   };
 };

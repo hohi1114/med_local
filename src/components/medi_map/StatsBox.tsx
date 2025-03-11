@@ -3,10 +3,12 @@ import styled from "styled-components";
 export const STATSTYPE = [
   { id: 1, title: "전체 환자 수" },
   { id: 2, title: "누적 매출액" },
-  { id: 3, title: "재방문 환자 수" },
-  { id: 4, title: "초진 환자 수" },
-  { id: 5, title: "전체 인구 수" },
-  { id: 6, title: "유입 비율" }
+  { id: 3, title: "객단가" },
+  { id: 4, title: "1인당 평균 매출" },
+  { id: 5, title: "재방문 환자수" },
+  { id: 6, title: "신규 환자수" },
+  { id: 7, title: "전체 인구 수" },
+  { id: 8, title: "유입 비율" }
 ];
 
 interface StatsBoxProps {

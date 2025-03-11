@@ -13,12 +13,15 @@ interface DurationDatePickerProps {
  */
 const DurationDatePicker = ({
   rangeDate,
-  handleDateChange,
+  handleDateChange
 }: DurationDatePickerProps) => {
   return (
     <RangePicker
       format={"YYYY-MM-DD"}
-      defaultValue={[dayjs(rangeDate.startDate), dayjs(rangeDate.endDate)]}
+      defaultValue={[
+        dayjs(rangeDate.startDate).subtract(1, "year"),
+        dayjs(rangeDate.endDate)
+      ]}
       onChange={handleDateChange}
     />
   );
