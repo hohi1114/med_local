@@ -32,6 +32,19 @@ const BarChart = () => {
     style: {
       radius: 8
     },
+    scale: {
+      color: {
+        range: [
+          "#9F9FF8",
+          "#96E2D6",
+          "#000000",
+          "#92BFFF",
+          "#AEC7ED",
+          "#94E9B8",
+          "#E4A9FF"
+        ]
+      }
+    },
     tooltip: {
       items: ["age", "value"]
     }

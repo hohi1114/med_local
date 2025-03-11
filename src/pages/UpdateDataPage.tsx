@@ -1,31 +1,30 @@
 import { useState } from "react";
-import FileUpload from "../components/data/FileUpload";
+import FileUpload from "../components/upload_data/FileUpload.tsx";
 import { parseDaysFiles, parsePlaceFiles } from "../utils/ExcelParser";
 import {
   saveToIndexedDB,
   getDataFromIndexedDB
-} from "../components/data/IndexedDB";
+} from "../store/indexded_db/IndexedDB.ts";
 import styled from "styled-components";
 import ContentHeader from "../components/common/layout/ContentHeader";
 import BaseButton from "../components/common/button/BaseButton";
 import { MergedData } from "../types/medi-types";
-import { processData } from "../components/data/DataProcessor";
+import { processData } from "../components/upload_data/DataProcessor.ts";
 import { loadNaverMapsScript } from "../utils/NaverGeocode";
 import { useEffect } from "react";
 import { Progress, notification } from "antd";
-import UploadedCalendar from "../components/data/UploadedCalendar";
+import UploadedCalendar from "../components/upload_data/UploadedCalendar.tsx";
 import useMediMapData from "../hooks/useMediMapData.tsx";
 import {
-  storePatientsByRegion,
-  updateRegionSums
-} from "../components/data/RegionDB";
-import Loading from "../components/common/Loading.tsx";
+  createDistrictDataFromNeighborhoods,
+  populateDistrictsFromNeighborhoods,
+  storePatientsByRegion
+} from "../store/indexded_db/RegionDB.ts";
 
 const UpdateDataPage = () => {
   const [daysFiles, setDaysFiles] = useState<FileList | null>(null);
   const [placeFiles, setPlaceFiles] = useState<FileList | null>(null);
   const [progress, setProgress] = useState<number>(0);
-  const { areas } = useMediMapData("right.xlsx");
   const [api, contextHolder] = notification.useNotification();
 
   const openNotification = () => {
@@ -37,6 +36,10 @@ const UpdateDataPage = () => {
       icon: null
     });
   };
+
+  const { areas: areas_small } = useMediMapData("normalized_small_db.json");
+  const { areas: areas_dong } = useMediMapData("fixed_polygon.json");
+  const { areas: areas_gu } = useMediMapData("district_boundaries.json");
 
   // ✅ Load Naver Maps Script on Component Mount
   useEffect(() => {
@@ -75,10 +78,25 @@ const UpdateDataPage = () => {
 
     console.log(df_merged, df_filtered, df_date);
 
-    await saveToIndexedDB(df_merged, df_filtered, df_date);
+    await saveToIndexedDB(
+      df_merged,
+      df_filtered,
+      df_date,
+      areas_small,
+      areas_dong,
+      areas_gu
+    );
 
-    await storePatientsByRegion(df_filtered, areas);
-    await updateRegionSums();
+    await storePatientsByRegion(df_filtered, areas_small, "small");
+
+    // 2. Process neighborhoods
+    await storePatientsByRegion(df_filtered, areas_dong, "dong");
+
+    // 3. Create district structure
+    await createDistrictDataFromNeighborhoods(areas_dong);
+
+    // 4. Populate districts with neighborhood data
+    await populateDistrictsFromNeighborhoods();
 
     setProgress(100);
   };
@@ -94,7 +112,6 @@ const UpdateDataPage = () => {
       {contextHolder}
       <ContentHeader title={"데이터 업데이트"} />
       <UpdateDataContainer>
-        {/**업데이트 데이터 현황 달력 */}
         <div style={{ marginBottom: "4rem" }}>
           <ContentContainer>
             <TitleStyle>저장한 데이터 현황</TitleStyle>

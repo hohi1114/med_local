@@ -5,8 +5,17 @@ import StatisticsByRegionPage from "./pages/StatisticsByRegionPage";
 import UpdateDataPage from "./pages/UpdateDataPage.tsx";
 import MediMapPage from "./pages/MediMapPage";
 import NaverScriptLoader from "./utils/NaverScriptLoader.tsx";
+import { useEffect } from "react";
+import useRegionNamesData from "./hooks/useRegionNamesData.tsx";
 
 function App() {
+  const { getRegionNameFromIndexDB } = useRegionNamesData();
+
+  useEffect(() => {
+    //📌 Fetch Region Names
+    getRegionNameFromIndexDB();
+  }, []);
+
   return (
     <BrowserRouter>
       <Routes>
@@ -22,12 +31,12 @@ function App() {
             element={<StatisticsByRegionPage />}
           />
           <Route
-              path="map"
-              element={
-                <NaverScriptLoader>
-                  <MediMapPage />
-                </NaverScriptLoader>
-              }
+            path="map"
+            element={
+              <NaverScriptLoader>
+                <MediMapPage />
+              </NaverScriptLoader>
+            }
           />
         </Route>
       </Routes>
