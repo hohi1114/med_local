@@ -110,7 +110,7 @@ const UpdateDataPage = () => {
 
   return (
     <>
-      {progress === 0 && (
+      {progress > 0 && progress < 100 && (
         <div
           style={{
             position: "fixed",
