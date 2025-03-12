@@ -2,8 +2,9 @@ import styled from "styled-components";
 import ContentHeader from "../components/common/layout/ContentHeader";
 import BaseButton from "../components/common/button/BaseButton";
 import DurationDatePicker from "../components/common/datepicker/DurationDatePicker";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { RangePickerProps } from "antd/es/date-picker";
+import { getCookie } from "../utils/api/cookie";
 
 const FILTERDATA = ["오늘", "3일", "7일", "1개월", "3개월", "1년", "직접선택"];
 

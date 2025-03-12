@@ -59,3 +59,30 @@ const ButtonContainer = styled.button<StyledButtonProps>`
   font-weight: bold;
   background-color: ${({ color }) => color};
 `;
+const LoginContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.02); /* 부드러운 배경 */
+`;
+
+const LoginWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  background-color: #ffffff;
+  width: 100%;
+  max-width: 28rem; /* 크기 제한 */
+  padding: 2.5rem;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  text-align: center;
+
+  @media (max-width: 480px) {
+    padding: 2rem;
+    max-width: 90%;
+  }
+`;
