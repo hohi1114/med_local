@@ -1,3 +1,4 @@
+import { Spin } from "antd";
 import { memo, forwardRef } from "react";
 import styled from "styled-components";
 
@@ -8,6 +9,7 @@ interface StyledButtonProps {
   type: "button" | "submit" | "reset";
   onClick?: () => void;
   textcolor?: string;
+  isLoading?: boolean;
 }
 
 const BaseButton = memo(
@@ -19,6 +21,7 @@ const BaseButton = memo(
         disabled,
         color = "#9F9FF8",
         textcolor = "#ffffff",
+        isLoading,
         onClick,
         ...props
       },
@@ -34,7 +37,7 @@ const BaseButton = memo(
           onClick={onClick}
           {...props}
         >
-          <span>{children}</span>
+          {isLoading ? <Spin size="small" /> : <span>{children}</span>}
         </ButtonContainer>
       );
     }
