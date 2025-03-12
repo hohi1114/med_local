@@ -1,14 +1,17 @@
 import { Drawer } from "antd";
 import DurationDatePicker from "../common/datepicker/DurationDatePicker";
-import { useState } from "react";
-import { RangePickerProps } from "antd/es/date-picker";
 import BaseButton from "../common/button/BaseButton";
 import styled from "styled-components";
 import StatsBox, { STATSTYPE } from "./StatsBox";
 import mapStore from "../../store/mapStore";
 import BarChart from "./chart/BarChart";
 import BaseLineChart from "./chart/BaseLineChart";
+import isBetween from "dayjs/plugin/isBetween";
 import dayjs from "dayjs";
+import useRangeDurationDatePicker from "../../hooks/useRangeDurationDatePicker";
+import { useEffect, useState } from "react";
+import { PatientData } from "../../utils/ExcelParser";
+dayjs.extend(isBetween);
 
 interface StatisticsDrawerProps {
   open: boolean;
@@ -18,10 +21,8 @@ const StatisticsDrawer = ({
   open,
   handleDrawerOpen
 }: StatisticsDrawerProps) => {
-  const [rangeDate, setRangeDate] = useState({
-    startDate: new Date(),
-    endDate: new Date()
-  });
+  const { rangeDate, handleDateChange } = useRangeDurationDatePicker();
+  const [selectedPatient, setSelectedPatient] = useState<PatientData[]>([]);
   const {
     areaName,
     totalCost,
@@ -29,10 +30,159 @@ const StatisticsDrawer = ({
     firstVisitPatients,
     revisitedPatients,
     dailyRevenue,
-    revenueTrend
+    revenueTrend,
+    setDrawerDate,
+    setTotalCost,
+    setTotalPatients,
+    setFirstVisitPatients,
+    setRevisitedPatients,
+    setRevenueTrend,
+    setAgeGroups,
+    setDailyRevenue,
+    patients
   } = mapStore();
 
-  const formatData = (data: any) => {
+  useEffect(() => {
+    setDrawerDate([rangeDate.startDate, rangeDate.endDate]);
+  }, []);
+
+  // 연령을 숫자로 변환하는 함수
+  const parseAge = (ageString: string): number => {
+    const ageParts = ageString.split("세");
+    if (ageParts.length < 2) return 0;
+
+    const ageYears = parseInt(ageParts[0].trim(), 10);
+    const ageMonths =
+      ageParts[1] && ageParts[1].includes("개월")
+        ? parseInt(ageParts[1].replace("개월", "").trim(), 10)
+        : 0;
+
+    // 1년을 12개월로 보고, 월 단위로 계산하여 나이 계산
+    return ageYears + ageMonths / 12;
+  };
+
+  const initDrawerData = () => {
+    setTotalCost(0);
+    setTotalPatients(0);
+    setFirstVisitPatients(0);
+    setFirstVisitPatients(0);
+    setRevisitedPatients(0);
+    setRevenueTrend({});
+    setAgeGroups({});
+    setDailyRevenue({});
+  };
+
+  useEffect(() => {
+    if (open) {
+      initDrawerData();
+    }
+  }, [open, rangeDate]);
+
+  useEffect(() => {
+    if (areaName && open) {
+      if (patients.length > 0) {
+        const filteredPatients = patients.filter(
+          (data) => data.areaName === areaName
+        );
+        const filteredPatientsByDate = filteredPatients[0].patients.filter(
+          (data) => {
+            const visitDate = dayjs(data.visitDate);
+            return visitDate.isBetween(rangeDate.startDate, rangeDate.endDate);
+          }
+        );
+        setSelectedPatient(filteredPatientsByDate);
+      } else {
+        setSelectedPatient([]);
+      }
+    }
+  }, [patients, open, rangeDate, areaName]);
+
+  useEffect(() => {
+    if (selectedPatient?.length > 0) {
+      // 연령대 별 환자 분포
+      const ageGroups = {
+        아동: 0,
+        "10대": 0,
+        "20대": 0,
+        "30대": 0,
+        "40대": 0,
+        "50대": 0,
+        "60대": 0
+      };
+      let totalPatient = new Set();
+      const revenueMap: { [key: string]: number } = {};
+      const dailyRevenueMap: { [key: string]: number } = {};
+      let firstTimeCount = 0;
+      let revisitCount = 0;
+      let resultTotalCost = 0;
+
+      selectedPatient.forEach((patient) => {
+        const { totalCost, visitDate, age, visitType, chartNumber } = patient;
+        resultTotalCost += totalCost;
+
+        //총 환자 수
+        if (!totalPatient.has(chartNumber)) {
+          totalPatient.add(chartNumber);
+        }
+        //재방문 환자수 = 초진 + 재진
+        if (visitType === "초진" || visitType === "재진") {
+          revisitCount++;
+        } else if (visitType === "신환") {
+          firstTimeCount++;
+        }
+        //매출액 변화 추이
+        if (visitDate && revenueMap[visitDate]) {
+          revenueMap[visitDate] += totalCost ?? 0;
+        } else {
+          revenueMap[visitDate] = totalCost;
+        }
+        const ageInYears = parseAge(age);
+        // 연령대에 맞는 카운트 증가
+        if (ageInYears >= 0 && ageInYears <= 9) {
+          ageGroups["아동"]++;
+        } else if (ageInYears >= 10 && ageInYears <= 19) {
+          ageGroups["10대"]++;
+        } else if (ageInYears >= 20 && ageInYears <= 29) {
+          ageGroups["20대"]++;
+        } else if (ageInYears >= 30 && ageInYears <= 39) {
+          ageGroups["30대"]++;
+        } else if (ageInYears >= 40 && ageInYears <= 49) {
+          ageGroups["40대"]++;
+        } else if (ageInYears >= 50 && ageInYears <= 59) {
+          ageGroups["50대"]++;
+        } else {
+          ageGroups["60대"]++;
+        }
+        //1인당 평균 매출액
+        if (visitDate) {
+          // visitDate가 없으면 초기화
+          if (!dailyRevenueMap[visitDate]) {
+            dailyRevenueMap[visitDate] = {
+              totalCost: 0,
+              patientCount: 0
+            };
+          }
+        }
+        if (visitDate && dailyRevenueMap[visitDate].totalCost) {
+          dailyRevenueMap[visitDate].totalCost += totalCost;
+          dailyRevenueMap[visitDate].patientCount += 1;
+        } else {
+          dailyRevenueMap[visitDate].totalCost = totalCost;
+          dailyRevenueMap[visitDate].patientCount = 1;
+        }
+
+        setTotalCost(resultTotalCost);
+        setTotalPatients(totalPatient.size);
+        setFirstVisitPatients(firstTimeCount);
+        setRevisitedPatients(revisitCount);
+        setRevenueTrend(revenueMap);
+        setAgeGroups(ageGroups);
+        setDailyRevenue(dailyRevenueMap);
+      });
+    }
+  }, [selectedPatient]);
+
+  const formatDataForAverageRevenue = (data: any) => {
     return Object.entries(data).map(([date, value]) => {
       const averageRevenue =
         value.patientCount > 0 ? value.totalCost / value.patientCount : 0;
@@ -43,30 +193,34 @@ const StatisticsDrawer = ({
     });
   };
 
-  const formatData2 = (data: any) => {
+  const formatDataForRevenueTrend = (data: any) => {
     return Object.entries(revenueTrend).map(([date, value]) => ({
       date,
       value
     }));
   };
-
   const statsData: { [key: number]: string } = {
     1: `${totalPatients}명`,
     2: `${totalCost.toLocaleString()} ₩`,
-    3: `${revisitedPatients}명`,
-    4: `${firstVisitPatients}명`,
-    5: `${0}명`,
-    6: `${0}명`
+    3:
+      totalPatients > 0
+        ? `${Math.ceil(totalCost / totalPatients).toLocaleString()}` + " ₩"
+        : 0 + " ₩", //1인당 평균 매출 = 총 매출 / 총 환자수
+    4:
+      totalPatients > 0
+        ? `${Math.ceil(totalCost / selectedPatient.length).toLocaleString()}` +
+          " ₩"
+        : 0 + " ₩", //내원당 평균 매출액
+    5: `${revisitedPatients}명`,
+    6: `${firstVisitPatients}명`,
+    7: `${0}명`,
+    8: `${0}명`
   };
 
-  const handleDateChange: RangePickerProps["onChange"] = (dates, _) => {
-    if (dates && dates[0] && dates[1]) {
-      setRangeDate({
-        startDate: dates[0].toDate(),
-        endDate: dates[1].toDate()
-      });
-    }
+  const handleTodayButton = () => {
+    handleDateChange([dayjs(), dayjs()]);
   };
+
   return (
     <Drawer
       width={"35rem"}
@@ -97,8 +251,8 @@ const StatisticsDrawer = ({
         </div>
         <div style={{ flex: 1 }}>
           <BaseButton
-            type="submit"
-            onClick={() => {}}
+            type="button"
+            onClick={handleTodayButton}
             color="#EDEEFC"
             textcolor="#000000"
           >
@@ -130,7 +284,7 @@ const StatisticsDrawer = ({
             yField="value"
             labelFormatterY={(v: number) => `${v / 1000}K`}
             labelFormatterX={(v: string) => dayjs(v).format("MM/DD")}
-            formatData={formatData2}
+            formatData={formatDataForRevenueTrend}
           />
         </GrapWrapper>
         <GrapWrapper>
@@ -145,7 +299,7 @@ const StatisticsDrawer = ({
             yField="value"
             labelFormatterY={(v: number) => `${v / 1000}K`}
             labelFormatterX={(v: string) => dayjs(v).format("MM/DD")}
-            formatData={formatData}
+            formatData={formatDataForAverageRevenue}
           />
         </GrapWrapper>
       </GraphContainer>

@@ -19,6 +19,7 @@ interface IBaseLineChartProps {
   formatData: (data: any) => ILineData[];
 }
 
+const NUMBER_OF_POINTS = 6;
 const BaseLineChart = ({
   data,
   xField,
@@ -29,10 +30,21 @@ const BaseLineChart = ({
 }: IBaseLineChartProps) => {
   const [lineData, setLineData] = useState<ILineData[]>([]);
 
+  //Data Formatting for Many Data Points
   useEffect(() => {
     if (data) {
       const formattedData = formatData(data);
-      setLineData(formattedData);
+      let selectedData: ILineData[] = [];
+      if (formattedData.length > NUMBER_OF_POINTS) {
+        selectedData = formattedData.filter(
+          (_, index) =>
+            index % Math.floor(formattedData.length / NUMBER_OF_POINTS) === 0
+        );
+      } else {
+        selectedData = formattedData;
+      }
+
+      setLineData(selectedData);
     }
   }, [data, formatData]);
 
@@ -52,6 +64,10 @@ const BaseLineChart = ({
         labelFormatter:
           labelFormatterX || ((v: string) => dayjs(v).format("MM/DD"))
       }
+    },
+    scale: {
+      x: { utc: true },
+      y: { nice: true }
     },
     lineStyle: {
       stroke: "#F4664A",

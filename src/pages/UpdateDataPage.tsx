@@ -20,6 +20,7 @@ import {
   populateDistrictsFromNeighborhoods,
   storePatientsByRegion
 } from "../store/indexded_db/RegionDB.ts";
+import Loading from "../components/common/Loading.tsx";
 
 const UpdateDataPage = () => {
   const [daysFiles, setDaysFiles] = useState<FileList | null>(null);
@@ -109,6 +110,21 @@ const UpdateDataPage = () => {
 
   return (
     <>
+      {progress > 0 && progress < 100 && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            zIndex: 100,
+            backgroundColor: "rgba(0, 0, 0, 0.1)"
+          }}
+        >
+          <Loading content="데이터를 안전하게 처리중입니다." />
+        </div>
+      )}
       {contextHolder}
       <ContentHeader title={"데이터 업데이트"} />
       <UpdateDataContainer>

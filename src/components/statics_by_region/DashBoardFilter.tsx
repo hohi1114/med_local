@@ -2,30 +2,19 @@ import { useState } from "react";
 import styled from "styled-components";
 import { Select } from "antd";
 import DurationDatePicker from "../common/datepicker/DurationDatePicker";
-import { RangePickerProps } from "antd/es/date-picker";
 import SearchInput from "../common/input/SearchInput";
+import useRangeDurationDatePicker from "../../hooks/useRangeDurationDatePicker";
 
 const LOCALSECTIONS = ["시", "구", "동"];
 const DashBoardFilter = () => {
   const [localSection, setlocalSection] = useState(LOCALSECTIONS[0]);
-  const [rangeDate, setRangeDate] = useState({
-    startDate: new Date(),
-    endDate: new Date(),
-  });
+  const { rangeDate, handleDateChange } = useRangeDurationDatePicker();
   const [searchword, setSearchword] = useState<string | null>(null);
 
   const handleLocalSectionChange = (value: string) => {
     setlocalSection(value);
   };
 
-  const handleDateChange: RangePickerProps["onChange"] = (dates, _) => {
-    if (dates && dates[0] && dates[1]) {
-      setRangeDate({
-        startDate: dates[0].toDate(),
-        endDate: dates[1].toDate(),
-      });
-    }
-  };
   const handleSearchwordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchword(e.target.value);
   };

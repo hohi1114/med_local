@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
+import { Polygon } from "../types/naver-maps";
 
 // Define the expected shape of the data
-interface Area {
+export interface Area {
   areaName: string;
   coords: [number, number][][]; // Array of polygons, each containing multiple [lng, lat] coordinates
 }
@@ -46,7 +47,10 @@ const useMediMapData = (jsonFilePath: string): { areas: Area[] } => {
           let fixedPolygon = polygon.trim();
 
           // Fix missing closing brackets
-          while ((fixedPolygon.match(/\[/g) || []).length > (fixedPolygon.match(/\]/g) || []).length) {
+          while (
+            (fixedPolygon.match(/\[/g) || []).length >
+            (fixedPolygon.match(/\]/g) || []).length
+          ) {
             fixedPolygon += "]";
           }
 
@@ -58,32 +62,39 @@ const useMediMapData = (jsonFilePath: string): { areas: Area[] } => {
 
             // Ensure proper structure (array of polygons)
             if (Array.isArray(parsedCoords) && parsedCoords.length > 0) {
-              coords = parsedCoords.flatMap((polygon: any, polygonIndex: number) => {
-                if (!Array.isArray(polygon)) {
-                  return [];
-                }
-
-                return polygon.map((ring: any, ringIndex: number) => {
-                  if (!Array.isArray(ring[0])) {
-                    // If ring contains numbers instead of arrays, fix structure
-                    const fixedRing = [];
-                    for (let i = 0; i < ring.length; i += 2) {
-                      if (ring[i + 1] !== undefined) {
-                        fixedRing.push([Number(ring[i]), Number(ring[i + 1])]);
-                      }
-                    }
-                    return fixedRing;
+              coords = parsedCoords.flatMap(
+                (polygon: any, polygonIndex: number) => {
+                  if (!Array.isArray(polygon)) {
+                    return [];
                   }
 
-                  return ring.map((point: any, pointIndex: number) => {
-                    if (Array.isArray(point) && point.length === 2) {
-                      return [Number(point[0]), Number(point[1])];
-                    } else {
-                      return null;
+                  return polygon.map((ring: any, ringIndex: number) => {
+                    if (!Array.isArray(ring[0])) {
+                      // If ring contains numbers instead of arrays, fix structure
+                      const fixedRing = [];
+                      for (let i = 0; i < ring.length; i += 2) {
+                        if (ring[i + 1] !== undefined) {
+                          fixedRing.push([
+                            Number(ring[i]),
+                            Number(ring[i + 1])
+                          ]);
+                        }
+                      }
+                      return fixedRing;
                     }
-                  }).filter(Boolean);
-                });
-              });
+
+                    return ring
+                      .map((point: any, pointIndex: number) => {
+                        if (Array.isArray(point) && point.length === 2) {
+                          return [Number(point[0]), Number(point[1])];
+                        } else {
+                          return null;
+                        }
+                      })
+                      .filter(Boolean);
+                  });
+                }
+              );
             }
           } catch (error) {
             console.error(`JSON parse error for: ${area}`);
