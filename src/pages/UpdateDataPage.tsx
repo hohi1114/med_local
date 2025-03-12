@@ -61,7 +61,7 @@ const UpdateDataPage = () => {
 
     try {
       // ✅ Try fetching existing data
-      const dbData = await getDataFromIndexedDB();
+      const dbData = await getDataFromIndexedDB(); //이거를 backend에서 불러와야 할 듯함. local에 있는거 면 이상하자나, 그럼 back이랑 local이랑 동기화 됐는지 알 수 있는 data?  
       if (dbData && dbData.df_merged) {
         existingMergedData = dbData.df_merged;
       }

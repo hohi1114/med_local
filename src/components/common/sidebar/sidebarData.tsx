@@ -1,4 +1,4 @@
-import { MenuProps } from "antd";
+import { MenuProps} from "antd";
 
 type MenuItem = Required<MenuProps>["items"][number];
 export const MENUITEMS: MenuItem[] = [
@@ -31,7 +31,12 @@ export const MENUITEMS: MenuItem[] = [
   },
   {
     key: "update_data",
-    label: "데이터 업데이트",
+    // 2) Provide a custom label with a button
+    label: (
+      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+        <span>데이터 업데이트</span>
+      </div>
+    ),
     icon: (
       <img
         src="/images/update.svg"
