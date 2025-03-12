@@ -47,7 +47,7 @@ const ContentHeader = ({ title }: ContentHeaderProps) => {
     </ContentHeaderContainer>
   );
 };
-};
+
 
 const ContentHeaderContainer = styled.div`
   display: flex;
