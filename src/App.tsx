@@ -8,46 +8,61 @@ import NaverScriptLoader from "./utils/NaverScriptLoader.tsx";
 import { useEffect } from "react";
 import useRegionNamesData from "./hooks/useRegionNamesData.tsx";
 import LoginPage from "./pages/LoginPage.tsx";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import userStore from "./store/userStore.tsx";
+import { useQuery } from "@tanstack/react-query";
+import SettingPage from "./pages/SettingPage.tsx";
+import { getUserInfo } from "./utils/api/apis.ts";
 
 function App() {
   const { getRegionNameFromIndexDB } = useRegionNamesData();
+  const { setUser } = userStore();
+  const { data, refetch } = useQuery({
+    queryKey: ["userInfo"],
+    queryFn: () => getUserInfo(),
+    enabled: false
+  });
 
   useEffect(() => {
+    if (!window.location.pathname.startsWith("/login")) {
+      refetch();
+    }
     //📌 Fetch Region Names
     getRegionNameFromIndexDB();
   }, []);
-
-  const queryClient = new QueryClient();
+  //Store user data
+  useEffect(() => {
+    if (data) {
+      setUser(data);
+    }
+  }, [data]);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/" element={<BaseLayout />}>
-            <Route index path="dashboard" element={<DashBoardPage />} />
-            <Route
-              path="statistics-by-region"
-              element={<StatisticsByRegionPage />}
-            />
-            <Route path="update_data" element={<UpdateDataPage />} />
-            <Route
-              path="statistics-by-region"
-              element={<StatisticsByRegionPage />}
-            />
-            <Route
-              path="map"
-              element={
-                <NaverScriptLoader>
-                  <MediMapPage />
-                </NaverScriptLoader>
-              }
-            />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </QueryClientProvider>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/" element={<BaseLayout />}>
+          <Route path="/setting" element={<SettingPage />} />
+          <Route index path="dashboard" element={<DashBoardPage />} />
+          <Route
+            path="statistics-by-region"
+            element={<StatisticsByRegionPage />}
+          />
+          <Route path="update_data" element={<UpdateDataPage />} />
+          <Route
+            path="statistics-by-region"
+            element={<StatisticsByRegionPage />}
+          />
+          <Route
+            path="map"
+            element={
+              <NaverScriptLoader>
+                <MediMapPage />
+              </NaverScriptLoader>
+            }
+          />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
 

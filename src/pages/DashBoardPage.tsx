@@ -4,11 +4,19 @@ import BaseButton from "../components/common/button/BaseButton";
 import DurationDatePicker from "../components/common/datepicker/DurationDatePicker";
 import { useEffect, useState } from "react";
 import { RangePickerProps } from "antd/es/date-picker";
-import { getCookie } from "../utils/api/cookie";
+import userStore from "../store/userStore";
+import { useQuery } from "@tanstack/react-query";
+import { getUserInfo } from "../utils/api/apis";
 
 const FILTERDATA = ["오늘", "3일", "7일", "1개월", "3개월", "1년", "직접선택"];
 
 export default function DashBoardPage() {
+  const { user, setUser } = userStore();
+  const { data, refetch } = useQuery({
+    queryKey: ["userInfo"],
+    queryFn: () => getUserInfo(),
+    enabled: false
+  });
   const [rangeDate, setRangeDate] = useState({
     startDate: new Date(),
     endDate: new Date()
@@ -22,6 +30,14 @@ export default function DashBoardPage() {
       });
     }
   };
+
+  useEffect(() => {
+    if (!user) {
+      refetch();
+    } else if (data) {
+      setUser(data);
+    }
+  }, [user, data]);
 
   return (
     <DashBoardContainer>

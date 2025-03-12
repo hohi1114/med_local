@@ -19,18 +19,22 @@ const LoginPage = () => {
     formState: { errors }
   } = useForm<LoginParams>();
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const loginMutation = useMutation({
     mutationFn: (userData: LoginParams) => postLogin(userData),
     onSuccess: (data) => {
-      navigate("/");
+      setIsLoading(false);
+      navigate("/dashboard");
     },
     onError: (error: AxiosError) => {
+      setIsLoading(false);
       setError(error?.response?.data?.error);
     }
   });
 
   const onSubmit = (data: LoginParams) => {
+    setIsLoading(true);
     loginMutation.mutate(data);
   };
 
@@ -57,8 +61,11 @@ const LoginPage = () => {
         />
 
         <div style={{ minWidth: "20rem" }}>
-          <StyledButton type="submit">Sign in</StyledButton>
+          <StyledButton type="submit" isLoading={isLoading}>
+            Sign in
+          </StyledButton>
         </div>
+        {/**Error Messages */}
         <div style={{ color: "red", textAlign: "left" }}>
           <div>{errors.email?.message}</div>
           <div>{errors.password?.message}</div>
