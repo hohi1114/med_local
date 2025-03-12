@@ -6,7 +6,7 @@ import {
   getDataFromIndexedDB
 } from "../store/indexded_db/IndexedDB.ts";
 import styled from "styled-components";
-import ContentHeader from "../components/common/layout/ContentHeader";
+import ContentHeaderRefresh from "../components/common/layout/ContentHeaderRefresh";
 import BaseButton from "../components/common/button/BaseButton";
 import { MergedData } from "../types/medi-types";
 import { processData } from "../components/upload_data/DataProcessor.ts";
@@ -126,7 +126,7 @@ const UpdateDataPage = () => {
         </div>
       )}
       {contextHolder}
-      <ContentHeader title={"데이터 업데이트"} />
+      <ContentHeaderRefresh title={"데이터 업데이트"} />
       <UpdateDataContainer>
         <div style={{ marginBottom: "4rem" }}>
           <ContentContainer>

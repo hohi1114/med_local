@@ -1,12 +1,23 @@
+const BACKEND_URL=import.meta.env.VITE_LOCAL_URL;
+
+console.log(BACKEND_URL);
 
 export async function fetchDataFromBackend() {
-    try {
-      const response = await fetch("/api/data/all?userId=abc-123");
-      const result = await response.json();
-      console.log("Fetched data:", result);
-      // Handle or store the data
-    } catch (err) {
-      console.error("Failed to fetch data:", err);
+  try {
+    if (!BACKEND_URL) {
+      throw new Error("Backend URL is not defined");
     }
+
+    const response = await fetch(`${BACKEND_URL}/api/data/get`); // Corrected fetch URL
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log("Fetched data:", result);
+
+    return result; // Return the fetched data if needed
+  } catch (err) {
+    console.error("Failed to fetch data:", err);
   }
-  
+}
