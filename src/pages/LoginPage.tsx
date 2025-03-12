@@ -2,10 +2,10 @@ import styled from "styled-components";
 import BaseButton from "../components/common/button/BaseButton";
 import { useForm } from "react-hook-form";
 import { useMutation } from "@tanstack/react-query";
-import { postLogin } from "../utils/api/apis";
-import { useState } from "react";
+import { postLogin, postRefreshToken } from "../utils/api/apis";
+import { useEffect, useState } from "react";
 import { AxiosError } from "axios";
-import { useNavigate } from "react-router-dom";
+import { ErrorResponse, useNavigate } from "react-router-dom";
 
 export type LoginParams = {
   email: string;
@@ -23,13 +23,14 @@ const LoginPage = () => {
 
   const loginMutation = useMutation({
     mutationFn: (userData: LoginParams) => postLogin(userData),
-    onSuccess: (data) => {
+    onSuccess: () => {
       setIsLoading(false);
       navigate("/dashboard");
     },
-    onError: (error: AxiosError) => {
+    onError: (error: AxiosError<ErrorResponse>) => {
       setIsLoading(false);
-      setError(error?.response?.data?.error);
+      const errorMessage = (error.response?.data as { error?: string })?.error;
+      setError(errorMessage || null);
     }
   });
 
@@ -66,7 +67,7 @@ const LoginPage = () => {
           </StyledButton>
         </div>
         {/**Error Messages */}
-        <div style={{ color: "red", textAlign: "left" }}>
+        <div style={{ color: "#E53E3E", textAlign: "left" }}>
           <div>{errors.email?.message}</div>
           <div>{errors.password?.message}</div>
           <div>{error}</div>
@@ -80,7 +81,7 @@ export default LoginPage;
 
 const BaseInput = styled.input`
   border: 0.5px solid rgba(0, 0, 0, 0.1);
-  padding: 16px 20px;
+  padding: 13px 10px;
   border-radius: 6px;
   min-width: 20rem;
   font-size: 1.2rem;
@@ -108,7 +109,6 @@ const LoginContainer = styled.div`
   justify-content: center;
   align-items: center;
   height: 100vh;
-  padding: 1rem;
 `;
 
 const LoginWrapper = styled.form`
@@ -118,15 +118,13 @@ const LoginWrapper = styled.form`
   flex-direction: column;
   gap: 1.75rem;
   background-color: #ffffff;
-  min-width: 42rem;
-
+  max-width: 43rem;
+  width: 70%;
+  max-height: 30rem;
+  height: 100%;
   padding: 4rem;
   border-radius: 1rem;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
-  @media (max-width: 480px) {
-    padding: 2rem;
-    max-width: 90%;
-  }
 `;
 
 const TitleStyle = styled.div`

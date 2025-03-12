@@ -3,6 +3,7 @@ import { LoginParams } from "../../pages/LoginPage";
 import { removeAuthTokens, saveTokensToCookie } from "./token";
 import { getCookie, removeCookie } from "./cookie";
 import { jwtDecode } from "jwt-decode";
+import { apiRequest } from "./apihelper";
 
 //axios instance
 export const authApi = axios.create({
@@ -43,14 +44,21 @@ const isTokenExpired = (token: string): boolean => {
 
 //요청 interceptor
 authApi.interceptors.request.use(
-  (config) => {
+  async (config) => {
     const accessToken = getCookie("accessToken");
 
     const isLoginPage = window.location.pathname === "/login";
     if (!isLoginPage) {
       if (accessToken) {
+        //토큰이 만료 되었을때
         if (isTokenExpired(accessToken)) {
-          logout();
+          //refresh 토큰을 이용하여 다시 받아옴
+          const newAccessToken = await postRefreshToken();
+          await saveTokensToCookie({
+            access_token: newAccessToken.access_token,
+            refresh_token: newAccessToken.refresh_token,
+            expires_in: newAccessToken.expires_in
+          });
         } else {
           config.headers.Authorization = `Bearer ${accessToken}`;
         }
@@ -82,32 +90,27 @@ authApi.interceptors.response.use(
 );
 
 export const postLogin = async (loginData: LoginParams) => {
-  try {
-    const response = await authApi.post(`/auth/login`, loginData, {});
-    await saveTokensToCookie({
-      access_token: response.data.access_token,
-      refresh_token: response.data.refresh_token,
-      expires_in: response.data.expires_in
-    });
+  const data = await apiRequest("post", `/auth/login`, loginData);
+  await saveTokensToCookie({
+    access_token: data.access_token,
+    refresh_token: data.refresh_token,
+    expires_in: data.expires_in
+  });
 
-    return response.data;
-  } catch (error) {
-    if (error instanceof Error) {
-      throw error;
-    }
-    throw new Error("알 수 없는 오류가 발생했습니다.");
-  }
+  return data;
 };
 
 export const getUserInfo = async () => {
-  try {
-    const response = await authApi.get("/users/info");
+  return await authApi.get("/users/info");
+};
 
-    return response.data;
-  } catch (error) {
-    if (error instanceof Error) {
-      throw error;
-    }
-    throw new Error("알 수 없는 오류가 발생했습니다.");
+export const postRefreshToken = async () => {
+  const refreshToken = getCookie("refreshToken");
+  if (!refreshToken) {
+    logout();
   }
+  console.log(refreshToken);
+  return await apiRequest("post", "/auth/refresh", {
+    refresh_token: refreshToken
+  });
 };

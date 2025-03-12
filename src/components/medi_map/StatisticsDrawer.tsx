@@ -207,7 +207,7 @@ const StatisticsDrawer = ({
         ? `${Math.ceil(totalCost / totalPatients).toLocaleString()}` + " ₩"
         : 0 + " ₩", //1인당 평균 매출 = 총 매출 / 총 환자수
     4:
-      totalPatients > 0
+      selectedPatient.length > 0
         ? `${Math.ceil(totalCost / selectedPatient.length).toLocaleString()}` +
           " ₩"
         : 0 + " ₩", //내원당 평균 매출액
