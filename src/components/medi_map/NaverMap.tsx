@@ -20,6 +20,7 @@ const NaverMap: React.FC<{
   //**Refs
   const polygonsRef = useRef<Map<string, naver.maps.Polygon>>(new Map());
   const markersRef = useRef<Map<string, naver.maps.Marker>>(new Map());
+  const regionMarkerClusterRef = useRef(null);
   const patientMarkersRef = useRef<Map<string, naver.maps.Marker>>(new Map());
   const markerClustererRef = useRef<any>(null);
   //**Refs
@@ -46,33 +47,10 @@ const NaverMap: React.FC<{
     setMap(newMap);
   }, [map]);
 
-  const clusterMarker1 = {
-    content: `<div class="cluster_marker1"></div>`,
-    size: new window.naver.maps.Size(40, 40),
-    anchor: new window.naver.maps.Point(20, 20)
-  };
   // ✅ Drawer handler
   const handleShowButton = () => {
     setPeopleShowButton(!peopleShowButton);
   };
-
-  const [cluster, setCluster] = useState(() => {
-    const markers: naver.maps.Marker[] = [];
-    const cluster = new MarkerClustering({
-      minClusterSize: 2,
-      maxZoom: 13,
-      map: map,
-      markers: markers,
-      disableClickZoom: false,
-      gridSize: 120,
-      icons: [clusterMarker1],
-      stylingFunction: function (clusterMarker: any, count: number) {
-        clusterMarker.getElement().querySelector("div:first-child").innerText =
-          count;
-      }
-    });
-    return cluster;
-  });
 
   // ✅ Handle zoom change
   useEffect(() => {
@@ -107,63 +85,13 @@ const NaverMap: React.FC<{
 
       const { boundAreas } = getBoundAreas(polygonsToRender, mapBounds);
 
-      // 클러스터 및 마커 초기화
-      setCluster(null);
-      setCluster(() => {
-        const markers: naver.maps.Marker[] = [];
-
-        boundAreas.forEach((area) => {
-          const latlng = new window.naver.maps.LatLng(
-            area.coords[0][0],
-            area.coords[0][1]
-          );
-
-          const marker = new naver.maps.Marker({
-            position: latlng,
-            icon: {
-              content: ` 
-                      <div style="display: flex; align-items: center; justify-content: center;">
-              <span style="font-size:${fontSize}; color:#2c2c2c; text-align: center;
-                           text-shadow: -0.75px -0.75px 0 #fafaf8,
-                                        0.75px 0.75px 0 #fafaf8,
-                                        -0.75px -0.75px 0 #fafaf8,
-                                        0.75px 0.75px 0 #fafaf8;">
-                ${name === "dong" ? area.areaName.split(" ")[2] : area.areaName}
-              </span>
-            </div>
-                     `,
-              origin: new naver.maps.Point(0, 67),
-              anchor: new naver.maps.Point(20, 67)
-            }
-          });
-
-          markers.push(marker);
-        });
-
-        new MarkerClustering({
-          minClusterSize: 2,
-          maxZoom: 13,
-          map: map,
-          markers: markers,
-          disableClickZoom: false,
-          gridSize: 120,
-          icons: [
-            {
-              content: `<div></div>`,
-              size: new window.naver.maps.Size(40, 40),
-              anchor: new window.naver.maps.Point(20, 20)
-            }
-          ],
-          stylingFunction: function (clusterMarker: any, count: number) {
-            clusterMarker
-              .getElement()
-              .querySelector("div:first-child").innerText = count;
-          }
-        });
-      });
+      if (regionMarkerClusterRef.current) {
+        regionMarkerClusterRef.current.setMap(null);
+      }
 
       if (boundAreas.length === 0) return;
 
+      const markers: naver.maps.Marker[] = [];
       boundAreas.forEach(async (area) => {
         // 📌 1.Draw polygons
         //Create new polygons
@@ -176,7 +104,6 @@ const NaverMap: React.FC<{
         if (!polygon) {
           polygon = new window.naver.maps.Polygon({
             paths: latLngs,
-            // fillColor: polygonBackground,
             strokeColor: polygonLineColor,
             strokeWeight: 1.5,
             clickable: true
@@ -193,11 +120,36 @@ const NaverMap: React.FC<{
           }
         }
 
-        let marker = markersRef.current.get(area.areaName);
-        if (!marker && polygon) {
+        if (polygon) {
           const bounds = polygon.getBounds();
           if (bounds) {
             const center = bounds.getCenter();
+
+            const marker = new naver.maps.Marker({
+              position: center,
+              icon: {
+                content: `
+                        <div style="display: flex; align-items: center; justify-content: center;">
+                <span style="font-size:${fontSize}; color:#2c2c2c; text-align: center;
+                             text-shadow: -0.75px -0.75px 0 #fafaf8,
+                                          0.75px 0.75px 0 #fafaf8,
+                                          -0.75px -0.75px 0 #fafaf8,
+                                          0.75px 0.75px 0 #fafaf8;">
+                  ${
+                    name === "dong"
+                      ? area.areaName.split(" ")[2]
+                      : area.areaName
+                  }
+                </span>
+              </div>
+                       `,
+                origin: new naver.maps.Point(0, 67),
+                anchor: new naver.maps.Point(20, 67)
+              }
+            });
+
+            markers.push(marker);
+
             //             marker = new window.naver.maps.Marker({
             //               map,
             //               position: center,
@@ -218,35 +170,12 @@ const NaverMap: React.FC<{
           }
         }
 
-        if (marker) {
-          markersRef.current.set(area.areaName, marker);
-
-          polygonsRef.current.forEach((polygon, key) => {
-            const polygonBounds = polygon.getBounds();
-            const marker = markersRef.current.get(key); // 중복 호출 제거
-
-            if (!mapBounds.hasBounds(polygonBounds)) {
-              polygon.setMap(null);
-              if (marker) marker.setMap(null);
-              return; // 불필요한 연산 방지
-            }
-
-            polygon.setMap(map);
-            if (marker) {
-              if (mapBounds.hasLatLng(marker.getPosition())) {
-                marker.setMap(map);
-              } else {
-                marker.setMap(null);
-              }
-            }
-          });
-          if (!marker.hasListener("click")) {
-            window.naver.maps.Event.addListener(marker, "click", () => {
-              handleDrawerOpen();
-              setAreaName(area.areaName);
-            });
-          }
-        }
+        // if (!marker.hasListener("click")) {
+        //   window.naver.maps.Event.addListener(marker, "click", () => {
+        //     handleDrawerOpen();
+        //     setAreaName(area.areaName);
+        //   });
+        // }
 
         const patients = await getPatientsFromRegion(area.areaName, name);
         let totalCost = 0;
@@ -296,6 +225,26 @@ const NaverMap: React.FC<{
         //   patientMarkersRef.current.delete(area.area);
         // }
       });
+
+      // 새 클러스터 생성
+      const newCluster = new MarkerClustering({
+        minClusterSize: 2,
+        maxZoom: 13,
+        map: map,
+        markers: markers,
+        disableClickZoom: false,
+        icons: [
+          {
+            content: `<div></div>`,
+            size: new window.naver.maps.Size(40, 40),
+            anchor: new window.naver.maps.Point(20, 20)
+          }
+        ]
+      });
+
+      // 클러스터를 ref에 저장
+      regionMarkerClusterRef.current = newCluster;
+
       setPatients(patientTemp);
     }, 300);
 
