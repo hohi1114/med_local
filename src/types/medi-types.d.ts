@@ -32,3 +32,9 @@ export interface FilteredData {
 export interface UpdatedDates {
   date: string;
 }
+
+export interface BackendData{
+  merged_data: MergedData[];
+  filtered_data: FilteredData[];
+  df_date: UpdatedDates[];
+}

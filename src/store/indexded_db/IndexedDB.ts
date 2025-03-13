@@ -12,9 +12,7 @@ const DB_VERSION = 3; // Increment version to ensure upgrade
 const MERGED_STORE = "df_merged";
 const FILTERED_STORE = "df_filtered";
 const DATE_STORE = "df_date";
-const SMALL_AREA_STORE = "df_areas_small"; // ✅ Separate store for areas_small
-const DONG_AREA_STORE = "df_areas_dong";   // ✅ Separate store for areas_dong
-const GU_AREA_STORE = "df_areas_gu";       // ✅ Separate store for areas_gu
+
 
 // Initialize database without deleting existing data
 const initDatabase = async () => {
@@ -24,7 +22,7 @@ const initDatabase = async () => {
       upgrade(db, oldVersion, newVersion) {
         console.log(`Upgrade triggered: ${oldVersion} -> ${newVersion}`);
 
-        [MERGED_STORE, FILTERED_STORE, DATE_STORE, SMALL_AREA_STORE, DONG_AREA_STORE, GU_AREA_STORE].forEach(store => {
+        [MERGED_STORE, FILTERED_STORE, DATE_STORE].forEach(store => {
           if (!db.objectStoreNames.contains(store)) {
             console.log(`Creating ${store} store...`);
             db.createObjectStore(store, { keyPath: "id",autoIncrement:true }); // "name" is the unique key for each area
@@ -81,10 +79,7 @@ const saveDataToStore = async (
 export const saveToIndexedDB = async (
     merged: MergedData[],
     filtered: FilteredData[],
-    df_date: UpdatedDates[],
-    areas_small: Area[],
-    areas_dong: Area[],
-    areas_gu: Area[]
+    df_date: UpdatedDates[]
 ) => {
   try {
     // ✅ Initialize database
@@ -94,8 +89,6 @@ export const saveToIndexedDB = async (
     await saveDataToStore(db, MERGED_STORE, merged);
     await saveDataToStore(db, FILTERED_STORE, filtered);
     await saveDataToStore(db, DATE_STORE, df_date);
-
-    console.log("Small areas",areas_small);
     // Log area names before saving
     /*
     console.log("Small areas:", areas_small.map(area => area.area));
@@ -104,18 +97,14 @@ export const saveToIndexedDB = async (
 
 */
 
-    // ✅ Save areas separately
-    await saveDataToStore(db, SMALL_AREA_STORE, areas_small.map((area) => ({ name: area.areaName })));
-    await saveDataToStore(db, DONG_AREA_STORE, areas_dong.map((area) => ({ name: area.areaName })));
-    await saveDataToStore(db, GU_AREA_STORE, areas_gu.map((area) => ({ name: area.areaName })));
-
-    console.log("✅ All data saved successfully, including separate area names!");
     return true;
   } catch (error) {
     console.error("❌ Error saving to IndexedDB:", error);
     throw error;
   }
 };
+
+
 
 
 export const getDataFromIndexedDB = async () => {

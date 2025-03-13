@@ -37,12 +37,16 @@ export async function initRegionDB(regions: Area[], regionType: string) {
     const db = await openDB(dbName, REGION_DB_VERSION, {
         upgrade(db) {
             // Create a store for each region
+            if (regions && regions.length > 0) {
             regions.forEach((region) => {
                 const storeName = region.areaName;
                 if (!db.objectStoreNames.contains(storeName)) {
                     db.createObjectStore(storeName, { autoIncrement: true });
                 }
             });
+        } else{
+            console.warn("No regions provided for initialization");
+        }
 
             // Create fallback store
             const fallbackName = `${fallbackStoreName}_${regionType}`;
@@ -73,6 +77,14 @@ export async function storePatientsByRegion(
     // Initialize the database for this region type
     const dbName = `${REGION_DB_NAME}_${regionType}`;
     const db = await initRegionDB(regions, regionType);
+
+
+    // Validate regions
+  if (!regions || regions.length === 0) {
+    console.error("No regions provided for storePatientsByRegion.");
+    return { assignments: {}, patientToRegionMap: {} };
+  }
+
 
     // Parse all polygons once
     // Use the already parsed coordinate arrays
@@ -108,7 +120,6 @@ export async function storePatientsByRegion(
         for (const region of parsedRegions) {
 
             if (isPointInPolygon(latitude, longitude, region.polygon)) {
-                console.log(`Patient ${chartNumber} is inside region ${region.area}`);
                 await putInStore(db, region.area, patient);
                 assignments[region.area] = (assignments[region.area] || 0) + 1;
                 patientToRegionMap[chartNumber] = region.area;
@@ -120,7 +131,6 @@ export async function storePatientsByRegion(
 
         // Assign to fallback if no region matched
         if (!assigned) {
-            console.warn(`Patient ${chartNumber} did not match any region, assigning to fallback`);
             await putInStore(db, fallbackName, patient);
             assignments[fallbackName]++;
         }

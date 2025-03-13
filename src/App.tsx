@@ -6,7 +6,6 @@ import UpdateDataPage from "./pages/UpdateDataPage.tsx";
 import MediMapPage from "./pages/MediMapPage";
 import NaverScriptLoader from "./utils/NaverScriptLoader.tsx";
 import { useEffect } from "react";
-import useRegionNamesData from "./hooks/useRegionNamesData.tsx";
 import LoginPage from "./pages/LoginPage.tsx";
 import userStore from "./store/userStore.tsx";
 import { useQuery } from "@tanstack/react-query";
@@ -14,7 +13,6 @@ import SettingPage from "./pages/SettingPage.tsx";
 import { getUserInfo } from "./utils/api/apis.ts";
 
 function App() {
-  const { getRegionNameFromIndexDB } = useRegionNamesData();
   const { setUser } = userStore();
   const { data, refetch } = useQuery({
     queryKey: ["userInfo"],
@@ -26,8 +24,6 @@ function App() {
     if (!window.location.pathname.startsWith("/login")) {
       refetch();
     }
-    //📌 Fetch Region Names
-    getRegionNameFromIndexDB();
   }, []);
   //Store user data
   useEffect(() => {

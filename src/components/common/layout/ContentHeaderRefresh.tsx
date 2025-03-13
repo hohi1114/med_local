@@ -1,29 +1,33 @@
 import styled from "styled-components";
-import { fetchDataFromBackend } from "../../../utils/backendData";
+import { fetchDataFromBackend } from "../../../utils/api/apis";
 import { useState } from "react";
 import { Button } from "antd";
+import { BackendData } from "../../../types/medi-types";
 
 interface ContentHeaderProps {
   title: string;
+  onDataFetched?: (data: BackendData | undefined) => void; // Callback to pass data
 }
 
-const ContentHeaderRefresh = ({ title }: ContentHeaderProps) => {
+const ContentHeaderRefresh = ({ title, onDataFetched }: ContentHeaderProps) => {
   const [loading, setLoading] = useState(false);
   const [fetchedData, setFetchedData] = useState<string | null>(null);
 
-  // 🔹 Fetch Data on Button Click
   const handleFetchData = async () => {
     setLoading(true);
     try {
       const result = await fetchDataFromBackend();
-      if (result) {
+      if (result?.merged_data) {
         setFetchedData(`데이터 개수: ${result.merged_data.length}개`);
+        onDataFetched?.(result); // Pass data to parent
       } else {
         setFetchedData("데이터를 불러오는 데 실패했습니다.");
+        onDataFetched?.(undefined);
       }
     } catch (error) {
       console.error("❌ Failed to fetch data:", error);
       setFetchedData("서버 오류");
+      onDataFetched?.(undefined);
     }
     setLoading(false);
   };
@@ -41,9 +45,10 @@ const ContentHeaderRefresh = ({ title }: ContentHeaderProps) => {
   );
 };
 
+// Styled components remain the same
 const ContentHeaderContainer = styled.div`
   display: flex;
-  justify-content: space-between; /* Changed to space-between to push button to right */
+  justify-content: space-between;
   align-items: center;
   width: 100%;
   height: 5rem;

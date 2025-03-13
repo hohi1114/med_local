@@ -8,7 +8,7 @@ import {
 import styled from "styled-components";
 import ContentHeaderRefresh from "../components/common/layout/ContentHeaderRefresh";
 import BaseButton from "../components/common/button/BaseButton";
-import { MergedData } from "../types/medi-types";
+import { MergedData,BackendData } from "../types/medi-types";
 import { processData } from "../components/upload_data/DataProcessor.ts";
 import { loadNaverMapsScript } from "../utils/NaverGeocode";
 import { useEffect } from "react";
@@ -21,12 +21,15 @@ import {
   storePatientsByRegion
 } from "../store/indexded_db/RegionDB.ts";
 import Loading from "../components/common/Loading.tsx";
+import { Button } from "antd"; // Import Button for styled buttons
+import { uploadDataToBackend } from "../utils/api/apis";
 
 const UpdateDataPage = () => {
   const [daysFiles, setDaysFiles] = useState<FileList | null>(null);
   const [placeFiles, setPlaceFiles] = useState<FileList | null>(null);
   const [progress, setProgress] = useState<number>(0);
   const [api, contextHolder] = notification.useNotification();
+  const [localData,setLocalData]=useState<number>(0);
 
   const openNotification = () => {
     api.info({
@@ -79,14 +82,15 @@ const UpdateDataPage = () => {
 
     console.log(df_merged, df_filtered, df_date);
 
+
     await saveToIndexedDB(
       df_merged,
       df_filtered,
       df_date,
-      areas_small,
-      areas_dong,
-      areas_gu
     );
+
+     uploadDataToBackend({merged_data:df_merged,filtered_data:df_filtered,df_date});
+
 
     await storePatientsByRegion(df_filtered, areas_small, "small");
 
@@ -102,11 +106,163 @@ const UpdateDataPage = () => {
     setProgress(100);
   };
 
+
+// Handle backend data when fetched from ContentHeaderRefresh
+const handleDataFetched = async (backendData: BackendData | undefined) => {
+  if (!backendData || !backendData.merged_data) return; // Exit if no valid backend data
+
+  let existingMergedData: MergedData[] = [];
+  let existingFilteredData: BackendData['filtered_data'] = [];
+  let existingDates: BackendData['df_date'] = [];
+
+  try {
+    const dbData = await getDataFromIndexedDB();
+    if (dbData) {
+      existingMergedData = dbData.df_merged || [];
+      existingFilteredData = dbData.df_filtered || [];
+      existingDates = dbData.df_date || [];
+    }
+  } catch (error) {
+    console.warn("⚠️ IndexedDB not found. Using backend data as is.", error);
+  }
+
+  // If no local data exists, save everything from backend
+  if (!existingMergedData.length) {
+    await saveToIndexedDB(
+      backendData.merged_data,
+      backendData.filtered_data,
+      backendData.df_date,
+    );
+    setLocalData(backendData.merged_data.length);
+    return;
+  }
+
+  // Check if df_merged is identical using specific fields
+  const isMergedSame = backendData.merged_data.every((backendItem) =>
+    existingMergedData.some((localItem) =>
+      localItem.chartNumber === backendItem.chartNumber &&
+      localItem.visitDate === backendItem.visitDate &&
+      localItem.totalCost === backendItem.totalCost
+    ) && existingMergedData.every((localItem) =>
+      backendData.merged_data.some((backendItem) =>
+        backendItem.chartNumber === localItem.chartNumber &&
+        backendItem.visitDate === localItem.visitDate &&
+        backendItem.totalCost === localItem.totalCost
+      )
+    )
+  );
+
+  if (isMergedSame) {
+    console.log("Local df_merged matches backend df_merged. No update needed.");
+    setLocalData(existingMergedData.length);
+    return; // If df_merged is the same, assume others are too and exit
+  }
+
+  // Check if backend is a subset of local
+  const isBackendSubset = backendData.merged_data.every((backendItem) =>
+    existingMergedData.some((localItem) =>
+      localItem.chartNumber === backendItem.chartNumber &&
+      localItem.visitDate === backendItem.visitDate &&
+      localItem.totalCost === backendItem.totalCost
+    )
+  ) && backendData.merged_data.length < existingMergedData.length;
+
+
+
+  // Remove duplicates from merged_data (keep only new records)
+  const newMergedData = backendData.merged_data.filter(
+    (record) =>
+      !existingMergedData.some(
+        (existing) =>
+          existing.chartNumber === record.chartNumber &&
+          existing.visitDate === record.visitDate &&
+          existing.totalCost === record.totalCost
+      )
+  );
+
+  // Remove corresponding duplicates from filtered_data based on merged_data keys
+  const newFilteredData = backendData.filtered_data.filter(
+    (record) =>
+      !existingFilteredData.some(
+        (existing) =>
+          existing.chartNumber === record.chartNumber &&
+          existing.visitDate === record.visitDate &&
+          existing.totalCost === record.totalCost
+      )
+  );
+
+  // Remove duplicates from df_date (assuming it has a unique identifier like 'date')
+  const newDates = backendData.df_date.filter(
+    (record) =>
+      !existingDates.some(
+        (existing) => existing.date === record.date
+      )
+  );
+
+// Error handling when backend is a subset of local
+if (isBackendSubset) {
+  const key = `subset-warning-${Date.now()}`; // Unique key for notification
+  api.warning({
+    key, // Use key to control the notification
+    message: "데이터 불일치 감지",
+    description: "서버 데이터가 로컬 데이터보다 적습니다. 서버 데이터로 덮어씌우시겠습니까?",
+    placement: "topRight",
+    duration: 0,
+    btn: (
+      <div>
+        <Button
+          onClick={() => {
+            api.destroy(key); // Close notification
+            setLocalData(existingMergedData.length); // Keep local data
+          }}
+          style={{ marginRight: '10px' }}
+        >
+          No
+        </Button>
+        <Button
+          type="primary"
+          onClick={async () => {
+            api.destroy(key); // Close notification
+            await saveToIndexedDB(
+              backendData.merged_data,
+              backendData.filtered_data,
+              backendData.df_date
+            );
+            setLocalData(backendData.merged_data.length);
+          }}
+        >
+          Yes
+        </Button>
+      </div>
+    ),
+  });
+  return; // Exit after handling subset case
+}
+
+  // Only save if there are new items
+  if (newMergedData.length > 0 || newFilteredData.length > 0 || newDates.length > 0) {
+
+    await saveToIndexedDB(
+      newMergedData,
+      newFilteredData,
+      newDates,
+    );
+    setLocalData(newMergedData.length+existingMergedData.length);
+    console.log(`Added ${newMergedData.length} new merged items, ${newFilteredData.length} new filtered items, ${newDates.length} new dates`);
+  } else {
+    console.log("No new data to add after duplicate removal.");
+    setLocalData(existingMergedData.length);
+  }
+};
   useEffect(() => {
     if (progress === 100) {
       openNotification();
     }
   }, [progress]);
+
+
+
+
 
   return (
     <>
@@ -126,15 +282,15 @@ const UpdateDataPage = () => {
         </div>
       )}
       {contextHolder}
-      <ContentHeaderRefresh title={"데이터 업데이트"} />
+      <ContentHeaderRefresh title={"데이터 업데이트"} onDataFetched={handleDataFetched} />
       <UpdateDataContainer>
         <div style={{ marginBottom: "4rem" }}>
           <ContentContainer>
             <TitleStyle>저장한 데이터 현황</TitleStyle>
             <UploadedCalendar updated={progress === 100} />
+            <DataInfo>현재 로컬 데이터 개수: {localData}개</DataInfo>
           </ContentContainer>
         </div>
-        {/**파일 업로드 */}
         <ContentContainer>
           <FileUpload
             title="일일 수입 업로드"
@@ -191,4 +347,9 @@ const ContentContainer = styled.div`
   display: flex;
   flex-direction: column;
   gap: 1rem;
+`;
+const DataInfo = styled.span`
+  font-size: 1rem;
+  color: #666;
+  margin-top: 1rem;
 `;
