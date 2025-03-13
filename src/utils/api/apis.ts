@@ -43,6 +43,7 @@ const isTokenExpired = (token: string): boolean => {
   return currentTime > expirationTime;
 };
 
+let isRefresing = false;
 //요청 interceptor
 authApi.interceptors.request.use(
   async (config) => {
@@ -52,19 +53,33 @@ authApi.interceptors.request.use(
     if (!isLoginPage) {
       if (accessToken) {
         //토큰이 만료 되었을때
+        console.log(isTokenExpired(accessToken));
         if (isTokenExpired(accessToken)) {
-          //refresh 토큰을 이용하여 다시 받아옴
-          const newAccessToken = await postRefreshToken();
-          await saveTokensToCookie({
-            access_token: newAccessToken.access_token,
-            refresh_token: newAccessToken.refresh_token,
-            expires_in: newAccessToken.expires_in
-          });
+          if (!isRefresing) {
+            isRefresing = true;
+            //refresh 토큰을 이용하여 다시 받아옴
+            try {
+              const newAccessToken = await postRefreshToken();
+              console.log(newAccessToken);
+              await saveTokensToCookie({
+                access_token: newAccessToken.access_token,
+                refresh_token: newAccessToken.refresh_token,
+                expires_in: newAccessToken.expires_at
+              });
+
+              config.headers.Authorization = `Bearer ${newAccessToken.access_token}`;
+            } catch (error) {
+              console.log("Failed to refresh token", error);
+              // window.location.href = "/login";
+            } finally {
+              isRefresing = false;
+            }
+          }
         } else {
           config.headers.Authorization = `Bearer ${accessToken}`;
         }
       } else {
-        window.location.href = "/login";
+        // window.location.href = "/login";
       }
     }
     return config;
@@ -81,11 +96,11 @@ authApi.interceptors.response.use(
   },
   async (error) => {
     const { response } = error;
-    const isLoginPage = window.location.pathname === "/login";
+    // const isLoginPage = window.location.pathname === "/login";
 
-    if (response.status === 401 && !isLoginPage) {
-      window.location.href = "/login";
-    }
+    // if (response.status === 401 && !isLoginPage) {
+    //   window.location.href = "/login";
+    // }
     return Promise.reject(error);
   }
 );
@@ -102,13 +117,13 @@ export const postLogin = async (loginData: LoginParams) => {
 };
 
 export const getUserInfo = async () => {
-  return await authApi.get("/users/info");
+  return await apiRequest("get", "/users/info");
 };
 
 export const postRefreshToken = async () => {
-  const refreshToken = getCookie("refreshToken");
+  const refreshToken = await getCookie("refreshToken");
   if (!refreshToken) {
-    logout();
+    // logout();
   }
   console.log(refreshToken);
   return await apiRequest("post", "/auth/refresh", {

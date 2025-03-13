@@ -2,8 +2,8 @@ import styled from "styled-components";
 import BaseButton from "../components/common/button/BaseButton";
 import { useForm } from "react-hook-form";
 import { useMutation } from "@tanstack/react-query";
-import { postLogin, postRefreshToken } from "../utils/api/apis";
-import { useEffect, useState } from "react";
+import { postLogin } from "../utils/api/apis";
+import { useState } from "react";
 import { AxiosError } from "axios";
 import { ErrorResponse, useNavigate } from "react-router-dom";
 
@@ -67,7 +67,11 @@ const LoginPage = () => {
           </StyledButton>
         </div>
         {/**Error Messages */}
-        <div style={{ color: "#E53E3E", textAlign: "left" }}>
+        <div
+          style={{
+            color: "#E53E3E"
+          }}
+        >
           <div>{errors.email?.message}</div>
           <div>{errors.password?.message}</div>
           <div>{error}</div>
@@ -116,7 +120,7 @@ const LoginWrapper = styled.form`
   justify-content: center;
   align-items: center;
   flex-direction: column;
-  gap: 1.75rem;
+  gap: 1.2rem;
   background-color: #ffffff;
   max-width: 43rem;
   width: 70%;
