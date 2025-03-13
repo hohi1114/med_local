@@ -221,6 +221,8 @@ const StatisticsDrawer = ({
     handleDateChange([dayjs(), dayjs()]);
   };
 
+  console.log(revenueTrend);
+
   return (
     <Drawer
       width={"35rem"}
@@ -289,7 +291,7 @@ const StatisticsDrawer = ({
         </GrapWrapper>
         <GrapWrapper>
           <ChartTitleStyle>연령대 별 환자 분포</ChartTitleStyle>
-          <BarChart />
+          {/* <BarChart /> */}
         </GrapWrapper>
         <GrapWrapper>
           <ChartTitleStyle>1인당 평균 매출액</ChartTitleStyle>

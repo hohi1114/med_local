@@ -2,34 +2,30 @@ import styled from "styled-components";
 import ContentHeader from "../components/common/layout/ContentHeader";
 import BaseButton from "../components/common/button/BaseButton";
 import DurationDatePicker from "../components/common/datepicker/DurationDatePicker";
-import { useEffect, useState } from "react";
-import { RangePickerProps } from "antd/es/date-picker";
+import { useEffect } from "react";
 import userStore from "../store/userStore";
 import { useQuery } from "@tanstack/react-query";
 import { getUserInfo } from "../utils/api/apis";
+import useDashBoard from "../hooks/useDashBoard";
+import BarChart from "../components/medi_map/chart/BarChart";
 
 const FILTERDATA = ["오늘", "3일", "7일", "1개월", "3개월", "1년", "직접선택"];
-
 export default function DashBoardPage() {
+  const {
+    rangeDate,
+    totalCost,
+    totalPatients,
+    totalNewPatients,
+    averageAge,
+    totalRevisitedPatitents,
+    handleDateChange
+  } = useDashBoard();
   const { user, setUser } = userStore();
   const { data, refetch } = useQuery({
     queryKey: ["userInfo"],
     queryFn: () => getUserInfo(),
     enabled: false
   });
-  const [rangeDate, setRangeDate] = useState({
-    startDate: new Date(),
-    endDate: new Date()
-  });
-
-  const handleDateChange: RangePickerProps["onChange"] = (dates, _) => {
-    if (dates && dates[0] && dates[1]) {
-      setRangeDate({
-        startDate: dates[0].toDate(),
-        endDate: dates[1].toDate()
-      });
-    }
-  };
 
   useEffect(() => {
     if (!user) {
@@ -67,7 +63,7 @@ export default function DashBoardPage() {
         <Card>
           <Title>누적 매출</Title>
           <ValueWrapper>
-            <Value>5,112,201,301₩</Value>
+            <Value>{totalCost.toLocaleString()}₩</Value>
             <img src="/images/arrow_up.svg" alt="increase" />
             <Percentage>3.36%</Percentage>
           </ValueWrapper>
@@ -77,7 +73,7 @@ export default function DashBoardPage() {
         <Card>
           <Title>전체 환자 수</Title>
           <ValueWrapper>
-            <Value>5,421명</Value>
+            <Value>{totalPatients.toLocaleString()}명</Value>
             <img src="/images/arrow_up.svg" alt="increase" />
             <Percentage>3.36%</Percentage>
           </ValueWrapper>
@@ -87,7 +83,7 @@ export default function DashBoardPage() {
         <Card>
           <Title>신규 환자 수</Title>
           <ValueWrapper>
-            <Value>1,210명</Value>
+            <Value>{totalNewPatients.toLocaleString()}명</Value>
             <img src="/images/arrow_up.svg" alt="increase" />
             <Percentage>2.5%</Percentage>
           </ValueWrapper>
@@ -97,7 +93,7 @@ export default function DashBoardPage() {
         <Card>
           <Title>재방문 환자 수</Title>
           <ValueWrapper>
-            <Value>4,211명</Value>
+            <Value>{totalRevisitedPatitents.toLocaleString()}명</Value>
             <img src="/images/arrow_up.svg" alt="increase" />
             <Percentage>5.1%</Percentage>
           </ValueWrapper>
@@ -106,11 +102,28 @@ export default function DashBoardPage() {
       </CardGrid>
 
       <CardGrid>
-        <Card>차트</Card>
+        <Card>
+          <Title>누적 배출 분포</Title>
+          <div style={{ paddingTop: "1rem" }}>
+            {/* <BaseLineChart
+              data={test}
+              xField="data"
+              yField="value"
+              labelFormatterY={(v: number) => `${v / 1000}K`}
+              labelFormatterX={(v: string) => dayjs(v).format("MM/DD")}
+              formatData={formatDataForRevenueTrend}
+            /> */}
+          </div>
+        </Card>
       </CardGrid>
       <CardGrid>
-        <Card>표</Card>
-        <Card>차트</Card>
+        <Card>
+          <Title>지역 별 매출 순위</Title>
+        </Card>
+        <Card>
+          <Title>연령 별 환자 분포</Title>
+          <BarChart data={averageAge} />
+        </Card>
       </CardGrid>
     </DashBoardContainer>
   );

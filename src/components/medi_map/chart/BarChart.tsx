@@ -1,5 +1,4 @@
 import { Column } from "@ant-design/plots";
-import mapStore from "../../../store/mapStore";
 import { useEffect, useState } from "react";
 import styled from "styled-components";
 
@@ -7,18 +6,20 @@ interface IBarData {
   age: string;
   value: number;
 }
-const BarChart = () => {
-  const { ageGroups } = mapStore();
+const BarChart = ({ data }: any) => {
+  // const { ageGroups } = mapStore();
   const [barData, setBarData] = useState<IBarData[]>([]);
+
   useEffect(() => {
-    if (ageGroups) {
-      const data = Object.entries(ageGroups).map(([age, value]) => ({
+    if (data) {
+      const formattedData = Object.entries(data).map(([age, value]) => ({
         age,
         value
       }));
-      setBarData(data);
+
+      setBarData(formattedData);
     }
-  }, [ageGroups]);
+  }, [data]);
 
   const config = {
     data: barData,
