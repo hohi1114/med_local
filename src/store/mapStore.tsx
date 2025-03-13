@@ -15,6 +15,7 @@ interface IMapStore {
   dailyRevenue: Record<string, { totalCost: number; patientCount: number }>; //객단가 = 총 매출 / 총 거래 수
   patients: { areaName: string; patients: PatientData[] }[];
   drawerDate: [Date, Date];
+  isOpenDrawer: boolean;
   setDrawerDate: (drawerDate: [Date, Date]) => void;
 
   setAreaName: (areaName: string) => void;
@@ -32,6 +33,7 @@ interface IMapStore {
   setPatients: (
     patients: { areaName: string; patients: PatientData[] }[]
   ) => void;
+  handleIsDrawerOpen: () => void;
 }
 
 const mapStore = create<IMapStore>((set) => ({
@@ -47,6 +49,7 @@ const mapStore = create<IMapStore>((set) => ({
   dailyRevenue: {},
   patients: [],
   drawerDate: [new Date(), dayjs().subtract(1, "year").toDate()],
+  isOpenDrawer: false,
 
   setAreaName: (areaName) => set({ areaName }),
   setTotalPatients: (totalPatients) => set({ totalPatients }),
@@ -59,7 +62,11 @@ const mapStore = create<IMapStore>((set) => ({
   setAgeGroups: (ageGroups) => set({ ageGroups }),
   setDailyRevenue: (dailyRevenue) => set({ dailyRevenue }),
   setPatients: (patients) => set({ patients }),
-  setDrawerDate: (drawerDate) => set({ drawerDate })
+  setDrawerDate: (drawerDate) => set({ drawerDate }),
+  handleIsDrawerOpen: () =>
+    set((state) => {
+      return { isOpenDrawer: !state.isOpenDrawer };
+    })
 }));
 
 export default mapStore;

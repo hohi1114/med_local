@@ -13,14 +13,8 @@ import { useEffect, useState } from "react";
 import { PatientData } from "../../utils/ExcelParser";
 dayjs.extend(isBetween);
 
-interface StatisticsDrawerProps {
-  open: boolean;
-  handleDrawerOpen: () => void;
-}
-const StatisticsDrawer = ({
-  open,
-  handleDrawerOpen
-}: StatisticsDrawerProps) => {
+const StatisticsDrawer = () => {
+  const { isOpenDrawer, handleIsDrawerOpen } = mapStore();
   const { rangeDate, handleDateChange } = useRangeDurationDatePicker();
   const [selectedPatient, setSelectedPatient] = useState<PatientData[]>([]);
   const {
@@ -73,17 +67,19 @@ const StatisticsDrawer = ({
   };
 
   useEffect(() => {
-    if (open) {
+    if (isOpenDrawer) {
       initDrawerData();
     }
-  }, [open, rangeDate]);
+  }, [isOpenDrawer, rangeDate]);
 
   useEffect(() => {
-    if (areaName && open) {
+    if (areaName && isOpenDrawer) {
       if (patients.length > 0) {
         const filteredPatients = patients.filter(
           (data) => data.areaName === areaName
         );
+        console.log(areaName);
+        console.log(filteredPatients);
         const filteredPatientsByDate = filteredPatients[0].patients.filter(
           (data) => {
             const visitDate = dayjs(data.visitDate);
@@ -95,7 +91,7 @@ const StatisticsDrawer = ({
         setSelectedPatient([]);
       }
     }
-  }, [patients, open, rangeDate, areaName]);
+  }, [patients, isOpenDrawer, rangeDate, areaName]);
 
   useEffect(() => {
     if (selectedPatient?.length > 0) {
@@ -225,7 +221,7 @@ const StatisticsDrawer = ({
     <Drawer
       width={"35rem"}
       placement="right"
-      onClose={handleDrawerOpen}
+      onClose={handleIsDrawerOpen}
       style={{ backgroundColor: "#FAFAFB" }}
       styles={{
         header: {
@@ -239,7 +235,7 @@ const StatisticsDrawer = ({
           backgroundColor: "#FAFAFB"
         }
       }}
-      open={open}
+      open={isOpenDrawer}
     >
       {/** 날짜 필터 */}
       <DateFilterWrapper>
