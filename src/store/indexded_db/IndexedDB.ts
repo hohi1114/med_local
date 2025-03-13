@@ -15,7 +15,7 @@ const DATE_STORE = "df_date";
 
 
 // Initialize database without deleting existing data
-const initDatabase = async () => {
+export const initIndexedDB = async () => {
   try {
     console.log(`Opening database ${DB_NAME} with version ${DB_VERSION}...`);
     const db = await openDB(DB_NAME, DB_VERSION, {
@@ -83,19 +83,12 @@ export const saveToIndexedDB = async (
 ) => {
   try {
     // ✅ Initialize database
-    const db = await initDatabase();
-
+    const db = await openDB(DB_NAME, DB_VERSION);
     // ✅ Save merged, filtered, and date data
     await saveDataToStore(db, MERGED_STORE, merged);
     await saveDataToStore(db, FILTERED_STORE, filtered);
     await saveDataToStore(db, DATE_STORE, df_date);
-    // Log area names before saving
-    /*
-    console.log("Small areas:", areas_small.map(area => area.area));
-    console.log("Dong areas:", areas_dong.map(area => area.area));
-    console.log("Gu areas:", areas_gu.map(area => area.area));
-
-*/
+ 
 
     return true;
   } catch (error) {
@@ -109,11 +102,10 @@ export const saveToIndexedDB = async (
 
 export const getDataFromIndexedDB = async () => {
   try {
-    // Ensure database is properly initialized
-    await initDatabase();
 
-    // Then open it again to work with it
+    await initIndexedDB();
     const db = await openDB(DB_NAME, DB_VERSION);
+    
 
     const df_merged = await db.getAll(MERGED_STORE);
     const df_filtered = await db.getAll(FILTERED_STORE);
@@ -129,69 +121,4 @@ export const getDataFromIndexedDB = async () => {
   }
 };
 
-export const getSmallAreas = async () => {
-  const db = await openDB(DB_NAME, DB_VERSION);
-  return db.getAll(SMALL_AREA_STORE);
-};
 
-export const getDongAreas = async () => {
-  const db = await openDB(DB_NAME, DB_VERSION);
-  return db.getAll(DONG_AREA_STORE);
-};
-
-export const getGuAreas = async () => {
-  const db = await openDB(DB_NAME, DB_VERSION);
-  return db.getAll(GU_AREA_STORE);
-};
-
-
-async function calculateConsultationType() {
-  try {
-    const db = await openDB(DB_NAME, DB_VERSION);
-    const mergedData = await db.getAll(MERGED_STORE);
-
-    // Sort by chart number and visit date
-    mergedData.sort((a, b) => {
-      if (a.chartNumber === b.chartNumber) {
-        return new Date(a.visitDate).getTime() - new Date(b.visitDate).getTime();
-      }
-      return a.chartNumber - b.chartNumber;
-    });
-
-    // Track which chart numbers we've seen
-    const visitedPatients = new Set();
-
-    // Update consultation type for each record
-    const updatedData = mergedData.map(record => {
-      const isFirstVisit = !visitedPatients.has(record.chartNumber);
-
-      // Add to set after checking
-      visitedPatients.add(record.chartNumber);
-
-
-      return {
-        ...record,
-        consultationType: isFirstVisit ? '초진' : '재진'
-      };
-    });
-
-    const tx = db.transaction(MERGED_STORE, 'readwrite');
-    const store = tx.objectStore(MERGED_STORE);
-
-    await store.clear();
-
-    for (const record of updatedData) {
-      await store.add(record);
-    }
-
-    await tx.done;
-
-    console.log('Consultation types calculated and saved');
-
-    // The filtered data will automatically reflect these changes when retrieved
-    return true;
-  } catch (error) {
-    console.error('Error calculating consultation types:', error);
-    return false;
-  }
-}

@@ -17,6 +17,7 @@ export interface MergedData {
   totalCost: number;
   age: string;
   address: string;
+  visitType:string;
 }
 
 export interface FilteredData {
@@ -25,6 +26,7 @@ export interface FilteredData {
   totalCost: number;
   age: string;
   address: string;
+  visitType:string;
   latitude: number | null;
   longitude: number | null;
 }

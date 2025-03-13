@@ -3,7 +3,8 @@ import FileUpload from "../components/upload_data/FileUpload.tsx";
 import { parseDaysFiles, parsePlaceFiles } from "../utils/ExcelParser";
 import {
   saveToIndexedDB,
-  getDataFromIndexedDB
+  getDataFromIndexedDB,
+  initIndexedDB
 } from "../store/indexded_db/IndexedDB.ts";
 import styled from "styled-components";
 import ContentHeaderRefresh from "../components/common/layout/ContentHeaderRefresh";
@@ -18,7 +19,8 @@ import useMediMapData from "../hooks/useMediMapData.tsx";
 import {
   createDistrictDataFromNeighborhoods,
   populateDistrictsFromNeighborhoods,
-  storePatientsByRegion
+  storePatientsByRegion,
+  initRegionDB,
 } from "../store/indexded_db/RegionDB.ts";
 import Loading from "../components/common/Loading.tsx";
 import { Button } from "antd"; // Import Button for styled buttons
@@ -31,16 +33,16 @@ const UpdateDataPage = () => {
   const [api, contextHolder] = notification.useNotification();
   const [localData,setLocalData]=useState<number>(0);
 
-  const openNotification = () => {
-    api.info({
-      message: `데이터 업로드`,
-      description: <div>데이터가 성공적으로 업로드 되었습니다!</div>,
+  const openNotification = (type: 'success' | 'error' | 'warning', message: string, description: string) => {
+    api[type]({
+      message,
+      description,
       placement: "topRight",
-      duration: 0,
-      icon: null
+      duration: type === 'error' ? 0 : 3,
     });
   };
 
+  
   const { areas: areas_small } = useMediMapData("normalized_small_db.json");
   const { areas: areas_dong } = useMediMapData("fixed_polygon.json");
   const { areas: areas_gu } = useMediMapData("district_boundaries.json");
@@ -53,6 +55,31 @@ const UpdateDataPage = () => {
         console.error("❌ Failed to load Naver Maps script:", error)
       );
   }, []);
+
+  // ✅ Initialize RegionDBs on Component Mount
+  useEffect(() => {
+    const initializeDatabases = async () => {
+      try {
+        await initIndexedDB();
+        // Initialize databases for each region type
+        if (areas_small && areas_small.length > 0) {
+          await initRegionDB(areas_small, "small");
+        }
+        if (areas_dong && areas_dong.length > 0) {
+          await initRegionDB(areas_dong, "dong");
+        }
+        if (areas_gu && areas_gu.length > 0) {
+          await initRegionDB(areas_gu, "gu");
+        }
+        console.log("✅ All RegionDBs initialized");
+      } catch (error) {
+        console.error("❌ Error initializing RegionDBs:", error);
+        openNotification("error", "데이터베이스 오류", "데이터베이스 초기화에 실패했습니다.");
+      }
+    };
+
+    initializeDatabases();
+  }, [areas_small, areas_dong, areas_gu]); //
 
   // 🔹 Process and Store Data in IndexedDB
   const handleProcessData = async () => {
@@ -98,10 +125,9 @@ const UpdateDataPage = () => {
     await storePatientsByRegion(df_filtered, areas_dong, "dong");
 
     // 3. Create district structure
-    await createDistrictDataFromNeighborhoods(areas_dong);
+    await storePatientsByRegion(df_filtered,areas_gu, "gu");
 
-    // 4. Populate districts with neighborhood data
-    await populateDistrictsFromNeighborhoods();
+
 
     setProgress(100);
   };
@@ -125,8 +151,7 @@ const handleDataFetched = async (backendData: BackendData | undefined) => {
   } catch (error) {
     console.warn("⚠️ IndexedDB not found. Using backend data as is.", error);
   }
-
-  // If no local data exists, save everything from backend
+  // If local data is empty, simply save the backend data
   if (!existingMergedData.length) {
     await saveToIndexedDB(
       backendData.merged_data,
@@ -134,40 +159,17 @@ const handleDataFetched = async (backendData: BackendData | undefined) => {
       backendData.df_date,
     );
     setLocalData(backendData.merged_data.length);
+    openNotification('success', '데이터 동기화', '서버 데이터가 로컬에 저장되었습니다.');
     return;
   }
 
-  // Check if df_merged is identical using specific fields
-  const isMergedSame = backendData.merged_data.every((backendItem) =>
-    existingMergedData.some((localItem) =>
-      localItem.chartNumber === backendItem.chartNumber &&
-      localItem.visitDate === backendItem.visitDate &&
-      localItem.totalCost === backendItem.totalCost
-    ) && existingMergedData.every((localItem) =>
-      backendData.merged_data.some((backendItem) =>
-        backendItem.chartNumber === localItem.chartNumber &&
-        backendItem.visitDate === localItem.visitDate &&
-        backendItem.totalCost === localItem.totalCost
-      )
-    )
-  );
 
-  if (isMergedSame) {
-    console.log("Local df_merged matches backend df_merged. No update needed.");
+  // Check if the local merged data is identical to the backend merged data
+  if (existingMergedData.length == backendData.merged_data.length) {
     setLocalData(existingMergedData.length);
-    return; // If df_merged is the same, assume others are too and exit
-  }
-
-  // Check if backend is a subset of local
-  const isBackendSubset = backendData.merged_data.every((backendItem) =>
-    existingMergedData.some((localItem) =>
-      localItem.chartNumber === backendItem.chartNumber &&
-      localItem.visitDate === backendItem.visitDate &&
-      localItem.totalCost === backendItem.totalCost
-    )
-  ) && backendData.merged_data.length < existingMergedData.length;
-
-
+    openNotification('success', '데이터 동일', '로컬 데이터와 서버 데이터가 동일합니다.');
+  } else{
+  
 
   // Remove duplicates from merged_data (keep only new records)
   const newMergedData = backendData.merged_data.filter(
@@ -179,8 +181,10 @@ const handleDataFetched = async (backendData: BackendData | undefined) => {
           existing.totalCost === record.totalCost
       )
   );
+  console.log(backendData.merged_data);
+  console.log(existingMergedData);
+  console.log(newMergedData);
 
-  // Remove corresponding duplicates from filtered_data based on merged_data keys
   const newFilteredData = backendData.filtered_data.filter(
     (record) =>
       !existingFilteredData.some(
@@ -191,54 +195,14 @@ const handleDataFetched = async (backendData: BackendData | undefined) => {
       )
   );
 
-  // Remove duplicates from df_date (assuming it has a unique identifier like 'date')
+
   const newDates = backendData.df_date.filter(
     (record) =>
       !existingDates.some(
         (existing) => existing.date === record.date
       )
   );
-
-// Error handling when backend is a subset of local
-if (isBackendSubset) {
-  const key = `subset-warning-${Date.now()}`; // Unique key for notification
-  api.warning({
-    key, // Use key to control the notification
-    message: "데이터 불일치 감지",
-    description: "서버 데이터가 로컬 데이터보다 적습니다. 서버 데이터로 덮어씌우시겠습니까?",
-    placement: "topRight",
-    duration: 0,
-    btn: (
-      <div>
-        <Button
-          onClick={() => {
-            api.destroy(key); // Close notification
-            setLocalData(existingMergedData.length); // Keep local data
-          }}
-          style={{ marginRight: '10px' }}
-        >
-          No
-        </Button>
-        <Button
-          type="primary"
-          onClick={async () => {
-            api.destroy(key); // Close notification
-            await saveToIndexedDB(
-              backendData.merged_data,
-              backendData.filtered_data,
-              backendData.df_date
-            );
-            setLocalData(backendData.merged_data.length);
-          }}
-        >
-          Yes
-        </Button>
-      </div>
-    ),
-  });
-  return; // Exit after handling subset case
-}
-
+  
   // Only save if there are new items
   if (newMergedData.length > 0 || newFilteredData.length > 0 || newDates.length > 0) {
 
@@ -247,21 +211,28 @@ if (isBackendSubset) {
       newFilteredData,
       newDates,
     );
+    
+   await storePatientsByRegion(newFilteredData, areas_small, "small");
+   await storePatientsByRegion(newFilteredData, areas_dong, "dong");
+   await storePatientsByRegion(newFilteredData,areas_dong, "gu");
+   
+
     setLocalData(newMergedData.length+existingMergedData.length);
     console.log(`Added ${newMergedData.length} new merged items, ${newFilteredData.length} new filtered items, ${newDates.length} new dates`);
+    openNotification('success', '데이터 동기화', '서버 데이터와 로컬 데이터에 추가되었습니다다.');
   } else {
-    console.log("No new data to add after duplicate removal.");
+    openNotification('success', '데이터 동기화', '서버 데이터가 로컬 데이터보다 적습니다');
     setLocalData(existingMergedData.length);
   }
-};
+  }
+  };
+
+
   useEffect(() => {
     if (progress === 100) {
-      openNotification();
+      openNotification("success", "데이터 처리 완료", "데이터 처리가 완료되었습니다.");
     }
   }, [progress]);
-
-
-
 
 
   return (

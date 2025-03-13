@@ -17,6 +17,7 @@ const ContentHeaderRefresh = ({ title, onDataFetched }: ContentHeaderProps) => {
     setLoading(true);
     try {
       const result = await fetchDataFromBackend();
+      console.log(result);
       if (result?.merged_data) {
         setFetchedData(`데이터 개수: ${result.merged_data.length}개`);
         onDataFetched?.(result); // Pass data to parent

@@ -21,15 +21,39 @@ export interface PatientData {
  * Converts an Excel serial date (e.g. 45329) to a "YYYY-MM-DD" string.
  * 엑셀 date 저장 오류 해결
  */
+
 function excelSerialToDate(serial: number): string {
-  const baseDate = new Date(1900, 0, 1); // Excel starts from Jan 1, 1900
-  baseDate.setDate(baseDate.getDate() + serial - 2); // Adjust for Excel's leap year bug
-  return baseDate.toISOString().split("T")[0]; // Format as "YYYY-MM-DD"
+  // Input validation
+  if (serial < 0) {
+    throw new Error("Invalid Excel serial date: cannot be negative");
+  }
+  
+  if (serial < 1) {
+    throw new Error("Invalid Excel serial date: cannot represent dates before 1900-01-01");
+  }
+  
+  // Adjust for Excel's leap year bug
+  // Serial number 60 in Excel represents the non-existent Feb 29, 1900
+  let adjustedSerial = serial;
+  if (serial >= 60) {
+    adjustedSerial = serial - 1;
+  }
+  
+  // Calculate the date
+  const millisecondsPerDay = 24 * 60 * 60 * 1000;
+  // Excel dates start from December 30, 1899 (day 0 in Excel)
+  const baseDate = new Date(Date.UTC(1899, 11, 30));
+  const targetDate = new Date(baseDate.getTime() + adjustedSerial * millisecondsPerDay);
+  
+  // Format the date as YYYY-MM-DD using UTC to avoid timezone issues
+  const year = targetDate.getUTCFullYear();
+  const month = String(targetDate.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(targetDate.getUTCDate()).padStart(2, "0");
+  
+  return `${year}-${month}-${day}`;
 }
 
-/**
- * Parses visit data from uploaded Excel files.
- */
+ 
 export const parseDaysFiles = async (files: FileList): Promise<VisitData[]> => {
   let data: VisitData[] = [];
 

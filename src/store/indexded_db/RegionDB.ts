@@ -36,29 +36,30 @@ export async function initRegionDB(regions: Area[], regionType: string) {
 
     const db = await openDB(dbName, REGION_DB_VERSION, {
         upgrade(db) {
-            // Create a store for each region
+            // Create stores only if they don't exist
             if (regions && regions.length > 0) {
-            regions.forEach((region) => {
-                const storeName = region.areaName;
-                if (!db.objectStoreNames.contains(storeName)) {
-                    db.createObjectStore(storeName, { autoIncrement: true });
-                }
-            });
-        } else{
-            console.warn("No regions provided for initialization");
-        }
-
-            // Create fallback store
-            const fallbackName = `${fallbackStoreName}_${regionType}`;
-            if (!db.objectStoreNames.contains(fallbackName)) {
-                db.createObjectStore(fallbackName, { autoIncrement:true});
+                regions.forEach((region) => {
+                    const storeName = region.areaName;
+                    if (!db.objectStoreNames.contains(storeName)) {
+                        console.log(`Creating store: ${storeName}`);
+                        db.createObjectStore(storeName, { autoIncrement: true });
+                    }
+                });
+            } else {
+                console.warn("No regions provided for initialization");
             }
+           // Create fallback store if it doesn't exist
+           const fallbackName = `${fallbackStoreName}_${regionType}`;
+           if (!db.objectStoreNames.contains(fallbackName)) {
+               db.createObjectStore(fallbackName, { autoIncrement: true });
+           }
 
-            // Create sums store
-            const sumsStoreName = `${REGION_SUMS_STORE}_${regionType}`;
-            if (!db.objectStoreNames.contains(sumsStoreName)) {
-                db.createObjectStore(sumsStoreName, { keyPath: "regionName" });
-            }
+           // Create sums store if it doesn't exist
+           const sumsStoreName = `${REGION_SUMS_STORE}_${regionType}`;
+           if (!db.objectStoreNames.contains(sumsStoreName)) {
+               console.log(`Creating sums store: ${sumsStoreName}`);
+               db.createObjectStore(sumsStoreName, { keyPath: "regionName" });
+           }
         },
     });
 
@@ -291,7 +292,8 @@ export async function populateDistrictsFromNeighborhoods() {
 export async function processAllRegionTypes(
     patients: FilteredData[],
     areasSmall: Area[],
-    areasDong: Area[]
+    areasDong: Area[],
+    areasGu: Area[]
 ) {
     // Process small areas
     console.log("Processing small areas...");
@@ -303,19 +305,20 @@ export async function processAllRegionTypes(
 
     // Create district (구) structure from neighborhoods
     console.log("Creating district structure from neighborhoods...");
-    const districtMap = await createDistrictDataFromNeighborhoods(areasDong);
+   
+
+    const guResults= await storePatientsByRegion(patients,areasGu,"gu");
 
     // Populate district data from neighborhood assignments
-    console.log("Populating district data from neighborhoods...");
-    const districtCounts = await populateDistrictsFromNeighborhoods();
+   // console.log("Populating district data from neighborhoods...");
+    //const districtCounts = await populateDistrictsFromNeighborhoods();
 
     console.log("✅ All region types processed successfully");
 
     return {
         small: smallResults,
         dong: dongResults,
-        gu: districtCounts,
-        districtMap
+        gu: guResults
     };
 }
 
