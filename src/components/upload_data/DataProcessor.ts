@@ -21,22 +21,14 @@ const visitMap = new Map(
   ])
 );
 
-// Log all key-value pairs
-console.log('uniqueVisits Map key-value pairs:');
-for (const [key, value] of visitMap) {
-  console.log(`Key: ${key}, Value:`, value);
-}
+
 
 // Convert to array of values for further processing
 const uniqueVisits = Array.from(visitMap.values());
 
-console.log('Unique visits (values only):', uniqueVisits);
-
-
 
   // ✅ Generate df_merged (All patients, including "N/D" addresses)
   let df_merged = uniqueVisits.map((visit) => {
-    console.log(visit);
     const patient = patientMap.get(visit.chartNumber);
     return {
       chartNumber: visit.chartNumber,
@@ -86,8 +78,7 @@ df_merged.sort((a, b) => new Date(a.visitDate).getTime() - new Date(b.visitDate)
 // Process each new record
 for (const record of df_merged) {
   // Check if we've seen this patient before (either in existing data or in previously processed new records)
-  console.log(lastVisitMap);
-  console.log(record.chartNumber);
+
   if (!lastVisitMap.has(record.chartNumber)) {
     // Case 1: First time seeing this chart number
     record.visitType = "신환";
@@ -126,7 +117,6 @@ for (const record of df_merged) {
     );
     df_filtered[i].latitude = latitude;
     df_filtered[i].longitude = longitude;
-    console.log(i + " step done");
   }
 
   let df_date: UpdatedDates[] = Array.from(

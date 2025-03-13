@@ -8,9 +8,14 @@ import { BackendData } from "../../types/medi-types";
 
 //axios instance
 export const authApi = axios.create({
-  baseURL: "http://localhost:3001/api"
+  baseURL: "http://localhost:3001/api",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  maxBodyLength: 50 * 1024 * 1024, // 50MB
+  maxContentLength: 50 * 1024 * 1024, // 50MB
 });
-authApi.defaults.headers.common["Content-Type"] = "application/json";
+
 
 export const logout = () => {
   removeAuthTokens();

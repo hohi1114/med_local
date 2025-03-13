@@ -25,28 +25,26 @@ export const loadNaverMapsScript = (clientId: string): Promise<void> => {
     });
 };
 
-// ✅ Function to wait for Naver Maps to be available
-const waitForNaverMaps = (): Promise<void> => {
-    return new Promise((resolve) => {
-        const checkMapsReady = () => {
-            if (window.naver?.maps?.Service?.geocode) {
-                console.log("✅ Naver Maps Geocoder is ready.");
-                resolve();
-            }
-        };
+/// ✅ Singleton promise to wait for Naver Maps to be available
+const naverMapsReadyPromise = new Promise<void>((resolve) => {
+    const checkMapsReady = () => {
+        if (window.naver?.maps?.Service?.geocode) {
+            console.log("✅ Naver Maps Geocoder is ready.");
+            resolve();
+        }
+    };
 
-        // Check immediately in case it's already loaded
-        checkMapsReady();
+    // Check immediately in case it's already loaded
+    checkMapsReady();
 
-        // If not, check every 100ms until it is available
-        const interval = setInterval(() => {
-            if (window.naver?.maps?.Service?.geocode) {
-                clearInterval(interval);
-                resolve();
-            }
-        }, 100);
-    });
-};
+    // If not, check every 100ms until it is available
+    const interval = setInterval(() => {
+        if (window.naver?.maps?.Service?.geocode) {
+            clearInterval(interval);
+            resolve();
+        }
+    }, 100);
+});
 
 // ✅ Function to get latitude and longitude using Naver Geocode API
 export const getLatLonNaver = async (
@@ -55,10 +53,9 @@ export const getLatLonNaver = async (
     index: number,
     total: number
 ): Promise<{ latitude: number | null; longitude: number | null }> => {
-    await waitForNaverMaps(); // ✅ Ensure Naver Maps is ready before calling `geocode`
-
+    await naverMapsReadyPromise; 
+    
     return new Promise((resolve) => {
-        console.log("insidegetLatLonNaver");
         naver.maps.Service.geocode({ query: address }, (status: string, response: any) => {
             if (status === naver.maps.Service.Status.OK && response?.v2?.addresses?.length && response.v2.addresses.length > 0) {
                 updateProgress(((index + 1) / total) * 99);

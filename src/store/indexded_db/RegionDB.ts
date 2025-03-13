@@ -112,8 +112,6 @@ export async function storePatientsByRegion(
             continue;
         }
 
-        console.log(`Processing patient ${chartNumber} at [${latitude}, ${longitude}]`);
-
 
         let assigned = false;
 
