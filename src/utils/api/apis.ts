@@ -1,7 +1,7 @@
 import axios from "axios";
 import { LoginParams } from "../../pages/LoginPage";
 import { removeAuthTokens, saveTokensToCookie } from "./token";
-import { getCookie, removeCookie } from "./cookie";
+import { getCookie } from "./cookie";
 import { jwtDecode } from "jwt-decode";
 import { apiRequest } from "./apihelper";
 
@@ -52,24 +52,16 @@ authApi.interceptors.request.use(
     if (!isLoginPage) {
       if (accessToken) {
         //토큰이 만료 되었을때
-        console.log(isTokenExpired(accessToken));
         if (isTokenExpired(accessToken)) {
           if (!isRefresing) {
             isRefresing = true;
             //refresh 토큰을 이용하여 다시 받아옴
             try {
               const newAccessToken = await postRefreshToken();
-              console.log(newAccessToken);
-              await saveTokensToCookie({
-                access_token: newAccessToken.access_token,
-                refresh_token: newAccessToken.refresh_token,
-                expires_in: newAccessToken.expires_at
-              });
-
-              config.headers.Authorization = `Bearer ${newAccessToken.access_token}`;
+              config.headers.Authorization = `Bearer ${newAccessToken}`;
             } catch (error) {
               console.log("Failed to refresh token", error);
-              // window.location.href = "/login";
+              window.location.href = "/login";
             } finally {
               isRefresing = false;
             }
@@ -78,7 +70,7 @@ authApi.interceptors.request.use(
           config.headers.Authorization = `Bearer ${accessToken}`;
         }
       } else {
-        // window.location.href = "/login";
+        window.location.href = "/login";
       }
     }
     return config;
@@ -95,11 +87,11 @@ authApi.interceptors.response.use(
   },
   async (error) => {
     const { response } = error;
-    // const isLoginPage = window.location.pathname === "/login";
+    const isLoginPage = window.location.pathname === "/login";
 
-    // if (response.status === 401 && !isLoginPage) {
-    //   window.location.href = "/login";
-    // }
+    if (response?.status === 401 && !isLoginPage) {
+      window.location.href = "/login"; //로그인 페이지가 아닌 경우 로그아웃
+    }
     return Promise.reject(error);
   }
 );
@@ -121,11 +113,17 @@ export const getUserInfo = async () => {
 
 export const postRefreshToken = async () => {
   const refreshToken = await getCookie("refreshToken");
+
   if (!refreshToken) {
-    // logout();
+    logout();
   }
-  console.log(refreshToken);
-  return await apiRequest("post", "/auth/refresh", {
+  const data = await apiRequest("post", "/auth/refresh", {
     refresh_token: refreshToken
   });
+  await saveTokensToCookie({
+    access_token: data.access_token,
+    refresh_token: data.refresh_token
+  });
+
+  return data.access_token;
 };
