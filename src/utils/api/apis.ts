@@ -4,6 +4,7 @@ import { removeAuthTokens, saveTokensToCookie } from "./token";
 import { getCookie, removeCookie } from "./cookie";
 import { jwtDecode } from "jwt-decode";
 import { apiRequest } from "./apihelper";
+import { BackendData } from "../../types/medi-types";
 
 //axios instance
 export const authApi = axios.create({
@@ -129,3 +130,24 @@ export const postRefreshToken = async () => {
     refresh_token: refreshToken
   });
 };
+export async function fetchDataFromBackend(): Promise<BackendData | undefined> {
+  try {
+    const data = await apiRequest('get', '/data/get_all');
+    console.log('Fetched data:', data);
+    return data as BackendData;
+  } catch (error) {
+    console.error('Error in fetchDataFromBackend:', error);
+    return undefined;
+  }
+}
+
+export async function uploadDataToBackend(dataToUpload: BackendData): Promise<boolean> {
+  try {
+    await apiRequest('post', '/data/sync', dataToUpload);
+    console.log('Successfully uploaded data to backend:',dataToUpload);
+    return true; // Return true on successful upload
+  } catch (error) {
+    console.error('Error in uploadDataToBackend:', error);
+    return false; // Return false on failure
+  }
+}

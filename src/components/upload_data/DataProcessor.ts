@@ -11,8 +11,32 @@ export const processData = async (
 ) => {
   const patientMap = new Map(patients.map((p) => [p.chartNumber, p]));
 
+
+ console.log(visits); 
+// Create the Map for deduplication
+const visitMap = new Map(
+  visits.map((visit) => [
+    `${visit.chartNumber}-${visit.visitDate}-${Number(visit.totalCost)}`,
+    visit,
+  ])
+);
+
+// Log all key-value pairs
+console.log('uniqueVisits Map key-value pairs:');
+for (const [key, value] of visitMap) {
+  console.log(`Key: ${key}, Value:`, value);
+}
+
+// Convert to array of values for further processing
+const uniqueVisits = Array.from(visitMap.values());
+
+console.log('Unique visits (values only):', uniqueVisits);
+
+
+
   // ✅ Generate df_merged (All patients, including "N/D" addresses)
-  let df_merged = visits.map((visit) => {
+  let df_merged = uniqueVisits.map((visit) => {
+    console.log(visit);
     const patient = patientMap.get(visit.chartNumber);
     return {
       chartNumber: visit.chartNumber,
@@ -105,11 +129,12 @@ for (const record of df_merged) {
     console.log(i + " step done");
   }
 
-  let df_date: UpdatedDates[] = df_filtered.map((record) => ({
-    date: dayjs(record.visitDate).format("YYYY-MM-DD")
-  }));
+  let df_date: UpdatedDates[] = Array.from(
+    new Set(
+      df_merged.map((record) => dayjs(record.visitDate).format("YYYY-MM-DD"))
+    )
+  ).map((date) => ({ date }));
 
-  console.log("📊 Final df_filtered:", df_filtered);
   return { df_merged, df_filtered, df_date };
 };
 

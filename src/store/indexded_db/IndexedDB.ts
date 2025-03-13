@@ -12,19 +12,17 @@ const DB_VERSION = 3; // Increment version to ensure upgrade
 const MERGED_STORE = "df_merged";
 const FILTERED_STORE = "df_filtered";
 const DATE_STORE = "df_date";
-const SMALL_AREA_STORE = "df_areas_small"; // ✅ Separate store for areas_small
-const DONG_AREA_STORE = "df_areas_dong";   // ✅ Separate store for areas_dong
-const GU_AREA_STORE = "df_areas_gu";       // ✅ Separate store for areas_gu
+
 
 // Initialize database without deleting existing data
-const initDatabase = async () => {
+export const initIndexedDB = async () => {
   try {
     console.log(`Opening database ${DB_NAME} with version ${DB_VERSION}...`);
     const db = await openDB(DB_NAME, DB_VERSION, {
       upgrade(db, oldVersion, newVersion) {
         console.log(`Upgrade triggered: ${oldVersion} -> ${newVersion}`);
 
-        [MERGED_STORE, FILTERED_STORE, DATE_STORE, SMALL_AREA_STORE, DONG_AREA_STORE, GU_AREA_STORE].forEach(store => {
+        [MERGED_STORE, FILTERED_STORE, DATE_STORE].forEach(store => {
           if (!db.objectStoreNames.contains(store)) {
             console.log(`Creating ${store} store...`);
             db.createObjectStore(store, { keyPath: "id",autoIncrement:true }); // "name" is the unique key for each area
@@ -81,35 +79,17 @@ const saveDataToStore = async (
 export const saveToIndexedDB = async (
     merged: MergedData[],
     filtered: FilteredData[],
-    df_date: UpdatedDates[],
-    areas_small: Area[],
-    areas_dong: Area[],
-    areas_gu: Area[]
+    df_date: UpdatedDates[]
 ) => {
   try {
     // ✅ Initialize database
-    const db = await initDatabase();
-
+    const db = await openDB(DB_NAME, DB_VERSION);
     // ✅ Save merged, filtered, and date data
     await saveDataToStore(db, MERGED_STORE, merged);
     await saveDataToStore(db, FILTERED_STORE, filtered);
     await saveDataToStore(db, DATE_STORE, df_date);
+ 
 
-    console.log("Small areas",areas_small);
-    // Log area names before saving
-    /*
-    console.log("Small areas:", areas_small.map(area => area.area));
-    console.log("Dong areas:", areas_dong.map(area => area.area));
-    console.log("Gu areas:", areas_gu.map(area => area.area));
-
-*/
-
-    // ✅ Save areas separately
-    await saveDataToStore(db, SMALL_AREA_STORE, areas_small.map((area) => ({ name: area.areaName })));
-    await saveDataToStore(db, DONG_AREA_STORE, areas_dong.map((area) => ({ name: area.areaName })));
-    await saveDataToStore(db, GU_AREA_STORE, areas_gu.map((area) => ({ name: area.areaName })));
-
-    console.log("✅ All data saved successfully, including separate area names!");
     return true;
   } catch (error) {
     console.error("❌ Error saving to IndexedDB:", error);
@@ -118,13 +98,14 @@ export const saveToIndexedDB = async (
 };
 
 
+
+
 export const getDataFromIndexedDB = async () => {
   try {
-    // Ensure database is properly initialized
-    await initDatabase();
 
-    // Then open it again to work with it
+    await initIndexedDB();
     const db = await openDB(DB_NAME, DB_VERSION);
+    
 
     const df_merged = await db.getAll(MERGED_STORE);
     const df_filtered = await db.getAll(FILTERED_STORE);
@@ -140,69 +121,4 @@ export const getDataFromIndexedDB = async () => {
   }
 };
 
-export const getSmallAreas = async () => {
-  const db = await openDB(DB_NAME, DB_VERSION);
-  return db.getAll(SMALL_AREA_STORE);
-};
 
-export const getDongAreas = async () => {
-  const db = await openDB(DB_NAME, DB_VERSION);
-  return db.getAll(DONG_AREA_STORE);
-};
-
-export const getGuAreas = async () => {
-  const db = await openDB(DB_NAME, DB_VERSION);
-  return db.getAll(GU_AREA_STORE);
-};
-
-
-async function calculateConsultationType() {
-  try {
-    const db = await openDB(DB_NAME, DB_VERSION);
-    const mergedData = await db.getAll(MERGED_STORE);
-
-    // Sort by chart number and visit date
-    mergedData.sort((a, b) => {
-      if (a.chartNumber === b.chartNumber) {
-        return new Date(a.visitDate).getTime() - new Date(b.visitDate).getTime();
-      }
-      return a.chartNumber - b.chartNumber;
-    });
-
-    // Track which chart numbers we've seen
-    const visitedPatients = new Set();
-
-    // Update consultation type for each record
-    const updatedData = mergedData.map(record => {
-      const isFirstVisit = !visitedPatients.has(record.chartNumber);
-
-      // Add to set after checking
-      visitedPatients.add(record.chartNumber);
-
-
-      return {
-        ...record,
-        consultationType: isFirstVisit ? '초진' : '재진'
-      };
-    });
-
-    const tx = db.transaction(MERGED_STORE, 'readwrite');
-    const store = tx.objectStore(MERGED_STORE);
-
-    await store.clear();
-
-    for (const record of updatedData) {
-      await store.add(record);
-    }
-
-    await tx.done;
-
-    console.log('Consultation types calculated and saved');
-
-    // The filtered data will automatically reflect these changes when retrieved
-    return true;
-  } catch (error) {
-    console.error('Error calculating consultation types:', error);
-    return false;
-  }
-}

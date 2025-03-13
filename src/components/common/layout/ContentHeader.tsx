@@ -1,16 +1,23 @@
 import styled from "styled-components";
 
+
+
+
+
 interface ContentHeaderProps {
   title: string;
 }
 
 const ContentHeader = ({ title }: ContentHeaderProps) => {
+
+
   return (
     <ContentHeaderContainer>
       <TitleStyle>{title}</TitleStyle>
     </ContentHeaderContainer>
   );
 };
+
 
 const ContentHeaderContainer = styled.div`
   display: flex;
@@ -26,5 +33,6 @@ const TitleStyle = styled.span`
   font-weight: bold;
   font-size: 1.2rem;
 `;
+
 
 export default ContentHeader;

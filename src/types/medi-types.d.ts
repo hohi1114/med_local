@@ -17,6 +17,7 @@ export interface MergedData {
   totalCost: number;
   age: string;
   address: string;
+  visitType:string;
 }
 
 export interface FilteredData {
@@ -25,10 +26,17 @@ export interface FilteredData {
   totalCost: number;
   age: string;
   address: string;
+  visitType:string;
   latitude: number | null;
   longitude: number | null;
 }
 
 export interface UpdatedDates {
   date: string;
+}
+
+export interface BackendData{
+  merged_data: MergedData[];
+  filtered_data: FilteredData[];
+  df_date: UpdatedDates[];
 }
