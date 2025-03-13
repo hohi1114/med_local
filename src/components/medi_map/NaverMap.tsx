@@ -138,7 +138,7 @@ const NaverMap = () => {
       dongPolygons.length === 0 ||
       guPolygons.length === 0
     ) {
-      return; // 값이 하나라도 준비되지 않았다면 실행하지 않음
+      return;
     }
 
     const handleZoomChange = debounce(async () => {
@@ -162,19 +162,7 @@ const NaverMap = () => {
         0.3
       );
 
-      //3. Remove all polygons and
-      polygonsRef.current.forEach((polygon) => polygon.setMap(null));
-      polygonsRef.current.clear();
-      markersRef.current.forEach((markers) => markers.setMap(null));
-      markersRef.current.clear();
-      if (regionMarkerClusterRef.current && currentZoom) {
-        regionMarkerClusterRef.current.setMap(null);
-      }
-      if (patientMarkersRef.current) {
-        patientMarkersRef.current.setMap(null);
-      }
-
-      //4. Get Bound Areas
+      //3. Get Bound Areas
       const polygonsToRender =
         currentZoom >= 15
           ? smallPolygons
@@ -183,8 +171,21 @@ const NaverMap = () => {
           : guPolygons;
 
       const { boundAreas } = getBoundAreas(polygonsToRender, mapBounds);
-
       if (boundAreas.length === 0) return;
+
+      //4. Remove all polygons and
+      polygonsRef.current.forEach((polygon, areaName) => {
+        if (!boundAreas.find((area) => area.areaName === areaName)) {
+          polygon.setMap(null);
+          polygonsRef.current.delete(areaName);
+        }
+      });
+      if (regionMarkerClusterRef.current) {
+        regionMarkerClusterRef.current.setMap(null);
+      }
+      if (patientMarkersRef.current) {
+        patientMarkersRef.current.setMap(null);
+      }
 
       // 📌 1.Draw polygons
       //Create new polygons
