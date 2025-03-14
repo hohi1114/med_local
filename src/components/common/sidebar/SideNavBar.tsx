@@ -46,11 +46,6 @@ const SideNavBar = () => {
         inlineCollapsed={collapsed}
         style={{ flex: 1, overflowY: "auto" }}
       />
-
-      {/* <SettingContainer>
-        <IconStyle src="/images/settings.svg" alt="settings" />
-        설정
-      </SettingContainer> */}
     </SidbarContainer>
   );
 };
@@ -62,18 +57,6 @@ const LogoContainer = styled.div`
   display: flex;
   gap: 10px;
   align-items: center;
-`;
-
-const SettingContainer = styled.div`
-  position: fixed;
-  bottom: 2.8rem;
-  left: 1.5rem;
-  width: 100%;
-  display: flex;
-  gap: 0.8rem;
-  align-items: center;
-  font-size: 1.3rem;
-  cursor: pointer;
 `;
 
 const SidbarContainer = styled.div<{ collapsed: boolean }>`
