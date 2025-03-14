@@ -1,7 +1,6 @@
 import StatisticsDrawer from "../components/medi_map/StatisticsDrawer";
 import NaverMap from "../components/medi_map/NaverMap";
 import { useEffect } from "react";
-import { getAllMergedData } from "../store/indexded_db/IndexedDB";
 import mapStore from "../store/mapStore";
 import { getRegionSums } from "../store/indexded_db/RegionDB";
 

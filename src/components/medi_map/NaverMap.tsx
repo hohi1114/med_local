@@ -1,6 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import OnOffButton from "../common/button/OnOffButton";
-import styled from "styled-components";
 import mapStore from "../../store/mapStore";
 import { getPatientsFromRegion } from "../../store/indexded_db/RegionDB";
 import useNaverMapData from "../../hooks/useNaverMapData";
@@ -13,7 +11,6 @@ const NaverMap = () => {
   const {
     isOpenDrawer,
     handleIsDrawerOpen,
-    patients,
     setAreaName,
     setPatients,
     highestCost
@@ -33,12 +30,9 @@ const NaverMap = () => {
   );
   const previousZoomRef = useRef<number>(15);
   const clickedAreaRef = useRef<string>(null);
-  const clickedAreaPatientsRef = useRef<PatientData[]>([]);
   //**Refs
   const mapElement = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<naver.maps.Map | null>(null);
-  //**Drawer states
-  const [peopleShowButton, setPeopleShowButton] = useState(false);
   //** Map Logic
   const {
     getRegionName,
@@ -50,7 +44,6 @@ const NaverMap = () => {
 
   let [clickedArea, setClickedArea] = useState<string>("");
   const [currentZoom, setCurrentZoom] = useState(0);
-  const [areaPatients, setAreaPatients] = useState<PatientData[]>([]);
 
   // ✅ Initialize map only once
   useEffect(() => {
@@ -64,11 +57,6 @@ const NaverMap = () => {
 
     setMap(newMap);
   }, [map]);
-
-  // ✅ Drawer handler
-  const handleShowButton = () => {
-    setPeopleShowButton(!peopleShowButton);
-  };
 
   useEffect(() => {
     if (!isOpenDrawer) {
@@ -85,14 +73,15 @@ const NaverMap = () => {
     }
   }, [isOpenDrawer, currentZoom, clickedArea]);
 
+  const existringMarkers = new Set();
+
   // ✅ Handle zoom change
   useEffect(() => {
     if (
       !map ||
       smallPolygons.length === 0 ||
       dongPolygons.length === 0 ||
-      guPolygons.length === 0 ||
-      highestCost === 0
+      guPolygons.length === 0
     ) {
       return;
     }
@@ -100,7 +89,6 @@ const NaverMap = () => {
     const handleZoomChange = debounce(async () => {
       //1. Init Map
       const currentZoom = map.getZoom();
-      previousZoomRef.current = currentZoom;
 
       setCurrentZoom(currentZoom);
       const patientTemp: { areaName: string; patients: PatientData[] }[] = [];
@@ -132,9 +120,10 @@ const NaverMap = () => {
           polygonsRef.current.delete(areaName);
         }
       });
-      if (regionMarkerClusterRef.current) {
-        regionMarkerClusterRef.current.setMap(null);
-      }
+
+      // if (regionMarkerClusterRef.current) {
+      //   regionMarkerClusterRef.current.setMap(null);
+      // }
       if (patientGroupsMarkerClusterRef.current) {
         patientGroupsMarkerClusterRef.current.setMap(null);
       }
@@ -220,7 +209,10 @@ const NaverMap = () => {
                 anchor: new naver.maps.Point(20, 67)
               }
             });
-            markers.push(marker);
+            if (!existringMarkers.has(area.areaName)) {
+              markers.push(marker);
+              existringMarkers.add(area.areaName);
+            }
           }
         }
         return { area, polygon, latLngs };
@@ -306,7 +298,32 @@ const NaverMap = () => {
       setPatients(patientTemp);
     }, 500);
 
-    window.naver.maps.Event.addListener(map, "zoom_changed", handleZoomChange);
+    window.naver.maps.Event.addListener(map, "zoom_changed", () => {
+      const currentZoom = map.getZoom();
+      console.log(currentZoom + " " + previousZoomRef.current);
+      if (previousZoomRef.current !== undefined) {
+        // small <-> dong, dong <-> small
+        if (
+          (previousZoomRef.current >= 15 && currentZoom < 15) || // 15 -> 14
+          (previousZoomRef.current < 15 && currentZoom >= 15) || // 14 -> 15
+          currentZoom === previousZoomRef.current // 같을 때도 클리어
+        ) {
+          existringMarkers.clear();
+          regionMarkerClusterRef.current?.setMap(null);
+        }
+
+        // gu <-> dong, dong <-> gu
+        if (
+          (previousZoomRef.current < 14 && currentZoom >= 14) || // 14 -> 13
+          (previousZoomRef.current >= 14 && currentZoom < 14) || // 13 -> 14
+          currentZoom === previousZoomRef.current // 같을 때도 클리어
+        ) {
+          existringMarkers.clear();
+          regionMarkerClusterRef.current?.setMap(null);
+        }
+      }
+      handleZoomChange();
+    });
     window.naver.maps.Event.addListener(map, "idle", handleZoomChange);
     handleZoomChange();
   }, [map, smallPolygons, dongPolygons, guPolygons, isOpenDrawer, highestCost]);
@@ -320,30 +337,8 @@ const NaverMap = () => {
         height: "100%",
         backgroundColor: "#e0e0e0"
       }}
-    >
-      <ButtonsContainer>
-        <div
-          style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}
-        >
-          <OnOffButton
-            imagePath={
-              peopleShowButton
-                ? "/images/people.svg"
-                : "/images/unactive_people.svg"
-            }
-            handleClickButton={handleShowButton}
-          />
-        </div>
-      </ButtonsContainer>
-    </div>
+    ></div>
   );
 };
 
 export default NaverMap;
-
-const ButtonsContainer = styled.div`
-  position: absolute;
-  bottom: 8%;
-  right: 5%;
-  z-index: 100;
-`;
