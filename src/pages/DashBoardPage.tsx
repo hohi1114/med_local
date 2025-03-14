@@ -35,6 +35,12 @@ export default function DashBoardPage() {
     }
   }, [user, data]);
 
+  useEffect(() => {
+    setTimeout(() => {
+      refetch();
+    }, 5000);
+  }, []);
+
   return (
     <DashBoardContainer>
       <ContentHeader title="대시보드" />

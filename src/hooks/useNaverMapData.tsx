@@ -1,3 +1,4 @@
+import { PatientData } from "../utils/ExcelParser";
 import { Area } from "./useMediMapData";
 
 const useNaverMapData = () => {
@@ -5,48 +6,47 @@ const useNaverMapData = () => {
     if (currentZoom >= 15) {
       return {
         name: "small",
-        polygonLineColor: "#92BFFF",
-        color_r: 146,
-        color_g: 191,
-        color_b: 255,
         fontSize: "1.2rem"
       };
     } else if (currentZoom < 15 && currentZoom >= 14) {
       return {
         name: "dong",
-        polygonLineColor: "#92BFFF",
-        color_r: 146,
-        color_g: 191,
-        color_b: 255,
         fontSize: "1.2rem"
       };
     } else {
       return {
         name: "gu",
-        polygonLineColor: "#92BFFF",
-        color_r: 146,
-        color_g: 191,
-        color_b: 255,
         fontSize: "1.5rem"
       };
     }
   };
 
-  //Get Polygon color opacity based on totalCost
-  const getPolyonColorOpacity = (totalCost: number) => {
-    if (totalCost < 10000) {
-      //1만 미만
-      return 0.1;
-    } else if (totalCost >= 10000 && totalCost < 100000) {
-      //1민이상 - 10만 미안
-      return 0.3;
-    } else if (totalCost >= 100000 && totalCost < 1000000) {
-      //10만 이상 - 100만 미만
-      return 0.5;
-    } else {
-      // 100만 이상
-      return 0.7;
-    }
+  //** Calculate Polygon Opacity */
+  const getPolygonColorOpacity = (
+    totalCost: number,
+    maxCost: number
+  ): string => {
+    const minCost = 0;
+    const normalizedCost =
+      maxCost === 0
+        ? 1
+        : Math.min(Math.max(totalCost, minCost), maxCost) / maxCost;
+
+    const startColor = { r: 208, g: 232, b: 255 };
+    const endColor = { r: 76, g: 140, b: 255 };
+
+    const r = Math.round(
+      startColor.r + (endColor.r - startColor.r) * normalizedCost
+    );
+    const g = Math.round(
+      startColor.g + (endColor.g - startColor.g) * normalizedCost
+    );
+    const b = Math.round(
+      startColor.b + (endColor.b - startColor.b) * normalizedCost
+    );
+
+    const opacity = 0.5;
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
   };
 
   const expandBounds = (
@@ -94,11 +94,65 @@ const useNaverMapData = () => {
     return { boundAreas };
   };
 
+  // Haversine 공식을 사용하여 두 점 사이의 거리 계산 함수
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371; // 지구 반경 (km)
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c * 1000;
+
+    return distance;
+  };
+
+  // 500미터 내 환자들만 필터링하는 함수
+  const groupPatientsByProximity = (patients: PatientData, range = 500) => {
+    let groups: PatientData[] = [];
+
+    // 각 환자에 대해 그룹을 찾아 그룹화
+    patients.forEach((patient, index) => {
+      // 이미 그룹에 포함된 환자는 건너뛰기
+      let foundGroup = false;
+
+      for (let group of groups) {
+        // 그룹의 첫 번째 환자와 현재 환자 간의 거리를 계산
+        const distance = calculateDistance(
+          patient.latitude,
+          patient.longitude,
+          group[0].latitude,
+          group[0].longitude
+        );
+
+        // 500미터 이내라면 같은 그룹에 포함
+        if (distance <= range) {
+          group.push(patient);
+          foundGroup = true;
+          break;
+        }
+      }
+
+      // 만약 해당 환자가 어떤 그룹에도 속하지 않으면 새로운 그룹을 생성
+      if (!foundGroup) {
+        groups.push([patient]);
+      }
+    });
+
+    return groups;
+  };
   return {
     getRegionName,
     expandBounds,
     getBoundAreas,
-    getPolyonColorOpacity
+    getPolygonColorOpacity,
+    groupPatientsByProximity
   };
 };
 
