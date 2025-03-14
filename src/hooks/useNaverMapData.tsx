@@ -32,22 +32,19 @@ const useNaverMapData = () => {
     }
   };
 
-  //Get Polygon color opacity based on totalCost
-  const getPolyonColorOpacity = (totalCost: number) => {
-    if (totalCost < 10000) {
-      //1만 미만
-      return 0.1;
-    } else if (totalCost >= 10000 && totalCost < 100000) {
-      //1민이상 - 10만 미안
-      return 0.3;
-    } else if (totalCost >= 100000 && totalCost < 1000000) {
-      //10만 이상 - 100만 미만
-      return 0.5;
-    } else {
-      // 100만 이상
-      return 0.7;
-    }
-  };
+  //** Calculate Polygon Opacity */
+  function getPolygonColorOpacity(totalCost: number) {
+    const minOpacity = 0.1;
+    const maxOpacity = 0.7;
+    const minCost = 0;
+    const maxCost = 10000000;
+
+    if (totalCost <= minCost) return minOpacity;
+    if (totalCost >= maxCost) return maxOpacity;
+
+    const normalized = (totalCost - minCost) / (maxCost - minCost);
+    return minOpacity + normalized * (maxOpacity - minOpacity);
+  }
 
   const expandBounds = (
     bounds: naver.maps.LatLngBounds,
@@ -98,7 +95,7 @@ const useNaverMapData = () => {
     getRegionName,
     expandBounds,
     getBoundAreas,
-    getPolyonColorOpacity
+    getPolygonColorOpacity
   };
 };
 

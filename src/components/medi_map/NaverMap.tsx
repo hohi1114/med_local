@@ -34,7 +34,7 @@ const NaverMap = () => {
   const [peopleShowButton, setPeopleShowButton] = useState(false);
   const MarkerClustering = makeMarkerClustering(window.naver) as any;
   //** Map Logic
-  const { getRegionName, expandBounds, getBoundAreas, getPolyonColorOpacity } =
+  const { getRegionName, expandBounds, getBoundAreas, getPolygonColorOpacity } =
     useNaverMapData();
 
   let [clickedArea, setClickedArea] = useState<string>("");
@@ -286,7 +286,7 @@ const NaverMap = () => {
         let totalCost = patients.reduce((sum, p) => sum + p.totalCost, 0);
         patientTemp.push({ areaName: area.areaName, patients });
         polygon.setOptions({
-          fillColor: `rgba(${color_r}, ${color_g}, ${color_b}, ${getPolyonColorOpacity(
+          fillColor: `rgba(${color_r}, ${color_g}, ${color_b}, ${getPolygonColorOpacity(
             totalCost
           )})`
         });
