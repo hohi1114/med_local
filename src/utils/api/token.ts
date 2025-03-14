@@ -9,7 +9,10 @@ const AUTH_KEYS = {
 export const saveTokensToCookie = async (response: AuthResponse) => {
   if (response.access_token) {
     setCookie(AUTH_KEYS.ACCESS_TOKEN, response.access_token, {
-      expires: new Date(Date.now() + 24 * response.expires_in * 1000) // 24시간
+      expires: new Date(
+        Date.now() +
+          24 * (response.expires_in ? response.expires_in : 3600) * 1000
+      ) // 24시간
     });
   }
 

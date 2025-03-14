@@ -1,7 +1,7 @@
 import styled from "styled-components";
 
 export const STATSTYPE = [
-  { id: 1, title: "전체 환자 수" },
+  { id: 1, title: "내원 환자 수" },
   { id: 2, title: "누적 매출액" },
   { id: 3, title: "내원당 평균 매출액" },
   { id: 4, title: "1인당 평균 매출" },

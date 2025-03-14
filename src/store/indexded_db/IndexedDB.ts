@@ -6,13 +6,14 @@ export interface Area {
   coords: [number, number][][]; // [lng, lat] pairs
 }
 
-
 const DB_NAME = "MedicalDB";
 const DB_VERSION = 3; // Increment version to ensure upgrade
 const MERGED_STORE = "df_merged";
 const FILTERED_STORE = "df_filtered";
 const DATE_STORE = "df_date";
-
+const SMALL_AREA_STORE = "df_areas_small"; // ✅ Separate store for areas_small
+const DONG_AREA_STORE = "df_areas_dong"; // ✅ Separate store for areas_dong
+const GU_AREA_STORE = "df_areas_gu"; // ✅ Separate store for areas_gu
 
 // Initialize database without deleting existing data
 export const initIndexedDB = async () => {
@@ -22,10 +23,17 @@ export const initIndexedDB = async () => {
       upgrade(db, oldVersion, newVersion) {
         console.log(`Upgrade triggered: ${oldVersion} -> ${newVersion}`);
 
-        [MERGED_STORE, FILTERED_STORE, DATE_STORE].forEach(store => {
+        [
+          MERGED_STORE,
+          FILTERED_STORE,
+          DATE_STORE,
+          SMALL_AREA_STORE,
+          DONG_AREA_STORE,
+          GU_AREA_STORE
+        ].forEach((store) => {
           if (!db.objectStoreNames.contains(store)) {
             console.log(`Creating ${store} store...`);
-            db.createObjectStore(store, { keyPath: "id",autoIncrement:true }); // "name" is the unique key for each area
+            db.createObjectStore(store, { keyPath: "id", autoIncrement: true }); // "name" is the unique key for each area
           }
         });
       }
@@ -44,9 +52,9 @@ export const initIndexedDB = async () => {
 };
 
 const saveDataToStore = async (
-    db: IDBPDatabase,
-    storeName: string,
-    data: any[]
+  db: IDBPDatabase,
+  storeName: string,
+  data: any[]
 ) => {
   console.log(storeName, data);
 
@@ -65,7 +73,10 @@ const saveDataToStore = async (
         resolve();
       };
       tx.onerror = (event) => {
-        console.error(`Transaction failed for store: ${storeName}`, (event.target as IDBRequest).error);
+        console.error(
+          `Transaction failed for store: ${storeName}`,
+          (event.target as IDBRequest).error
+        );
         reject((event.target as IDBRequest).error);
       };
     });
@@ -75,11 +86,13 @@ const saveDataToStore = async (
   }
 };
 
-
 export const saveToIndexedDB = async (
-    merged: MergedData[],
-    filtered: FilteredData[],
-    df_date: UpdatedDates[]
+  merged: MergedData[],
+  filtered: FilteredData[],
+  df_date: UpdatedDates[],
+  areas_small: Area[],
+  areas_dong: Area[],
+  areas_gu: Area[]
 ) => {
   try {
     // ✅ Initialize database
@@ -88,8 +101,36 @@ export const saveToIndexedDB = async (
     await saveDataToStore(db, MERGED_STORE, merged);
     await saveDataToStore(db, FILTERED_STORE, filtered);
     await saveDataToStore(db, DATE_STORE, df_date);
- 
 
+    console.log("Small areas", areas_small);
+    // Log area names before saving
+    /*
+    console.log("Small areas:", areas_small.map(area => area.area));
+    console.log("Dong areas:", areas_dong.map(area => area.area));
+    console.log("Gu areas:", areas_gu.map(area => area.area));
+
+*/
+
+    // ✅ Save areas separately
+    await saveDataToStore(
+      db,
+      SMALL_AREA_STORE,
+      areas_small.map((area) => ({ name: area.areaName }))
+    );
+    await saveDataToStore(
+      db,
+      DONG_AREA_STORE,
+      areas_dong.map((area) => ({ name: area.areaName }))
+    );
+    await saveDataToStore(
+      db,
+      GU_AREA_STORE,
+      areas_gu.map((area) => ({ name: area.areaName }))
+    );
+
+    console.log(
+      "✅ All data saved successfully, including separate area names!"
+    );
     return true;
   } catch (error) {
     console.error("❌ Error saving to IndexedDB:", error);
@@ -97,15 +138,10 @@ export const saveToIndexedDB = async (
   }
 };
 
-
-
-
 export const getDataFromIndexedDB = async () => {
   try {
-
     await initIndexedDB();
     const db = await openDB(DB_NAME, DB_VERSION);
-    
 
     const df_merged = await db.getAll(MERGED_STORE);
     const df_filtered = await db.getAll(FILTERED_STORE);
@@ -117,8 +153,21 @@ export const getDataFromIndexedDB = async () => {
     return { df_merged, df_filtered, df_date };
   } catch (error) {
     console.error("Error retrieving from IndexedDB:", error);
-    return { df_merged: [], df_filtered: [] , df_data: []};
+    return { df_merged: [], df_filtered: [], df_data: [] };
   }
 };
 
+export const getDongAreas = async () => {
+  const db = await openDB(DB_NAME, DB_VERSION);
+  return db.getAll(DONG_AREA_STORE);
+};
 
+export const getGuAreas = async () => {
+  const db = await openDB(DB_NAME, DB_VERSION);
+  return db.getAll(GU_AREA_STORE);
+};
+
+export const getAllMergedData = async () => {
+  const db = await openDB(DB_NAME, DB_VERSION);
+  return await db.getAll(MERGED_STORE);
+};

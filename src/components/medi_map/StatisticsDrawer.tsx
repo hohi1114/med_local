@@ -13,14 +13,8 @@ import { useEffect, useState } from "react";
 import { PatientData } from "../../utils/ExcelParser";
 dayjs.extend(isBetween);
 
-interface StatisticsDrawerProps {
-  open: boolean;
-  handleDrawerOpen: () => void;
-}
-const StatisticsDrawer = ({
-  open,
-  handleDrawerOpen
-}: StatisticsDrawerProps) => {
+const StatisticsDrawer = () => {
+  const { isOpenDrawer, handleIsDrawerOpen } = mapStore();
   const { rangeDate, handleDateChange } = useRangeDurationDatePicker();
   const [selectedPatient, setSelectedPatient] = useState<PatientData[]>([]);
   const {
@@ -73,29 +67,34 @@ const StatisticsDrawer = ({
   };
 
   useEffect(() => {
-    if (open) {
+    if (isOpenDrawer) {
       initDrawerData();
     }
-  }, [open, rangeDate]);
+  }, [isOpenDrawer, rangeDate]);
 
   useEffect(() => {
-    if (areaName && open) {
-      if (patients.length > 0) {
+    if (areaName && isOpenDrawer) {
+      if (patients?.length > 0) {
         const filteredPatients = patients.filter(
           (data) => data.areaName === areaName
         );
-        const filteredPatientsByDate = filteredPatients[0].patients.filter(
-          (data) => {
-            const visitDate = dayjs(data.visitDate);
-            return visitDate.isBetween(rangeDate.startDate, rangeDate.endDate);
-          }
-        );
-        setSelectedPatient(filteredPatientsByDate);
+        if (filteredPatients[0]?.patients) {
+          const filteredPatientsByDate = filteredPatients[0]?.patients.filter(
+            (data) => {
+              const visitDate = dayjs(data.visitDate);
+              return visitDate.isBetween(
+                rangeDate.startDate,
+                rangeDate.endDate
+              );
+            }
+          );
+          setSelectedPatient(filteredPatientsByDate);
+        }
       } else {
         setSelectedPatient([]);
       }
     }
-  }, [patients, open, rangeDate, areaName]);
+  }, [patients, isOpenDrawer, rangeDate, areaName]);
 
   useEffect(() => {
     if (selectedPatient?.length > 0) {
@@ -109,7 +108,7 @@ const StatisticsDrawer = ({
         "50대": 0,
         "60대": 0
       };
-      let totalPatient = new Set();
+
       const revenueMap: { [key: string]: number } = {};
       const dailyRevenueMap: { [key: string]: number } = {};
       let firstTimeCount = 0;
@@ -117,13 +116,8 @@ const StatisticsDrawer = ({
       let resultTotalCost = 0;
 
       selectedPatient.forEach((patient) => {
-        const { totalCost, visitDate, age, visitType, chartNumber } = patient;
+        const { totalCost, visitDate, age, visitType } = patient;
         resultTotalCost += totalCost;
-
-        //총 환자 수
-        if (!totalPatient.has(chartNumber)) {
-          totalPatient.add(chartNumber);
-        }
         //재방문 환자수 = 초진 + 재진
         if (visitType === "초진" || visitType === "재진") {
           revisitCount++;
@@ -172,7 +166,7 @@ const StatisticsDrawer = ({
         }
 
         setTotalCost(resultTotalCost);
-        setTotalPatients(totalPatient.size);
+        setTotalPatients(selectedPatient.length);
         setFirstVisitPatients(firstTimeCount);
         setRevisitedPatients(revisitCount);
         setRevenueTrend(revenueMap);
@@ -225,7 +219,7 @@ const StatisticsDrawer = ({
     <Drawer
       width={"35rem"}
       placement="right"
-      onClose={handleDrawerOpen}
+      onClose={() => handleIsDrawerOpen(false)}
       style={{ backgroundColor: "#FAFAFB" }}
       styles={{
         header: {
@@ -239,7 +233,7 @@ const StatisticsDrawer = ({
           backgroundColor: "#FAFAFB"
         }
       }}
-      open={open}
+      open={isOpenDrawer}
     >
       {/** 날짜 필터 */}
       <DateFilterWrapper>
