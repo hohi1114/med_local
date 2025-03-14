@@ -8,6 +8,8 @@ import { useQuery } from "@tanstack/react-query";
 import { getUserInfo } from "../utils/api/apis";
 import useDashBoard from "../hooks/useDashBoard";
 import BarChart from "../components/medi_map/chart/BarChart";
+import dayjs from "dayjs";
+import BaseLineChart from "../components/medi_map/chart/BaseLineChart";
 
 const FILTERDATA = ["오늘", "3일", "7일", "1개월", "3개월", "1년", "직접선택"];
 export default function DashBoardPage() {
@@ -18,6 +20,7 @@ export default function DashBoardPage() {
     totalNewPatients,
     averageAge,
     totalRevisitedPatitents,
+    revenueByDate,
     handleDateChange
   } = useDashBoard();
   const { user, setUser } = userStore();
@@ -41,6 +44,20 @@ export default function DashBoardPage() {
     }, 5000);
   }, []);
 
+  const barFormatData = () => {
+    return Object.entries(averageAge).map(([age, value]) => ({
+      age,
+      value
+    }));
+  };
+
+  const chartFormatData = () => {
+    return Object.entries(revenueByDate).map(([date, value]) => ({
+      date,
+      value
+    }));
+  };
+  console.log(revenueByDate);
   return (
     <DashBoardContainer>
       <ContentHeader title="대시보드" />
@@ -109,26 +126,32 @@ export default function DashBoardPage() {
 
       <CardGrid>
         <Card>
-          <Title>누적 배출 분포</Title>
-          <div style={{ paddingTop: "1rem" }}>
-            {/* <BaseLineChart
-              data={test}
-              xField="data"
-              yField="value"
-              labelFormatterY={(v: number) => `${v / 1000}K`}
-              labelFormatterX={(v: string) => dayjs(v).format("MM/DD")}
-              formatData={formatDataForRevenueTrend}
-            /> */}
-          </div>
+          <ChartTitle>누적 배출 분포</ChartTitle>
+
+          <BaseLineChart
+            data={revenueByDate}
+            xField="date"
+            yField="value"
+            labelFormatterY={(v: number) => `${v / 1000}K`}
+            labelFormatterX={(v: string) => dayjs(v).format("MM/DD")}
+            formatData={chartFormatData}
+            height={350}
+          />
         </Card>
       </CardGrid>
       <CardGrid>
         <Card>
-          <Title>지역 별 매출 순위</Title>
+          <ChartTitle>지역 별 매출 순위</ChartTitle>
         </Card>
         <Card>
-          <Title>연령 별 환자 분포</Title>
-          <BarChart data={averageAge} />
+          <ChartTitle>연령 별 환자 분포</ChartTitle>
+          <BarChart
+            data={averageAge}
+            xField="age"
+            yField="value"
+            formatData={barFormatData}
+            height={350}
+          />
         </Card>
       </CardGrid>
     </DashBoardContainer>
@@ -173,8 +196,13 @@ const Card = styled.div`
 
 const Title = styled.span`
   font-size: 1.2rem;
-
   font-weight: 500;
+`;
+
+const ChartTitle = styled.span`
+  font-size: 1.4rem;
+  font-weight: 700;
+  padding-bottom: 1rem;
 `;
 
 const ValueWrapper = styled.div`

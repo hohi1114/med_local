@@ -2,34 +2,38 @@ import { Column } from "@ant-design/plots";
 import { useEffect, useState } from "react";
 import styled from "styled-components";
 
-interface IBarData {
-  age: string;
-  value: number;
+interface IBaseBarCharProps<T, U> {
+  data: T;
+  xField: string;
+  yField: string;
+  height: number;
+  formatData: (data: U) => U[];
 }
-const BarChart = ({ data }: any) => {
-  // const { ageGroups } = mapStore();
-  const [barData, setBarData] = useState<IBarData[]>([]);
+
+const BarChart = <T, U extends { [key: string]: any }>({
+  data,
+  xField,
+  yField,
+  height,
+  formatData
+}: IBaseBarCharProps<T, U>) => {
+  const [barData, setBarData] = useState<U[]>([]);
 
   useEffect(() => {
-    if (data) {
-      const formattedData = Object.entries(data).map(([age, value]) => ({
-        age,
-        value
-      }));
-
+    if (data && Object.keys(data).length > 0) {
+      const formattedData = formatData(data);
       setBarData(formattedData);
     }
   }, [data]);
 
   const config = {
     data: barData,
-    xField: "age",
-    yField: "value",
-    colorField: "age",
-    width: 350,
-    height: 260,
+    xField: xField,
+    yField: yField,
+    colorField: xField,
+    autoFit: true,
+    height: height,
     legend: false,
-
     style: {
       radius: 8
     },
@@ -51,7 +55,9 @@ const BarChart = ({ data }: any) => {
     }
   };
   return barData.length > 0 ? (
-    <Column {...config} />
+    <BarChartContainer>
+      <Column {...config} />
+    </BarChartContainer>
   ) : (
     <EmptyDataContainer>
       <div>불러올 데이터가 없습니다.</div>
@@ -59,6 +65,12 @@ const BarChart = ({ data }: any) => {
   );
 };
 
+const BarChartContainer = styled.div`
+  display: flex;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+`;
 const EmptyDataContainer = styled.div`
   display: flex;
   justify-content: center;

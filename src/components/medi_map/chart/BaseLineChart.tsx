@@ -14,6 +14,7 @@ interface IBaseLineChartProps {
     | Record<string, number>;
   xField: string;
   yField: string;
+  height: number;
   labelFormatterX?: (value: string) => string;
   labelFormatterY?: (value: number) => string;
   formatData: (data: any) => ILineData[];
@@ -24,6 +25,7 @@ const BaseLineChart = ({
   data,
   xField,
   yField,
+  height,
   labelFormatterX,
   labelFormatterY,
   formatData
@@ -54,8 +56,7 @@ const BaseLineChart = ({
     yField,
     smooth: true,
     autoFit: true,
-    width: 350,
-    height: 280,
+    height: height,
     axis: {
       y: {
         labelFormatter: labelFormatterY || ((v: number) => `${v / 1000}K`)
@@ -77,13 +78,21 @@ const BaseLineChart = ({
   };
 
   return lineData.length > 0 ? (
-    <Line {...config} />
+    <ChartContainer>
+      <Line {...config} />
+    </ChartContainer>
   ) : (
     <EmptyDataContainer>
       <div>불러올 데이터가 없습니다.</div>
     </EmptyDataContainer>
   );
 };
+const ChartContainer = styled.div`
+  display: flex;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+`;
 
 const EmptyDataContainer = styled.div`
   display: flex;

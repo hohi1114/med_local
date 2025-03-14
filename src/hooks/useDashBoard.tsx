@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { getAllPatients } from "../store/indexded_db/RegionDB";
 import useRangeDurationDatePicker from "./useRangeDurationDatePicker";
 import { PatientData } from "../utils/ExcelParser";
+import { getAllMergedData } from "../store/indexded_db/IndexedDB";
 
 const useDashBoard = () => {
   const { rangeDate, handleDateChange } = useRangeDurationDatePicker();
@@ -12,10 +12,13 @@ const useDashBoard = () => {
   const [totalRevisitedPatitents, setTotalRevisitedPatients] =
     useState<number>(0);
   const [averageAge, setAverageAge] = useState<Record<string, number>>({});
+  const [revenueByDate, setrevenueByDate] = useState<Record<string, number>>(
+    {}
+  );
 
   useEffect(() => {
     const fetchData = async () => {
-      const data: PatientData[] = await getAllPatients("dong");
+      const data: PatientData[] = await getAllMergedData();
       if (data) {
         setPatientsData(data);
       }
@@ -83,7 +86,19 @@ const useDashBoard = () => {
   };
 
   //누적 매출 분포
-  const calRevenueDate = () => {};
+  const calRevenueDate = () => {
+    if (patientsData === null) return;
+    const revenueTrend = {};
+    patientsData.forEach((patient) => {
+      const date = patient.visitDate;
+      if (!revenueTrend[date]) {
+        revenueTrend[date] = patient.totalCost;
+      } else {
+        revenueTrend[date] += patient.totalCost;
+      }
+    });
+    setrevenueByDate(revenueTrend);
+  };
 
   //지역 별 매출 순위
 
@@ -128,6 +143,7 @@ const useDashBoard = () => {
       calNewPatients();
       calRevisitedPatients();
       calAverageAge();
+      calRevenueDate();
     }
   }, [patientsData]);
 
@@ -138,7 +154,8 @@ const useDashBoard = () => {
     totalPatients,
     totalNewPatients,
     totalRevisitedPatitents,
-    averageAge
+    averageAge,
+    revenueByDate
   };
 };
 

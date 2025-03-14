@@ -25,6 +25,7 @@ const StatisticsDrawer = () => {
     revisitedPatients,
     dailyRevenue,
     revenueTrend,
+    ageGroups,
     setDrawerDate,
     setTotalCost,
     setTotalPatients,
@@ -193,6 +194,14 @@ const StatisticsDrawer = () => {
       value
     }));
   };
+
+  const barFormatData = () => {
+    return Object.entries(ageGroups).map(([age, value]) => ({
+      age,
+      value
+    }));
+  };
+
   const statsData: { [key: number]: string } = {
     1: `${totalPatients}명`,
     2: `${totalCost.toLocaleString()} ₩`,
@@ -214,8 +223,6 @@ const StatisticsDrawer = () => {
   const handleTodayButton = () => {
     handleDateChange([dayjs(), dayjs()]);
   };
-
-  console.log(revenueTrend);
 
   return (
     <Drawer
@@ -275,6 +282,7 @@ const StatisticsDrawer = () => {
         <GrapWrapper>
           <ChartTitleStyle>매출액 변화 추이</ChartTitleStyle>
           <BaseLineChart
+            height={280}
             data={revenueTrend}
             xField="date"
             yField="value"
@@ -285,7 +293,13 @@ const StatisticsDrawer = () => {
         </GrapWrapper>
         <GrapWrapper>
           <ChartTitleStyle>연령대 별 환자 분포</ChartTitleStyle>
-          {/* <BarChart /> */}
+          <BarChart
+            height={280}
+            data={ageGroups}
+            xField="age"
+            yField="value"
+            formatData={barFormatData}
+          />
         </GrapWrapper>
         <GrapWrapper>
           <ChartTitleStyle>1인당 평균 매출액</ChartTitleStyle>
@@ -296,6 +310,7 @@ const StatisticsDrawer = () => {
             labelFormatterY={(v: number) => `${v / 1000}K`}
             labelFormatterX={(v: string) => dayjs(v).format("MM/DD")}
             formatData={formatDataForAverageRevenue}
+            height={280}
           />
         </GrapWrapper>
       </GraphContainer>
