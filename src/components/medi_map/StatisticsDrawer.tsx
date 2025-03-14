@@ -74,19 +74,22 @@ const StatisticsDrawer = () => {
 
   useEffect(() => {
     if (areaName && isOpenDrawer) {
-      if (patients.length > 0) {
+      if (patients?.length > 0) {
         const filteredPatients = patients.filter(
           (data) => data.areaName === areaName
         );
-        console.log(areaName);
-        console.log(filteredPatients);
-        const filteredPatientsByDate = filteredPatients[0].patients.filter(
-          (data) => {
-            const visitDate = dayjs(data.visitDate);
-            return visitDate.isBetween(rangeDate.startDate, rangeDate.endDate);
-          }
-        );
-        setSelectedPatient(filteredPatientsByDate);
+        if (filteredPatients[0]?.patients) {
+          const filteredPatientsByDate = filteredPatients[0]?.patients.filter(
+            (data) => {
+              const visitDate = dayjs(data.visitDate);
+              return visitDate.isBetween(
+                rangeDate.startDate,
+                rangeDate.endDate
+              );
+            }
+          );
+          setSelectedPatient(filteredPatientsByDate);
+        }
       } else {
         setSelectedPatient([]);
       }
@@ -105,7 +108,7 @@ const StatisticsDrawer = () => {
         "50대": 0,
         "60대": 0
       };
-      let totalPatient = new Set();
+
       const revenueMap: { [key: string]: number } = {};
       const dailyRevenueMap: { [key: string]: number } = {};
       let firstTimeCount = 0;
@@ -113,13 +116,8 @@ const StatisticsDrawer = () => {
       let resultTotalCost = 0;
 
       selectedPatient.forEach((patient) => {
-        const { totalCost, visitDate, age, visitType, chartNumber } = patient;
+        const { totalCost, visitDate, age, visitType } = patient;
         resultTotalCost += totalCost;
-
-        //총 환자 수
-        if (!totalPatient.has(chartNumber)) {
-          totalPatient.add(chartNumber);
-        }
         //재방문 환자수 = 초진 + 재진
         if (visitType === "초진" || visitType === "재진") {
           revisitCount++;
@@ -168,7 +166,7 @@ const StatisticsDrawer = () => {
         }
 
         setTotalCost(resultTotalCost);
-        setTotalPatients(totalPatient.size);
+        setTotalPatients(selectedPatient.length);
         setFirstVisitPatients(firstTimeCount);
         setRevisitedPatients(revisitCount);
         setRevenueTrend(revenueMap);
@@ -221,7 +219,7 @@ const StatisticsDrawer = () => {
     <Drawer
       width={"35rem"}
       placement="right"
-      onClose={handleIsDrawerOpen}
+      onClose={() => handleIsDrawerOpen(false)}
       style={{ backgroundColor: "#FAFAFB" }}
       styles={{
         header: {

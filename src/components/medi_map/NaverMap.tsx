@@ -24,9 +24,10 @@ const NaverMap = () => {
 
   //**Refs
   const polygonsRef = useRef<Map<string, naver.maps.Polygon>>(new Map());
-  const markersRef = useRef<Map<string, naver.maps.Marker>>(new Map());
   const regionMarkerClusterRef = useRef<naver.maps.Marker[] | null>(null);
   const patientMarkersRef = useRef<naver.maps.Marker[] | null>(null);
+  const previousZoomRef = useRef<number>(15);
+  const clickedAreaRef = useRef<string>(null);
   //**Refs
   const mapElement = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<naver.maps.Map | null>(null);
@@ -39,7 +40,6 @@ const NaverMap = () => {
 
   let [clickedArea, setClickedArea] = useState<string>("");
   const [currentZoom, setCurrentZoom] = useState(0);
-  const [patientMarkers, setPatientMarkers] = useState([]);
 
   // ✅ Initialize map only once
   useEffect(() => {
@@ -61,11 +61,6 @@ const NaverMap = () => {
 
   useEffect(() => {
     if (!isOpenDrawer) {
-      if (regionMarkerClusterRef.current) {
-        regionMarkerClusterRef.current.setMap(null);
-        setPatientMarkers([]);
-      }
-
       const polygon = polygonsRef.current.get(clickedArea);
       if (polygon) {
         polygon.setOptions({
@@ -73,64 +68,10 @@ const NaverMap = () => {
           strokeWeight: 3
         });
       }
-    } else {
-      if (currentZoom > 15) {
-        const filteredPatients = patients.filter(
-          (patient) => patient.areaName === clickedArea
-        );
-        if (
-          filteredPatients.length === 0 &&
-          filteredPatients[0].patients.length === 0
-        ) {
-          return;
-        }
-        const newPatientMarkers = filteredPatients[0].patients.map(
-          (patient) => {
-            const marker = new naver.maps.Marker({
-              position: new naver.maps.LatLng(
-                patient.latitude,
-                patient.longitude
-              ),
-              icon: {
-                content:
-                  '<div style="background:red; width:4px; height:4px; border-radius:50%;"></div>',
-                origin: new naver.maps.Point(0, 67),
-                anchor: new naver.maps.Point(20, 67)
-              }
-            });
-            return marker;
-          }
-        );
-        setPatientMarkers(newPatientMarkers);
-      }
     }
   }, [isOpenDrawer, currentZoom]);
 
-  useEffect(() => {
-    if (!map || patientMarkers.length === 0) return;
-
-    // 새 클러스터 생성
-    const newCluster = new MarkerClustering({
-      minClusterSize: 2,
-      maxZoom: 13,
-      map: map,
-      markers: patientMarkers,
-      disableClickZoom: false,
-      icons: [
-        {
-          content: `<div></div>`,
-          size: new window.naver.maps.Size(40, 40),
-          anchor: new window.naver.maps.Point(20, 20)
-        }
-      ]
-    });
-
-    // 클러스터를 ref에 저장
-    regionMarkerClusterRef.current = newCluster;
-  }, [patientMarkers, map]);
-
   // ✅ Handle zoom change
-  const previousZoomRef = useRef<number>(15);
   useEffect(() => {
     if (
       !map ||
@@ -144,10 +85,6 @@ const NaverMap = () => {
     const handleZoomChange = debounce(async () => {
       //1. Init Map
       const currentZoom = map.getZoom();
-      const previousZoom = previousZoomRef.current;
-      if (previousZoom !== null && previousZoom === currentZoom) {
-        return;
-      }
       previousZoomRef.current = currentZoom;
 
       setCurrentZoom(currentZoom);
@@ -199,7 +136,7 @@ const NaverMap = () => {
           polygon = new window.naver.maps.Polygon({
             paths: latLngs,
             strokeColor: polygonLineColor,
-            strokeWeight: 1.5,
+            strokeWeight: 3,
             clickable: true
           });
         }
@@ -208,33 +145,34 @@ const NaverMap = () => {
           polygon.setMap(map);
           if (!polygon.hasListener("click")) {
             polygon.addListener("click", () => {
-              handleIsDrawerOpen();
+              //dreawer open
+              if (!isOpenDrawer) {
+                handleIsDrawerOpen(true);
+              }
+              //remove previous highlight polygon
+              if (clickedAreaRef.current) {
+                const polygon2 = polygonsRef.current.get(
+                  clickedAreaRef.current
+                );
+                if (polygon2) {
+                  if (polygon2) {
+                    polygon2.setOptions({
+                      strokeColor: "#92BFFF",
+                      strokeWeight: 4
+                    });
+                  }
+                }
+              }
+              clickedAreaRef.current = area.areaName;
+              //highlight polygon
               setAreaName(area.areaName);
               polygon.setOptions({
                 path: latLngs,
                 strokeColor: "#4692ff",
-                strokeWeight: 3
+                strokeWeight: 3,
+                zIndex: 100
               });
               setClickedArea(area.areaName);
-
-              if (currentZoom >= 17) {
-                // 새 클러스터 생성
-                const newPatientCluster = new MarkerClustering({
-                  minClusterSize: 2,
-                  maxZoom: 13,
-                  map: map,
-                  markers: patientMarkers,
-                  disableClickZoom: false,
-                  icons: [
-                    {
-                      content: `<div></div>`,
-                      size: new window.naver.maps.Size(40, 40),
-                      anchor: new window.naver.maps.Point(20, 20)
-                    }
-                  ]
-                });
-                patientMarkersRef.current = newPatientCluster;
-              }
             });
           }
         }
@@ -317,7 +255,7 @@ const NaverMap = () => {
     window.naver.maps.Event.addListener(map, "zoom_changed", handleZoomChange);
     window.naver.maps.Event.addListener(map, "idle", handleZoomChange);
     handleZoomChange();
-  }, [map, smallPolygons, dongPolygons, guPolygons]);
+  }, [map, smallPolygons, dongPolygons, guPolygons, isOpenDrawer]);
 
   return (
     <div

@@ -33,7 +33,7 @@ interface IMapStore {
   setPatients: (
     patients: { areaName: string; patients: PatientData[] }[]
   ) => void;
-  handleIsDrawerOpen: () => void;
+  handleIsDrawerOpen: (isDrawerOpen: boolean) => void;
 }
 
 const mapStore = create<IMapStore>((set) => ({
@@ -63,10 +63,11 @@ const mapStore = create<IMapStore>((set) => ({
   setDailyRevenue: (dailyRevenue) => set({ dailyRevenue }),
   setPatients: (patients) => set({ patients }),
   setDrawerDate: (drawerDate) => set({ drawerDate }),
-  handleIsDrawerOpen: () =>
-    set((state) => {
-      return { isOpenDrawer: !state.isOpenDrawer };
-    })
+  handleIsDrawerOpen: (isOpenDrawer) => set({ isOpenDrawer })
+  // handleIsDrawerOpen: () =>
+  //   set((state) => {
+  //     return { isOpenDrawer: !state.isOpenDrawer };
+  //   })
 }));
 
 export default mapStore;
