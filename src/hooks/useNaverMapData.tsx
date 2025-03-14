@@ -6,46 +6,48 @@ const useNaverMapData = () => {
     if (currentZoom >= 15) {
       return {
         name: "small",
-        polygonLineColor: "#92BFFF",
-        color_r: 146,
-        color_g: 191,
-        color_b: 255,
         fontSize: "1.2rem"
       };
     } else if (currentZoom < 15 && currentZoom >= 14) {
       return {
         name: "dong",
-        polygonLineColor: "#92BFFF",
-        color_r: 146,
-        color_g: 191,
-        color_b: 255,
         fontSize: "1.2rem"
       };
     } else {
       return {
         name: "gu",
-        polygonLineColor: "#92BFFF",
-        color_r: 146,
-        color_g: 191,
-        color_b: 255,
         fontSize: "1.5rem"
       };
     }
   };
 
   //** Calculate Polygon Opacity */
-  function getPolygonColorOpacity(totalCost: number) {
-    const minOpacity = 0.1;
-    const maxOpacity = 0.7;
+  const getPolygonColorOpacity = (
+    totalCost: number,
+    maxCost: number
+  ): string => {
     const minCost = 0;
-    const maxCost = 10000000;
+    const normalizedCost =
+      maxCost === 0
+        ? 1
+        : Math.min(Math.max(totalCost, minCost), maxCost) / maxCost;
 
-    if (totalCost <= minCost) return minOpacity;
-    if (totalCost >= maxCost) return maxOpacity;
+    const startColor = { r: 208, g: 232, b: 255 };
+    const endColor = { r: 76, g: 140, b: 255 };
 
-    const normalized = (totalCost - minCost) / (maxCost - minCost);
-    return minOpacity + normalized * (maxOpacity - minOpacity);
-  }
+    const r = Math.round(
+      startColor.r + (endColor.r - startColor.r) * normalizedCost
+    );
+    const g = Math.round(
+      startColor.g + (endColor.g - startColor.g) * normalizedCost
+    );
+    const b = Math.round(
+      startColor.b + (endColor.b - startColor.b) * normalizedCost
+    );
+
+    const opacity = 0.5;
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  };
 
   const expandBounds = (
     bounds: naver.maps.LatLngBounds,
