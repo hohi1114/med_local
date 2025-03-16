@@ -1,20 +1,35 @@
+import mapStore from "../store/mapStore";
 import { PatientData } from "../utils/ExcelParser";
-import { Area } from "./useMediMapData";
+import useMediMapData, { Area } from "./useMediMapData";
 
 const useNaverMapData = () => {
+  const { highestCost } = mapStore();
+  //**Data
+  const { areas: dongPolygons } = useMediMapData("fixed_polygon.json");
+  const { areas: smallPolygons } = useMediMapData("normalized_small_db.json");
+  const { areas: guPolygons } = useMediMapData("district_boundaries.json");
+
+  const isDataLoaded =
+    dongPolygons.length > 0 &&
+    smallPolygons.length > 0 &&
+    guPolygons.length > 0;
+
   const getRegionName = (currentZoom: number) => {
     if (currentZoom >= 15) {
       return {
+        data: smallPolygons,
         name: "small",
         fontSize: "1.2rem"
       };
     } else if (currentZoom < 15 && currentZoom >= 14) {
       return {
+        data: dongPolygons,
         name: "dong",
         fontSize: "1.2rem"
       };
     } else {
       return {
+        data: guPolygons,
         name: "gu",
         fontSize: "1.5rem"
       };
@@ -22,15 +37,13 @@ const useNaverMapData = () => {
   };
 
   //** Calculate Polygon Opacity */
-  const getPolygonColorOpacity = (
-    totalCost: number,
-    maxCost: number
-  ): string => {
+  const getPolygonColorOpacity = (totalCost: number, name: string): string => {
     const minCost = 0;
+    const hightestCost = highestCost[name] || 0;
     const normalizedCost =
-      maxCost === 0
+      hightestCost === 0
         ? 1
-        : Math.min(Math.max(totalCost, minCost), maxCost) / maxCost;
+        : Math.min(Math.max(totalCost, minCost), hightestCost) / hightestCost;
 
     const startColor = { r: 208, g: 232, b: 255 };
     const endColor = { r: 76, g: 140, b: 255 };
@@ -114,7 +127,10 @@ const useNaverMapData = () => {
   };
 
   // 500미터 내 환자들만 필터링하는 함수
-  const groupPatientsByProximity = (patients: PatientData, range = 500) => {
+  const groupPatientsByProximity = (
+    patients: PatientData[],
+    range = 500
+  ): PatientData[][] => {
     let groups: PatientData[] = [];
 
     // 각 환자에 대해 그룹을 찾아 그룹화
@@ -147,7 +163,9 @@ const useNaverMapData = () => {
 
     return groups;
   };
+
   return {
+    isDataLoaded,
     getRegionName,
     expandBounds,
     getBoundAreas,
