@@ -10,11 +10,11 @@ export interface PatientData {
   chartNumber: number;
   age: string;
   address: string;
-  latitude?: number | null;
-  longitude?: number | null;
+  latitude: number;
+  longitude: number;
   totalCost: number;
-  visitDate?: string;
-  visitType?: string;
+  visitDate: string;
+  visitType: string;
 }
 
 /**
@@ -27,33 +27,36 @@ function excelSerialToDate(serial: number): string {
   if (serial < 0) {
     throw new Error("Invalid Excel serial date: cannot be negative");
   }
-  
+
   if (serial < 1) {
-    throw new Error("Invalid Excel serial date: cannot represent dates before 1900-01-01");
+    throw new Error(
+      "Invalid Excel serial date: cannot represent dates before 1900-01-01"
+    );
   }
-  
+
   // Adjust for Excel's leap year bug
   // Serial number 60 in Excel represents the non-existent Feb 29, 1900
   let adjustedSerial = serial;
   if (serial >= 60) {
     adjustedSerial = serial - 1;
   }
-  
+
   // Calculate the date
   const millisecondsPerDay = 24 * 60 * 60 * 1000;
   // Excel dates start from December 30, 1899 (day 0 in Excel)
   const baseDate = new Date(Date.UTC(1899, 11, 30));
-  const targetDate = new Date(baseDate.getTime() + adjustedSerial * millisecondsPerDay);
-  
+  const targetDate = new Date(
+    baseDate.getTime() + adjustedSerial * millisecondsPerDay
+  );
+
   // Format the date as YYYY-MM-DD using UTC to avoid timezone issues
   const year = targetDate.getUTCFullYear();
   const month = String(targetDate.getUTCMonth() + 1).padStart(2, "0");
   const day = String(targetDate.getUTCDate()).padStart(2, "0");
-  
+
   return `${year}-${month}-${day}`;
 }
 
- 
 export const parseDaysFiles = async (files: FileList): Promise<VisitData[]> => {
   let data: VisitData[] = [];
 
