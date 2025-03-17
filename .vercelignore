@@ -1,0 +1,6 @@
+.vercel
+dist
+dist-electron
+release
+.idea
+.env

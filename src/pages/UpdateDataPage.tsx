@@ -50,7 +50,7 @@ const UpdateDataPage = () => {
   // ✅ Load Naver Maps Script on Component Mount
   useEffect(() => {
     loadNaverMapsScript(import.meta.env.VITE_NAVER_MAPS_CLIENT_ID)
-      .then(() => {})
+      .then(() => { })
       .catch((error) =>
         console.error("❌ Failed to load Naver Maps script:", error)
       );
