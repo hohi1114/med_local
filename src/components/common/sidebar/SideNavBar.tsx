@@ -32,8 +32,8 @@ const SideNavBar = () => {
     <SidbarContainer collapsed={collapsed}>
       {!collapsed && (
         <LogoContainer>
-          <IconStyle src="/images/defaultProfile.svg" alt="default_profile" />
-          <span>Logo</span>
+          <IconStyle src="/images/logo.png" alt="default_profile" />
+          <span style={{ fontSize: "1.2rem" }}>Orbis</span>
         </LogoContainer>
       )}
 
@@ -71,8 +71,9 @@ const SidbarContainer = styled.div<{ collapsed: boolean }>`
 `;
 
 const IconStyle = styled.img`
-  width: 1.5rem;
+  width: 2.5rem;
   height: auto;
+  /* border-radius: 100%; */
 `;
 
 export default SideNavBar;

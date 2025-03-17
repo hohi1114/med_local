@@ -35,7 +35,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={<LoginPage />} />
+        {/* <Route path="/login" element={<LoginPage />} /> */}
         <Route path="/" element={<BaseLayout />}>
           <Route path="/setting" element={<SettingPage />} />
           <Route index path="dashboard" element={<DashBoardPage />} />
