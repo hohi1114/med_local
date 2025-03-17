@@ -12,7 +12,7 @@ import dayjs from "dayjs";
 import BaseLineChart from "../components/medi_map/chart/BaseLineChart";
 import BaseTable from "../components/medi_map/chart/BaseTable";
 
-const FILTERDATA = ["오늘", "3일", "7일", "1개월", "3개월", "1년", "직접선택"];
+const FILTERDATA = ["오늘", "3일", "7일", "1개월", "3개월", "1년", "직접 선택"];
 export default function DashBoardPage() {
   const {
     rangeDate,
@@ -22,6 +22,8 @@ export default function DashBoardPage() {
     averageAge,
     totalRevisitedPatitents,
     revenueByDate,
+    rankedRegion,
+    handleDateFilterButton,
     handleDateChange
   } = useDashBoard();
   const { user, setUser } = userStore();
@@ -64,16 +66,20 @@ export default function DashBoardPage() {
       <ContentHeader title="대시보드" />
       <DashBoardContainer>
         <FilterContainer>
-          {FILTERDATA.map((data, index) => {
+          {FILTERDATA.map((content, index) => {
             return (
               <div style={{ width: "85px" }} key={index}>
                 <CutomButton
+                  onClick={() =>
+                    content !== "직접 선택" && handleDateFilterButton(content)
+                  }
                   type="button"
                   textcolor="#000000"
-                  color={"직접선택" === data ? "#EDEEFC" : "#ffffff"}
+                  color={"직접 선택" === content ? "#EDEEFC" : "#ffffff"}
                   key={index}
+                  disabled={content === "직접 선택"}
                 >
-                  {data}
+                  {content}
                 </CutomButton>
               </div>
             );
@@ -88,11 +94,16 @@ export default function DashBoardPage() {
           <Card>
             <Title>누적 매출</Title>
             <ValueWrapper>
-              <Value>{totalCost.toLocaleString()}₩</Value>
-              <img src="/images/arrow_up.svg" alt="increase" />
-              <Percentage>3.36%</Percentage>
+              <Value>{totalCost?.current?.toLocaleString()}₩</Value>
+              {/* <img src="/images/arrow_up.svg" alt="increase" /> */}
+              <Percentage>
+                {totalCost.past === 0 ? "-" : totalCost.past}
+              </Percentage>
             </ValueWrapper>
-            <SubText>동일 기간 작년 매출 4,946,015,190₩</SubText>
+            <SubText>
+              동일 기간 작년 매출{" "}
+              {totalCost?.past === 0 ? "-" : totalCost?.past}
+            </SubText>
           </Card>
 
           <Card>
@@ -128,8 +139,7 @@ export default function DashBoardPage() {
 
         <CardGrid>
           <Card>
-            <ChartTitle>누적 배출 분포</ChartTitle>
-
+            <ChartTitle>누적 매출 분포</ChartTitle>
             <BaseLineChart
               data={revenueByDate}
               xField="date"
@@ -144,7 +154,7 @@ export default function DashBoardPage() {
         <CardGrid>
           <Card>
             <ChartTitle>지역 별 매출 순위</ChartTitle>
-            <BaseTable />
+            <BaseTable data={rankedRegion} />
           </Card>
           <Card>
             <ChartTitle>연령 별 환자 분포</ChartTitle>
@@ -241,4 +251,9 @@ const CutomButton = styled(BaseButton)`
   min-width: 85px;
   max-width: 100px;
   flex-grow: 0;
+  transition: border 0.2s ease;
+
+  &:focus {
+    border: 1.5px solid #9f9ff8;
+  }
 `;

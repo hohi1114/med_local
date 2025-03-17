@@ -365,3 +365,52 @@ export async function getRegionSums(regionType: string) {
   const db = await openDB(dbName, REGION_DB_VERSION);
   return db.getAll(sumsStoreName);
 }
+
+export async function getAllPatients(regionType: string) {
+  return new Promise((resolve, reject) => {
+    const dbName = `${REGION_DB_NAME}_${regionType}`;
+    const request = indexedDB.open(dbName, REGION_DB_VERSION);
+
+    request.onsuccess = async (event: any) => {
+      const db = event.target.result;
+      const transaction = db.transaction(db.objectStoreNames, "readonly");
+      const allData: any[] = [];
+
+      // 모든 테이블(객체 저장소)에서 데이터 가져오기
+      const storePromises = Array.from(db.objectStoreNames)
+        .filter(
+          (storeName) =>
+            storeName !== "etc_small" &&
+            storeName !== `regionSums_${regionType}`
+        )
+        .map((storeName) => {
+          return new Promise((resolveStore, rejectStore) => {
+            const store = transaction.objectStore(storeName);
+            const getAllRequest = store.getAll();
+
+            getAllRequest.onsuccess = () => {
+              allData.push({
+                regionName: storeName,
+                data: getAllRequest.result
+              });
+              resolveStore(getAllRequest.result);
+            };
+            getAllRequest.onerror = () => {
+              rejectStore(getAllRequest.error);
+            };
+          });
+        });
+
+      try {
+        await Promise.all(storePromises);
+        resolve(allData);
+      } catch (error) {
+        reject(error);
+      }
+    };
+
+    request.onerror = (event) => {
+      reject(event.target?.error || new Error("Unknown error"));
+    };
+  });
+}
