@@ -30,22 +30,188 @@ const useDashBoard = () => {
   const [filteredPastPatients, setFilteredPastPatients] = useState<
     PatientData[]
   >([]);
+  const locations = [
+    "가양1동 A",
+    "가양1동 B",
+    "가양1동 C",
+    "가양2동 A",
+    "가양2동 B",
+    "가양3동 A",
+    "가양3동 B",
+    "개봉1동 A",
+    "개봉1동 B",
+    "개봉1동 C",
+    "개봉1동 D",
+    "개봉2동 A",
+    "개봉2동 B",
+    "개봉3동 A",
+    "개봉3동 B",
+    "고강1동 A",
+    "고강본동 A",
+    "고강본동 B",
+    "고척 1동 A",
+    "고척 1동 B",
+    "고척 2동 A",
+    "고척 2동 B",
+    "공항동 B",
+    "공항동A",
+    "당산1동 A",
+    "당산1동 B",
+    "당산2동 A",
+    "당산2동 B",
+    "당산2동 C",
+    "등촌 2동 B",
+    "등촌1동 A",
+    "등촌2동 A",
+    "등촌3동 A",
+    "등촌3동 B",
+    "등촌3동 C",
+    "등촌3동 D",
+    "목1동 A",
+    "목1동 B",
+    "목2동 A",
+    "목2동 B",
+    "목3동 A",
+    "목3동 B",
+    "목4동 A",
+    "목5동 A",
+    "목5동 B",
+    "목5동 C",
+    "문래동 A",
+    "문래동 B",
+    "문래동 C",
+    "문래동 D",
+    "발산 1동 A",
+    "발산 1동 B",
+    "방화1동 A",
+    "방화1동 B",
+    "방화1동 C",
+    "방화2동 A",
+    "방화2동 B",
+    "방화3동 A",
+    "성곡동 A",
+    "성곡동 B",
+    "성곡동 C",
+    "수궁동 A",
+    "수궁동 B",
+    "신도림동 A",
+    "신도림동 B",
+    "신도림동 C",
+    "신사동 A",
+    "신사동 B",
+    "신사동 C",
+    "신사동 D",
+    "신사동 E",
+    "신월 1동  A",
+    "신월 2동 A",
+    "신월 2동 B",
+    "신월 3동 A",
+    "신월 4동 A",
+    "신월 4동 B",
+    "신월 6동 A",
+    "신월 6동 B",
+    "신월 7동 A",
+    "신월 7동 B",
+    "신정 1동  A",
+    "신정 1동 B",
+    "신정 2동 A",
+    "신정 3동 A",
+    "신정 3동 B",
+    "신정 3동 C",
+    "신정 3동 D",
+    "신정 3동 E",
+    "신정 4동 A",
+    "신정 4동 B",
+    "신정 6동 A",
+    "신정 6동 B",
+    "신정 6동 C",
+    "신정 7동 A",
+    "신정 7동 B",
+    "압구정동 A",
+    "압구정동 B",
+    "압구정동 C",
+    "압구정동 D",
+    "압구정동 E",
+    "압구정동 F",
+    "압구정동 G",
+    "압구정동 H",
+    "압구정동 I",
+    "압구정동 J",
+    "압구정동 K",
+    "양평1동 A",
+    "양평1동 B",
+    "양평1동 C",
+    "양평2동 A",
+    "염창동 A",
+    "염창동 B",
+    "염창동 C",
+    "영등포동 A",
+    "영등포동 B",
+    "영등포동 C",
+    "오류1동 A",
+    "오류1동 B",
+    "오류1동 C",
+    "오류2동 A",
+    "오류2동 B",
+    "오류2동 C",
+    "우장산동 A",
+    "우장산동 B",
+    "우장산동 C",
+    "청담동 A",
+    "청담동 B",
+    "청담동 C",
+    "청담동 D",
+    "청담동 E",
+    "춘의동 A",
+    "향동 A",
+    "향동 B",
+    "화곡 1동 A",
+    "화곡 1동 B",
+    "화곡 2동 A",
+    "화곡 3동 A",
+    "화곡 3동 B",
+    "화곡 4동 A",
+    "화곡 6동 A",
+    "화곡 6동 B",
+    "화곡 8동 A",
+    "화곡본동  A"
+  ];
 
   useEffect(() => {
     const fetchData = async () => {
       // const data: PatientData[] = await getAllMergedData();
       const data = await dashboardMock();
+      const patients = await dashboardMock();
       // const allPatientsData: AllPatientsData[] = await getAllPatients("small");
       if (data) {
         setPatientsData(data);
         setFilteredPatients(data);
       }
-      // if (allPatientsData) {
-      //   setRegionAllPatients(allPatientsData);
-      // }
+
+      patients.forEach((item) => {
+        const randomLocation =
+          locations[Math.floor(Math.random() * locations.length)];
+        item.location = randomLocation;
+      });
+
+      let regionData = locations.map((location) => {
+        const filteredPatients = patients.filter(
+          (patient) => patient.location === location
+        );
+
+        return {
+          regionName: location,
+          data: filteredPatients
+        };
+      });
+
+      setRegionAllPatients(regionData);
     };
     fetchData();
-    handleDateChange([dayjs().subtract(1, "year"), dayjs()]);
+    handleDateChange({
+      startDate: dayjs().subtract(1, "year"),
+      endDate: dayjs()
+    });
   }, []);
 
   //날짜 필터
@@ -76,17 +242,35 @@ const useDashBoard = () => {
     const today = dayjs();
     switch (content) {
       case "오늘":
-        return handleDateChange([today, today]);
+        return handleDateChange({
+          startDate: today,
+          endDate: today
+        });
       case "3일":
-        return handleDateChange([today.subtract(3, "day"), today]);
+        return handleDateChange({
+          startDate: today.subtract(3, "day"),
+          endDate: today
+        });
       case "7일":
-        return handleDateChange([today.subtract(7, "day"), today]);
+        return handleDateChange({
+          startDate: today.subtract(7, "day"),
+          endDate: today
+        });
       case "1개월":
-        return handleDateChange([today.subtract(1, "month"), today]);
+        return handleDateChange({
+          startDate: today.subtract(1, "month"),
+          endDate: today
+        });
       case "3개월":
-        return handleDateChange([today.subtract(3, "month"), today]);
+        return handleDateChange({
+          startDate: today.subtract(3, "month"),
+          endDate: today
+        });
       case "1년":
-        return handleDateChange([today.subtract(1, "year"), today]);
+        return handleDateChange({
+          startDate: today.subtract(1, "year"),
+          endDate: today
+        });
       default:
         return;
     }
@@ -182,10 +366,11 @@ const useDashBoard = () => {
       .map((region) => ({
         ...region,
         revenueRate:
-          totalCost > 0
-            ? ((region.totalCost / totalCost) * 100).toFixed(2) + "%"
+          totalCost.current > 0
+            ? ((region.totalCost / totalCost.current) * 100).toFixed(2) + "%"
             : "0%"
       }));
+
     setRankedRegion(updatedRegionData.slice(0, 5));
   };
 

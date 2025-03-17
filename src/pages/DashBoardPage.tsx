@@ -67,7 +67,11 @@ export default function DashBoardPage() {
           })}
           <DurationDatePicker
             rangeDate={rangeDate}
-            handleDateChange={handleDateChange}
+            handleDateChange={(date) => {
+              if (date?.length === 2 && date[0] && date[1]) {
+                handleDateChange({ startDate: date[0], endDate: date[1] });
+              }
+            }}
           />
         </FilterContainer>
 
