@@ -5,33 +5,10 @@ import StatisticsByRegionPage from "./pages/StatisticsByRegionPage";
 import UpdateDataPage from "./pages/UpdateDataPage.tsx";
 import MediMapPage from "./pages/MediMapPage";
 import NaverScriptLoader from "./utils/NaverScriptLoader.tsx";
-import { useEffect } from "react";
-import LoginPage from "./pages/LoginPage.tsx";
-import userStore from "./store/userStore.tsx";
-import { useQuery } from "@tanstack/react-query";
+
 import SettingPage from "./pages/SettingPage.tsx";
-import { getUserInfo } from "./utils/api/apis.ts";
 
 function App() {
-  const { setUser } = userStore();
-  const { data, refetch } = useQuery({
-    queryKey: ["userInfo"],
-    queryFn: () => getUserInfo(),
-    enabled: false
-  });
-
-  useEffect(() => {
-    if (!window.location.pathname.startsWith("/login")) {
-      refetch();
-    }
-  }, []);
-  //Store user data
-  useEffect(() => {
-    if (data) {
-      setUser(data);
-    }
-  }, [data]);
-
   return (
     <BrowserRouter>
       <Routes>
@@ -56,6 +33,7 @@ function App() {
               </NaverScriptLoader>
             }
           />
+          <Route path="compare-chart" element={<StatisticsByRegionPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

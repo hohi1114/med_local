@@ -11,6 +11,7 @@ import BarChart from "../components/medi_map/chart/BarChart";
 import dayjs from "dayjs";
 import BaseLineChart from "../components/medi_map/chart/BaseLineChart";
 import BaseTable from "../components/medi_map/chart/BaseTable";
+import { dashboardMock } from "../assets/DashboardMock.js";
 
 const FILTERDATA = ["오늘", "3일", "7일", "1개월", "3개월", "1년", "직접 선택"];
 export default function DashBoardPage() {
@@ -26,26 +27,6 @@ export default function DashBoardPage() {
     handleDateFilterButton,
     handleDateChange
   } = useDashBoard();
-  const { user, setUser } = userStore();
-  const { data, refetch } = useQuery({
-    queryKey: ["userInfo"],
-    queryFn: () => getUserInfo(),
-    enabled: false
-  });
-
-  useEffect(() => {
-    if (!user) {
-      refetch();
-    } else if (data) {
-      setUser(data);
-    }
-  }, [user, data]);
-
-  useEffect(() => {
-    setTimeout(() => {
-      refetch();
-    }, 5000);
-  }, []);
 
   const barFormatData = () => {
     return Object.entries(averageAge).map(([age, value]) => ({

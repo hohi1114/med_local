@@ -6,6 +6,37 @@ import useNaverMapData from "../../hooks/useNaverMapData";
 import { debounce } from "lodash";
 import { makeMarkerClustering } from "../../utils/marker-cluster.js";
 import { PatientData } from "../../utils/ExcelParser.js";
+import { dashboardMock } from "../../assets/DashboardMock.js";
+
+/**
+ 특정 구역에 환자가 포함되는지
+ */
+function containsLocation(
+  pointLat: number,
+  pointLng: number,
+  polygon: naver.maps.Polygon
+): boolean {
+  // Instead of getPath(), use getPaths() + getAt(0)
+  const ringArray = polygon.getPaths().getAt(0); // the first ring
+  if (!ringArray) return false; // no ring
+
+  let inside = false;
+  const len = ringArray.getLength();
+
+  for (let i = 0, j = len - 1; i < len; j = i++) {
+    const latI = ringArray.getAt(i).lat();
+    const lngI = ringArray.getAt(i).lng();
+    const latJ = ringArray.getAt(j).lat();
+    const lngJ = ringArray.getAt(j).lng();
+
+    const intersect =
+      lngI > pointLng !== lngJ > pointLng &&
+      pointLat < ((latJ - latI) * (pointLng - lngI)) / (lngJ - lngI) + latI;
+
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
 
 const NaverMap = () => {
   const {
@@ -18,7 +49,7 @@ const NaverMap = () => {
   const MarkerClustering = makeMarkerClustering(window.naver) as any;
   const mapElement = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<naver.maps.Map | null>(null);
-
+  const patientsArr = dashboardMock();
   //**Refs
   const polygonsRef = useRef<Map<string, naver.maps.Polygon>>(new Map());
   const regionMarkerClusterRef = useRef<any | null>(null);
@@ -74,8 +105,6 @@ const NaverMap = () => {
       }
     }
   }, [isOpenDrawer, currentZoom, clickedArea]);
-
-  const existringMarkers = new Set();
 
   // ✅ Handle zoom change
   useEffect(() => {
@@ -157,17 +186,26 @@ const NaverMap = () => {
       const resolvedAreas = await Promise.all(areaPromises);
 
       // 📌 Get patients data based on boundArea
-      const PatientDataPromises = boundAreas.map((area) => {
-        return getPatientsFromRegion(area.areaName, name);
-      });
-      const patientsArr = await Promise.all(PatientDataPromises);
+      // const PatientDataPromises = boundAreas.map((area) => {
+      //   return getPatientsFromRegion(area.areaName, name);
+      // });
+      // const patientsArr = await Promise.all(PatientDataPromises);
+
       // 📌 Set patient makers and background based on patient count
       resolvedAreas.forEach((item, index) => {
         if (!item) return;
         const { area, polygon } = item;
+
         if (!area || !polygon) return;
 
-        const patients = patientsArr[index];
+        const patients = [];
+        patientsArr.forEach((patient) => {
+          if (containsLocation(patient.latitude, patient.longtitude, polygon)) {
+            patients.push(patient);
+          }
+        });
+
+        // const patients = patientsArr[index];
         let totalCost = patients.reduce((sum, p) => sum + p.totalCost, 0);
         patientTemp.push({ areaName: area.areaName, patients });
         polygon.setOptions({
@@ -191,7 +229,7 @@ const NaverMap = () => {
       handleZoomChange();
     });
     handleZoomChange();
-  }, [map, isDataLoaded, isOpenDrawer, highestCost]);
+  }, [map, isDataLoaded, highestCost]);
 
   const setPolygonClickListener = (
     polygon: naver.maps.Polygon,

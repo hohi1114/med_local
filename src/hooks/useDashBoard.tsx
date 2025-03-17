@@ -7,6 +7,7 @@ import isBetween from "dayjs/plugin/isBetween";
 import { getAllPatients } from "../store/indexded_db/RegionDB";
 import { AllPatientsData, RankedRegion } from "../types/medi-types";
 dayjs.extend(isBetween);
+import { dashboardMock } from "../assets/DashboardMock.js";
 
 const useDashBoard = () => {
   const { rangeDate, handleDateChange } = useRangeDurationDatePicker();
@@ -30,9 +31,10 @@ const useDashBoard = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const data: PatientData[] = await getAllMergedData();
+      // const data: PatientData[] = await getAllMergedData();
+      const data = dashboardMock();
       const allPatientsData: AllPatientsData[] = await getAllPatients("small");
-
+      console.log(data);
       if (data) {
         setPatientsData(data);
         setFilteredPatients(data);

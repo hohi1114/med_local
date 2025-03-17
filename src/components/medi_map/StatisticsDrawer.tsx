@@ -74,6 +74,8 @@ const StatisticsDrawer = () => {
   }, [isOpenDrawer, rangeDate]);
 
   useEffect(() => {
+    console.log(areaName);
+    console.log(patients);
     if (areaName && isOpenDrawer) {
       if (patients?.length > 0) {
         const filteredPatients = patients.filter(
@@ -82,7 +84,7 @@ const StatisticsDrawer = () => {
         if (filteredPatients[0]?.patients) {
           const filteredPatientsByDate = filteredPatients[0]?.patients.filter(
             (data) => {
-              const visitDate = dayjs(data.visitDate);
+              const visitDate = dayjs(new Date(data.visitDate));
               return visitDate.isBetween(
                 rangeDate.startDate,
                 rangeDate.endDate

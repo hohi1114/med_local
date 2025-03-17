@@ -13,6 +13,16 @@ export const MENUITEMS: MenuItem[] = [
     )
   },
   {
+    key: "compare-chart",
+    label: "기간 비교 분석",
+    icon: (
+      <img
+        src="/images/calendar.svg"
+        style={{ width: "1.5rem", height: "1.5rem" }}
+      />
+    )
+  },
+  {
     key: "local_analysis",
     label: "지역 별 분석",
     icon: (
@@ -22,11 +32,11 @@ export const MENUITEMS: MenuItem[] = [
       />
     ),
     children: [
-      { key: "map", label: "지도" }
-      // {
-      //   key: "statistics-by-region",
-      //   label: "지역 별 통계"
-      // }
+      { key: "map", label: "지도" },
+      {
+        key: "statistics-by-region",
+        label: "지역 별 통계"
+      }
     ]
   }
   // {
