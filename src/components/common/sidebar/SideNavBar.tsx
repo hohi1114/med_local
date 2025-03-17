@@ -10,15 +10,10 @@ const SideNavBar = () => {
 
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth <= 768) {
-        setCollapsed(true);
-      } else {
-        setCollapsed(false);
-      }
+      setCollapsed(window.innerWidth <= 768);
     };
 
     window.addEventListener("resize", handleResize);
-
     handleResize();
 
     return () => window.removeEventListener("resize", handleResize);
@@ -28,38 +23,38 @@ const SideNavBar = () => {
     navigate(`/${e.key}`);
   };
 
+  const toggleCollapsed = () => {
+    setCollapsed(!collapsed);
+  };
+
   return (
-    <SidbarContainer collapsed={collapsed}>
-      {!collapsed && (
-        <LogoContainer>
-          <IconStyle src="/images/logo.png" alt="default_profile" />
-          <span style={{ fontSize: "1.2rem" }}>Orbis</span>
-        </LogoContainer>
-      )}
+    <SidebarContainer collapsed={collapsed}>
+      <LogoContainer collapsed={collapsed}>
+        <MenuIcon
+          src="/images/menu.svg"
+          onClick={toggleCollapsed}
+          alt="menu icon"
+        />
+        {!collapsed && <LogoText>ORBIS</LogoText>}
+      </LogoContainer>
 
       <Menu
         onClick={onClick}
-        defaultSelectedKeys={["Dashboard"]}
+        defaultSelectedKeys={["map"]}
+        defaultOpenKeys={["local_analysis"]}
         mode="inline"
         items={MENUITEMS}
         inlineCollapsed={collapsed}
         style={{ flex: 1, overflowY: "auto" }}
       />
-    </SidbarContainer>
+    </SidebarContainer>
   );
 };
 
-const LogoContainer = styled.div`
-  padding: 1rem;
-  font-size: 1.2rem;
-  font-weight: bold;
-  display: flex;
-  gap: 10px;
-  align-items: center;
-`;
+// Styled components
 
-const SidbarContainer = styled.div<{ collapsed: boolean }>`
-  width: ${(props) => (props.collapsed ? "8rem" : "23rem")};
+const SidebarContainer = styled.div<{ collapsed: boolean }>`
+  width: ${(props) => (props.collapsed ? "7rem" : "20rem")};
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -69,10 +64,26 @@ const SidbarContainer = styled.div<{ collapsed: boolean }>`
   transition: width 0.3s ease;
 `;
 
-const IconStyle = styled.img`
-  width: 2.5rem;
+const LogoContainer = styled.div<{ collapsed: boolean }>`
+  padding: ${(props) => (props.collapsed ? "1rem 2.3rem" : "1rem 2rem")};
+  display: flex;
+  align-items: center;
+  gap: 6px;
+`;
+
+const MenuIcon = styled.img`
+  width: 2rem;
   height: auto;
-  /* border-radius: 100%; */
+  cursor: pointer;
+`;
+
+const LogoText = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.1rem;
+  font-size: 1.5rem;
+  font-weight: bold;
 `;
 
 export default SideNavBar;
