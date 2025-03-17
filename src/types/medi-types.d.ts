@@ -1,3 +1,5 @@
+import { PatientData } from "../utils/ExcelParser";
+
 export interface MediDataType {
   key: number;
   local: string | null;
@@ -46,3 +48,12 @@ export type RegionSummary = {
   totalCost: number;
   patientCount: number;
 };
+
+export interface RankedRegion extends RegionSummary {
+  revenueRate: string; // 매출 비율 (예: "25.50%")
+}
+
+export interface AllPatientsData extends PatientData {
+  regionName: string;
+  data: PatientData[];
+}

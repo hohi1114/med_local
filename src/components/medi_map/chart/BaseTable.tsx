@@ -13,8 +13,8 @@ interface DataType {
 const columns: TableProps<DataType>["columns"] = [
   {
     title: "지역",
-    dataIndex: "area",
-    key: "area"
+    dataIndex: "regionName",
+    key: "regionName"
   },
   {
     title: "환자수",
@@ -28,36 +28,12 @@ const columns: TableProps<DataType>["columns"] = [
   },
   {
     title: "누적 매출액",
-    dataIndex: "accumulatedRevenue",
-    key: "accumulatedRevenue"
+    dataIndex: "totalCost",
+    key: "totalCost"
   }
 ];
 
-const data: DataType[] = [
-  {
-    key: "1",
-    area: "John Brown",
-    patientCount: 32,
-    revenueRate: "New York No. 1 Lake Park",
-    accumulatedRevenue: 44
-  },
-  {
-    key: "3",
-    area: "John Brown",
-    patientCount: 32,
-    revenueRate: "New York No. 1 Lake Park",
-    accumulatedRevenue: 44
-  },
-  {
-    key: "4",
-    area: "John Brown",
-    patientCount: 32,
-    revenueRate: "New York No. 1 Lake Park",
-    accumulatedRevenue: 44
-  }
-];
-
-const BaseTable = () => {
+const BaseTable = ({ data }) => {
   return (
     <TableContainer>
       <Table<DataType>

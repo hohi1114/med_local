@@ -1,16 +1,24 @@
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import useRangeDurationDatePicker from "./useRangeDurationDatePicker";
 import { PatientData } from "../utils/ExcelParser";
 import { getAllMergedData } from "../store/indexded_db/IndexedDB";
 import dayjs from "dayjs";
 import isBetween from "dayjs/plugin/isBetween";
+import { getAllPatients } from "../store/indexded_db/RegionDB";
+import { AllPatientsData, RankedRegion } from "../types/medi-types";
 dayjs.extend(isBetween);
 
 const useDashBoard = () => {
   const { rangeDate, handleDateChange } = useRangeDurationDatePicker();
   const [patientsData, setPatientsData] = useState<PatientData[]>([]);
   const [filteredpatients, setFilteredPatients] = useState<PatientData[]>([]);
-  const [totalCost, setTotalCost] = useState<number>(0);
+  const [rankedRegion, setRankedRegion] = useState<RankedRegion[]>([]);
+  const [regionAllPatients, setRegionAllPatients] = useState<AllPatientsData[]>(
+    []
+  );
+  const [totalCost, setTotalCost] = useState<{ past: number; current: number }>(
+    0
+  );
   const [totalPatients, setTotalPatients] = useState<number>(0);
   const [totalNewPatients, setTotalNewPatients] = useState<number>(0);
   const [totalRevisitedPatitents, setTotalRevisitedPatients] =
@@ -23,15 +31,22 @@ const useDashBoard = () => {
   useEffect(() => {
     const fetchData = async () => {
       const data: PatientData[] = await getAllMergedData();
+      const allPatientsData: AllPatientsData[] = await getAllPatients("small");
+
       if (data) {
         setPatientsData(data);
         setFilteredPatients(data);
       }
+      if (allPatientsData) {
+        setRegionAllPatients(allPatientsData);
+      }
     };
-    console.log("실행됨");
     fetchData();
   }, []);
 
+  const [filteredPastPatients, setFilteredPastPatients] = useState<
+    PatientData[]
+  >([]);
   //날짜 필터
   useEffect(() => {
     if (patientsData?.length > 0) {
@@ -39,12 +54,25 @@ const useDashBoard = () => {
         const visitDate = dayjs(patient.visitDate);
         return visitDate.isBetween(rangeDate.startDate, rangeDate.endDate);
       });
+
+      const filterPastPatients = patientsData?.filter((patient) => {
+        const visitDate = dayjs(patient.visitDate);
+        return visitDate.isBetween(
+          dayjs(rangeDate.startDate).subtract(1, "year"),
+          dayjs(rangeDate.endDate).subtract(1, "year")
+        );
+      });
+      setFilteredPastPatients(filterPastPatients);
       setFilteredPatients(filterPatientsByDate);
     }
   }, [rangeDate, patientsData]);
 
+  useEffect(() => {
+    rankRevenueByRegion();
+  }, [totalCost]);
+
   const handleDateFilterButton = (content: string) => {
-    const today = dayjs("2024-03-28");
+    const today = dayjs();
     switch (content) {
       case "오늘":
         return handleDateChange([today, today]);
@@ -83,21 +111,17 @@ const useDashBoard = () => {
     const result = filteredpatients.reduce((acc, cur) => {
       return acc + cur.totalCost;
     }, 0);
-    setTotalCost(Math.ceil(result));
+
+    const pastResult = filteredPastPatients.reduce((acc, cur) => {
+      return acc + cur.totalCost;
+    }, 0);
+
+    setTotalCost({ past: Math.ceil(pastResult), current: Math.ceil(result) });
   };
 
   //전체 환자 수
   const calTotalPatients = () => {
-    const patientsSet = new Set();
-
-    let count = 0;
-    filteredpatients.forEach((patient) => {
-      if (!patientsSet.has(patient.chartNumber)) {
-        patientsSet.add(patient.chartNumber);
-        count++;
-      }
-    });
-    setTotalPatients(count);
+    setTotalPatients(filteredpatients.length);
   };
 
   //신규 환자 수
@@ -133,6 +157,36 @@ const useDashBoard = () => {
   };
 
   //지역 별 매출 순위
+  const rankRevenueByRegion = async () => {
+    let regionData = [];
+    regionAllPatients.forEach((region) => {
+      const filterePatients = region.data.filter((patient) => {
+        const visitDate = dayjs(patient.visitDate);
+
+        return visitDate.isBetween(rangeDate.startDate, rangeDate.endDate);
+      });
+      const totalCost = filterePatients.reduce(
+        (acc, cur) => acc + cur.totalCost,
+        0
+      );
+      const patientCount = filterePatients.length;
+      regionData.push({
+        regionName: region.regionName,
+        totalCost,
+        patientCount
+      });
+    });
+    const updatedRegionData = regionData
+      .sort((a, b) => b.totalCost - a.totalCost)
+      .map((region) => ({
+        ...region,
+        revenueRate:
+          totalCost > 0
+            ? ((region.totalCost / totalCost) * 100).toFixed(2) + "%"
+            : "0%"
+      }));
+    setRankedRegion(updatedRegionData.slice(0, 5));
+  };
 
   //연령별 환자 분포
   const calAverageAge = () => {
@@ -174,7 +228,7 @@ const useDashBoard = () => {
     calRevisitedPatients();
     calAverageAge();
     calRevenueDate();
-  }, [filteredpatients]);
+  }, [filteredpatients, filteredPastPatients]);
 
   return {
     rangeDate,
@@ -186,7 +240,7 @@ const useDashBoard = () => {
     totalRevisitedPatitents,
     averageAge,
     revenueByDate,
-    filteredpatients
+    rankedRegion
   };
 };
 
