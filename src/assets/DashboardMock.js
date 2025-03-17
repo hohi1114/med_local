@@ -42,7 +42,7 @@ export const dashboardMock = () => {
           id: faker.number.int({ min: 100, max: 999 }),
           totalCost: faker.number.int({ min: 10000, max: 5000000 }),
           visitDate: dayjs(
-            faker.date.between({ from: "2025-01-01", to: Date.now() })
+            faker.date.between({ from: "2024-01-01", to: Date.now() })
           ).format("YYYY-MM-DD"),
           visitType: faker.helpers.arrayElement(["신환", "재진", "초진"])
         };

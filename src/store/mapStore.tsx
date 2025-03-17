@@ -16,7 +16,7 @@ interface IMapStore {
   patients: { areaName: string; patients: PatientData[] }[];
   drawerDate: [Date, Date];
   isOpenDrawer: boolean;
-  highestCost: { small: 0; dong: 0; gu: 0 };
+  highestCost: { small: number; dong: number; gu: number };
 
   setDrawerDate: (drawerDate: [Date, Date]) => void;
   setAreaName: (areaName: string) => void;
@@ -35,7 +35,11 @@ interface IMapStore {
     patients: { areaName: string; patients: PatientData[] }[]
   ) => void;
   handleIsDrawerOpen: (isDrawerOpen: boolean) => void;
-  setHighestCost: (highestCost: { small: 0; dong: 0; gu: 0 }) => void;
+  setHighestCost: (highestCost: {
+    small: number;
+    dong: number;
+    gu: number;
+  }) => void;
 }
 
 const mapStore = create<IMapStore>((set) => ({
@@ -52,7 +56,7 @@ const mapStore = create<IMapStore>((set) => ({
   patients: [],
   drawerDate: [new Date(), dayjs().subtract(1, "year").toDate()],
   isOpenDrawer: false,
-  highestCost: { small: 0, dong: 0, gu: 0 },
+  highestCost: { small: 175661741, dong: 417978115, gu: 123328002 },
 
   setAreaName: (areaName) => set({ areaName }),
   setTotalPatients: (totalPatients) => set({ totalPatients }),

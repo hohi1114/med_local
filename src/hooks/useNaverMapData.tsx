@@ -44,7 +44,6 @@ const useNaverMapData = () => {
       hightestCost === 0
         ? 1
         : Math.min(Math.max(totalCost, minCost), hightestCost) / hightestCost;
-
     const startColor = { r: 208, g: 232, b: 255 };
     const endColor = { r: 76, g: 140, b: 255 };
 
