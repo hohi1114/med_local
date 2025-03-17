@@ -22,6 +22,7 @@ export default function DashBoardPage() {
     averageAge,
     totalRevisitedPatitents,
     revenueByDate,
+    handleDateFilterButton,
     handleDateChange
   } = useDashBoard();
   const { user, setUser } = userStore();
@@ -64,16 +65,19 @@ export default function DashBoardPage() {
       <ContentHeader title="대시보드" />
       <DashBoardContainer>
         <FilterContainer>
-          {FILTERDATA.map((data, index) => {
+          {FILTERDATA.map((content, index) => {
             return (
               <div style={{ width: "85px" }} key={index}>
                 <CutomButton
+                  onClick={() =>
+                    content !== "직접선택" && handleDateFilterButton(content)
+                  }
                   type="button"
                   textcolor="#000000"
-                  color={"직접선택" === data ? "#EDEEFC" : "#ffffff"}
+                  color={"직접선택" === content ? "#EDEEFC" : "#ffffff"}
                   key={index}
                 >
-                  {data}
+                  {content}
                 </CutomButton>
               </div>
             );
