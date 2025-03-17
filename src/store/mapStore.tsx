@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { PatientData } from "../utils/ExcelParser";
-import dayjs from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 
 interface IMapStore {
   areaName: string; //지역이름
@@ -14,11 +14,11 @@ interface IMapStore {
   ageGroups: Record<string, number>;
   dailyRevenue: Record<string, { totalCost: number; patientCount: number }>; //객단가 = 총 매출 / 총 거래 수
   patients: { areaName: string; patients: PatientData[] }[];
-  drawerDate: [Date, Date];
+  drawerDate: { startDate: Dayjs; endDate: Dayjs };
   isOpenDrawer: boolean;
   highestCost: { small: number; dong: number; gu: number };
 
-  setDrawerDate: (drawerDate: [Date, Date]) => void;
+  setDrawerDate: (drawerDate: { startDate: Dayjs; endDate: Dayjs }) => void;
   setAreaName: (areaName: string) => void;
   setTotalPatients: (totalPatients: number) => void;
   setTotalCost: (totalCost: number) => void;
@@ -54,7 +54,7 @@ const mapStore = create<IMapStore>((set) => ({
   ageGroups: {},
   dailyRevenue: {},
   patients: [],
-  drawerDate: [new Date(), dayjs().subtract(1, "year").toDate()],
+  drawerDate: { startDate: new Date(), endDate: new Date() },
   isOpenDrawer: false,
   highestCost: { small: 175661741, dong: 417978115, gu: 123328002 },
 

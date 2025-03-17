@@ -1,3 +1,4 @@
+import React from "react";
 import { Drawer } from "antd";
 import DurationDatePicker from "../common/datepicker/DurationDatePicker";
 import BaseButton from "../common/button/BaseButton";
@@ -8,14 +9,12 @@ import BarChart from "./chart/BarChart";
 import BaseLineChart from "./chart/BaseLineChart";
 import isBetween from "dayjs/plugin/isBetween";
 import dayjs from "dayjs";
-import useRangeDurationDatePicker from "../../hooks/useRangeDurationDatePicker";
 import { useEffect, useState } from "react";
 import { PatientData } from "../../utils/ExcelParser";
 dayjs.extend(isBetween);
 
 const StatisticsDrawer = () => {
   const { isOpenDrawer, handleIsDrawerOpen } = mapStore();
-  const { rangeDate, handleDateChange } = useRangeDurationDatePicker();
   const [selectedPatient, setSelectedPatient] = useState<PatientData[]>([]);
   const {
     areaName,
@@ -26,6 +25,7 @@ const StatisticsDrawer = () => {
     dailyRevenue,
     revenueTrend,
     ageGroups,
+    drawerDate,
     setDrawerDate,
     setTotalCost,
     setTotalPatients,
@@ -37,10 +37,10 @@ const StatisticsDrawer = () => {
     patients
   } = mapStore();
 
-  useEffect(() => {
-    setDrawerDate([rangeDate.startDate, rangeDate.endDate]);
-    handleDateChange([dayjs().subtract(1, "year"), dayjs()]);
-  }, []);
+  // useEffect(() => {
+  //   setDrawerDate([rangeDate.startDate, rangeDate.endDate]);
+  //   handleDateChange([dayjs().subtract(1, "year"), dayjs()]);
+  // }, []);
 
   // 연령을 숫자로 변환하는 함수
   const parseAge = (ageString: string): number => {
@@ -64,7 +64,15 @@ const StatisticsDrawer = () => {
     setFirstVisitPatients(0);
     setRevisitedPatients(0);
     setRevenueTrend({});
-    setAgeGroups({});
+    setAgeGroups({
+      아동: 0,
+      "10대": 0,
+      "20대": 0,
+      "30대": 0,
+      "40대": 0,
+      "50대": 0,
+      "60대": 0
+    });
     setDailyRevenue({});
   };
 
@@ -72,7 +80,7 @@ const StatisticsDrawer = () => {
     if (isOpenDrawer) {
       initDrawerData();
     }
-  }, [isOpenDrawer, rangeDate]);
+  }, [isOpenDrawer, drawerDate]);
 
   useEffect(() => {
     if (areaName && isOpenDrawer) {
@@ -80,13 +88,14 @@ const StatisticsDrawer = () => {
         const filteredPatients = patients.filter(
           (data) => data.areaName === areaName
         );
+
         if (filteredPatients[0]?.patients) {
           const filteredPatientsByDate = filteredPatients[0]?.patients.filter(
             (data) => {
               const visitDate = dayjs(new Date(data.visitDate));
               return visitDate.isBetween(
-                rangeDate.startDate,
-                rangeDate.endDate
+                drawerDate.startDate.toDate(),
+                drawerDate.endDate.toDate()
               );
             }
           );
@@ -96,86 +105,88 @@ const StatisticsDrawer = () => {
         setSelectedPatient([]);
       }
     }
-  }, [patients, isOpenDrawer, rangeDate, areaName]);
+  }, [patients, isOpenDrawer, drawerDate, areaName]);
 
   useEffect(() => {
-    if (selectedPatient?.length > 0) {
-      // 연령대 별 환자 분포
-      const ageGroups = {
-        아동: 0,
-        "10대": 0,
-        "20대": 0,
-        "30대": 0,
-        "40대": 0,
-        "50대": 0,
-        "60대": 0
-      };
-
-      const revenueMap: { [key: string]: number } = {};
-      const dailyRevenueMap: { [key: string]: number } = {};
-      let firstTimeCount = 0;
-      let revisitCount = 0;
-      let resultTotalCost = 0;
-
-      selectedPatient.forEach((patient) => {
-        const { totalCost, visitDate, age, visitType } = patient;
-        resultTotalCost += totalCost;
-        //재방문 환자수 = 초진 + 재진
-        if (visitType === "초진" || visitType === "재진") {
-          revisitCount++;
-        } else if (visitType === "신환") {
-          firstTimeCount++;
-        }
-        //매출액 변화 추이
-        if (visitDate && revenueMap[visitDate]) {
-          revenueMap[visitDate] += totalCost ?? 0;
-        } else {
-          revenueMap[visitDate] = totalCost;
-        }
-        const ageInYears = parseAge(age);
-        // 연령대에 맞는 카운트 증가
-        if (ageInYears >= 0 && ageInYears <= 9) {
-          ageGroups["아동"]++;
-        } else if (ageInYears >= 10 && ageInYears <= 19) {
-          ageGroups["10대"]++;
-        } else if (ageInYears >= 20 && ageInYears <= 29) {
-          ageGroups["20대"]++;
-        } else if (ageInYears >= 30 && ageInYears <= 39) {
-          ageGroups["30대"]++;
-        } else if (ageInYears >= 40 && ageInYears <= 49) {
-          ageGroups["40대"]++;
-        } else if (ageInYears >= 50 && ageInYears <= 59) {
-          ageGroups["50대"]++;
-        } else {
-          ageGroups["60대"]++;
-        }
-        //1인당 평균 매출액
-        if (visitDate) {
-          // visitDate가 없으면 초기화
-          if (!dailyRevenueMap[visitDate]) {
-            dailyRevenueMap[visitDate] = {
-              totalCost: 0,
-              patientCount: 0
-            };
-          }
-        }
-        if (visitDate && dailyRevenueMap[visitDate].totalCost) {
-          dailyRevenueMap[visitDate].totalCost += totalCost;
-          dailyRevenueMap[visitDate].patientCount += 1;
-        } else {
-          dailyRevenueMap[visitDate].totalCost = totalCost;
-          dailyRevenueMap[visitDate].patientCount = 1;
-        }
-
-        setTotalCost(resultTotalCost);
-        setTotalPatients(selectedPatient.length);
-        setFirstVisitPatients(firstTimeCount);
-        setRevisitedPatients(revisitCount);
-        setRevenueTrend(revenueMap);
-        setAgeGroups(ageGroups);
-        setDailyRevenue(dailyRevenueMap);
-      });
+    if (selectedPatient.length === 0) {
+      initDrawerData();
+      return;
     }
+    // 연령대 별 환자 분포
+    const ageGroups = {
+      아동: 0,
+      "10대": 0,
+      "20대": 0,
+      "30대": 0,
+      "40대": 0,
+      "50대": 0,
+      "60대": 0
+    };
+
+    const revenueMap: { [key: string]: number } = {};
+    const dailyRevenueMap: { [key: string]: number } = {};
+    let firstTimeCount = 0;
+    let revisitCount = 0;
+    let resultTotalCost = 0;
+
+    selectedPatient.forEach((patient) => {
+      const { totalCost, visitDate, age, visitType } = patient;
+      resultTotalCost += totalCost;
+      //재방문 환자수 = 초진 + 재진
+      if (visitType === "초진" || visitType === "재진") {
+        revisitCount++;
+      } else if (visitType === "신환") {
+        firstTimeCount++;
+      }
+      //매출액 변화 추이
+      if (visitDate && revenueMap[visitDate]) {
+        revenueMap[visitDate] += totalCost ?? 0;
+      } else {
+        revenueMap[visitDate] = totalCost;
+      }
+      const ageInYears = parseAge(age);
+      // 연령대에 맞는 카운트 증가
+      if (ageInYears >= 0 && ageInYears <= 9) {
+        ageGroups["아동"]++;
+      } else if (ageInYears >= 10 && ageInYears <= 19) {
+        ageGroups["10대"]++;
+      } else if (ageInYears >= 20 && ageInYears <= 29) {
+        ageGroups["20대"]++;
+      } else if (ageInYears >= 30 && ageInYears <= 39) {
+        ageGroups["30대"]++;
+      } else if (ageInYears >= 40 && ageInYears <= 49) {
+        ageGroups["40대"]++;
+      } else if (ageInYears >= 50 && ageInYears <= 59) {
+        ageGroups["50대"]++;
+      } else {
+        ageGroups["60대"]++;
+      }
+      //1인당 평균 매출액
+      if (visitDate) {
+        // visitDate가 없으면 초기화
+        if (!dailyRevenueMap[visitDate]) {
+          dailyRevenueMap[visitDate] = {
+            totalCost: 0,
+            patientCount: 0
+          };
+        }
+      }
+      if (visitDate && dailyRevenueMap[visitDate].totalCost) {
+        dailyRevenueMap[visitDate].totalCost += totalCost;
+        dailyRevenueMap[visitDate].patientCount += 1;
+      } else {
+        dailyRevenueMap[visitDate].totalCost = totalCost;
+        dailyRevenueMap[visitDate].patientCount = 1;
+      }
+
+      setTotalCost(resultTotalCost);
+      setTotalPatients(selectedPatient.length);
+      setFirstVisitPatients(firstTimeCount);
+      setRevisitedPatients(revisitCount);
+      setRevenueTrend(revenueMap);
+      setAgeGroups(ageGroups);
+      setDailyRevenue(dailyRevenueMap);
+    });
   }, [selectedPatient]);
 
   const formatDataForAverageRevenue = (data: any) => {
@@ -222,7 +233,7 @@ const StatisticsDrawer = () => {
   };
 
   const handleTodayButton = () => {
-    handleDateChange([dayjs(), dayjs()]);
+    setDrawerDate({ startDate: dayjs(), endDate: dayjs() });
   };
 
   return (
@@ -249,8 +260,18 @@ const StatisticsDrawer = () => {
       <DateFilterWrapper>
         <div style={{ flex: 3 }}>
           <DurationDatePicker
-            rangeDate={rangeDate}
-            handleDateChange={handleDateChange}
+            rangeDate={{
+              startDate: drawerDate.startDate,
+              endDate: drawerDate.endDate
+            }}
+            handleDateChange={(dates) => {
+              if (dates) {
+                setDrawerDate({
+                  startDate: dayjs(dates[0]),
+                  endDate: dayjs(dates[1])
+                });
+              }
+            }}
           />
         </div>
         <div style={{ flex: 1 }}>
