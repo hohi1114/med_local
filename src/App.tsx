@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import DashBoardPage from "./pages/DashBoardPage";
 import BaseLayout from "./components/common/layout/BaseLayout";
 import StatisticsByRegionPage from "./pages/StatisticsByRegionPage";
@@ -13,9 +13,11 @@ function App() {
     <BrowserRouter>
       <Routes>
         {/* <Route path="/login" element={<LoginPage />} /> */}
+        <Route path="/" element={<Navigate to="/dashboard" />} />
         <Route path="/" element={<BaseLayout />}>
-          <Route path="/setting" element={<SettingPage />} />
           <Route index path="dashboard" element={<DashBoardPage />} />
+          <Route path="setting" element={<SettingPage />} />
+
           <Route
             path="statistics-by-region"
             element={<StatisticsByRegionPage />}

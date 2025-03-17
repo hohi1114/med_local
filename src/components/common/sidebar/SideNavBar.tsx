@@ -39,8 +39,7 @@ const SideNavBar = () => {
 
       <Menu
         onClick={onClick}
-        defaultSelectedKeys={["1"]}
-        defaultOpenKeys={["sub1"]}
+        defaultSelectedKeys={["Dashboard"]}
         mode="inline"
         items={MENUITEMS}
         inlineCollapsed={collapsed}
