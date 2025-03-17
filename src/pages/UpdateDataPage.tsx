@@ -1,6 +1,6 @@
 import { useState } from "react";
 import FileUpload from "../components/upload_data/FileUpload.tsx";
-import { parseDaysFiles, parsePlaceFiles } from "../utils/ExcelParser";
+import { parseDaysFiles, parsePlaceFiles } from "../utils/ExcelParser.ts"
 import {
   saveToIndexedDB,
   getDataFromIndexedDB,
@@ -9,7 +9,7 @@ import {
 import styled from "styled-components";
 import ContentHeaderRefresh from "../components/common/layout/ContentHeaderRefresh";
 import BaseButton from "../components/common/button/BaseButton";
-import { MergedData,BackendData } from "../types/medi-types";
+import { MergedData, BackendData } from "../types/medi-types";
 import { processData } from "../components/upload_data/DataProcessor.ts";
 import { loadNaverMapsScript } from "../utils/NaverGeocode";
 import { useEffect } from "react";
@@ -25,13 +25,14 @@ import {
 import Loading from "../components/common/Loading.tsx";
 import { Button } from "antd"; // Import Button for styled buttons
 import { uploadDataToBackend } from "../utils/api/apis";
+import ContentHeader from "../components/common/layout/ContentHeader.tsx";
 
 const UpdateDataPage = () => {
   const [daysFiles, setDaysFiles] = useState<FileList | null>(null);
   const [placeFiles, setPlaceFiles] = useState<FileList | null>(null);
   const [progress, setProgress] = useState<number>(0);
   const [api, contextHolder] = notification.useNotification();
-  const [localData,setLocalData]=useState<number>(0);
+  const [localData, setLocalData] = useState<number>(0);
 
   const openNotification = (type: 'success' | 'error' | 'warning', message: string, description: string) => {
     api[type]({
@@ -42,7 +43,7 @@ const UpdateDataPage = () => {
     });
   };
 
-  
+
   const { areas: areas_small } = useMediMapData("normalized_small_db.json");
   const { areas: areas_dong } = useMediMapData("fixed_polygon.json");
   const { areas: areas_gu } = useMediMapData("district_boundaries.json");
@@ -50,7 +51,7 @@ const UpdateDataPage = () => {
   // ✅ Load Naver Maps Script on Component Mount
   useEffect(() => {
     loadNaverMapsScript(import.meta.env.VITE_NAVER_MAPS_CLIENT_ID)
-      .then(() => {})
+      .then(() => { })
       .catch((error) =>
         console.error("❌ Failed to load Naver Maps script:", error)
       );
@@ -81,158 +82,47 @@ const UpdateDataPage = () => {
     initializeDatabases();
   }, [areas_small, areas_dong, areas_gu]); //
 
-  // 🔹 Process and Store Data in IndexedDB
-  const handleProcessData = async () => {
-    setProgress(0);
-    if (!placeFiles || !daysFiles) return;
-    const visits = await parseDaysFiles(daysFiles);
-    const patients = await parsePlaceFiles(placeFiles);
-
-    let existingMergedData: MergedData[] = [];
-
-    try {
-      // ✅ Try fetching existing data
-      const dbData = await getDataFromIndexedDB(); //이거를 backend에서 불러와야 할 듯함. local에 있는거 면 이상하자나, 그럼 back이랑 local이랑 동기화 됐는지 알 수 있는 data?  
-      if (dbData && dbData.df_merged) {
-        existingMergedData = dbData.df_merged;
-      }
-    } catch (error) {
-      console.warn("⚠️ IndexedDB not found. Skipping duplicate check.", error);
-    }
-    // 🔹 Process Data inside DataProcessor
-    const { df_merged, df_filtered, df_date } = await processData(
-      visits,
-      patients,
-      existingMergedData.length > 0 ? existingMergedData : [],
-      setProgress
-    );
-
-    console.log(df_merged, df_filtered, df_date);
-
-
-    await saveToIndexedDB(
-      df_merged,
-      df_filtered,
-      df_date,
-    );
-
-     uploadDataToBackend({merged_data:df_merged,filtered_data:df_filtered,df_date});
-
-
-    await storePatientsByRegion(df_filtered, areas_small, "small");
-
-    // 2. Process neighborhoods
-    await storePatientsByRegion(df_filtered, areas_dong, "dong");
-
-    // 3. Create district structure
-    await storePatientsByRegion(df_filtered,areas_gu, "gu");
-
-
-
-    setProgress(100);
-  };
-
-
-// Handle backend data when fetched from ContentHeaderRefresh
-const handleDataFetched = async (backendData: BackendData | undefined) => {
-  if (!backendData || !backendData.merged_data) return; // Exit if no valid backend data
-
-  let existingMergedData: MergedData[] = [];
-  let existingFilteredData: BackendData['filtered_data'] = [];
-  let existingDates: BackendData['df_date'] = [];
-
-  try {
-    const dbData = await getDataFromIndexedDB();
-    if (dbData) {
-      existingMergedData = dbData.df_merged || [];
-      existingFilteredData = dbData.df_filtered || [];
-      existingDates = dbData.df_date || [];
-    }
-  } catch (error) {
-    console.warn("⚠️ IndexedDB not found. Using backend data as is.", error);
-  }
-  // If local data is empty, simply save the backend data
-  if (!existingMergedData.length) {
-    await saveToIndexedDB(
-      backendData.merged_data,
-      backendData.filtered_data,
-      backendData.df_date,
-    );
-    setLocalData(backendData.merged_data.length);
-    openNotification('success', '데이터 동기화', '서버 데이터가 로컬에 저장되었습니다.');
-    return;
-  }
-
-
-  // Check if the local merged data is identical to the backend merged data
-  if (existingMergedData.length == backendData.merged_data.length) {
-    setLocalData(existingMergedData.length);
-    openNotification('success', '데이터 동일', '로컬 데이터와 서버 데이터가 동일합니다.');
-  } else{
-  
-
-  // Remove duplicates from merged_data (keep only new records)
-  const newMergedData = backendData.merged_data.filter(
-    (record) =>
-      !existingMergedData.some(
-        (existing) =>
-          existing.chartNumber === record.chartNumber &&
-          existing.visitDate === record.visitDate &&
-          existing.totalCost === record.totalCost
-      )
-  );
-  console.log(backendData.merged_data);
-  console.log(existingMergedData);
-  console.log(newMergedData);
-
-  const newFilteredData = backendData.filtered_data.filter(
-    (record) =>
-      !existingFilteredData.some(
-        (existing) =>
-          existing.chartNumber === record.chartNumber &&
-          existing.visitDate === record.visitDate &&
-          existing.totalCost === record.totalCost
-      )
-  );
-
-
-  const newDates = backendData.df_date.filter(
-    (record) =>
-      !existingDates.some(
-        (existing) => existing.date === record.date
-      )
-  );
-  
-  // Only save if there are new items
-  if (newMergedData.length > 0 || newFilteredData.length > 0 || newDates.length > 0) {
-
-    await saveToIndexedDB(
-      newMergedData,
-      newFilteredData,
-      newDates,
-    );
-    
-   await storePatientsByRegion(newFilteredData, areas_small, "small");
-   await storePatientsByRegion(newFilteredData, areas_dong, "dong");
-   await storePatientsByRegion(newFilteredData,areas_dong, "gu");
-   
-
-    setLocalData(newMergedData.length+existingMergedData.length);
-    console.log(`Added ${newMergedData.length} new merged items, ${newFilteredData.length} new filtered items, ${newDates.length} new dates`);
-    openNotification('success', '데이터 동기화', '서버 데이터와 로컬 데이터에 추가되었습니다다.');
-  } else {
-    openNotification('success', '데이터 동기화', '서버 데이터가 로컬 데이터보다 적습니다');
-    setLocalData(existingMergedData.length);
-  }
-  }
-  };
-
-
   useEffect(() => {
     if (progress === 100) {
       openNotification("success", "데이터 처리 완료", "데이터 처리가 완료되었습니다.");
     }
   }, [progress]);
+
+
+
+  // Process and upload data
+  const handleProcessData = async () => {
+    if (!placeFiles || !daysFiles) {
+      openNotification("warning", "파일 누락", "모든 파일을 업로드해주세요.");
+      return;
+    }
+
+    setProgress(1); // Start progress
+
+    try {
+      // Parse files
+      const visits = await parseDaysFiles(daysFiles);
+      const patients = await parsePlaceFiles(placeFiles);
+      setProgress(20);
+
+      // Simulate progress for parsing
+      setProgress(40);
+
+      // Upload to backend (token is handled by authApi interceptor)
+      const backendResponse = await uploadDataToBackend(visits, patients);
+      setProgress(100);
+
+      // Update local data count
+      setLocalData(visits.length); // Adjust as needed
+
+      console.log(`✅ Backend response: ${backendResponse.message}, Processed: ${backendResponse.processedRecords}`);
+    } catch (error) {
+      console.error("❌ Error processing data:", error);
+      openNotification("error", "데이터 처리 실패", error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다.");
+      setProgress(0); // Reset progress on error
+    }
+  };
+
 
 
   return (
@@ -253,7 +143,7 @@ const handleDataFetched = async (backendData: BackendData | undefined) => {
         </div>
       )}
       {contextHolder}
-      <ContentHeaderRefresh title={"데이터 업데이트"} onDataFetched={handleDataFetched} />
+      <ContentHeader title={"데이터 업데이트"} />
       <UpdateDataContainer>
         <div style={{ marginBottom: "4rem" }}>
           <ContentContainer>

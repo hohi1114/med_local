@@ -1,22 +1,5 @@
 import * as XLSX from "xlsx";
 
-export interface VisitData {
-  chartNumber: number;
-  visitDate: string;
-  totalCost: number;
-}
-
-export interface PatientData {
-  chartNumber: number;
-  age: string;
-  address: string;
-  latitude?: number | null;
-  longitude?: number | null;
-  totalCost: number;
-  visitDate?: string;
-  visitType?: string;
-}
-
 /**
  * Converts an Excel serial date (e.g. 45329) to a "YYYY-MM-DD" string.
  * 엑셀 date 저장 오류 해결
@@ -27,33 +10,36 @@ function excelSerialToDate(serial: number): string {
   if (serial < 0) {
     throw new Error("Invalid Excel serial date: cannot be negative");
   }
-  
+
   if (serial < 1) {
-    throw new Error("Invalid Excel serial date: cannot represent dates before 1900-01-01");
+    throw new Error(
+      "Invalid Excel serial date: cannot represent dates before 1900-01-01"
+    );
   }
-  
+
   // Adjust for Excel's leap year bug
   // Serial number 60 in Excel represents the non-existent Feb 29, 1900
   let adjustedSerial = serial;
   if (serial >= 60) {
     adjustedSerial = serial - 1;
   }
-  
+
   // Calculate the date
   const millisecondsPerDay = 24 * 60 * 60 * 1000;
   // Excel dates start from December 30, 1899 (day 0 in Excel)
   const baseDate = new Date(Date.UTC(1899, 11, 30));
-  const targetDate = new Date(baseDate.getTime() + adjustedSerial * millisecondsPerDay);
-  
+  const targetDate = new Date(
+    baseDate.getTime() + adjustedSerial * millisecondsPerDay
+  );
+
   // Format the date as YYYY-MM-DD using UTC to avoid timezone issues
   const year = targetDate.getUTCFullYear();
   const month = String(targetDate.getUTCMonth() + 1).padStart(2, "0");
   const day = String(targetDate.getUTCDate()).padStart(2, "0");
-  
+
   return `${year}-${month}-${day}`;
 }
 
- 
 export const parseDaysFiles = async (files: FileList): Promise<VisitData[]> => {
   let data: VisitData[] = [];
 
@@ -73,7 +59,7 @@ export const parseDaysFiles = async (files: FileList): Promise<VisitData[]> => {
 
     const jsonData = XLSX.utils.sheet_to_json<any>(worksheet, {
       header: 1,
-      range: 3
+      range: 3,
     }); // Skip first 3 rows
 
     jsonData.forEach((row: any) => {
@@ -88,7 +74,7 @@ export const parseDaysFiles = async (files: FileList): Promise<VisitData[]> => {
         data.push({
           chartNumber: Number(row[0]),
           visitDate: visitDate,
-          totalCost: Number(row[3])
+          totalCost: Number(row[3]),
         });
       }
     });
@@ -118,7 +104,7 @@ export const parsePlaceFiles = async (
 
     const jsonData = XLSX.utils.sheet_to_json<any>(worksheet, {
       header: 1,
-      range: 3
+      range: 2,
     });
 
     jsonData.forEach((row: any) => {
@@ -128,7 +114,7 @@ export const parsePlaceFiles = async (
           age: row[4] || "N/D",
           address: row[8] || "N/D",
           latitude: null,
-          longitude: null
+          longitude: null,
         });
       }
     });

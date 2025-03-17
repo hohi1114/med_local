@@ -52,6 +52,7 @@ const uniqueVisits = Array.from(visitMap.values());
   );
 
   console.log(`📌 Removed duplicates. Remaining records: ${df_merged.length}`);
+
 // Function to determine if two dates are more than a month apart
 // Create a map to track the last visit date for each patient
 const lastVisitMap = new Map<number, string>();
@@ -94,6 +95,7 @@ for (const record of df_merged) {
     }
   }
   
+  console.log()
   // Update the last visit map with this record's date
   lastVisitMap.set(record.chartNumber, record.visitDate);
 }

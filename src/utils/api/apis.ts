@@ -16,7 +16,6 @@ export const authApi = axios.create({
   maxContentLength: 50 * 1024 * 1024, // 50MB
 });
 
-
 export const logout = () => {
   removeAuthTokens();
   window.location.href = "/login";
@@ -69,7 +68,7 @@ authApi.interceptors.request.use(
               await saveTokensToCookie({
                 access_token: newAccessToken.access_token,
                 refresh_token: newAccessToken.refresh_token,
-                expires_in: newAccessToken.expires_at
+                expires_in: newAccessToken.expires_at,
               });
 
               config.headers.Authorization = `Bearer ${newAccessToken.access_token}`;
@@ -115,7 +114,7 @@ export const postLogin = async (loginData: LoginParams) => {
   await saveTokensToCookie({
     access_token: data.access_token,
     refresh_token: data.refresh_token,
-    expires_in: data.expires_in
+    expires_in: data.expires_in,
   });
 
   return data;
@@ -132,27 +131,31 @@ export const postRefreshToken = async () => {
   }
   console.log(refreshToken);
   return await apiRequest("post", "/auth/refresh", {
-    refresh_token: refreshToken
+    refresh_token: refreshToken,
   });
 };
 export async function fetchDataFromBackend(): Promise<BackendData | undefined> {
   try {
-    const data = await apiRequest('get', '/data/get_all');
-    console.log('Fetched data:', data);
+    const data = await apiRequest("get", "/data/get_all");
+    console.log("Fetched data:", data);
     return data as BackendData;
   } catch (error) {
-    console.error('Error in fetchDataFromBackend:', error);
+    console.error("Error in fetchDataFromBackend:", error);
     return undefined;
   }
 }
-
-export async function uploadDataToBackend(dataToUpload: BackendData): Promise<boolean> {
+// Function to upload parsed data to the backend
+export const uploadDataToBackend = async (
+  visits: VisitData[],
+  patients: PatientData[]
+): Promise<BackendResponse> => {
+  const dataToUpload = { visits, patients };
   try {
-    await apiRequest('post', '/data/sync', dataToUpload);
-    console.log('Successfully uploaded data to backend:',dataToUpload);
-    return true; // Return true on successful upload
+    const response = await apiRequest("post", "/data/process_e", dataToUpload);
+    console.log("Successfully uploaded data to backend:", response);
+    return response as BackendResponse;
   } catch (error) {
-    console.error('Error in uploadDataToBackend:', error);
-    return false; // Return false on failure
+    console.error("Error in uploadDataToBackend:", error);
+    throw error; // Re-throw to handle in the component
   }
-}
+};
