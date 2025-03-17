@@ -34,7 +34,6 @@ const useDashBoard = () => {
       // const data: PatientData[] = await getAllMergedData();
       const data = dashboardMock();
       const allPatientsData: AllPatientsData[] = await getAllPatients("small");
-      console.log(data);
       if (data) {
         setPatientsData(data);
         setFilteredPatients(data);

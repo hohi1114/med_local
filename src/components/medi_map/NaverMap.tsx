@@ -49,7 +49,7 @@ const NaverMap = () => {
   const MarkerClustering = makeMarkerClustering(window.naver) as any;
   const mapElement = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<naver.maps.Map | null>(null);
-  const patientsArr = dashboardMock();
+  const [patientsArr, setPatientsArr] = useState<PatientData[][]>([]);
   //**Refs
   const polygonsRef = useRef<Map<string, naver.maps.Polygon>>(new Map());
   const regionMarkerClusterRef = useRef<any | null>(null);
@@ -79,6 +79,11 @@ const NaverMap = () => {
     });
 
     setMap(newMap);
+    const fetchData = async () => {
+      const data = await dashboardMock();
+      setPatientsArr(data);
+    };
+    fetchData();
   }, [map]);
 
   // ✅ Change PolyStyle and patinetMarkers when drawer is open
@@ -93,22 +98,12 @@ const NaverMap = () => {
           strokeWeight: 3
         });
       }
-      if (patientGroupsMarkerClusterRef.current) {
-        patientGroupsMarkerClusterRef.current
-          .getMarkers()
-          .forEach((marker: naver.maps.Marker) => {
-            marker.setMap(null);
-          });
-        patientGroupsMarkerClusterRef.current.setMap(null);
-
-        patientGroupsMarkerClusterRef.current = null;
-      }
     }
-  }, [isOpenDrawer, currentZoom, clickedArea]);
+  }, [isOpenDrawer, clickedArea]);
 
   // ✅ Handle zoom change
   useEffect(() => {
-    if (!map || !isDataLoaded) {
+    if (!map || !isDataLoaded || patientsArr.length == 0) {
       return;
     }
 
@@ -198,30 +193,28 @@ const NaverMap = () => {
 
         if (!area || !polygon) return;
 
-        const patients = [];
+        const patients: any = [];
+
         patientsArr.forEach((patient) => {
-          if (containsLocation(patient.latitude, patient.longtitude, polygon)) {
+          if (containsLocation(patient.latitude, patient.longitude, polygon)) {
             patients.push(patient);
           }
         });
-
-        // const patients = patientsArr[index];
         let totalCost = patients.reduce((sum, p) => sum + p.totalCost, 0);
         patientTemp.push({ areaName: area.areaName, patients });
         polygon.setOptions({
           paths: polygon.getPaths(),
           fillColor: `${getPolygonColorOpacity(totalCost, name)}`
         });
-
         if (currentZoom >= 16) {
-          const groupPatients = groupPatientsByProximity(patients, 500);
+          const groupPatients = groupPatientsByProximity(patients, 300);
           createPatientGroupMarkers(groupPatients, patientGroupsMarkers);
         }
       });
+
       // Marker clustering
       createMarkerCluster(regionMarkers, regionMarkerClusterRef);
       createMarkerCluster(patientGroupsMarkers, patientGroupsMarkerClusterRef);
-
       setPatients(patientTemp);
     }, 500);
 
@@ -229,7 +222,7 @@ const NaverMap = () => {
       handleZoomChange();
     });
     handleZoomChange();
-  }, [map, isDataLoaded, highestCost]);
+  }, [map, isDataLoaded, highestCost, patientsArr]);
 
   const setPolygonClickListener = (
     polygon: naver.maps.Polygon,

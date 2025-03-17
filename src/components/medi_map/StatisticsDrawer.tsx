@@ -74,8 +74,6 @@ const StatisticsDrawer = () => {
   }, [isOpenDrawer, rangeDate]);
 
   useEffect(() => {
-    console.log(areaName);
-    console.log(patients);
     if (areaName && isOpenDrawer) {
       if (patients?.length > 0) {
         const filteredPatients = patients.filter(
