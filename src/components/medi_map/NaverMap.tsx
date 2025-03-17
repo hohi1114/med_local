@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import mapStore from "../../store/mapStore";
-import { getPatientsFromRegion } from "../../store/indexded_db/RegionDB";
 import useNaverMapData from "../../hooks/useNaverMapData";
-
 import { debounce } from "lodash";
 import { makeMarkerClustering } from "../../utils/marker-cluster.js";
 import { PatientData } from "../../utils/ExcelParser.js";

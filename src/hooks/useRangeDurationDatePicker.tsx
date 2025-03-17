@@ -1,10 +1,7 @@
 import { RangePickerProps } from "antd/es/date-picker";
-import { useEffect, useState } from "react";
-import useMediMapData from "./useMediMapData";
-import { getRegionSums } from "../store/indexded_db/RegionDB";
+import { useState } from "react";
 
 const useRangeDurationDatePicker = () => {
-  const [regionData, setRegionData] = useState();
   const [rangeDate, setRangeDate] = useState({
     startDate: new Date(),
     endDate: new Date()

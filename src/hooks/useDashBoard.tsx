@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import useRangeDurationDatePicker from "./useRangeDurationDatePicker";
 import { PatientData } from "../utils/ExcelParser";
-import { getAllMergedData } from "../store/indexded_db/IndexedDB";
 import dayjs from "dayjs";
 import isBetween from "dayjs/plugin/isBetween";
 import { getAllPatients } from "../store/indexded_db/RegionDB";
@@ -28,26 +27,27 @@ const useDashBoard = () => {
   const [revenueByDate, setrevenueByDate] = useState<Record<string, number>>(
     {}
   );
+  const [filteredPastPatients, setFilteredPastPatients] = useState<
+    PatientData[]
+  >([]);
 
   useEffect(() => {
     const fetchData = async () => {
       // const data: PatientData[] = await getAllMergedData();
-      const data = dashboardMock();
-      const allPatientsData: AllPatientsData[] = await getAllPatients("small");
+      const data = await dashboardMock();
+      // const allPatientsData: AllPatientsData[] = await getAllPatients("small");
       if (data) {
         setPatientsData(data);
         setFilteredPatients(data);
       }
-      if (allPatientsData) {
-        setRegionAllPatients(allPatientsData);
-      }
+      // if (allPatientsData) {
+      //   setRegionAllPatients(allPatientsData);
+      // }
     };
     fetchData();
+    handleDateChange([dayjs().subtract(1, "year"), dayjs()]);
   }, []);
 
-  const [filteredPastPatients, setFilteredPastPatients] = useState<
-    PatientData[]
-  >([]);
   //날짜 필터
   useEffect(() => {
     if (patientsData?.length > 0) {

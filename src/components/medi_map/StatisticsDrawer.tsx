@@ -39,6 +39,7 @@ const StatisticsDrawer = () => {
 
   useEffect(() => {
     setDrawerDate([rangeDate.startDate, rangeDate.endDate]);
+    handleDateChange([dayjs().subtract(1, "year"), dayjs()]);
   }, []);
 
   // 연령을 숫자로 변환하는 함수
