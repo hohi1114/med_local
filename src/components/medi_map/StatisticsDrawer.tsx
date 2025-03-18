@@ -398,7 +398,7 @@ const StatisticsDrawer = () => {
         }}
       >
         <Segmented
-          options={["지역", "수입", "전체"]}
+          options={["지역", "매출", "전체"]}
           value={toggleValue}
           onChange={setToggleValue}
           shape="round"
@@ -411,7 +411,7 @@ const StatisticsDrawer = () => {
       {regionInfo &&
         (toggleValue === "지역" ? (
           <RegionInfo data={regionInfo} />
-        ) : toggleValue === "수입" ? (
+        ) : toggleValue === "매출" ? (
           <RevenuInfo
             statsData={statsData}
             revenueTrend={revenueTrend}
@@ -457,7 +457,7 @@ const StatisticsDrawer = () => {
                   backgroundColor: "#f0f2f5"
                 }}
               >
-                <ChartTitleStyle>수입 데이터</ChartTitleStyle>
+                <ChartTitleStyle>매출 데이터</ChartTitleStyle>
               </div>
 
               <RevenuInfo
