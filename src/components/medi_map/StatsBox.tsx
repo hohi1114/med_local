@@ -7,7 +7,7 @@ export const STATSTYPE = [
   { id: 4, title: "1인당 평균 매출" },
   { id: 5, title: "재방문 환자수" },
   { id: 6, title: "신규 환자수" },
-  { id: 7, title: "전체 인구 수" },
+  { id: 7, title: "지역 매출 순위" },
   { id: 8, title: "유입 비율" }
 ];
 

@@ -329,7 +329,7 @@ const StatisticsDrawer = () => {
     5: `${revisitedPatients}명`,
     6: `${firstVisitPatients}명`,
     7: `${0}명`,
-    8: `${0}명`
+    8: `${0}%`
   };
 
   const handleTodayButton = () => {

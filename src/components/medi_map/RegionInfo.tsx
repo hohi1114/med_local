@@ -12,7 +12,7 @@ import { JSX } from "react";
 
 const BOXTYPE = [
   { id: 1, title: "월평균 소득" },
-  { id: 2, title: "의료비 지출" },
+  { id: 2, title: "월 평균 의료비 지출액" },
   { id: 3, title: "전체 평균 연령" },
   { id: 4, title: "총 인구" }
 ];
@@ -55,8 +55,8 @@ const RegionInfo = ({ data }: RegionInfoProps) => {
   const statsData: { [key: number]: string } = {
     1: data.monthly_avg_income?.toLocaleString() + " ₩",
     2: data.medical_expense?.toLocaleString() + " ₩",
-    3: data.total_avg_age + " 명",
-    4: data.total_population?.toLocaleString() + " 명"
+    3: data.total_avg_age + "세",
+    4: Math.ceil(data.total_population)?.toLocaleString() + "명"
   };
 
   const horizantalBarData = [

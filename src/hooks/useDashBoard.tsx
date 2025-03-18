@@ -346,7 +346,7 @@ const useDashBoard = () => {
     setTotalRevisitedPatients({ past: pastcount, current: count });
   };
 
-  //누적 매출 분포
+  //일자별 매출 통계
   const calRevenueDate = () => {
     const revenueTrend = {};
     filteredpatients.forEach((patient) => {

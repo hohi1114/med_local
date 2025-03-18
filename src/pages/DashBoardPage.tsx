@@ -205,7 +205,7 @@ export default function DashBoardPage() {
 
         <CardGrid>
           <Card>
-            <ChartTitle>누적 매출 분포</ChartTitle>
+            <ChartTitle>일자별 매출 통계</ChartTitle>
             <BaseLineChart
               data={revenueByDate}
               xField="date"
