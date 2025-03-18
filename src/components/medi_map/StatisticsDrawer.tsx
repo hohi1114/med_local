@@ -431,6 +431,15 @@ const StatisticsDrawer = () => {
                 gap: "1rem"
               }}
             >
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "0.5rem 1rem",
+                  backgroundColor: "#f0f2f5"
+                }}
+              >
+                <ChartTitleStyle>지역 데이터</ChartTitleStyle>
+              </div>
               <RegionInfo data={regionInfo} />
             </div>
             <div
@@ -441,6 +450,16 @@ const StatisticsDrawer = () => {
                 gap: "1rem"
               }}
             >
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "0.5rem 1rem",
+                  backgroundColor: "#f0f2f5"
+                }}
+              >
+                <ChartTitleStyle>수입 데이터</ChartTitleStyle>
+              </div>
+
               <RevenuInfo
                 statsData={statsData}
                 revenueTrend={revenueTrend}
@@ -493,6 +512,4 @@ const DateFilterWrapper = styled.div`
   display: flex;
   gap: 1rem;
   justify-content: end;
-  /* align-items: center;
-  justify-content: center; */
 `;
