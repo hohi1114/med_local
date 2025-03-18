@@ -302,7 +302,7 @@ const Value = styled.span`
 `;
 
 const Percentage = styled.div<{ isDecreased: boolean }>`
-  font-size: 1rem;
+  font-size: 1.2rem;
   color: ${(props) => (props.isDecreased ? "#EF4261" : "#30bf78")};
 `;
 

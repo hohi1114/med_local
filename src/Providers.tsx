@@ -8,16 +8,16 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       theme={{
         token: {
           colorPrimary: "#9F9FF8",
-          fontFamily: `"Inter", sans-serif`
+          fontFamily: `"Inter", sans-serif`,
         },
         components: {
           Segmented: {
-            itemSelectedColor: "#ffffff !important",
-            itemColor: "#9F9FF8",
-            itemSelectedBg: "#9F9FF8 !important",
-            itemHoverColor: "#5a4ec5"
-          }
-        }
+            itemSelectedColor: "#fafaf8",
+            itemColor: "#1a1a1a",
+            itemSelectedBg: "#333",
+            itemHoverColor: "#fafaf8",
+          },
+        },
       }}
     >
       <QueryClientProvider client={quertClient}>{children}</QueryClientProvider>
