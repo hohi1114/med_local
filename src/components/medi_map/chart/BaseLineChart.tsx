@@ -15,7 +15,7 @@ interface IBaseLineChartProps {
   xField: string;
   yField: string;
   height: number;
-  width: number;
+  width?: number;
   labelFormatterX?: (value: string) => string;
   labelFormatterY?: (value: number) => string;
   formatData: (data: any) => ILineData[];
@@ -57,7 +57,7 @@ const BaseLineChart = ({
     xField,
     yField,
     smooth: true,
-    width: width,
+    width: width ? width : null,
     autoFit: true,
     height: height,
     forceFit: true,

@@ -3,7 +3,6 @@ import useRangeDurationDatePicker from "./useRangeDurationDatePicker";
 import { PatientData } from "../utils/ExcelParser";
 import dayjs from "dayjs";
 import isBetween from "dayjs/plugin/isBetween";
-import { getAllPatients } from "../store/indexded_db/RegionDB";
 import { AllPatientsData, RankedRegion } from "../types/medi-types";
 dayjs.extend(isBetween);
 import { dashboardMock } from "../assets/DashboardMock.js";
@@ -17,12 +16,20 @@ const useDashBoard = () => {
     []
   );
   const [totalCost, setTotalCost] = useState<{ past: number; current: number }>(
-    0
+    { past: 0, current: 0 }
   );
-  const [totalPatients, setTotalPatients] = useState<number>(0);
-  const [totalNewPatients, setTotalNewPatients] = useState<number>(0);
-  const [totalRevisitedPatitents, setTotalRevisitedPatients] =
-    useState<number>(0);
+  const [totalPatients, setTotalPatients] = useState<{
+    past: number;
+    current: number;
+  }>({ past: 0, current: 0 });
+  const [totalNewPatients, setTotalNewPatients] = useState<{
+    past: number;
+    current: number;
+  }>({ past: 0, current: 0 });
+  const [totalRevisitedPatitents, setTotalRevisitedPatients] = useState<{
+    past: number;
+    current: number;
+  }>({ past: 0, current: 0 });
   const [averageAge, setAverageAge] = useState<Record<string, number>>({});
   const [revenueByDate, setrevenueByDate] = useState<Record<string, number>>(
     {}
@@ -306,25 +313,37 @@ const useDashBoard = () => {
 
   //전체 환자 수
   const calTotalPatients = () => {
-    setTotalPatients(filteredpatients.length);
+    setTotalPatients({
+      past: filteredPastPatients.length,
+      current: filteredpatients.length
+    });
   };
 
   //신규 환자 수
   const calNewPatients = () => {
     let count = 0;
+    let pastcount = 0;
     filteredpatients?.forEach((patient) => {
       if (patient.visitType === "신환") count++;
     });
-    setTotalNewPatients(count);
+    filteredPastPatients?.forEach((patient) => {
+      if (patient.visitType === "신환") pastcount++;
+    });
+    setTotalNewPatients({ past: pastcount, current: count });
   };
 
   //재방문 환자 수
   const calRevisitedPatients = () => {
     let count = 0;
+    let pastcount = 0;
     filteredpatients?.forEach((patient) => {
       if (patient.visitType === "초진" || patient.visitType === "재진") count++;
     });
-    setTotalRevisitedPatients(count);
+    filteredPastPatients?.forEach((patient) => {
+      if (patient.visitType === "초진" || patient.visitType === "재진")
+        pastcount++;
+    });
+    setTotalRevisitedPatients({ past: pastcount, current: count });
   };
 
   //누적 매출 분포

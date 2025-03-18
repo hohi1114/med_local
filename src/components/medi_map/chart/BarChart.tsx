@@ -7,7 +7,7 @@ interface IBaseBarCharProps<T, U> {
   xField: string;
   yField: string;
   height: number;
-  width: number;
+  width?: number;
   formatData: (data: U) => U[];
 }
 
@@ -35,7 +35,7 @@ const BarChart = <T, U extends { [key: string]: any }>({
     colorField: xField,
     autoFit: true,
     height: height,
-    width: width,
+    width: width ? width : null,
     legend: false,
     style: {
       radius: 8
