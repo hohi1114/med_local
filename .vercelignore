@@ -1,0 +1,7 @@
+.vercel
+dist
+dist-electron
+release
+node_modules
+.idea
+.env

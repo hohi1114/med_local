@@ -1,25 +1,26 @@
+import React, { useEffect } from "react";
 import StatisticsDrawer from "../components/medi_map/StatisticsDrawer";
 import NaverMap from "../components/medi_map/NaverMap";
-import { useEffect } from "react";
 import mapStore from "../store/mapStore";
 import { getRegionSums } from "../store/indexded_db/RegionDB";
+import useRangeDurationDatePicker from "../hooks/useRangeDurationDatePicker";
+import dayjs from "dayjs";
 
 function MediMapPage() {
-  const { setHighestCost } = mapStore();
+  const { setHighestCost, drawerDate, setDrawerDate } = mapStore();
+  const { rangeDate, handleDateChange } = useRangeDurationDatePicker();
   useEffect(() => {
-    const fetchHighestCost = async () => {
-      const newHightestCost: { [key: string]: number } = {};
-      Promise.all(
-        ["small", "dong", "gu"].map(async (region) => {
-          const data = await getRegionSums(region);
-          const sortedData = data.sort((a, b) => b.totalCost - a.totalCost);
-          newHightestCost[region] = sortedData[0].totalCost;
-        })
-      );
-      setHighestCost(newHightestCost);
-    };
-    fetchHighestCost();
+    setDrawerDate({
+      startDate: dayjs().subtract(1, "year"),
+      endDate: dayjs()
+    });
   }, []);
+  useEffect(() => {
+    if (drawerDate) {
+      handleDateChange(drawerDate);
+    }
+  }, [drawerDate]);
+
   return (
     <>
       <NaverMap />

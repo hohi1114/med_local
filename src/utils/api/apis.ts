@@ -45,57 +45,57 @@ const isTokenExpired = (token: string): boolean => {
 
 let isRefresing = false;
 //요청 interceptor
-authApi.interceptors.request.use(
-  async (config) => {
-    const accessToken = getCookie("accessToken");
+// authApi.interceptors.request.use(
+//   async (config) => {
+//     const accessToken = getCookie("accessToken");
 
-    const isLoginPage = window.location.pathname === "/login";
-    if (!isLoginPage) {
-      if (accessToken) {
-        //토큰이 만료 되었을때
-        if (isTokenExpired(accessToken)) {
-          if (!isRefresing) {
-            isRefresing = true;
-            //refresh 토큰을 이용하여 다시 받아옴
-            try {
-              const newAccessToken = await postRefreshToken();
-              config.headers.Authorization = `Bearer ${newAccessToken}`;
-            } catch (error) {
-              console.log("Failed to refresh token", error);
-              window.location.href = "/login";
-            } finally {
-              isRefresing = false;
-            }
-          }
-        } else {
-          config.headers.Authorization = `Bearer ${accessToken}`;
-        }
-      } else {
-        window.location.href = "/login";
-      }
-    }
-    return config;
-  },
-  async (error) => {
-    return Promise.reject(error);
-  }
-);
+//     const isLoginPage = window.location.pathname === "/login";
+//     if (!isLoginPage) {
+//       if (accessToken) {
+//         //토큰이 만료 되었을때
+//         if (isTokenExpired(accessToken)) {
+//           if (!isRefresing) {
+//             isRefresing = true;
+//             //refresh 토큰을 이용하여 다시 받아옴
+//             try {
+//               const newAccessToken = await postRefreshToken();
+//               config.headers.Authorization = `Bearer ${newAccessToken}`;
+//             } catch (error) {
+//               console.log("Failed to refresh token", error);
+//               window.location.href = "/login";
+//             } finally {
+//               isRefresing = false;
+//             }
+//           }
+//         } else {
+//           config.headers.Authorization = `Bearer ${accessToken}`;
+//         }
+//       } else {
+//         window.location.href = "/login";
+//       }
+//     }
+//     return config;
+//   },
+//   async (error) => {
+//     return Promise.reject(error);
+//   }
+// );
 
 //응답 interceptor
-authApi.interceptors.response.use(
-  (response) => {
-    return response;
-  },
-  async (error) => {
-    const { response } = error;
-    const isLoginPage = window.location.pathname === "/login";
+// authApi.interceptors.response.use(
+//   (response) => {
+//     return response;
+//   },
+//   async (error) => {
+//     const { response } = error;
+//     const isLoginPage = window.location.pathname === "/login";
 
-    if (response?.status === 401 && !isLoginPage) {
-      window.location.href = "/login"; //로그인 페이지가 아닌 경우 로그아웃
-    }
-    return Promise.reject(error);
-  }
-);
+//     if (response?.status === 401 && !isLoginPage) {
+//       window.location.href = "/login"; //로그인 페이지가 아닌 경우 로그아웃
+//     }
+//     return Promise.reject(error);
+//   }
+// );
 
 export const postLogin = async (loginData: LoginParams) => {
   const data = await apiRequest("post", `/auth/login`, loginData);
@@ -130,22 +130,24 @@ export const postRefreshToken = async () => {
 };
 export async function fetchDataFromBackend(): Promise<BackendData | undefined> {
   try {
-    const data = await apiRequest('get', '/data/get_all');
-    console.log('Fetched data:', data);
+    const data = await apiRequest("get", "/data/get_all");
+    console.log("Fetched data:", data);
     return data as BackendData;
   } catch (error) {
-    console.error('Error in fetchDataFromBackend:', error);
+    console.error("Error in fetchDataFromBackend:", error);
     return undefined;
   }
 }
 
-export async function uploadDataToBackend(dataToUpload: BackendData): Promise<boolean> {
+export async function uploadDataToBackend(
+  dataToUpload: BackendData
+): Promise<boolean> {
   try {
-    await apiRequest('post', '/data/sync', dataToUpload);
-    console.log('Successfully uploaded data to backend:',dataToUpload);
+    await apiRequest("post", "/data/sync", dataToUpload);
+    console.log("Successfully uploaded data to backend:", dataToUpload);
     return true; // Return true on successful upload
   } catch (error) {
-    console.error('Error in uploadDataToBackend:', error);
+    console.error("Error in uploadDataToBackend:", error);
     return false; // Return false on failure
   }
 }

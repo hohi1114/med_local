@@ -6,7 +6,18 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ConfigProvider
       theme={{
-        token: { colorPrimary: "#9F9FF8", fontFamily: `"Inter", sans-serif` }
+        token: {
+          colorPrimary: "#9F9FF8",
+          fontFamily: `"Inter", sans-serif`,
+        },
+        components: {
+          Segmented: {
+            itemSelectedColor: "#fafaf8",
+            itemColor: "#1a1a1a",
+            itemSelectedBg: "#333",
+            itemHoverColor: "#fafaf8",
+          },
+        },
       }}
     >
       <QueryClientProvider client={quertClient}>{children}</QueryClientProvider>

@@ -4,9 +4,9 @@
   "version": "0.0.0",
   "main": "dist-electron/main.js",
   "scripts": {
-    "dev": "cross-env NODE_ENV=development concurrently \"vite\" \"wait-on http://localhost:5173 && tsc -p tsconfig.electron.json && electron .\"",
-    "build": "vite build && tsc -p tsconfig.electron.json && electron-builder",
-    "start": "vite build && tsc -p tsconfig.electron.json && electron .",
+    "dev": "vite",
+    "build": "vite build",
+    "start": "vite preview",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -17,8 +17,7 @@
       "output": "release"
     },
     "files": [
-      "dist/**/*",
-      "electron/**/*"
+      "dist/**/*"
     ]
   },
   "dependencies": {
@@ -62,6 +61,7 @@
     "@electron-forge/plugin-fuses": "^7.7.0",
     "@electron/fuses": "^1.8.0",
     "@eslint/js": "^9.21.0",
+    "@faker-js/faker": "^9.6.0",
     "@types/bcrypt": "^5.0.2",
     "@types/body-parser": "^1.19.5",
     "@types/express": "^5.0.0",

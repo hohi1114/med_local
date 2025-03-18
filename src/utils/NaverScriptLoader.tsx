@@ -15,18 +15,10 @@ export default function NaverScriptLoader({
       setLoaded(true);
       return;
     }
-
-    // 2) Log the VITE_NAVER_MAPS_CLIENT_ID
-    console.log(
-      "VITE_NAVER_MAPS_CLIENT_ID:",
-      import.meta.env.VITE_NAVER_MAPS_CLIENT_ID
-    );
-
     // 3) Dynamically create the <script> for basic Naver Maps
     const script = document.createElement("script");
-    script.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpClientId=${
-      import.meta.env.VITE_NAVER_MAPS_CLIENT_ID
-    }`; // No &submodules=geometry anymore
+    script.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpClientId=${import.meta.env.VITE_NAVER_MAPS_CLIENT_ID
+      }`; // No &submodules=geometry anymore
     script.async = true;
 
     // 4) Once script loads, mark as loaded

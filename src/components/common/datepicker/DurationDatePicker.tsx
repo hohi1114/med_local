@@ -1,11 +1,11 @@
 import { DatePicker } from "antd";
 import { RangePickerProps } from "antd/es/date-picker";
-import dayjs from "dayjs";
+import { Dayjs } from "dayjs";
 
 const { RangePicker } = DatePicker;
 
 interface DurationDatePickerProps {
-  rangeDate: { startDate: Date; endDate: Date };
+  rangeDate: { startDate: Dayjs; endDate: Dayjs };
   handleDateChange?: RangePickerProps["onChange"];
 }
 /**
@@ -18,10 +18,7 @@ const DurationDatePicker = ({
   return (
     <RangePicker
       format={"YYYY-MM-DD"}
-      defaultValue={[
-        dayjs(rangeDate.startDate).subtract(1, "year"),
-        dayjs(rangeDate.endDate)
-      ]}
+      value={[rangeDate.startDate, rangeDate.endDate]}
       onChange={handleDateChange}
     />
   );
