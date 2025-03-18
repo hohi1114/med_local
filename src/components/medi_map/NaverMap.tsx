@@ -44,7 +44,7 @@ const NaverMap = () => {
     setAreaName,
     setPatients,
     highestCost,
-    drawerDate
+    setRegion
   } = mapStore();
   const MarkerClustering = makeMarkerClustering(window.naver) as any;
   const mapElement = useRef<HTMLDivElement>(null);
@@ -94,8 +94,8 @@ const NaverMap = () => {
         const paths = polygon.getPaths();
         polygon.setOptions({
           paths: paths,
-          strokeColor: "#92BFFF",
-          strokeWeight: 3
+          strokeColor: "#6FA8FF",
+          strokeWeight: 1.5
         });
       }
     }
@@ -119,6 +119,7 @@ const NaverMap = () => {
       //1. Get Regioin Info
       //the area of the map currently displayed is changed by zooming or moving the map.
       const { data, name, fontSize } = getRegionName(currentZoom);
+      setRegion(name);
       const mapBounds = expandBounds(
         map.getBounds() as naver.maps.LatLngBounds,
         0.3
@@ -149,8 +150,8 @@ const NaverMap = () => {
         if (!polygon) {
           polygon = new window.naver.maps.Polygon({
             paths: latLngs,
-            strokeColor: "#92BFFF",
-            strokeWeight: 3,
+            strokeColor: "#6FA8FF",
+            strokeWeight: 1.5,
             clickable: true
           });
         }
@@ -246,8 +247,8 @@ const NaverMap = () => {
           if (clickedPolygon) {
             clickedPolygon.setOptions({
               paths: clickedPolygon.getPaths(),
-              strokeColor: "#92BFFF",
-              strokeWeight: 4
+              strokeColor: "#6FA8FF",
+              strokeWeight: 1.5
             });
           }
         }

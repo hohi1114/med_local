@@ -19,8 +19,8 @@ interface StatsBoxProps {
 const StatsBox = ({ title, data }: StatsBoxProps) => {
   /** If the data is too long, calculate font size */
   const calculateFontsize = () => {
-    if (data.length > 13) {
-      return 1.5;
+    if (data.length >= 15) {
+      return 1.3;
     } else {
       return 1.5;
     }

@@ -126,6 +126,7 @@ export default function DashBoardPage() {
           <Card>
             <ChartTitle>누적 매출 분포</ChartTitle>
             <BaseLineChart
+              width={500}
               data={revenueByDate}
               xField="date"
               yField="value"

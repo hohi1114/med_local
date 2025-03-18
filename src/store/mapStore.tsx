@@ -3,6 +3,7 @@ import { PatientData } from "../utils/ExcelParser";
 import dayjs, { Dayjs } from "dayjs";
 
 interface IMapStore {
+  region: string;
   areaName: string; //지역이름
   totalPatients: number; //전체 환자 수
   totalCost: number; //누적 매출액
@@ -18,6 +19,7 @@ interface IMapStore {
   isOpenDrawer: boolean;
   highestCost: { small: number; dong: number; gu: number };
 
+  setRegion: (region: string) => void;
   setDrawerDate: (drawerDate: { startDate: Dayjs; endDate: Dayjs }) => void;
   setAreaName: (areaName: string) => void;
   setTotalPatients: (totalPatients: number) => void;
@@ -54,6 +56,7 @@ const mapStore = create<IMapStore>((set) => ({
   ageGroups: {},
   dailyRevenue: {},
   patients: [],
+  region: "small",
   drawerDate: { startDate: new Date(), endDate: new Date() },
   isOpenDrawer: false,
   highestCost: { small: 175661741, dong: 417978115, gu: 123328002 },
@@ -71,7 +74,8 @@ const mapStore = create<IMapStore>((set) => ({
   setPatients: (patients) => set({ patients }),
   setDrawerDate: (drawerDate) => set({ drawerDate }),
   handleIsDrawerOpen: (isOpenDrawer) => set({ isOpenDrawer }),
-  setHighestCost: (highestCost) => set({ highestCost })
+  setHighestCost: (highestCost) => set({ highestCost }),
+  setRegion: (region) => set({ region })
 }));
 
 export default mapStore;
