@@ -2,10 +2,15 @@ import { useEffect } from "react";
 import useRangeDurationDatePicker from "./useRangeDurationDatePicker";
 import dayjs from "dayjs";
 import { useQuery } from "@tanstack/react-query";
-import { getDashboardData, getUserInfo } from "../utils/api/apis.js";
+import {
+  getAllRegions,
+  getDashboardData,
+  getUserInfo
+} from "../utils/api/apis.js";
 import { DashBoard } from "../types/dashboard.js";
 import isBetween from "dayjs/plugin/isBetween";
 import userStore from "../store/userStore.js";
+import { saveDataToIndexDB } from "../store/indexded_db/RegionDB.js";
 
 dayjs.extend(isBetween);
 
@@ -18,7 +23,7 @@ const useDashBoard = () => {
     isRefetching,
     isError,
     error,
-    refetch
+    refetch: dashboardInfoFetch
   } = useQuery<DashBoard>({
     queryKey: ["dashboardInfo"],
     queryFn: () => getDashboardData(rangeDate),
@@ -26,13 +31,26 @@ const useDashBoard = () => {
     retry: false
   });
 
-  /*** 고치기!!!!!!!!!!!!!!!!!!! */
   const { data, refetch: userRefetch } = useQuery({
     queryKey: ["userInfo"],
     queryFn: () => getUserInfo(),
+    enabled: !!user,
+    retry: false
+  });
+
+  const { data: allregionData, refetch: allRegionsRefecth } = useQuery({
+    queryKey: ["allRegions"],
+    queryFn: () => getAllRegions(),
     enabled: false,
     retry: false
   });
+
+  //DashboardInfo fetch
+  useEffect(() => {
+    if (rangeDate) {
+      dashboardInfoFetch();
+    }
+  }, [rangeDate]);
 
   //자동로그인시 유저정보 fetch
   useEffect(() => {
@@ -43,17 +61,16 @@ const useDashBoard = () => {
     }
   }, [user, data]);
 
+  //지역 데이터 IndexedDB에 저장
   useEffect(() => {
-    setTimeout(() => {
-      userRefetch();
-    }, 5000);
+    allRegionsRefecth();
   }, []);
 
   useEffect(() => {
-    if (rangeDate) {
-      refetch();
+    if (allregionData) {
+      saveDataToIndexDB(allregionData);
     }
-  }, [rangeDate]);
+  }, [allregionData]);
 
   const handleDateFilterButton = (content: string) => {
     const today = dayjs();
