@@ -68,7 +68,7 @@ const Divider = styled.div`
   width: 100%;
   height: 1px;
   background-color: #ddd;
-  margin-bottom: 1rem;
+  margin: 1.5rem 0rem 3rem 0rem;
 `;
 
 const ProfileCard = styled.div`

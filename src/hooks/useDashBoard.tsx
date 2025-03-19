@@ -2,13 +2,16 @@ import { useEffect } from "react";
 import useRangeDurationDatePicker from "./useRangeDurationDatePicker";
 import dayjs from "dayjs";
 import { useQuery } from "@tanstack/react-query";
-import { getDashboardData } from "../utils/api/apis.js";
+import { getDashboardData, getUserInfo } from "../utils/api/apis.js";
 import { DashBoard } from "../types/dashboard.js";
 import isBetween from "dayjs/plugin/isBetween";
+import userStore from "../store/userStore.js";
+
 dayjs.extend(isBetween);
 
 const useDashBoard = () => {
   const { rangeDate, handleDateChange } = useRangeDurationDatePicker();
+  const { user, setUser } = userStore();
   const {
     data: dashboardInfo,
     isLoading,
@@ -22,6 +25,29 @@ const useDashBoard = () => {
     enabled: false,
     retry: false
   });
+
+  /*** 고치기!!!!!!!!!!!!!!!!!!! */
+  const { data, refetch: userRefetch } = useQuery({
+    queryKey: ["userInfo"],
+    queryFn: () => getUserInfo(),
+    enabled: false,
+    retry: false
+  });
+
+  //자동로그인시 유저정보 fetch
+  useEffect(() => {
+    if (!user) {
+      userRefetch();
+    } else if (data) {
+      setUser(data);
+    }
+  }, [user, data]);
+
+  useEffect(() => {
+    setTimeout(() => {
+      userRefetch();
+    }, 5000);
+  }, []);
 
   useEffect(() => {
     if (rangeDate) {
