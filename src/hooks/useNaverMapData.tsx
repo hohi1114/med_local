@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { PatientData } from "../utils/ExcelParser";
-import useMediMapData, { Area } from "./useMediMapData";
+import useMediMapData from "./useMediMapData";
 import { getDataFromRegionDB } from "../store/indexded_db/RegionDB";
 import { Point, RegionData } from "../types/naver-maps";
+import { useQuery } from "@tanstack/react-query";
+import { getAllRegionsEtc, getRegionPrivateData } from "../utils/api/apis";
 
 const useNaverMapData = () => {
   //**Data
@@ -14,6 +15,16 @@ const useNaverMapData = () => {
   const [dongRegions, setDongRegions] = useState<RegionData[]>([]);
   const [guRegions, setGuRegions] = useState<RegionData[]>([]);
 
+  const { data: privateRegion, refetch: privateRegionFetch } = useQuery({
+    queryKey: ["userInfo"],
+    queryFn: () => getAllRegionsEtc(),
+    retry: false
+  });
+
+  useEffect(() => {
+    privateRegionFetch();
+  }, []);
+
   useEffect(() => {
     const fetchAndTransformRegions = async () => {
       const regionKeys = ["small_regions", "dong_regions", "gu_regions"];
@@ -22,19 +33,19 @@ const useNaverMapData = () => {
       const regionData = await Promise.all(
         regionKeys.map(async (key, index) => {
           const regions = await getDataFromRegionDB(key);
-          const region_etc = await getDataFromRegionDB(key + "_etc");
+
           return regions.map((region) => {
-            const matchedEtc = region_etc[0]?.[
-              etcKeys[index] + "_region_costs"
-            ]?.find(
-              (item) => item[etcKeys[index] + "_region_name"] === region.name
-            );
+            // const matchedEtc = region_etc[0]?.[
+            //   etcKeys[index] + "_region_costs"
+            // ]?.find(
+            //   (item) => item[etcKeys[index] + "_region_name"] === region.name
+            // );
 
             return {
               ...region,
-              polygon: JSON.parse(region.polygon)[0],
-              total_cost: matchedEtc?.total_cost ?? 0,
-              patient_locations: matchedEtc?.patient_locations ?? []
+              polygon: JSON.parse(region.polygon)[0]
+              // total_cost: matchedEtc?.total_cost ?? 0,
+              // patient_locations: matchedEtc?.patient_locations ?? []
             };
           });
         })
@@ -46,7 +57,8 @@ const useNaverMapData = () => {
     };
 
     fetchAndTransformRegions();
-  }, []);
+    // console.log(privateRegion);
+  }, [privateRegion]);
   const isDataLoaded =
     dongPolygons.length > 0 &&
     smallPolygons.length > 0 &&

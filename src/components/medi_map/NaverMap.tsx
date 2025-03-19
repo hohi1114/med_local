@@ -4,8 +4,6 @@ import useNaverMapData from "../../hooks/useNaverMapData";
 import { debounce } from "lodash";
 import { makeMarkerClustering } from "../../utils/marker-cluster.js";
 import { PatientData } from "../../utils/ExcelParser.js";
-import { dashboardMock } from "../../assets/DashboardMock.js";
-import dayjs from "dayjs";
 import { Point, RegionData } from "../../types/naver-maps.js";
 
 const NaverMap = () => {
@@ -16,7 +14,9 @@ const NaverMap = () => {
     setPatients,
     highestCost,
     setRegion,
-    setSelctedRegionData
+    setSelctedRegionData,
+    setSmallPolygons,
+    setDongPolygons
   } = mapStore();
   const MarkerClustering = makeMarkerClustering(window.naver) as any;
   const mapElement = useRef<HTMLDivElement>(null);
@@ -41,7 +41,6 @@ const NaverMap = () => {
   } = useNaverMapData();
   const clickedAreaRef = useRef<string>(null);
   let [clickedArea, setClickedArea] = useState<string>("");
-  const [currentZoom, setCurrentZoom] = useState(0);
 
   // ✅ Initialize map only once
   useEffect(() => {
@@ -54,11 +53,6 @@ const NaverMap = () => {
     });
 
     setMap(newMap);
-    const fetchData = async () => {
-      const data = await dashboardMock();
-      setPatientsArr(data);
-    };
-    fetchData();
   }, [map]);
 
   // ✅ Change PolyStyle and patinetMarkers when drawer is open
@@ -78,15 +72,13 @@ const NaverMap = () => {
 
   // ✅ Handle zoom change
   useEffect(() => {
-    if (!map || !isDataLoaded || patientsArr.length == 0) {
+    if (!map) {
       return;
     }
 
     const handleZoomChange = debounce(async () => {
       //📌Init Map
       const currentZoom = map.getZoom();
-      setCurrentZoom(currentZoom);
-
       const patientTemp: { areaName: string; patients: PatientData[] }[] = [];
       const regionMarkers: naver.maps.Marker[] = [];
       const patientGroupsMarkers: naver.maps.Marker[] = [];
@@ -94,6 +86,7 @@ const NaverMap = () => {
       //1. Get Regioin Info
       //the area of the map currently displayed is changed by zooming or moving the map.
       const { data, name, fontSize } = getRegionName(currentZoom);
+
       setRegion(name);
       const mapBounds = expandBounds(
         map.getBounds() as naver.maps.LatLngBounds,
@@ -101,7 +94,6 @@ const NaverMap = () => {
       );
 
       const polygonsToRender = data;
-
       //2. Get Bound Areas
       const { boundAreas } = getBoundAreas(polygonsToRender, mapBounds);
       if (boundAreas.length === 0) return;
@@ -127,7 +119,8 @@ const NaverMap = () => {
             strokeColor: "#6FA8FF",
             strokeWeight: 1.5,
             clickable: true,
-            fillColor: `${getPolygonColorOpacity(area.total_cost, name)}`
+            // fillColor: `${getPolygonColorOpacity(area.total_cost, name)}`
+            fillColor: `${getPolygonColorOpacity(10000, name)}`
           });
         }
 
@@ -218,6 +211,7 @@ const NaverMap = () => {
           });
           setClickedArea(area.name);
           setSelctedRegionData(area);
+          setSmallPolygons(area.polygon);
         }
       });
     }

@@ -7,35 +7,14 @@ import isBetween from "dayjs/plugin/isBetween";
 import dayjs from "dayjs";
 import { useEffect, useMemo, useState } from "react";
 import { PatientData } from "../../utils/ExcelParser";
-import Dong_region_info from "../../../public/D_integrated_data.json";
-import Gu_region_info from "../../../public/G_integrated.json";
-import Small_region_info from "../../../public/Sub_integrated_data.json";
 import RegionInfo from "./RegionInfo";
 import * as turf from "@turf/turf";
 import RevenuInfo from "./chart/RevenueInfo";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { getRegionPrivateData } from "../../utils/api/apis";
+import { Polygon, RegionData } from "../../types/naver-maps";
+import { getDataFromRegionDB } from "../../store/indexded_db/RegionDB";
 dayjs.extend(isBetween);
-
-// 지역 데이터 타입 정의
-interface RegionData {
-  area: string;
-  polygon?: string;
-  male_avg_age?: number;
-  female_avg_age?: number;
-  total_avg_age?: number;
-  monthly_avg_income?: number;
-  male_population?: number;
-  female_population?: number;
-  medical_expense?: number;
-  age_group_population?: any; // 구체적인 타입이 있으면 적용
-}
-
-interface Props {
-  areaName: string;
-  region: "small" | "dong" | "gu";
-  setRegionInfo: (data: RegionData) => void;
-}
 
 function fixPolygonCoordinates(
   polygon: [number, number][]
@@ -55,11 +34,12 @@ function fixPolygonCoordinates(
 }
 
 // ✅ `smallPolygon`을 포함하는 `dong` 찾기
-function findContainingDong(
-  smallPoint: [number, number],
-  dongRegions: RegionData[]
-): RegionData | undefined {
-  return dongRegions.find((dong) => {
+const findContainingDong = async (
+  smallPoint: number[][]
+): RegionData | undefined => {
+  const dongData = await getDataFromRegionDB("dong_regions");
+
+  return dongData.find((dong) => {
     if (!dong.polygon) return false;
     const dongPolygonArray = JSON.parse(dong.polygon);
     const fixedPolygon = fixPolygonCoordinates(dongPolygonArray?.[0]);
@@ -69,7 +49,7 @@ function findContainingDong(
       turf.booleanContains(turf.polygon([fixedPolygon]), turf.point(smallPoint))
     );
   });
-}
+};
 
 const StatisticsDrawer = () => {
   const { isOpenDrawer, handleIsDrawerOpen } = mapStore();
@@ -94,16 +74,17 @@ const StatisticsDrawer = () => {
     setRevisitedPatients,
     setRevenueTrend,
     setAgeGroups,
-    setDailyRevenue
+    setDailyRevenue,
+    smallPolygons
   } = mapStore();
 
-  const [regionInfo, setRegionInfo] = useState();
-  const getPrivateData = useMutation({
-    mutationFn: (params: RegionPrivateParams) => getRegionPrivateData(params),
-    onSuccess: (data) => {
-      console.log(data);
-    }
-  });
+  const [regionInfo, setRegionInfo] = useState<RegionData | null>(null);
+  //const getPrivateData = useMutation({
+  // mutationFn: (params: RegionPrivateParams) => getRegionPrivateData(params),
+  // onSuccess: (data) => {
+  //  console.log(data);
+  //}
+  //});
 
   const params = useMemo(() => {
     return {
@@ -115,201 +96,35 @@ const StatisticsDrawer = () => {
   }, [areaName, region, drawerDate]);
 
   useEffect(() => {
-    getPrivateData.mutate(params);
+    //getPrivateData.mutate(params);
   }, [params]);
 
   useEffect(() => {
-    let data: RegionData[] = [];
-
-    if (region === "small") {
-      const smallRegions = Small_region_info["DATA"].filter(
-        (data: RegionData) => data["area"] === areaName
-      );
-
-      if (smallRegions.length === 0) return;
-      const smallPolygonString = smallRegions[0].polygons;
-      if (!smallPolygonString) return;
-
-      const smallPolygon = JSON.parse(smallPolygonString);
-      const smallPoint = smallPolygon?.[0]?.[0] as [number, number];
-      if (!smallPoint) return;
-
-      const dongRegions: RegionData[] = Dong_region_info["DATA"];
-      const containingDong = findContainingDong(smallPoint, dongRegions);
-      if (containingDong) {
-        Object.assign(smallRegions[0], {
-          male_avg_age: containingDong.male_avg_age,
-          female_avg_age: containingDong.female_avg_age,
-          total_avg_age: containingDong.total_avg_age,
-          monthly_avg_income: containingDong.monthly_avg_income,
-          male_population: containingDong.male_population,
-          female_population: containingDong.female_population,
-          medical_expense: containingDong.medical_expense,
-          age_group_population: containingDong.age_group_population
-        });
-      }
-      data = smallRegions;
-    } else if (region === "dong") {
-      data = Dong_region_info["DATA"].filter((data) => {
-        return data["area"] === areaName;
-      });
-    } else {
-      data = Gu_region_info["DATA"].filter((data) => {
-        return data["area"] === areaName;
-      });
-    }
-
-    if (data.length > 0) {
-      setRegionInfo(data[0]);
-    }
-  }, [areaName]);
-
-  // 연령을 숫자로 변환하는 함수
-  const parseAge = (ageString: string): number => {
-    const ageParts = ageString.split("세");
-    if (ageParts.length < 2) return 0;
-
-    const ageYears = parseInt(ageParts[0].trim(), 10);
-    const ageMonths =
-      ageParts[1] && ageParts[1].includes("개월")
-        ? parseInt(ageParts[1].replace("개월", "").trim(), 10)
-        : 0;
-
-    // 1년을 12개월로 보고, 월 단위로 계산하여 나이 계산
-    return ageYears + ageMonths / 12;
-  };
-
-  const initDrawerData = () => {
-    setTotalCost(0);
-    setTotalPatients(0);
-    setFirstVisitPatients(0);
-    setFirstVisitPatients(0);
-    setRevisitedPatients(0);
-    setRevenueTrend({});
-    setAgeGroups({
-      아동: 0,
-      "10대": 0,
-      "20대": 0,
-      "30대": 0,
-      "40대": 0,
-      "50대": 0,
-      "60대": 0
-    });
-    setDailyRevenue({});
-  };
-
-  useEffect(() => {
-    if (isOpenDrawer) {
-      initDrawerData();
-    }
-  }, [isOpenDrawer, drawerDate]);
-
-  useEffect(() => {
-    if (areaName && isOpenDrawer) {
-      if (patients?.length > 0) {
-        const filteredPatients = patients.filter(
-          (data) => data.areaName === areaName
-        );
-
-        if (filteredPatients[0]?.patients) {
-          const filteredPatientsByDate = filteredPatients[0]?.patients.filter(
-            (data) => {
-              const visitDate = dayjs(new Date(data.visitDate));
-              return visitDate.isBetween(
-                drawerDate.startDate.toDate(),
-                drawerDate.endDate.toDate()
-              );
-            }
-          );
-          setSelectedPatient(filteredPatientsByDate);
-        }
-      } else {
-        setSelectedPatient([]);
-      }
-    }
-  }, [patients, isOpenDrawer, drawerDate, areaName]);
-
-  useEffect(() => {
-    if (selectedPatient.length === 0) {
-      initDrawerData();
-      return;
-    }
-    // 연령대 별 환자 분포
-    const ageGroups = {
-      아동: 0,
-      "10대": 0,
-      "20대": 0,
-      "30대": 0,
-      "40대": 0,
-      "50대": 0,
-      "60대": 0
-    };
-
-    const revenueMap: { [key: string]: number } = {};
-    const dailyRevenueMap: { [key: string]: number } = {};
-    let firstTimeCount = 0;
-    let revisitCount = 0;
-    let resultTotalCost = 0;
-
-    selectedPatient.forEach((patient) => {
-      const { totalCost, visitDate, age, visitType } = patient;
-      resultTotalCost += totalCost;
-      //재방문 환자수 = 초진 + 재진
-      if (visitType === "초진" || visitType === "재진") {
-        revisitCount++;
-      } else if (visitType === "신환") {
-        firstTimeCount++;
-      }
-      //매출액 변화 추이
-      if (visitDate && revenueMap[visitDate]) {
-        revenueMap[visitDate] += totalCost ?? 0;
-      } else {
-        revenueMap[visitDate] = totalCost;
-      }
-      const ageInYears = parseAge(age);
-      // 연령대에 맞는 카운트 증가
-      if (ageInYears >= 0 && ageInYears <= 9) {
-        ageGroups["아동"]++;
-      } else if (ageInYears >= 10 && ageInYears <= 19) {
-        ageGroups["10대"]++;
-      } else if (ageInYears >= 20 && ageInYears <= 29) {
-        ageGroups["20대"]++;
-      } else if (ageInYears >= 30 && ageInYears <= 39) {
-        ageGroups["30대"]++;
-      } else if (ageInYears >= 40 && ageInYears <= 49) {
-        ageGroups["40대"]++;
-      } else if (ageInYears >= 50 && ageInYears <= 59) {
-        ageGroups["50대"]++;
-      } else {
-        ageGroups["60대"]++;
-      }
-      //1인당 평균 매출액
-      if (visitDate) {
-        // visitDate가 없으면 초기화
-        if (!dailyRevenueMap[visitDate]) {
-          dailyRevenueMap[visitDate] = {
-            totalCost: 0,
-            patientCount: 0
+    const fetchData = async () => {
+      if (region === "small") {
+        const containingDong = await findContainingDong(smallPolygons[0]);
+        console.log(containingDong);
+        if (containingDong) {
+          const newSmallRegion = {
+            name: selectedRegionData.name,
+            population: selectedRegionData.population,
+            male_avg_age: containingDong.male_avg_age,
+            female_avg_age: containingDong.female_avg_age,
+            total_avg_age: containingDong.total_avg_age,
+            monthly_avg_income: containingDong.monthly_avg_income,
+            male_population: containingDong.male_population,
+            female_population: containingDong.female_population,
+            medical_expense: containingDong.medical_expense,
+            age_group_population: containingDong.age_group_population
           };
+          setRegionInfo(newSmallRegion);
         }
-      }
-      if (visitDate && dailyRevenueMap[visitDate].totalCost) {
-        dailyRevenueMap[visitDate].totalCost += totalCost;
-        dailyRevenueMap[visitDate].patientCount += 1;
       } else {
-        dailyRevenueMap[visitDate].totalCost = totalCost;
-        dailyRevenueMap[visitDate].patientCount = 1;
+        setRegionInfo(selectedRegionData);
       }
-
-      setTotalCost(resultTotalCost);
-      setTotalPatients(selectedPatient.length);
-      setFirstVisitPatients(firstTimeCount);
-      setRevisitedPatients(revisitCount);
-      setRevenueTrend(revenueMap);
-      setAgeGroups(ageGroups);
-      setDailyRevenue(dailyRevenueMap);
-    });
-  }, [selectedPatient]);
+    };
+    fetchData();
+  }, [areaName]);
 
   const formatDataForAverageRevenue = (data: any) => {
     return Object.entries(data).map(([date, value]) => {
@@ -432,7 +247,7 @@ const StatisticsDrawer = () => {
       </div>
       {regionInfo &&
         (toggleValue === "지역" ? (
-          <RegionInfo data={selectedRegionData} />
+          <RegionInfo data={regionInfo} />
         ) : toggleValue === "매출" ? (
           <RevenuInfo
             statsData={statsData}
@@ -462,7 +277,7 @@ const StatisticsDrawer = () => {
               >
                 <ChartTitleStyle>지역 데이터</ChartTitleStyle>
               </div>
-              <RegionInfo data={selectedRegionData} />
+              <RegionInfo data={regionInfo} />
             </div>
             <div
               style={{
