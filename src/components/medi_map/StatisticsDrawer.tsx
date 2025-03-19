@@ -6,7 +6,6 @@ import mapStore from "../../store/mapStore";
 import isBetween from "dayjs/plugin/isBetween";
 import dayjs from "dayjs";
 import { useEffect, useMemo, useState } from "react";
-import { PatientData } from "../../utils/ExcelParser";
 import RegionInfo from "./RegionInfo";
 import * as turf from "@turf/turf";
 import RevenuInfo from "./chart/RevenueInfo";
@@ -53,38 +52,23 @@ const findContainingDong = async (
 
 const StatisticsDrawer = () => {
   const { isOpenDrawer, handleIsDrawerOpen } = mapStore();
-  const [selectedPatient, setSelectedPatient] = useState<PatientData[]>([]);
   const {
     areaName,
-    totalCost,
-    totalPatients,
-    firstVisitPatients,
-    revisitedPatients,
-    dailyRevenue,
-    revenueTrend,
-    ageGroups,
     drawerDate,
-    patients,
     region,
     selectedRegionData,
     setDrawerDate,
-    setTotalCost,
-    setTotalPatients,
-    setFirstVisitPatients,
-    setRevisitedPatients,
-    setRevenueTrend,
-    setAgeGroups,
-    setDailyRevenue,
+
     smallPolygons
   } = mapStore();
 
   const [regionInfo, setRegionInfo] = useState<RegionData | null>(null);
-  //const getPrivateData = useMutation({
-  // mutationFn: (params: RegionPrivateParams) => getRegionPrivateData(params),
-  // onSuccess: (data) => {
-  //  console.log(data);
-  //}
-  //});
+  const getPrivateData = useMutation({
+    mutationFn: (params: RegionPrivateParams) => getRegionPrivateData(params),
+    onSuccess: (data) => {
+      console.log(data);
+    }
+  });
 
   const params = useMemo(() => {
     return {
@@ -95,19 +79,31 @@ const StatisticsDrawer = () => {
     };
   }, [areaName, region, drawerDate]);
 
+  const {
+    data: regionPrivate,
+    isLoading,
+    isRefetching,
+    isError,
+    error,
+    refetch: regionPrivateFetch
+  } = useQuery({
+    queryKey: ["regionPrivateData"],
+    queryFn: () => getRegionPrivateData(params),
+    enabled: false
+  });
+
   useEffect(() => {
-    //getPrivateData.mutate(params);
+    regionPrivateFetch();
   }, [params]);
 
   useEffect(() => {
     const fetchData = async () => {
       if (region === "small") {
         const containingDong = await findContainingDong(smallPolygons[0]);
-        console.log(containingDong);
         if (containingDong) {
           const newSmallRegion = {
             name: selectedRegionData.name,
-            population: selectedRegionData.population,
+            total_population: selectedRegionData.population,
             male_avg_age: containingDong.male_avg_age,
             female_avg_age: containingDong.female_avg_age,
             total_avg_age: containingDong.total_avg_age,
@@ -127,44 +123,41 @@ const StatisticsDrawer = () => {
   }, [areaName]);
 
   const formatDataForAverageRevenue = (data: any) => {
-    return Object.entries(data).map(([date, value]) => {
-      const averageRevenue =
-        value.patientCount > 0 ? value.totalCost / value.patientCount : 0;
-      return {
+    return Object.entries(regionPrivate?.average_cost_per_visit_by_date).map(
+      ([date, value]) => ({
         date,
-        value: averageRevenue
-      };
-    });
+        value
+      })
+    );
   };
 
   const formatDataForRevenueTrend = (data: any) => {
-    return Object.entries(revenueTrend).map(([date, value]) => ({
+    return Object.entries(regionPrivate?.cost_by_date).map(([date, value]) => ({
       date,
       value
     }));
   };
 
   const barFormatData = () => {
-    return Object.entries(ageGroups).map(([age, value]) => ({
-      age,
-      value
-    }));
+    return Object.entries(regionPrivate?.patient_count_by_age_group).map(
+      ([age, value]) => ({
+        age,
+        value
+      })
+    );
   };
 
   const statsData: { [key: number]: string } = {
-    1: `${totalPatients}명`,
-    2: `${totalCost.toLocaleString()} ₩`,
-    3:
-      totalPatients > 0
-        ? `${Math.ceil(totalCost / totalPatients).toLocaleString()}` + " ₩"
-        : 0 + " ₩", //1인당 평균 매출 = 총 매출 / 총 환자수
-    4:
-      selectedPatient.length > 0
-        ? `${Math.ceil(totalCost / selectedPatient.length).toLocaleString()}` +
-          " ₩"
-        : 0 + " ₩", //내원당 평균 매출액
-    5: `${revisitedPatients}명`,
-    6: `${firstVisitPatients}명`,
+    1: `${regionPrivate?.total_patient_count}명`,
+    2: `${Math.ceil(regionPrivate?.total_cost)?.toLocaleString()} ₩`,
+    3: `${Math.ceil(
+      regionPrivate?.average_cost_per_visit
+    )?.toLocaleString()} ₩`, //1인당 평균 매출 = 총 매출 / 총 환자수
+    4: `${Math.ceil(
+      regionPrivate?.average_cost_per_patient
+    )?.toLocaleString()} ₩`,
+    5: `${regionPrivate?.chojin_rejin_visit_count}명`,
+    6: `${regionPrivate?.sinhwan_visit_count}명`,
     7: `${0}명`,
     8: `${0}%`
   };
@@ -251,9 +244,9 @@ const StatisticsDrawer = () => {
         ) : toggleValue === "매출" ? (
           <RevenuInfo
             statsData={statsData}
-            revenueTrend={revenueTrend}
-            dailyRevenue={dailyRevenue}
-            ageGroups={ageGroups}
+            revenueTrend={regionPrivate?.cost_by_date}
+            dailyRevenue={regionPrivate?.average_cost_per_visit_by_date}
+            ageGroups={regionPrivate?.patient_count_by_age_group}
             formatDataForRevenueTrend={formatDataForRevenueTrend}
             formatDataForAverageRevenue={formatDataForAverageRevenue}
             barFormatData={barFormatData}
@@ -299,9 +292,9 @@ const StatisticsDrawer = () => {
 
               <RevenuInfo
                 statsData={statsData}
-                revenueTrend={revenueTrend}
-                dailyRevenue={dailyRevenue}
-                ageGroups={ageGroups}
+                revenueTrend={regionPrivate?.cost_by_date}
+                dailyRevenue={regionPrivate?.average_cost_per_visit_by_date}
+                ageGroups={regionPrivate?.patient_count_by_age_group}
                 formatDataForRevenueTrend={formatDataForRevenueTrend}
                 formatDataForAverageRevenue={formatDataForAverageRevenue}
                 barFormatData={barFormatData}
