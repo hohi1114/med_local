@@ -29,6 +29,11 @@ type AgeGroupPopulation = {
 
 type Polygon = number[][];
 
+type Point = {
+  lat: number;
+  lng: number;
+};
+
 type RegionData = {
   age_group_population: AgeGroupPopulation;
   female_avg_age: number;
@@ -39,10 +44,12 @@ type RegionData = {
   medical_expense: number;
   monthly_avg_income: number;
   name: string;
-  polygon: Polygon;
+  polygon: Polygon[];
   population_by_time: PopulationByTime;
   total_avg_age: number;
   total_population: number;
+  total_cost: number;
+  patient_locations: Point[];
 };
 
 export interface AgeGroupPopulation {

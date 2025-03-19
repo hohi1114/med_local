@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 import { PatientData } from "../utils/ExcelParser";
 import useMediMapData, { Area } from "./useMediMapData";
-import { getDataFromIndexedDB } from "../store/indexded_db/IndexedDB";
 import { getDataFromRegionDB } from "../store/indexded_db/RegionDB";
-import { RegionData } from "../types/naver-maps";
+import { Point, RegionData } from "../types/naver-maps";
 
 const useNaverMapData = () => {
   //**Data
@@ -24,7 +23,6 @@ const useNaverMapData = () => {
         regionKeys.map(async (key, index) => {
           const regions = await getDataFromRegionDB(key);
           const region_etc = await getDataFromRegionDB(key + "_etc");
-          console.log(region_etc);
           return regions.map((region) => {
             const matchedEtc = region_etc[0]?.[
               etcKeys[index] + "_region_costs"
@@ -49,9 +47,6 @@ const useNaverMapData = () => {
 
     fetchAndTransformRegions();
   }, []);
-
-  console.log(dongRegions);
-
   const isDataLoaded =
     dongPolygons.length > 0 &&
     smallPolygons.length > 0 &&
@@ -60,19 +55,19 @@ const useNaverMapData = () => {
   const getRegionName = (currentZoom: number) => {
     if (currentZoom >= 15) {
       return {
-        data: smallPolygons,
+        data: smallRegions,
         name: "small",
         fontSize: "1.2rem"
       };
     } else if (currentZoom < 15 && currentZoom >= 14) {
       return {
-        data: dongPolygons,
+        data: dongRegions,
         name: "dong",
         fontSize: "1.2rem"
       };
     } else {
       return {
-        data: guPolygons,
+        data: guRegions,
         name: "gu",
         fontSize: "1.5rem"
       };
@@ -80,50 +75,50 @@ const useNaverMapData = () => {
   };
 
   //** Calculate Polygon Opacity */
-  const getPolygonColorOpacity = (totalCost: number, name: string): string => {
-    const baseColor = { r: 146, g: 191, b: 2255 };
-
-    // 단계별 투명도 설정
-    const opacityLevels = [
-      { max: 10000, opacity: 0.1 },
-      { max: 50000, opacity: 0.15 },
-      { max: 100000, opacity: 0.2 },
-      { max: 500000, opacity: 0.3 },
-      { max: 1000000, opacity: 0.4 },
-      { max: 10000000, opacity: 0.5 },
-      { max: 50000000, opacity: 0.6 },
-      { max: 100000000, opacity: 0.7 },
-      { max: Infinity, opacity: 0.8 }
-    ];
-
-    const opacity =
-      opacityLevels.find((level) => totalCost <= level.max)?.opacity || 0.05;
-
-    return `rgba(${baseColor.r}, ${baseColor.g}, ${baseColor.b}, ${opacity})`;
-  };
   // const getPolygonColorOpacity = (totalCost: number, name: string): string => {
-  //   const minCost = 0;
-  //   const hightestCost = highestCost[name] || 0;
-  //   const normalizedCost =
-  //     hightestCost === 0
-  //       ? 1
-  //       : Math.min(Math.max(totalCost, minCost), hightestCost) / hightestCost;
-  //   const startColor = { r: 208, g: 232, b: 255 };
-  //   const endColor = { r: 76, g: 140, b: 255 };
+  //   const baseColor = { r: 146, g: 191, b: 2255 };
 
-  //   const r = Math.round(
-  //     startColor.r + (endColor.r - startColor.r) * normalizedCost
-  //   );
-  //   const g = Math.round(
-  //     startColor.g + (endColor.g - startColor.g) * normalizedCost
-  //   );
-  //   const b = Math.round(
-  //     startColor.b + (endColor.b - startColor.b) * normalizedCost
-  //   );
+  //   // 단계별 투명도 설정
+  //   const opacityLevels = [
+  //     { max: 10000, opacity: 0.1 },
+  //     { max: 50000, opacity: 0.15 },
+  //     { max: 100000, opacity: 0.2 },
+  //     { max: 500000, opacity: 0.3 },
+  //     { max: 1000000, opacity: 0.4 },
+  //     { max: 10000000, opacity: 0.5 },
+  //     { max: 50000000, opacity: 0.6 },
+  //     { max: 100000000, opacity: 0.7 },
+  //     { max: Infinity, opacity: 0.8 }
+  //   ];
 
-  //   const opacity = 0.5;
-  //   return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  //   const opacity =
+  //     opacityLevels.find((level) => totalCost <= level.max)?.opacity || 0.05;
+
+  //   return `rgba(${baseColor.r}, ${baseColor.g}, ${baseColor.b}, ${opacity})`;
   // };
+  const getPolygonColorOpacity = (totalCost: number, name: string): string => {
+    const minCost = 0;
+    const hightestCost = 100000000 || 0;
+    const normalizedCost =
+      hightestCost === 0
+        ? 1
+        : Math.min(Math.max(totalCost, minCost), hightestCost) / hightestCost;
+    const startColor = { r: 208, g: 232, b: 255 };
+    const endColor = { r: 76, g: 140, b: 255 };
+
+    const r = Math.round(
+      startColor.r + (endColor.r - startColor.r) * normalizedCost
+    );
+    const g = Math.round(
+      startColor.g + (endColor.g - startColor.g) * normalizedCost
+    );
+    const b = Math.round(
+      startColor.b + (endColor.b - startColor.b) * normalizedCost
+    );
+
+    const opacity = 0.5;
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  };
 
   const expandBounds = (
     bounds: naver.maps.LatLngBounds,
@@ -143,20 +138,18 @@ const useNaverMapData = () => {
 
   /**Get Areas Based on Bounds */
   const getBoundAreas = (
-    areas: Area[],
+    areas: RegionData[],
     mapBounds: naver.maps.LatLngBounds
-  ): { boundAreas: Area[] } => {
-    let boundAreas = [] as Area[];
+  ): { boundAreas: RegionData[] } => {
+    let boundAreas = [] as RegionData[];
 
     areas.forEach((area) => {
-      if (!area.coords || area.coords.length === 0) return;
-
-      const polygonLatLngs = area.coords.map(
-        ([lat, lng]) => new naver.maps.LatLng(lat, lng)
+      const polygonLatLngs = area.polygon.map(
+        ([lng, lat]) => new naver.maps.LatLng(lat, lng)
       );
 
       let isAreaAlreadyAdded = boundAreas.some(
-        (existingArea) => existingArea.areaName === area.areaName
+        (existingArea) => existingArea.name === area.name
       );
 
       polygonLatLngs.forEach((latlng) => {
@@ -191,32 +184,32 @@ const useNaverMapData = () => {
 
   // 500미터 내 환자들만 필터링하는 함수
   const groupPatientsByProximity = (
-    patients: PatientData[],
+    patientsLocations: Point[],
     range = 500
-  ): PatientData[][] => {
+  ): Point[][] => {
     const clusters: Point[][] = [];
-    const visited: boolean[] = new Array(points.length).fill(false);
+    const visited: boolean[] = new Array(patientsLocations.length).fill(false);
 
-    for (let i = 0; i < points.length; i++) {
+    for (let i = 0; i < patientsLocations.length; i++) {
       if (visited[i]) continue;
 
       const cluster: Point[] = [];
-      cluster.push(points[i]);
+      cluster.push(patientsLocations[i]);
       visited[i] = true;
 
       // 현재 점을 기준으로 다른 점들과 비교
-      for (let j = i + 1; j < points.length; j++) {
+      for (let j = i + 1; j < patientsLocations.length; j++) {
         if (visited[j]) continue;
 
         const distance = calculateDistance(
-          points[i].lat,
-          points[i].lng,
-          points[j].lat,
-          points[j].lng
+          patientsLocations[i].lat,
+          patientsLocations[i].lng,
+          patientsLocations[j].lat,
+          patientsLocations[j].lng
         );
 
-        if (distance <= threshold) {
-          cluster.push(points[j]);
+        if (distance <= range) {
+          cluster.push(patientsLocations[j]);
           visited[j] = true;
         }
       }
@@ -230,6 +223,9 @@ const useNaverMapData = () => {
 
   return {
     isDataLoaded,
+    smallRegions,
+    dongRegions,
+    guRegions,
     getRegionName,
     expandBounds,
     getBoundAreas,
