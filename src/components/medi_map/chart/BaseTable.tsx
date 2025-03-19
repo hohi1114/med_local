@@ -1,42 +1,40 @@
 import { Table } from "antd";
 import type { TableProps } from "antd";
 import styled from "styled-components";
+import { Region } from "../../../types/dashboard";
 
-interface DataType {
-  key: string;
-  area: string;
-  patientCount: number;
-  revenueRate: string;
-  accumulatedRevenue: number;
-}
-
-const columns: TableProps<DataType>["columns"] = [
+const columns: TableProps<Region>["columns"] = [
   {
     title: "지역",
-    dataIndex: "regionName",
-    key: "regionName"
+    dataIndex: "region_name",
+    key: "region_name"
   },
   {
-    title: "환자수",
-    dataIndex: "patientCount",
-    key: "patientCount"
+    title: "환자 수",
+    dataIndex: "visit_count",
+    key: "visit_count"
   },
   {
-    title: "매출비율",
-    dataIndex: "revenueRate",
-    key: "revenueRate"
+    title: "신규 환자 수",
+    dataIndex: "sinhwan_count",
+    key: "sinhwan_count"
+  },
+  {
+    title: "재방문 환자 수",
+    dataIndex: "chojin_rejin_count",
+    key: "chojin_rejin_count"
   },
   {
     title: "누적 매출액",
-    dataIndex: "totalCost",
-    key: "totalCost"
+    dataIndex: "total_cost",
+    key: "total_cost"
   }
 ];
 
-const BaseTable = ({ data }) => {
+const BaseTable = ({ data }: { data: Region[] }) => {
   return (
     <TableContainer>
-      <Table<DataType>
+      <Table<Region>
         columns={columns}
         dataSource={data}
         scroll={{ x: "max-content" }}

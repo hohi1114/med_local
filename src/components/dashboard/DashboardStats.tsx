@@ -1,0 +1,92 @@
+import styled from "styled-components";
+
+type CardWithChangeProps = {
+  title: string;
+  value: number | string;
+  pastValue?: number | string;
+  diffRate: number;
+  currencySymbol?: string;
+};
+
+const DashboardStats: React.FC<CardWithChangeProps> = ({
+  title,
+  value,
+  pastValue,
+  diffRate,
+  currencySymbol = "₩"
+}) => {
+  const isDecreased = diffRate < 0;
+
+  return (
+    <Card>
+      <Title>{title}</Title>
+      <ValueWrapper>
+        <Value textLength={value.toString().length}>
+          {value?.toLocaleString()}
+          {currencySymbol}
+        </Value>
+        {diffRate >= 0 ? (
+          <img src="/images/arrow_up.svg" alt="increase" />
+        ) : (
+          <img src="/images/arrow_down.svg" alt="decrease" />
+        )}
+        <Percentage isDecreased={isDecreased}>{diffRate} %</Percentage>
+      </ValueWrapper>
+      <SubText>
+        동일 기간 작년 {title} {diffRate?.toLocaleString()}
+        {currencySymbol}
+      </SubText>
+    </Card>
+  );
+};
+
+export default DashboardStats;
+
+const Card = styled.div`
+  background-color: #ffffff;
+  padding: 1.5rem 2.2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: center;
+  border-radius: 5;
+  border: 1px solid #f3f2f3;
+`;
+
+const Title = styled.span`
+  font-size: 1.2rem;
+  font-weight: 500;
+`;
+const Value = styled.span<{ textLength: number }>`
+  font-size: ${(props) =>
+    props.textLength >= 9
+      ? props.textLength >= 10
+        ? "1.5rem"
+        : "1.2rem"
+      : "2.2rem"};
+  font-size: 2rem;
+  font-weight: bold;
+  box-sizing: border-box;
+`;
+
+const ValueWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+
+  img {
+    width: 15px;
+    height: 15px;
+  }
+`;
+
+const SubText = styled.div`
+  font-size: 1rem;
+  color: #969696;
+`;
+
+const Percentage = styled.div<{ isDecreased: boolean }>`
+  font-size: 1rem;
+  color: ${(props) => (props.isDecreased ? "#EF4261" : "#30bf78")};
+`;

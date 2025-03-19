@@ -1,0 +1,45 @@
+type CostByDate = {
+  [key: string]: number;
+};
+
+type AverageCostPerVisitByDate = {
+  [key: string]: number;
+};
+
+type PatientCountByAgeGroup = {
+  [key: string]: number;
+};
+
+type DiffRates = {
+  total_visit_count: number;
+  total_cost: number;
+  chojin_rejin_visit_count: number;
+  sinhwan_visit_count: number;
+  average_cost_per_visit: number;
+  average_cost_per_patient: number;
+  total_patient_count: number;
+};
+
+export type Region = {
+  region_name: string;
+  visit_count: number;
+  chojin_rejin_count: number;
+  sinhwan_count: number;
+  total_cost: number;
+};
+
+type TopRegion = Region[];
+
+export interface DashBoard {
+  total_visit_count: number;
+  total_cost: number;
+  chojin_rejin_visit_count: number;
+  sinhwan_visit_count: number;
+  average_cost_per_visit: number;
+  average_cost_per_patient: number;
+  cost_by_date: CostByDate;
+  average_cost_per_visit_by_date: AverageCostPerVisitByDate;
+  patient_count_by_age_group: PatientCountByAgeGroup;
+  diff_rates: DiffRates;
+  topRegions: TopRegion;
+}

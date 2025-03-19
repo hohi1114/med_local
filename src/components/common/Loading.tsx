@@ -25,6 +25,7 @@ const Overlay = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
+  background-color: transparent;
 `;
 
 const ContentWrapper = styled.div`

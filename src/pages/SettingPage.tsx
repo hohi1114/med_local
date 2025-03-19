@@ -1,8 +1,8 @@
 import styled from "styled-components";
 import BaseButton from "../components/common/button/BaseButton";
 import ContentHeader from "../components/common/layout/ContentHeader";
-import { logout } from "../utils/api/apis";
 import userStore from "../store/userStore";
+import { logout } from "../utils/api/apihelper";
 
 export default function SettingPage() {
   const { user } = userStore();

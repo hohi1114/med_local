@@ -19,9 +19,9 @@ interface IBaseLineChartProps {
   labelFormatterX?: (value: string) => string;
   labelFormatterY?: (value: number) => string;
   formatData: (data: any) => ILineData[];
+  number_of_points?: number;
 }
 
-const NUMBER_OF_POINTS = 6;
 const BaseLineChart = ({
   data,
   xField,
@@ -30,7 +30,8 @@ const BaseLineChart = ({
   width,
   labelFormatterX,
   labelFormatterY,
-  formatData
+  formatData,
+  number_of_points = 5
 }: IBaseLineChartProps) => {
   const [lineData, setLineData] = useState<ILineData[]>([]);
 
@@ -39,10 +40,10 @@ const BaseLineChart = ({
     if (data) {
       const formattedData = formatData(data);
       let selectedData: ILineData[] = [];
-      if (formattedData.length > NUMBER_OF_POINTS) {
+      if (formattedData.length > number_of_points) {
         selectedData = formattedData.filter(
           (_, index) =>
-            index % Math.floor(formattedData.length / NUMBER_OF_POINTS) === 0
+            index % Math.floor(formattedData.length / number_of_points) === 0
         );
       } else {
         selectedData = formattedData;
