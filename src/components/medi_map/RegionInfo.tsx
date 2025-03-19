@@ -9,6 +9,7 @@ import {
 import StatsBox from "./StatsBox";
 import SexPieChart from "./chart/SexPieChart";
 import { JSX } from "react";
+import { RegionData } from "../../types/naver-maps";
 
 const BOXTYPE = [
   { id: 1, title: "월평균 소득" },
@@ -18,7 +19,7 @@ const BOXTYPE = [
 ];
 
 type RegionInfoProps = {
-  data: RegionInfo;
+  data: RegionData;
 };
 
 type RegionInfo = {

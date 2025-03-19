@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { PatientData } from "../utils/ExcelParser";
 import dayjs, { Dayjs } from "dayjs";
+import { RegionData } from "../types/naver-maps";
 
 interface IMapStore {
   region: string;
@@ -18,6 +19,7 @@ interface IMapStore {
   drawerDate: { startDate: Dayjs; endDate: Dayjs };
   isOpenDrawer: boolean;
   highestCost: { small: number; dong: number; gu: number };
+  selectedRegionData: RegionData | null;
 
   setRegion: (region: string) => void;
   setDrawerDate: (drawerDate: { startDate: Dayjs; endDate: Dayjs }) => void;
@@ -42,6 +44,7 @@ interface IMapStore {
     dong: number;
     gu: number;
   }) => void;
+  setSelctedRegionData: (data: RegionData) => void;
 }
 
 const mapStore = create<IMapStore>((set) => ({
@@ -60,6 +63,7 @@ const mapStore = create<IMapStore>((set) => ({
   drawerDate: { startDate: new Date(), endDate: new Date() },
   isOpenDrawer: false,
   highestCost: { small: 175661741, dong: 417978115, gu: 123328002 },
+  selectedRegionData: null,
 
   setAreaName: (areaName) => set({ areaName }),
   setTotalPatients: (totalPatients) => set({ totalPatients }),
@@ -75,7 +79,9 @@ const mapStore = create<IMapStore>((set) => ({
   setDrawerDate: (drawerDate) => set({ drawerDate }),
   handleIsDrawerOpen: (isOpenDrawer) => set({ isOpenDrawer }),
   setHighestCost: (highestCost) => set({ highestCost }),
-  setRegion: (region) => set({ region })
+  setRegion: (region) => set({ region }),
+  setSelctedRegionData: (selectedRegionData: RegionData) =>
+    set({ selectedRegionData })
 }));
 
 export default mapStore;

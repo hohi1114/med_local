@@ -5,7 +5,7 @@ import styled from "styled-components";
 import mapStore from "../../store/mapStore";
 import isBetween from "dayjs/plugin/isBetween";
 import dayjs from "dayjs";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PatientData } from "../../utils/ExcelParser";
 import Dong_region_info from "../../../public/D_integrated_data.json";
 import Gu_region_info from "../../../public/G_integrated.json";
@@ -13,6 +13,8 @@ import Small_region_info from "../../../public/Sub_integrated_data.json";
 import RegionInfo from "./RegionInfo";
 import * as turf from "@turf/turf";
 import RevenuInfo from "./chart/RevenueInfo";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { getRegionPrivateData } from "../../utils/api/apis";
 dayjs.extend(isBetween);
 
 // 지역 데이터 타입 정의
@@ -84,6 +86,7 @@ const StatisticsDrawer = () => {
     drawerDate,
     patients,
     region,
+    selectedRegionData,
     setDrawerDate,
     setTotalCost,
     setTotalPatients,
@@ -95,6 +98,25 @@ const StatisticsDrawer = () => {
   } = mapStore();
 
   const [regionInfo, setRegionInfo] = useState();
+  const getPrivateData = useMutation({
+    mutationFn: (params: RegionPrivateParams) => getRegionPrivateData(params),
+    onSuccess: (data) => {
+      console.log(data);
+    }
+  });
+
+  const params = useMemo(() => {
+    return {
+      name: areaName,
+      regionType: region,
+      startDate: dayjs(drawerDate.startDate).format("YYYY-MM-DD"),
+      endDate: dayjs(drawerDate.endDate).format("YYYY-MM-DD")
+    };
+  }, [areaName, region, drawerDate]);
+
+  useEffect(() => {
+    getPrivateData.mutate(params);
+  }, [params]);
 
   useEffect(() => {
     let data: RegionData[] = [];
@@ -410,7 +432,7 @@ const StatisticsDrawer = () => {
       </div>
       {regionInfo &&
         (toggleValue === "지역" ? (
-          <RegionInfo data={regionInfo} />
+          <RegionInfo data={selectedRegionData} />
         ) : toggleValue === "매출" ? (
           <RevenuInfo
             statsData={statsData}
@@ -440,7 +462,7 @@ const StatisticsDrawer = () => {
               >
                 <ChartTitleStyle>지역 데이터</ChartTitleStyle>
               </div>
-              <RegionInfo data={regionInfo} />
+              <RegionInfo data={selectedRegionData} />
             </div>
             <div
               style={{

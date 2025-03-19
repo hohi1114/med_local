@@ -40,7 +40,7 @@ export const getAllRegions = async () => {
 };
 
 export const getAllRegionsEtc = async () => {
-  const data = await apiRequest("get", "etch/all_region_patient_cost");
+  const data = await apiRequest("get", "/fetch/all_region_patient_cost");
   return data;
 };
 
@@ -49,7 +49,7 @@ export const getRegionPrivateData = async (
 ) => {
   const data = await apiRequest(
     "post",
-    "etch/all_region_patient_cost",
+    "/fetch/region_date_patient_info",
     regionprivateParams
   );
   return data;

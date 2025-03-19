@@ -6,37 +6,7 @@ import { makeMarkerClustering } from "../../utils/marker-cluster.js";
 import { PatientData } from "../../utils/ExcelParser.js";
 import { dashboardMock } from "../../assets/DashboardMock.js";
 import dayjs from "dayjs";
-import { Point } from "../../types/naver-maps.js";
-
-/**
- 특정 구역에 환자가 포함되는지
- */
-function containsLocation(
-  pointLat: number,
-  pointLng: number,
-  polygon: naver.maps.Polygon
-): boolean {
-  // Instead of getPath(), use getPaths() + getAt(0)
-  const ringArray = polygon.getPaths().getAt(0); // the first ring
-  if (!ringArray) return false; // no ring
-
-  let inside = false;
-  const len = ringArray.getLength();
-
-  for (let i = 0, j = len - 1; i < len; j = i++) {
-    const latI = ringArray.getAt(i).lat();
-    const lngI = ringArray.getAt(i).lng();
-    const latJ = ringArray.getAt(j).lat();
-    const lngJ = ringArray.getAt(j).lng();
-
-    const intersect =
-      lngI > pointLng !== lngJ > pointLng &&
-      pointLat < ((latJ - latI) * (pointLng - lngI)) / (lngJ - lngI) + latI;
-
-    if (intersect) inside = !inside;
-  }
-  return inside;
-}
+import { Point, RegionData } from "../../types/naver-maps.js";
 
 const NaverMap = () => {
   const {
@@ -45,7 +15,8 @@ const NaverMap = () => {
     setAreaName,
     setPatients,
     highestCost,
-    setRegion
+    setRegion,
+    setSelctedRegionData
   } = mapStore();
   const MarkerClustering = makeMarkerClustering(window.naver) as any;
   const mapElement = useRef<HTMLDivElement>(null);
@@ -164,7 +135,7 @@ const NaverMap = () => {
           polygonsRef.current.set(area.name, polygon);
           polygon.setMap(map);
           //Set click event listener
-          setPolygonClickListener(polygon, area.name);
+          setPolygonClickListener(polygon, area);
           //Set region name marker
           const bounds = polygon.getBounds();
           if (bounds) {
@@ -216,7 +187,7 @@ const NaverMap = () => {
 
   const setPolygonClickListener = (
     polygon: naver.maps.Polygon,
-    areaName: string
+    area: RegionData
   ) => {
     if (!polygon.hasListener("click")) {
       polygon.addListener("click", () => {
@@ -237,15 +208,16 @@ const NaverMap = () => {
 
         if (polygon) {
           //highlight polygon
-          clickedAreaRef.current = areaName;
-          setAreaName(areaName);
+          clickedAreaRef.current = area.name;
+          setAreaName(area.name);
           polygon.setOptions({
             paths: polygon.getPaths(),
             strokeColor: "#4692ff",
             strokeWeight: 3,
             zIndex: 100
           });
-          setClickedArea(areaName);
+          setClickedArea(area.name);
+          setSelctedRegionData(area);
         }
       });
     }
