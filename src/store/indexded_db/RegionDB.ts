@@ -2,7 +2,7 @@ import { openDB } from "idb";
 
 // Database constants
 const REGION_DB_NAME = "RegionDB";
-const REGION_DB_VERSION = 1;
+const REGION_DB_VERSION = 4;
 const fallbackStoreName = "etc";
 const REGION_SUMS_STORE = "regionSums";
 
@@ -26,6 +26,13 @@ import {
   isPointInPolygon,
   flattenToPairs
 } from "../../utils/geometry";
+
+export const getDataFromRegionDB = async (regionType: string) => {
+  const db = await openDB(REGION_DB_NAME, REGION_DB_VERSION);
+  const store = db.transaction(regionType).objectStore(regionType);
+
+  return await store.getAll();
+};
 
 /**
  * Initialize the database for a specific region type

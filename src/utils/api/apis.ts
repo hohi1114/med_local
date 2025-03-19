@@ -33,6 +33,28 @@ export const getDashboardData = async (rangeDate: RangeDate) => {
   return data;
 };
 
+/**지도 */
+export const getAllRegions = async () => {
+  const data = await apiRequest("get", "/fetch/all_regions");
+  return data;
+};
+
+export const getAllRegionsEtc = async () => {
+  const data = await apiRequest("get", "etch/all_region_patient_cost");
+  return data;
+};
+
+export const getRegionPrivateData = async (
+  regionprivateParams: RegionPrivateParams
+) => {
+  const data = await apiRequest(
+    "post",
+    "etch/all_region_patient_cost",
+    regionprivateParams
+  );
+  return data;
+};
+
 export const postRefreshToken = async () => {
   const refreshToken = await getCookie("refreshToken");
 

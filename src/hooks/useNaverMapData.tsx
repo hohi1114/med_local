@@ -1,11 +1,56 @@
+import { useEffect, useState } from "react";
 import { PatientData } from "../utils/ExcelParser";
 import useMediMapData, { Area } from "./useMediMapData";
+import { getDataFromIndexedDB } from "../store/indexded_db/IndexedDB";
+import { getDataFromRegionDB } from "../store/indexded_db/RegionDB";
+import { RegionData } from "../types/naver-maps";
 
 const useNaverMapData = () => {
   //**Data
   const { areas: dongPolygons } = useMediMapData("fixed_polygon.json");
   const { areas: smallPolygons } = useMediMapData("normalized_small_db.json");
   const { areas: guPolygons } = useMediMapData("district_boundaries.json");
+
+  const [smallRegions, setSmallRegions] = useState<RegionData[]>([]);
+  const [dongRegions, setDongRegions] = useState<RegionData[]>([]);
+  const [guRegions, setGuRegions] = useState<RegionData[]>([]);
+
+  useEffect(() => {
+    const fetchAndTransformRegions = async () => {
+      const regionKeys = ["small_regions", "dong_regions", "gu_regions"];
+      const etcKeys = ["small", "dong", "gu"];
+
+      const regionData = await Promise.all(
+        regionKeys.map(async (key, index) => {
+          const regions = await getDataFromRegionDB(key);
+          const region_etc = await getDataFromRegionDB(key + "_etc");
+          console.log(region_etc);
+          return regions.map((region) => {
+            const matchedEtc = region_etc[0]?.[
+              etcKeys[index] + "_region_costs"
+            ]?.find(
+              (item) => item[etcKeys[index] + "_region_name"] === region.name
+            );
+
+            return {
+              ...region,
+              polygon: JSON.parse(region.polygon)[0],
+              total_cost: matchedEtc?.total_cost ?? 0,
+              patient_locations: matchedEtc?.patient_locations ?? []
+            };
+          });
+        })
+      );
+
+      setSmallRegions(regionData[0]);
+      setDongRegions(regionData[1]);
+      setGuRegions(regionData[2]);
+    };
+
+    fetchAndTransformRegions();
+  }, []);
+
+  console.log(dongRegions);
 
   const isDataLoaded =
     dongPolygons.length > 0 &&
@@ -149,37 +194,38 @@ const useNaverMapData = () => {
     patients: PatientData[],
     range = 500
   ): PatientData[][] => {
-    let groups: PatientData[] = [];
+    const clusters: Point[][] = [];
+    const visited: boolean[] = new Array(points.length).fill(false);
 
-    // 각 환자에 대해 그룹을 찾아 그룹화
-    patients.forEach((patient, index) => {
-      // 이미 그룹에 포함된 환자는 건너뛰기
-      let foundGroup = false;
+    for (let i = 0; i < points.length; i++) {
+      if (visited[i]) continue;
 
-      for (let group of groups) {
-        // 그룹의 첫 번째 환자와 현재 환자 간의 거리를 계산
+      const cluster: Point[] = [];
+      cluster.push(points[i]);
+      visited[i] = true;
+
+      // 현재 점을 기준으로 다른 점들과 비교
+      for (let j = i + 1; j < points.length; j++) {
+        if (visited[j]) continue;
+
         const distance = calculateDistance(
-          patient.latitude,
-          patient.longitude,
-          group[0].latitude,
-          group[0].longitude
+          points[i].lat,
+          points[i].lng,
+          points[j].lat,
+          points[j].lng
         );
 
-        // 500미터 이내라면 같은 그룹에 포함
-        if (distance <= range) {
-          group.push(patient);
-          foundGroup = true;
-          break;
+        if (distance <= threshold) {
+          cluster.push(points[j]);
+          visited[j] = true;
         }
       }
 
-      // 만약 해당 환자가 어떤 그룹에도 속하지 않으면 새로운 그룹을 생성
-      if (!foundGroup) {
-        groups.push([patient]);
-      }
-    });
+      // 클러스터에 추가
+      clusters.push(cluster);
+    }
 
-    return groups;
+    return clusters;
   };
 
   return {
