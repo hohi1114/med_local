@@ -1,21 +1,15 @@
 import { Table } from "antd";
-
-import { FC } from "react";
+import { FC, useEffect, useState } from "react";
 import styled from "styled-components";
 import { RegionStatistics } from "../../../types/region-analysis";
 import { ColumnType, TableProps } from "antd/es/table";
+import { useRegionAnalysisStore } from "../../../store/useRegionAnalysisStore";
 
 interface DashBoardTableProps {
-  data?: RegionStatistics[];
   isLoading: boolean;
-  isRefetching: boolean;
 }
 
-const DashBoardTable: FC<DashBoardTableProps> = ({
-  data,
-  isLoading,
-  isRefetching
-}) => {
+const DashBoardTable: FC<DashBoardTableProps> = ({ isLoading }) => {
   const columns: ColumnType<RegionStatistics>[] = [
     {
       title: "지역",
@@ -119,11 +113,24 @@ const DashBoardTable: FC<DashBoardTableProps> = ({
       ) => a.average_patient_age - b.average_patient_age
     }
   ];
+  const [data, setData] = useState<RegionStatistics[]>([]);
+  const { smallSectionData, dongSectionData, guSectionData, localSection } =
+    useRegionAnalysisStore();
+
+  useEffect(() => {
+    if (localSection === "시") {
+      setData(smallSectionData);
+    } else if (localSection === "동") {
+      setData(dongSectionData);
+    } else {
+      setData(guSectionData);
+    }
+  }, [localSection, smallSectionData, dongSectionData, guSectionData]);
 
   return (
     <DashBoardTableContainer
       columns={columns}
-      loading={isLoading || isRefetching}
+      loading={isLoading}
       dataSource={data}
       pagination={{
         position: ["bottomCenter"]

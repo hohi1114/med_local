@@ -6,14 +6,15 @@ import StatisticByRegionFilter from "../components/statics_by_region/StatisticBy
 
 export default function StatisticsByRegionPage() {
   const {
-    regionAnalysisData,
     isLoading,
-    isRefetching,
-    localSection,
     rangeDate,
+    isError,
+    error,
     handleDateChange,
     handleLocalSectionChange
   } = useRegionAnalysis();
+
+  if (isError) return <div>{error?.message}</div>;
   return (
     <>
       <DashBoardContainer>
@@ -21,15 +22,10 @@ export default function StatisticsByRegionPage() {
         <StatisticByRegionFilter
           rangeDate={rangeDate}
           handleDateChange={handleDateChange}
-          locationSection={localSection}
           handleLocalSectionChange={handleLocalSectionChange}
         />
         <DashBoardTableContainer>
-          <DashBoardTable
-            data={regionAnalysisData}
-            isLoading={isLoading}
-            isRefetching={isRefetching}
-          />
+          <DashBoardTable isLoading={isLoading} />
         </DashBoardTableContainer>
       </DashBoardContainer>
     </>

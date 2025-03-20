@@ -6,20 +6,16 @@ import SearchInput from "../common/input/SearchInput";
 import { RangeDate } from "../../hooks/useRangeDurationDatePicker";
 import { LOCAL_SECTIONS_MAP } from "../../hooks/useRegrionAnalysis";
 import { Dayjs } from "dayjs";
+import { useRegionAnalysisStore } from "../../store/useRegionAnalysisStore";
 
 interface StatisticByRegionFilterProps {
   rangeDate: RangeDate;
   handleDateChange: (data: { startDate: Dayjs; endDate: Dayjs }) => void;
-  locationSection: keyof typeof LOCAL_SECTIONS_MAP;
   handleLocalSectionChange: (value: keyof typeof LOCAL_SECTIONS_MAP) => void;
 }
 const StatisticByRegionFilter: FC<StatisticByRegionFilterProps> = (props) => {
-  const {
-    rangeDate,
-    handleDateChange,
-    locationSection,
-    handleLocalSectionChange
-  } = props;
+  const { rangeDate, handleDateChange, handleLocalSectionChange } = props;
+  const { localSection } = useRegionAnalysisStore();
 
   return (
     <FilterWrapper>
@@ -40,7 +36,7 @@ const StatisticByRegionFilter: FC<StatisticByRegionFilterProps> = (props) => {
           <span className="title">지역 단위</span>
           <Select
             onChange={handleLocalSectionChange}
-            defaultValue={locationSection}
+            defaultValue={localSection}
           >
             {Object.keys(LOCAL_SECTIONS_MAP).map((section, index) => {
               return (
