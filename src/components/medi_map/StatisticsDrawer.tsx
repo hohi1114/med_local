@@ -13,6 +13,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { getRegionPrivateData } from "../../utils/api/apis";
 import { Polygon, RegionData } from "../../types/naver-maps";
 import { getDataFromRegionDB } from "../../store/indexded_db/RegionDB";
+import Loading from "../common/Loading";
 dayjs.extend(isBetween);
 
 function fixPolygonCoordinates(
@@ -89,7 +90,8 @@ const StatisticsDrawer = () => {
   } = useQuery({
     queryKey: ["regionPrivateData"],
     queryFn: () => getRegionPrivateData(params),
-    enabled: false
+    enabled: false,
+    retry: false
   });
 
   useEffect(() => {
@@ -100,6 +102,7 @@ const StatisticsDrawer = () => {
     const fetchData = async () => {
       if (region === "small") {
         const containingDong = await findContainingDong(smallPolygons[0]);
+
         if (containingDong) {
           const newSmallRegion = {
             name: selectedRegionData.name,
@@ -242,15 +245,21 @@ const StatisticsDrawer = () => {
         (toggleValue === "지역" ? (
           <RegionInfo data={regionInfo} />
         ) : toggleValue === "매출" ? (
-          <RevenuInfo
-            statsData={statsData}
-            revenueTrend={regionPrivate?.cost_by_date}
-            dailyRevenue={regionPrivate?.average_cost_per_visit_by_date}
-            ageGroups={regionPrivate?.patient_count_by_age_group}
-            formatDataForRevenueTrend={formatDataForRevenueTrend}
-            formatDataForAverageRevenue={formatDataForAverageRevenue}
-            barFormatData={barFormatData}
-          />
+          isLoading || isRefetching ? (
+            <Loading />
+          ) : (
+            <RevenuInfo
+              statsData={statsData}
+              revenueTrend={regionPrivate?.cost_by_date}
+              dailyRevenue={regionPrivate?.average_cost_per_visit_by_date}
+              ageGroups={regionPrivate?.patient_count_by_age_group}
+              formatDataForRevenueTrend={formatDataForRevenueTrend}
+              formatDataForAverageRevenue={formatDataForAverageRevenue}
+              barFormatData={barFormatData}
+            />
+          )
+        ) : isLoading || isRefetching ? (
+          <Loading />
         ) : (
           <div style={{ display: "flex", gap: "1rem" }}>
             <div

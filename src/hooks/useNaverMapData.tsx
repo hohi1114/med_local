@@ -15,15 +15,16 @@ const useNaverMapData = () => {
   const [dongRegions, setDongRegions] = useState<RegionData[]>([]);
   const [guRegions, setGuRegions] = useState<RegionData[]>([]);
 
-  const { data: privateRegion, refetch: privateRegionFetch } = useQuery({
-    queryKey: ["userInfo"],
-    queryFn: () => getAllRegionsEtc(),
-    retry: false
-  });
+  // const { data: allRegionEtcData, refetch: allRegionEtcFetch } = useQuery({
+  //   queryKey: ["allRegionsEtc"],
+  //   queryFn: () => getAllRegionsEtc(),
+  //   retry: false,
+  //   enabled: false
+  // });
 
-  useEffect(() => {
-    privateRegionFetch();
-  }, []);
+  // useEffect(() => {
+  //   allRegionEtcFetch();
+  // }, []);
 
   useEffect(() => {
     const fetchAndTransformRegions = async () => {
@@ -58,7 +59,7 @@ const useNaverMapData = () => {
 
     fetchAndTransformRegions();
     // console.log(privateRegion);
-  }, [privateRegion]);
+  }, []);
   const isDataLoaded =
     dongPolygons.length > 0 &&
     smallPolygons.length > 0 &&

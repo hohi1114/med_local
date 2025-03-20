@@ -2,7 +2,7 @@ import { Spin } from "antd";
 import styled from "styled-components";
 
 interface LoadingProps {
-  content: string;
+  content?: string;
 }
 
 const Loading = ({ content }: LoadingProps) => {
@@ -10,7 +10,7 @@ const Loading = ({ content }: LoadingProps) => {
     <Overlay>
       <ContentWrapper>
         <Spin tip="Loading" size="large" style={{ fontSize: "3rem" }} />
-        <Message>{content}</Message>
+        {content && <Message>{content}</Message>}
       </ContentWrapper>
     </Overlay>
   );

@@ -142,13 +142,13 @@ const NaverMap = () => {
             regionMarkers.push(marker);
           }
 
-          if (currentZoom >= 16) {
-            const groupPatients = groupPatientsByProximity(
-              area.patient_locations,
-              300
-            );
-            createPatientGroupMarkers(groupPatients, patientGroupsMarkers);
-          }
+          // if (currentZoom >= 16) {
+          //   const groupPatients = groupPatientsByProximity(
+          //     area.patient_locations,
+          //     300
+          //   );
+          //   createPatientGroupMarkers(groupPatients, patientGroupsMarkers);
+          // }
         }
       });
 

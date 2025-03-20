@@ -37,9 +37,11 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
 
         <Route path="/" element={<BaseLayout />}>
+          {/* 기본 경로 ("/")로 접근하면 자동으로 "/dashboard"로 이동 */}
+          <Route index element={<Navigate to="dashboard" replace />} />
+
           <Route path="dashboard" element={<DashBoardPage />} />
           <Route
-            index
             path="map"
             element={
               <NaverScriptLoader>
@@ -47,17 +49,11 @@ function App() {
               </NaverScriptLoader>
             }
           />
-
           <Route
             path="statistics-by-region"
             element={<StatisticsByRegionPage />}
           />
           <Route path="update_data" element={<UpdateDataPage />} />
-          <Route
-            path="statistics-by-region"
-            element={<StatisticsByRegionPage />}
-          />
-
           <Route path="compare-chart" element={<StatisticsByRegionPage />} />
           <Route path="setting" element={<SettingPage />} />
         </Route>
