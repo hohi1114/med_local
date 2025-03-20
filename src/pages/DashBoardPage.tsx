@@ -21,6 +21,7 @@ export default function DashBoardPage() {
     isLoading,
     error,
     dashboardInfo,
+    buttonType,
     setButtonType
   } = useDashBoard();
 
@@ -54,6 +55,7 @@ export default function DashBoardPage() {
               return (
                 <div style={{ width: "85px" }} key={index}>
                   <CutomButton
+                    selected={content === buttonType}
                     onClick={() =>
                       content !== "직접 선택" && handleDateFilterButton(content)
                     }
@@ -183,15 +185,16 @@ const ChartTitle = styled.span`
   padding-bottom: 1.5rem;
 `;
 
-const CutomButton = styled(BaseButton)`
-  border: 1px solid #f3f2f3;
+const CutomButton = styled(BaseButton)<{ selected?: boolean }>`
   font-weight: 500;
   min-width: 85px;
   max-width: 100px;
   flex-grow: 0;
   transition: border 0.2s ease;
+  border: ${(props) =>
+    props.selected ? "1.5px solid #0077c0" : "1.5px solid #f3f2f3"};
 
-  &:focus {
+  &:hover {
     border: 1.5px solid #0077c0;
   }
 `;

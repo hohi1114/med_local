@@ -40,10 +40,8 @@ const RANGE_DATE_MAP = {
 };
 const useDashBoard = () => {
   const { rangeDate, handleDateChange } = useRangeDurationDatePicker();
-  const [buttonType, setButtonType] = useState<string>("3개월");
+  const [buttonType, setButtonType] = useState<RangeDateMapKey>("1개월");
   const {
-    dashboardData,
-    setDashboardData,
     todayData,
     monthData,
     threeDaysData,
@@ -94,6 +92,7 @@ const useDashBoard = () => {
 
   useEffect(() => {
     if (buttonType) {
+      console.log(buttonType);
       switch (buttonType) {
         case "오늘":
           setDashboardInfo(todayData);
@@ -113,6 +112,8 @@ const useDashBoard = () => {
         case "1년":
           setDashboardInfo(oneYearData);
           break;
+        default:
+          break;
       }
     }
   }, [
@@ -131,8 +132,8 @@ const useDashBoard = () => {
       setThreeMonthData(data);
       setIsLoading(false);
       fetchOtherDate(Object.keys(RANGE_DATE_MAP) as RangeDateMapKey[]);
-    } catch (err) {
-      console.log(err);
+    } catch (error) {
+      throw error;
     }
   };
 
@@ -179,7 +180,7 @@ const useDashBoard = () => {
     }
   }, [allregionData]);
 
-  const handleDateFilterButton = (content: string) => {
+  const handleDateFilterButton = (content: RangeDateMapKey) => {
     const today = dayjs();
     setButtonType(content);
     switch (content) {
@@ -226,7 +227,8 @@ const useDashBoard = () => {
     isLoading,
     error,
     isError,
-    dashboardInfo
+    dashboardInfo,
+    buttonType
   };
 };
 
