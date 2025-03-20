@@ -38,8 +38,12 @@ export const getAllRegions = async () => {
   return data;
 };
 
-export const getAllRegionsEtc = async () => {
-  const data = await apiRequest("get", "/fetch/all_region_patient_cost");
+export const getAllRegionsEtc = async (rangeDate: RangeDate) => {
+  const data = await apiRequest(
+    "post",
+    "/fetch/all_region_patient_cost",
+    rangeDate
+  );
   return data;
 };
 

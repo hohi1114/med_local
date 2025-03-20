@@ -4,6 +4,7 @@ import { getDataFromRegionDB } from "../store/indexded_db/RegionDB";
 import { Point, RegionData } from "../types/naver-maps";
 import { useQuery } from "@tanstack/react-query";
 import { getAllRegionsEtc, getRegionPrivateData } from "../utils/api/apis";
+import mapStore from "../store/mapStore";
 
 const useNaverMapData = () => {
   //**Data
@@ -11,20 +12,26 @@ const useNaverMapData = () => {
   const { areas: smallPolygons } = useMediMapData("normalized_small_db.json");
   const { areas: guPolygons } = useMediMapData("district_boundaries.json");
 
+  const { drawerDate } = mapStore();
+
   const [smallRegions, setSmallRegions] = useState<RegionData[]>([]);
   const [dongRegions, setDongRegions] = useState<RegionData[]>([]);
   const [guRegions, setGuRegions] = useState<RegionData[]>([]);
 
-  // const { data: allRegionEtcData, refetch: allRegionEtcFetch } = useQuery({
-  //   queryKey: ["allRegionsEtc"],
-  //   queryFn: () => getAllRegionsEtc(),
-  //   retry: false,
-  //   enabled: false
-  // });
+  const { data: allRegionEtcData, refetch: allRegionEtcFetch } = useQuery({
+    queryKey: ["allRegionsEtc"],
+    queryFn: () => getAllRegionsEtc(drawerDate),
+    retry: false,
+    enabled: !!drawerDate
+  });
 
-  // useEffect(() => {
-  //   allRegionEtcFetch();
-  // }, []);
+  useEffect(() => {
+    allRegionEtcFetch();
+  }, [drawerDate]);
+
+  useEffect(() => {
+    allRegionEtcFetch();
+  }, []);
 
   useEffect(() => {
     const fetchAndTransformRegions = async () => {
