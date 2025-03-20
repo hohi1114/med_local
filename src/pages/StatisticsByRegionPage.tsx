@@ -1,43 +1,47 @@
-import styled, { keyframes } from "styled-components";
+import styled from "styled-components";
 import ContentHeader from "../components/common/layout/ContentHeader";
+import DashBoardTable from "../components/statics_by_region/table/DashBoardTable";
+import useRegionAnalysis from "../hooks/useRegrionAnalysis";
+import StatisticByRegionFilter from "../components/statics_by_region/StatisticByRegionFilter";
 
 export default function StatisticsByRegionPage() {
+  const {
+    regionAnalysisData,
+    isLoading,
+    isRefetching,
+    localSection,
+    rangeDate,
+    handleDateChange,
+    handleLocalSectionChange
+  } = useRegionAnalysis();
   return (
     <>
-      <ContentHeader title="지역 별 통계" />
       <DashBoardContainer>
-        <ComingSoonText>Coming Soon!</ComingSoonText>
+        <ContentHeader title="지역 별 통계" />
+        <StatisticByRegionFilter
+          rangeDate={rangeDate}
+          handleDateChange={handleDateChange}
+          locationSection={localSection}
+          handleLocalSectionChange={handleLocalSectionChange}
+        />
+        <DashBoardTableContainer>
+          <DashBoardTable
+            data={regionAnalysisData}
+            isLoading={isLoading}
+            isRefetching={isRefetching}
+          />
+        </DashBoardTableContainer>
       </DashBoardContainer>
     </>
   );
 }
 
-// 깜빡이는 효과 (페이드 인 & 아웃)
-const fadeInOut = keyframes`
-  0% { opacity: 0.3; }
-  50% { opacity: 1; }
-  100% { opacity: 0.3; }
-`;
-
-// 메인 컨테이너
 const DashBoardContainer = styled.div`
   display: flex;
   flex-direction: column;
   width: 100%;
-  height: 80vh;
-  justify-content: center;
-  align-items: center;
-  color: white;
 `;
 
-// "Coming Soon!" 스타일링
-const ComingSoonText = styled.h1`
-  font-size: 2rem;
-  font-weight: bold;
-  text-transform: uppercase;
-  background: linear-gradient(90deg, #0077c0, #003366);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: ${fadeInOut} 3s infinite ease-in-out;
-  letter-spacing: 3px;
+const DashBoardTableContainer = styled.div`
+  padding: 1rem;
 `;

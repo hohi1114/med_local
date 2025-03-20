@@ -55,6 +55,19 @@ export const getRegionPrivateData = async (
   return data;
 };
 
+/**지역별 분석 */
+export const getRegionAnalysis = async (
+  regionAnalysisParams: regionAnalysisParams
+) => {
+  const { region, rangeDate } = regionAnalysisParams;
+  const data = await apiRequest(
+    "post",
+    `/fetch/dashboard_${region}_date_region`,
+    rangeDate
+  );
+  return data;
+};
+
 export const postRefreshToken = async () => {
   const refreshToken = await getCookie("refreshToken");
 

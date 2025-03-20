@@ -1,23 +1,25 @@
-import { useState } from "react";
+import { FC } from "react";
 import styled from "styled-components";
 import { Select } from "antd";
 import DurationDatePicker from "../common/datepicker/DurationDatePicker";
 import SearchInput from "../common/input/SearchInput";
-import useRangeDurationDatePicker from "../../hooks/useRangeDurationDatePicker";
+import { RangeDate } from "../../hooks/useRangeDurationDatePicker";
+import { LOCAL_SECTIONS_MAP } from "../../hooks/useRegrionAnalysis";
+import { Dayjs } from "dayjs";
 
-const LOCALSECTIONS = ["시", "구", "동"];
-const DashBoardFilter = () => {
-  const [localSection, setlocalSection] = useState(LOCALSECTIONS[0]);
-  const { rangeDate, handleDateChange } = useRangeDurationDatePicker();
-  const [searchword, setSearchword] = useState<string | null>(null);
-
-  const handleLocalSectionChange = (value: string) => {
-    setlocalSection(value);
-  };
-
-  const handleSearchwordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchword(e.target.value);
-  };
+interface StatisticByRegionFilterProps {
+  rangeDate: RangeDate;
+  handleDateChange: (data: { startDate: Dayjs; endDate: Dayjs }) => void;
+  locationSection: keyof typeof LOCAL_SECTIONS_MAP;
+  handleLocalSectionChange: (value: keyof typeof LOCAL_SECTIONS_MAP) => void;
+}
+const StatisticByRegionFilter: FC<StatisticByRegionFilterProps> = (props) => {
+  const {
+    rangeDate,
+    handleDateChange,
+    locationSection,
+    handleLocalSectionChange
+  } = props;
 
   return (
     <FilterWrapper>
@@ -27,17 +29,25 @@ const DashBoardFilter = () => {
           <span className="title">분석기간</span>
           <DurationDatePicker
             rangeDate={rangeDate}
-            handleDateChange={handleDateChange}
+            handleDateChange={(date) => {
+              if (date?.length === 2 && date[0] && date[1]) {
+                handleDateChange({ startDate: date[0], endDate: date[1] });
+              }
+            }}
           />
         </FilterItemContainer>
         <FilterItemContainer>
           <span className="title">지역 단위</span>
           <Select
             onChange={handleLocalSectionChange}
-            defaultValue={localSection}
+            defaultValue={locationSection}
           >
-            {LOCALSECTIONS.map((section, index) => {
-              return <Select.Option key={index}>{section}</Select.Option>;
+            {Object.keys(LOCAL_SECTIONS_MAP).map((section, index) => {
+              return (
+                <Select.Option key={index} value={section}>
+                  {section}
+                </Select.Option>
+              );
             })}
           </Select>
         </FilterItemContainer>
@@ -46,13 +56,13 @@ const DashBoardFilter = () => {
       {/* Right Filter Section */}
       <SearchContainer>
         <span className="title">검색하기</span>
-        <SearchInput handleInputChange={handleSearchwordChange} />
+        {/* <SearchInput handleInputChange={handleSearchwordChange} /> */}
       </SearchContainer>
     </FilterWrapper>
   );
 };
 
-export default DashBoardFilter;
+export default StatisticByRegionFilter;
 
 const FilterWrapper = styled.div`
   display: flex;

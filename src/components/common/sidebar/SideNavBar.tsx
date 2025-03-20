@@ -7,6 +7,9 @@ import { useState, useEffect } from "react";
 const SideNavBar = () => {
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
+  const [selectedKeys, setSelectedKeys] = useState<string[]>([
+    location.pathname
+  ]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -27,6 +30,10 @@ const SideNavBar = () => {
     setCollapsed(!collapsed);
   };
 
+  useEffect(() => {
+    setSelectedKeys([location.pathname.replace("/", "")]);
+  }, [location.pathname]);
+
   return (
     <SidebarContainer collapsed={collapsed}>
       <LogoContainer collapsed={collapsed}>
@@ -40,8 +47,7 @@ const SideNavBar = () => {
 
       <Menu
         onClick={onClick}
-        defaultSelectedKeys={["Dashboard"]}
-        // defaultOpenKeys={["dashboard"]}
+        selectedKeys={selectedKeys}
         mode="inline"
         items={MENUITEMS}
         inlineCollapsed={collapsed}
