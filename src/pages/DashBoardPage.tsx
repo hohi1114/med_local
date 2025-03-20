@@ -17,11 +17,11 @@ export default function DashBoardPage() {
     rangeDate,
     handleDateFilterButton,
     handleDateChange,
-    dashboardInfo,
     isError,
-    isRefetching,
     isLoading,
-    error
+    error,
+    dashboardInfo,
+    setButtonType
   } = useDashBoard();
 
   const barFormatData = () => {
@@ -41,26 +41,11 @@ export default function DashBoardPage() {
       value
     }));
   };
-  if (isLoading) return <Loading content={LOADINGCONTENT} />;
+  if (isLoading || !dashboardInfo) return <Loading content={LOADINGCONTENT} />;
   if (isError) return <div>{error?.message}</div>;
 
   return (
     <>
-      {isRefetching ? (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            zIndex: 100,
-            backgroundColor: "rgba(0, 0, 0, 0.1)"
-          }}
-        >
-          <Loading content={LOADINGCONTENT} />
-        </div>
-      ) : null}
       <ContentHeader title="대시보드" />
       {dashboardInfo && (
         <DashBoardContainer>
@@ -87,6 +72,7 @@ export default function DashBoardPage() {
               rangeDate={rangeDate}
               handleDateChange={(date) => {
                 if (date?.length === 2 && date[0] && date[1]) {
+                  setButtonType(date[0]?.toString() + date[1]?.toString());
                   handleDateChange({ startDate: date[0], endDate: date[1] });
                 }
               }}

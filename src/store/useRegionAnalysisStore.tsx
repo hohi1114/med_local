@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { RegionStatistics } from "../types/region-analysis";
-import { LocalSectionKey } from "../hooks/useRegrionAnalysis";
+import { LocalSectionKey } from "../hooks/useRegionAnalysis";
 
 type RegionAnalysisStore = {
   localSection: LocalSectionKey;

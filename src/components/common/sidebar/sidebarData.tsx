@@ -3,7 +3,7 @@ import { MenuProps } from "antd";
 type MenuItem = Required<MenuProps>["items"][number];
 export const MENUITEMS: MenuItem[] = [
   {
-    key: "Dashboard",
+    key: "dashboard",
     label: "대시보드",
     icon: (
       <img

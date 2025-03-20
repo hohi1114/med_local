@@ -4,7 +4,7 @@ import { Select } from "antd";
 import DurationDatePicker from "../common/datepicker/DurationDatePicker";
 import SearchInput from "../common/input/SearchInput";
 import { RangeDate } from "../../hooks/useRangeDurationDatePicker";
-import { LOCAL_SECTIONS_MAP } from "../../hooks/useRegrionAnalysis";
+import { LOCAL_SECTIONS_MAP } from "../../hooks/useRegionAnalysis";
 import { Dayjs } from "dayjs";
 import { useRegionAnalysisStore } from "../../store/useRegionAnalysisStore";
 

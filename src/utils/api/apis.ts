@@ -23,7 +23,6 @@ export const getUserInfo = async () => {
 
 /**대시보드 */
 export const getDashboardData = async (rangeDate: RangeDate) => {
-  console.log(rangeDate);
   const data = await apiRequest(
     "post",
     "/fetch/dashboard_date_patient",

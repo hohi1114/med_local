@@ -1,7 +1,7 @@
 import styled from "styled-components";
 import ContentHeader from "../components/common/layout/ContentHeader";
 import DashBoardTable from "../components/statics_by_region/table/DashBoardTable";
-import useRegionAnalysis from "../hooks/useRegrionAnalysis";
+import useRegionAnalysis from "../hooks/useRegionAnalysis";
 import StatisticByRegionFilter from "../components/statics_by_region/StatisticByRegionFilter";
 
 export default function StatisticsByRegionPage() {
