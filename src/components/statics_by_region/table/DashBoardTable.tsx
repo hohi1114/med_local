@@ -1,9 +1,9 @@
 import { Table } from "antd";
-import type { TableProps } from "antd";
+
 import { FC } from "react";
 import styled from "styled-components";
 import { RegionStatistics } from "../../../types/region-analysis";
-import Loading from "../../common/Loading";
+import { ColumnType, TableProps } from "antd/es/table";
 
 interface DashBoardTableProps {
   data?: RegionStatistics[];
@@ -16,16 +16,18 @@ const DashBoardTable: FC<DashBoardTableProps> = ({
   isLoading,
   isRefetching
 }) => {
-  const columns = [
+  const columns: ColumnType<RegionStatistics>[] = [
     {
       title: "지역",
       dataIndex: "region_name",
-      key: "region_name"
+      key: "region_name",
+      align: "center"
     },
     {
       title: "유동 인구 수",
       dataIndex: "population",
       key: "population",
+      align: "center",
       render: (value: number) => `${value.toLocaleString()} 명`,
       sorter: (a: { population: number }, b: { population: number }) =>
         a.population - b.population
@@ -34,6 +36,7 @@ const DashBoardTable: FC<DashBoardTableProps> = ({
       title: "방문 환자 수",
       dataIndex: "total_visit_count",
       key: "total_visit_count",
+      align: "center",
       render: (value: number) => `${value.toLocaleString()} 명`,
       sorter: (
         a: { total_visit_count: number },
@@ -44,6 +47,7 @@ const DashBoardTable: FC<DashBoardTableProps> = ({
       title: "누적 매출액",
       dataIndex: "total_cost",
       key: "total_cost",
+      align: "center",
       render: (value: number) => `${value.toLocaleString()} ₩`,
       sorter: (a: { total_cost: number }, b: { total_cost: number }) =>
         a.total_cost - b.total_cost
@@ -52,6 +56,7 @@ const DashBoardTable: FC<DashBoardTableProps> = ({
       title: "재방문 환자 수",
       dataIndex: "chojin_rejin_visit_count",
       key: "chojin_rejin_visit_count",
+      align: "center",
       render: (value: number) => `${value.toLocaleString()} 명`,
       sorter: (
         a: { chojin_rejin_visit_count: number },
@@ -62,6 +67,7 @@ const DashBoardTable: FC<DashBoardTableProps> = ({
       title: "신규 환자 수",
       dataIndex: "sinhwan_visit_count",
       key: "sinhwan_visit_count",
+      align: "center",
       render: (value: number) => `${value.toLocaleString()} 명`,
       sorter: (
         a: { sinhwan_visit_count: number },
@@ -72,6 +78,7 @@ const DashBoardTable: FC<DashBoardTableProps> = ({
       title: "내원당 평균 매출액",
       dataIndex: "average_cost_per_visit",
       key: "average_cost_per_visit",
+      align: "center",
       render: (value: number) => `${Math.ceil(value).toLocaleString()} ₩`,
       sorter: (
         a: { chojin_rejin_visit_count: number },
@@ -82,6 +89,7 @@ const DashBoardTable: FC<DashBoardTableProps> = ({
       title: "1인당 평균 매출액",
       dataIndex: "average_cost_per_patient",
       key: "average_cost_per_patient",
+      align: "center",
       render: (value: number) => `${Math.ceil(value).toLocaleString()} ₩`,
       sorter: (
         a: { average_cost_per_patient: number },
@@ -92,6 +100,7 @@ const DashBoardTable: FC<DashBoardTableProps> = ({
       title: "총 환자 수",
       dataIndex: "total_patient_count",
       key: "total_patient_count",
+      align: "center",
       render: (value: number) => `${value.toLocaleString()} 명`,
       sorter: (
         a: { total_patient_count: number },
@@ -102,6 +111,7 @@ const DashBoardTable: FC<DashBoardTableProps> = ({
       title: "평균 환자 연령",
       dataIndex: "average_patient_age",
       key: "average_patient_age",
+      align: "center",
       render: (value: number) => `${value} 세`,
       sorter: (
         a: { average_patient_age: number },
@@ -109,23 +119,11 @@ const DashBoardTable: FC<DashBoardTableProps> = ({
       ) => a.average_patient_age - b.average_patient_age
     }
   ];
-  if (isLoading || isRefetching)
-    return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          width: "80vw",
-          height: "80vh"
-        }}
-      >
-        <Loading />
-      </div>
-    );
+
   return (
     <DashBoardTableContainer
       columns={columns}
+      loading={isLoading || isRefetching}
       dataSource={data}
       pagination={{
         position: ["bottomCenter"]
@@ -138,7 +136,7 @@ const DashBoardTable: FC<DashBoardTableProps> = ({
 
 export default DashBoardTable;
 
-const DashBoardTableContainer = styled(Table)<TableProps<DataType>>`
+const DashBoardTableContainer = styled(Table)<TableProps<RegionStatistics>>`
   .ant-table {
     background-color: #ffffff;
     font-size: 1rem;

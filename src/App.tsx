@@ -11,6 +11,7 @@ import userStore from "./store/userStore.tsx";
 import { useQuery } from "@tanstack/react-query";
 import { getUserInfo } from "./utils/api/apis.ts";
 import LoginPage from "./pages/LoginPage.tsx";
+import ComingSoonPage from "./pages/ComingSoonPage.tsx";
 
 function App() {
   const { setUser } = userStore();
@@ -54,7 +55,7 @@ function App() {
             element={<StatisticsByRegionPage />}
           />
           <Route path="update_data" element={<UpdateDataPage />} />
-          <Route path="compare-chart" element={<StatisticsByRegionPage />} />
+          <Route path="compare-chart" element={<ComingSoonPage />} />
           <Route path="setting" element={<SettingPage />} />
         </Route>
       </Routes>
