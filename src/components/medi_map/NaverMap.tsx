@@ -1,23 +1,41 @@
-import { useEffect, useRef, useState } from "react";
+import { FC, useEffect, useRef, useState } from "react";
 import mapStore from "../../store/mapStore";
 import useNaverMapData from "../../hooks/useNaverMapData";
 import { debounce } from "lodash";
 import { makeMarkerClustering } from "../../utils/marker-cluster.js";
 import { PatientData } from "../../utils/ExcelParser.js";
 import { Point, RegionData } from "../../types/naver-maps.js";
+import DurationDatePicker from "../common/datepicker/DurationDatePicker.js";
+import useRangeDurationDatePicker, {
+  RangeDate
+} from "../../hooks/useRangeDurationDatePicker.js";
+import BaseButton from "../common/button/BaseButton.js";
+import dayjs, { Dayjs } from "dayjs";
 
-const NaverMap = () => {
+interface NaverMapProps {
+  rangeDate: { startDate: Dayjs; endDate: Dayjs };
+  handleDateChange: (dates: Dayjs[]) => void;
+  handleTodayButton: () => void;
+}
+
+const NaverMap: FC<NaverMapProps> = ({
+  rangeDate,
+  handleDateChange,
+  handleTodayButton
+}) => {
   const {
     isOpenDrawer,
     handleIsDrawerOpen,
     setAreaName,
     setPatients,
     highestCost,
+    setDrawerDate,
     setRegion,
     setSelctedRegionData,
     setSmallPolygons,
     setDongPolygons
   } = mapStore();
+
   const MarkerClustering = makeMarkerClustering(window.naver) as any;
   const mapElement = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<naver.maps.Map | null>(null);
@@ -304,7 +322,37 @@ const NaverMap = () => {
         height: "100%",
         backgroundColor: "#e0e0e0"
       }}
-    ></div>
+    >
+      <div
+        style={{
+          position: "absolute",
+          top: "1rem",
+          left: "4rem",
+          zIndex: 1000,
+          backgroundColor: "white",
+          padding: "10px",
+          borderRadius: "8px",
+          boxShadow: "0px 4px 6px rgba(0,0,0,0.1)"
+        }}
+      >
+        <div style={{ display: "flex", gap: "10px" }}>
+          <DurationDatePicker
+            rangeDate={rangeDate}
+            handleDateChange={handleDateChange}
+          />
+
+          <div style={{ width: "80px" }}>
+            <BaseButton
+              type="button"
+              onClick={handleTodayButton}
+              textcolor="#Ffffff"
+            >
+              오늘
+            </BaseButton>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 

@@ -59,7 +59,6 @@ const StatisticsDrawer = () => {
     region,
     selectedRegionData,
     setDrawerDate,
-
     smallPolygons
   } = mapStore();
 
@@ -72,11 +71,12 @@ const StatisticsDrawer = () => {
   });
 
   const params = useMemo(() => {
+    if (!areaName || !region || !drawerDate) return;
     return {
       name: areaName,
       regionType: region,
-      startDate: dayjs(drawerDate.startDate).format("YYYY-MM-DD"),
-      endDate: dayjs(drawerDate.endDate).format("YYYY-MM-DD")
+      startDate: drawerDate?.startDate,
+      endDate: drawerDate?.endDate
     };
   }, [areaName, region, drawerDate]);
 
@@ -88,9 +88,9 @@ const StatisticsDrawer = () => {
     error,
     refetch: regionPrivateFetch
   } = useQuery({
-    queryKey: ["regionPrivateData"],
-    queryFn: () => getRegionPrivateData(params),
-    enabled: false,
+    queryKey: ["regionPrivateData", params],
+    queryFn: () => getRegionPrivateData(params!),
+    enabled: !!params,
     retry: false
   });
 
@@ -165,10 +165,6 @@ const StatisticsDrawer = () => {
     8: `${0}%`
   };
 
-  const handleTodayButton = () => {
-    setDrawerDate({ startDate: dayjs(), endDate: dayjs() });
-  };
-
   const [toggleValue, setToggleValue] = useState<string>("지역");
 
   return (
@@ -192,8 +188,7 @@ const StatisticsDrawer = () => {
       open={isOpenDrawer}
     >
       {/** 날짜 필터 */}
-      <DateFilterWrapper>
-        {/* <div style={{ flex: 3 }}> */}
+      {/* <DateFilterWrapper>
         <DurationDatePicker
           rangeDate={{
             startDate: drawerDate.startDate,
@@ -208,8 +203,6 @@ const StatisticsDrawer = () => {
             }
           }}
         />
-        {/* </div> */}
-        {/* <div style={{ flex: 1 }}> */}
         <div style={{ width: 100 }}>
           <BaseButton
             type="button"
@@ -219,9 +212,7 @@ const StatisticsDrawer = () => {
             오늘
           </BaseButton>
         </div>
-
-        {/* </div> */}
-      </DateFilterWrapper>
+      </DateFilterWrapper> */}
       <div
         style={{
           display: "flex",

@@ -1,10 +1,9 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import StatisticsDrawer from "../components/medi_map/StatisticsDrawer";
 import NaverMap from "../components/medi_map/NaverMap";
 import mapStore from "../store/mapStore";
-import { getRegionSums } from "../store/indexded_db/RegionDB";
 import useRangeDurationDatePicker from "../hooks/useRangeDurationDatePicker";
-import dayjs from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 
 function MediMapPage() {
   const { setHighestCost, drawerDate, setDrawerDate } = mapStore();
@@ -21,9 +20,26 @@ function MediMapPage() {
     }
   }, [drawerDate]);
 
+  const handleDateChangeFromMap = (dates: Dayjs[]) => {
+    if (dates && dates.length === 2) {
+      setDrawerDate({
+        startDate: dayjs(dates[0]),
+        endDate: dayjs(dates[1])
+      });
+    }
+  };
+
+  const handleTodayButton = () => {
+    setDrawerDate({ startDate: dayjs(), endDate: dayjs() });
+  };
+
   return (
     <>
-      <NaverMap />
+      <NaverMap
+        rangeDate={rangeDate}
+        handleDateChange={handleDateChangeFromMap}
+        handleTodayButton={handleTodayButton}
+      />
       <StatisticsDrawer />
     </>
   );

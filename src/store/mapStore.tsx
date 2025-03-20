@@ -6,7 +6,7 @@ import { Polygon, RegionData } from "../types/naver-maps";
 interface IMapStore {
   region: string;
   selectedRegionData: RegionData | null;
-  drawerDate: { startDate: Dayjs; endDate: Dayjs };
+  drawerDate: { startDate: Dayjs; endDate: Dayjs } | null;
   isOpenDrawer: boolean;
   highestCost: { small: number; dong: number; gu: number };
   dongPolygons: Polygon[];
@@ -66,7 +66,7 @@ const mapStore = create<IMapStore>((set) => ({
   dailyRevenue: {},
   patients: [],
   region: "small",
-  drawerDate: { startDate: new Date(), endDate: new Date() },
+  drawerDate: null,
   isOpenDrawer: false,
   highestCost: { small: 175661741, dong: 417978115, gu: 123328002 },
   selectedRegionData: null,

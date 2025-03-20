@@ -55,33 +55,33 @@ const UpdateDataPage = () => {
   }, []);
 
   // ✅ Initialize RegionDBs on Component Mount
-  useEffect(() => {
-    const initializeDatabases = async () => {
-      try {
-        await initIndexedDB();
-        // Initialize databases for each region type
-        if (areas_small && areas_small.length > 0) {
-          await initRegionDB(areas_small, "small");
-        }
-        if (areas_dong && areas_dong.length > 0) {
-          await initRegionDB(areas_dong, "dong");
-        }
-        if (areas_gu && areas_gu.length > 0) {
-          await initRegionDB(areas_gu, "gu");
-        }
-        console.log("✅ All RegionDBs initialized");
-      } catch (error) {
-        console.error("❌ Error initializing RegionDBs:", error);
-        openNotification(
-          "error",
-          "데이터베이스 오류",
-          "데이터베이스 초기화에 실패했습니다."
-        );
-      }
-    };
+  // useEffect(() => {
+  //   const initializeDatabases = async () => {
+  //     try {
+  //       await initIndexedDB();
+  //       // Initialize databases for each region type
+  //       if (areas_small && areas_small.length > 0) {
+  //         await initRegionDB(areas_small, "small");
+  //       }
+  //       if (areas_dong && areas_dong.length > 0) {
+  //         await initRegionDB(areas_dong, "dong");
+  //       }
+  //       if (areas_gu && areas_gu.length > 0) {
+  //         await initRegionDB(areas_gu, "gu");
+  //       }
+  //       console.log("✅ All RegionDBs initialized");
+  //     } catch (error) {
+  //       console.error("❌ Error initializing RegionDBs:", error);
+  //       openNotification(
+  //         "error",
+  //         "데이터베이스 오류",
+  //         "데이터베이스 초기화에 실패했습니다."
+  //       );
+  //     }
+  //   };
 
-    initializeDatabases();
-  }, [areas_small, areas_dong, areas_gu]); //
+  //   initializeDatabases();
+  // }, [areas_small, areas_dong, areas_gu]); //
 
   useEffect(() => {
     if (progress === 100) {
