@@ -16,7 +16,7 @@ dayjs.extend(isBetween);
 
 const useDashBoard = () => {
   const { rangeDate, handleDateChange } = useRangeDurationDatePicker();
-  const { user, setUser } = userStore();
+
   const {
     data: dashboardInfo,
     isLoading,
@@ -28,13 +28,6 @@ const useDashBoard = () => {
     queryKey: ["dashboardInfo"],
     queryFn: () => getDashboardData(rangeDate),
     enabled: false,
-    retry: false
-  });
-
-  const { data, refetch: userRefetch } = useQuery({
-    queryKey: ["userInfo"],
-    queryFn: () => getUserInfo(),
-    enabled: !!user,
     retry: false
   });
 
@@ -51,15 +44,6 @@ const useDashBoard = () => {
       dashboardInfoFetch();
     }
   }, [rangeDate]);
-
-  //자동로그인시 유저정보 fetch
-  useEffect(() => {
-    if (!user) {
-      userRefetch();
-    } else if (data) {
-      setUser(data);
-    }
-  }, [user, data]);
 
   //지역 데이터 IndexedDB에 저장
   useEffect(() => {
