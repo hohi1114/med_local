@@ -93,7 +93,7 @@ const BaseInput = styled.input`
   box-sizing: border-box;
 
   &:focus {
-    border-color: #6a5acd;
+    border-color: #003366;
     outline: none;
     box-shadow: 0 0 5px rgba(106, 90, 205, 0.3);
   }
@@ -104,7 +104,7 @@ const StyledButton = styled(BaseButton)`
   color: white;
   transition: 0.2s ease-in-out;
   &:hover {
-    background: #5a4ec5;
+    background: #003366;
   }
 `;
 

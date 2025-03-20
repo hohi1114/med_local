@@ -35,7 +35,7 @@ const ComingSoonText = styled.h1`
   font-size: 2rem;
   font-weight: bold;
   text-transform: uppercase;
-  background: linear-gradient(90deg, #9f9ff8, #ccccf9);
+  background: linear-gradient(90deg, #0077c0, #003366);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   animation: ${fadeInOut} 3s infinite ease-in-out;

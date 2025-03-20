@@ -36,6 +36,6 @@ const ContentWrapper = styled.div`
 
 const Message = styled.span`
   font-size: 1.4rem;
-  color: #7f7fdb;
+  color: #0077c0;
   margin-top: 1rem;
 `;

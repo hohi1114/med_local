@@ -43,7 +43,7 @@ const BarChart = <T, U extends { [key: string]: any }>({
     scale: {
       color: {
         range: [
-          "#9F9FF8",
+          "#0077C0",
           "#96E2D6",
           "#000000",
           "#92BFFF",

@@ -214,8 +214,7 @@ const StatisticsDrawer = () => {
           <BaseButton
             type="button"
             onClick={handleTodayButton}
-            color="#EDEEFC"
-            textcolor="#000000"
+            textcolor="#Ffffff"
           >
             오늘
           </BaseButton>

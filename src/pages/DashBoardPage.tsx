@@ -206,6 +206,6 @@ const CutomButton = styled(BaseButton)`
   transition: border 0.2s ease;
 
   &:focus {
-    border: 1.5px solid #9f9ff8;
+    border: 1.5px solid #0077c0;
   }
 `;
