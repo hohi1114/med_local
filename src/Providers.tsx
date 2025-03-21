@@ -11,12 +11,11 @@ export default function Providers({ children }: { children: React.ReactNode }) {
           fontFamily: `"Inter", sans-serif`
         },
         components: {
-          Segmented: {
-            itemSelectedColor: "#fafaf8",
-            itemColor: "#1a1a1a",
-            itemSelectedBg: "#333",
-            itemHoverColor: "#fafaf8"
-          }
+          // Segmented: {
+          //   itemSelectedColor: "#fafaf8 !important",
+          //   itemColor: "#1a1a1a !important",
+          //   itemSelectedBg: "#333333 !important"
+          // }
         }
       }}
     >

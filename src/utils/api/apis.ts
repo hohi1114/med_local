@@ -4,7 +4,11 @@ import { saveTokensToCookie } from "./token";
 import { logout, apiRequest } from "./apihelper";
 import { getCookie } from "./cookie";
 import { RangeDate } from "../../hooks/useRangeDurationDatePicker";
-import { postActiveLicenseParams } from "../../types/params";
+import {
+  postActiveLicenseParams,
+  RegionPrivateParams,
+  regionAnalysisParams
+} from "../../types/params";
 
 /**로그인 */
 export const postLogin = async (loginData: LoginParams) => {

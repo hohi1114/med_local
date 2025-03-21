@@ -14,6 +14,7 @@ import { getRegionPrivateData } from "../../utils/api/apis";
 import { Polygon, RegionData } from "../../types/naver-maps";
 import { getDataFromRegionDB } from "../../store/indexded_db/RegionDB";
 import Loading from "../common/Loading";
+import CustomSegmentedControl from "../common/toggle/BaseToggle";
 dayjs.extend(isBetween);
 
 function fixPolygonCoordinates(
@@ -166,6 +167,7 @@ const StatisticsDrawer = () => {
   };
 
   const [toggleValue, setToggleValue] = useState<string>("지역");
+  const handleToggle = (value: string) => {};
   return (
     <Drawer
       width={toggleValue === "전체" ? "70rem" : "35rem"}
@@ -193,12 +195,17 @@ const StatisticsDrawer = () => {
           alignItems: "center"
         }}
       >
-        <Segmented
+        {/* <CustomSegmentedControl
+          options={[["지역", "매출", "전체"]]}
+          handleToggle={setToggleValue}
+          selectedValue={toggleValue}
+        /> */}
+        {/* <StyledSegmented
           options={["지역", "매출", "전체"]}
           value={toggleValue}
           onChange={setToggleValue}
           shape="round"
-        />
+        /> */}
       </div>
 
       <div style={{ padding: "0.8rem 0rem" }}>
@@ -308,4 +315,20 @@ export const GrapWrapper = styled.div`
   background-color: #ffffff;
   border-radius: 1rem;
   padding: 2rem 1rem 0rem 1rem;
+`;
+const StyledSegmented = styled(Segmented)`
+  .ant-segmented-item-selected {
+    background-color: #0f52ba; /* 선택된 아이템 배경색 */
+    color: #fafafa; /* 선택된 아이템 글자색 */
+  }
+
+  .ant-segmented-item {
+    border-color: #ccc; /* 아이템의 기본 테두리 색 */
+    color: #333; /* 기본 글자 색 */
+  }
+
+  .ant-segmented-item:hover {
+    background-color: #f0f0f0; /* hover 시 배경색 */
+    color: #0f52ba; /* hover 시 글자색 */
+  }
 `;
