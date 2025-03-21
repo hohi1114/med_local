@@ -42,12 +42,12 @@ export default function DashBoardPage() {
       value
     }));
   };
-  if (isLoading || !dashboardInfo) return <Loading content={LOADINGCONTENT} />;
   if (isError) return <div>{error?.message}</div>;
 
   return (
     <>
       <ContentHeader title="대시보드" />
+      {(isLoading || !dashboardInfo) && <Loading content={LOADINGCONTENT} />}
       {dashboardInfo && (
         <DashBoardContainer>
           <FilterContainer>

@@ -6,11 +6,8 @@ import { makeMarkerClustering } from "../../utils/marker-cluster.js";
 import { PatientData } from "../../utils/ExcelParser.js";
 import { Point, RegionData } from "../../types/naver-maps.js";
 import DurationDatePicker from "../common/datepicker/DurationDatePicker.js";
-import useRangeDurationDatePicker, {
-  RangeDate
-} from "../../hooks/useRangeDurationDatePicker.js";
 import BaseButton from "../common/button/BaseButton.js";
-import dayjs, { Dayjs } from "dayjs";
+import { Dayjs } from "dayjs";
 import Loading from "../common/Loading.js";
 
 interface NaverMapProps {
@@ -30,11 +27,9 @@ const NaverMap: FC<NaverMapProps> = ({
     setAreaName,
     setPatients,
     highestCost,
-    setDrawerDate,
     setRegion,
     setSelctedRegionData,
-    setSmallPolygons,
-    setDongPolygons
+    setSmallPolygons
   } = mapStore();
 
   const MarkerClustering = makeMarkerClustering(window.naver) as any;
@@ -75,7 +70,7 @@ const NaverMap: FC<NaverMapProps> = ({
     });
 
     setMap(newMap);
-  }, [map]);
+  }, [map, isFetching]);
 
   // ✅ Change PolyStyle and patinetMarkers when drawer is open
   useEffect(() => {
@@ -319,23 +314,6 @@ const NaverMap: FC<NaverMapProps> = ({
     }
   };
 
-  if (isFetching)
-    return (
-      <div
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          zIndex: 100,
-          backgroundColor: "rgba(0, 0, 0, 0.1)"
-        }}
-      >
-        <Loading content="데이터를 안전하게 처리중입니다." />
-      </div>
-    );
-
   return (
     <div
       ref={mapElement}
@@ -346,6 +324,7 @@ const NaverMap: FC<NaverMapProps> = ({
         backgroundColor: "#e0e0e0"
       }}
     >
+      {isFetching && <Loading />}
       <div
         style={{
           position: "absolute",
