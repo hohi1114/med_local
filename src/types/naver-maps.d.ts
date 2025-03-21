@@ -65,3 +65,9 @@ export interface AgeGroupPopulation {
   "90-99": number;
   "100세 이상": number;
 }
+
+export interface RegionEtcData {
+  dong_region_name: string;
+  total_cost: number;
+  patient_location: Point[];
+}

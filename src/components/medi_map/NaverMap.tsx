@@ -11,6 +11,7 @@ import useRangeDurationDatePicker, {
 } from "../../hooks/useRangeDurationDatePicker.js";
 import BaseButton from "../common/button/BaseButton.js";
 import dayjs, { Dayjs } from "dayjs";
+import Loading from "../common/Loading.js";
 
 interface NaverMapProps {
   rangeDate: { startDate: Dayjs; endDate: Dayjs };
@@ -47,15 +48,18 @@ const NaverMap: FC<NaverMapProps> = ({
 
   //** Map Logic
   const {
-    isDataLoaded,
     getRegionName,
     expandBounds,
     getBoundAreas,
     getPolygonColorOpacity,
     groupPatientsByProximity,
+    smallRegionEtc,
+    dongRegionEtc,
+    guRegionEtc,
     smallRegions,
     dongRegions,
-    guRegions
+    guRegions,
+    isFetching
   } = useNaverMapData();
   const clickedAreaRef = useRef<string>(null);
   let [clickedArea, setClickedArea] = useState<string>("");
@@ -114,8 +118,8 @@ const NaverMap: FC<NaverMapProps> = ({
       const polygonsToRender = data;
       //2. Get Bound Areas
       const { boundAreas } = getBoundAreas(polygonsToRender, mapBounds);
-      if (boundAreas.length === 0) return;
 
+      if (boundAreas.length === 0) return;
       //3. Remove all polygons and markerClusters
       polygonsRef.current.forEach((polygon, areaName) => {
         if (!boundAreas.find((area) => area.name === areaName)) {
@@ -137,8 +141,8 @@ const NaverMap: FC<NaverMapProps> = ({
             strokeColor: "#6FA8FF",
             strokeWeight: 1.5,
             clickable: true,
-            // fillColor: `${getPolygonColorOpacity(area.total_cost, name)}`
-            fillColor: `${getPolygonColorOpacity(10000, name)}`
+            fillColor: `${getPolygonColorOpacity(area.total_cost, name)}`
+            // fillColor: `${getPolygonColorOpacity(10000, name)}`
           });
         }
 
@@ -160,13 +164,13 @@ const NaverMap: FC<NaverMapProps> = ({
             regionMarkers.push(marker);
           }
 
-          // if (currentZoom >= 16) {
-          //   const groupPatients = groupPatientsByProximity(
-          //     area.patient_locations,
-          //     300
-          //   );
-          //   createPatientGroupMarkers(groupPatients, patientGroupsMarkers);
-          // }
+          if (currentZoom >= 16) {
+            const groupPatients = groupPatientsByProximity(
+              area.patient_locations,
+              300
+            );
+            createPatientGroupMarkers(groupPatients, patientGroupsMarkers);
+          }
         }
       });
 
@@ -188,12 +192,14 @@ const NaverMap: FC<NaverMapProps> = ({
     handleZoomChange();
   }, [
     map,
-    isDataLoaded,
     highestCost,
     patientsArr,
     smallRegions,
     dongRegions,
-    guRegions
+    guRegions,
+    smallRegionEtc,
+    dongRegionEtc,
+    guRegionEtc
   ]);
 
   const setPolygonClickListener = (
@@ -312,6 +318,23 @@ const NaverMap: FC<NaverMapProps> = ({
       ref.current.setMap(null);
     }
   };
+
+  if (isFetching)
+    return (
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          zIndex: 100,
+          backgroundColor: "rgba(0, 0, 0, 0.1)"
+        }}
+      >
+        <Loading content="데이터를 안전하게 처리중입니다." />
+      </div>
+    );
 
   return (
     <div

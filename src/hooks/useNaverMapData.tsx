@@ -1,37 +1,51 @@
 import { useEffect, useState } from "react";
-import useMediMapData from "./useMediMapData";
 import { getDataFromRegionDB } from "../store/indexded_db/RegionDB";
-import { Point, RegionData } from "../types/naver-maps";
+import { Point, RegionData, RegionEtcData } from "../types/naver-maps";
 import { useQuery } from "@tanstack/react-query";
-import { getAllRegionsEtc, getRegionPrivateData } from "../utils/api/apis";
+import { getAllRegionsEtc } from "../utils/api/apis";
 import mapStore from "../store/mapStore";
 
 const useNaverMapData = () => {
-  //**Data
-  const { areas: dongPolygons } = useMediMapData("fixed_polygon.json");
-  const { areas: smallPolygons } = useMediMapData("normalized_small_db.json");
-  const { areas: guPolygons } = useMediMapData("district_boundaries.json");
-
   const { drawerDate } = mapStore();
 
   const [smallRegions, setSmallRegions] = useState<RegionData[]>([]);
   const [dongRegions, setDongRegions] = useState<RegionData[]>([]);
   const [guRegions, setGuRegions] = useState<RegionData[]>([]);
+  const [smallRegionEtc, setSmallRegionEtc] = useState<RegionEtcData[]>([]);
+  const [dongRegionEtc, setDongRegionEtc] = useState<RegionEtcData[]>([]);
+  const [guRegionEtc, setGuRegionEtc] = useState<RegionEtcData[]>([]);
 
-  const { data: allRegionEtcData, refetch: allRegionEtcFetch } = useQuery({
+  const {
+    data: allRegionEtcData,
+    refetch: allRegionEtcFetch,
+    isFetching
+  } = useQuery({
     queryKey: ["allRegionsEtc"],
     queryFn: () => getAllRegionsEtc(drawerDate),
     retry: false,
+
     enabled: !!drawerDate
   });
 
   useEffect(() => {
-    allRegionEtcFetch();
+    if (drawerDate) {
+      allRegionEtcFetch();
+    }
   }, [drawerDate]);
 
   useEffect(() => {
-    allRegionEtcFetch();
-  }, []);
+    if (allRegionEtcData) {
+      Object.keys(allRegionEtcData).forEach((key) => {
+        if (key === "small_regions") {
+          setSmallRegionEtc(allRegionEtcData[key]?.small_region_costs);
+        } else if (key === "dong_regions") {
+          setDongRegionEtc(allRegionEtcData[key]?.dong_region_costs);
+        } else {
+          setGuRegionEtc(allRegionEtcData[key]?.gu_region_costs);
+        }
+      });
+    }
+  }, [allRegionEtcData]);
 
   useEffect(() => {
     const fetchAndTransformRegions = async () => {
@@ -43,17 +57,22 @@ const useNaverMapData = () => {
           const regions = await getDataFromRegionDB(key);
 
           return regions.map((region) => {
-            // const matchedEtc = region_etc[0]?.[
-            //   etcKeys[index] + "_region_costs"
-            // ]?.find(
-            //   (item) => item[etcKeys[index] + "_region_name"] === region.name
-            // );
-
+            let etc_data: RegionEtcData[] = [];
+            if (key === "small_regions") {
+              etc_data = smallRegionEtc;
+            } else if (key === "dong_regions") {
+              etc_data = dongRegionEtc;
+            } else {
+              etc_data = guRegionEtc;
+            }
+            const matchedEtc = etc_data.find(
+              (item) => item[etcKeys[index] + "_region_name"] === region.name
+            );
             return {
               ...region,
-              polygon: JSON.parse(region.polygon)[0]
-              // total_cost: matchedEtc?.total_cost ?? 0,
-              // patient_locations: matchedEtc?.patient_locations ?? []
+              polygon: JSON.parse(region.polygon)[0],
+              total_cost: matchedEtc?.total_cost ?? 0,
+              patient_locations: matchedEtc?.patient_locations ?? []
             };
           });
         })
@@ -63,14 +82,22 @@ const useNaverMapData = () => {
       setDongRegions(regionData[1]);
       setGuRegions(regionData[2]);
     };
+    if (
+      smallRegionEtc.length > 0 &&
+      dongRegionEtc.length > 0 &&
+      guRegionEtc.length > 0
+    ) {
+      fetchAndTransformRegions();
+    }
 
-    fetchAndTransformRegions();
     // console.log(privateRegion);
-  }, []);
-  const isDataLoaded =
-    dongPolygons.length > 0 &&
-    smallPolygons.length > 0 &&
-    guPolygons.length > 0;
+  }, [smallRegionEtc, dongRegionEtc, guRegionEtc]);
+
+  useEffect(() => {
+    // console.log(smallRegionEtc);
+    // console.log(dongRegionEtc);
+    // console.log(guRegionEtc);
+  }, [smallRegionEtc, dongRegionEtc, guRegionEtc]);
 
   const getRegionName = (currentZoom: number) => {
     if (currentZoom >= 15) {
@@ -242,15 +269,18 @@ const useNaverMapData = () => {
   };
 
   return {
-    isDataLoaded,
     smallRegions,
     dongRegions,
     guRegions,
+    smallRegionEtc,
+    dongRegionEtc,
+    guRegionEtc,
     getRegionName,
     expandBounds,
     getBoundAreas,
     getPolygonColorOpacity,
-    groupPatientsByProximity
+    groupPatientsByProximity,
+    isFetching
   };
 };
 
