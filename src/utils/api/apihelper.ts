@@ -47,9 +47,8 @@ let isRefresing = false;
 authApi.interceptors.request.use(
   async (config) => {
     const accessToken = getCookie("accessToken");
-
     const isLoginPage = window.location.pathname === "/login";
-    if (!isLoginPage) {
+    if (config.url !== "/auth/login") {
       if (accessToken) {
         //토큰이 만료 되었을때
         if (isTokenExpired(accessToken)) {

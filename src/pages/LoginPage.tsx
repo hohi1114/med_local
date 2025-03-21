@@ -1,11 +1,12 @@
 import styled from "styled-components";
 import BaseButton from "../components/common/button/BaseButton";
 import { useForm } from "react-hook-form";
-import { useMutation } from "@tanstack/react-query";
-import { postLogin } from "../utils/api/apis";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { getUserInfo, postLogin } from "../utils/api/apis";
 import { useState } from "react";
 import { AxiosError } from "axios";
 import { ErrorResponse, useNavigate } from "react-router-dom";
+import userStore, { User } from "../store/userStore";
 
 export type LoginParams = {
   email: string;
@@ -19,13 +20,25 @@ const LoginPage = () => {
     formState: { errors }
   } = useForm<LoginParams>();
   const [error, setError] = useState<string | null>(null);
+  const { setUser } = userStore();
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const { data, refetch: loginRefetch } = useQuery({
+    queryKey: ["userInfo"],
+    queryFn: () => getUserInfo(),
+    enabled: false,
+    retry: false
+  });
 
   const loginMutation = useMutation({
     mutationFn: (userData: LoginParams) => postLogin(userData),
     onSuccess: () => {
       setIsLoading(false);
-      navigate("/dashboard");
+
+      loginRefetch().then((result) => {
+        const userData = result.data as User;
+        setUser(userData);
+        navigate("/dashboard");
+      });
     },
     onError: (error: AxiosError<ErrorResponse>) => {
       setIsLoading(false);
@@ -43,7 +56,7 @@ const LoginPage = () => {
     <LoginContainer>
       <LoginWrapper onSubmit={handleSubmit(onSubmit)}>
         <img
-          src="/images/defaultProfile.svg"
+          src="/logo.png"
           alt="default_profile"
           style={{ width: "5rem", height: "auto" }}
         />

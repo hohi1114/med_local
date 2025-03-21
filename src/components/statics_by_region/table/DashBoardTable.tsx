@@ -135,7 +135,7 @@ const DashBoardTable: FC<DashBoardTableProps> = ({ isLoading }) => {
       pagination={{
         position: ["bottomCenter"]
       }}
-      // scroll={{ x: "max-content" }}
+      scroll={{ x: 1400 }}
       rowKey="region_name"
     />
   );

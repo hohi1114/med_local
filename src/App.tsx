@@ -32,6 +32,7 @@ function App() {
       setUser(data);
     }
   }, [data]);
+
   return (
     <BrowserRouter>
       <Routes>
