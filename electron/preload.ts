@@ -1,5 +1,6 @@
-import { contextBridge } from "electron";
+import { contextBridge, ipcRenderer } from "electron";
 
 contextBridge.exposeInMainWorld("electron", {
-    ping: () => "pong",
+  ping: () => "pong",
+  getSystemUUID: () => ipcRenderer.invoke("get-system-uuid")
 });

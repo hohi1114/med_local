@@ -1,23 +1,13 @@
 import { useState } from "react";
 import FileUpload from "../components/upload_data/FileUpload.tsx";
 import { parseDaysFiles, parsePlaceFiles } from "../utils/ExcelParser.ts";
-import {
-  saveToIndexedDB,
-  getDataFromIndexedDB,
-  initIndexedDB
-} from "../store/indexded_db/IndexedDB.ts";
 import styled from "styled-components";
-import ContentHeaderRefresh from "../components/common/layout/ContentHeaderRefresh";
 import BaseButton from "../components/common/button/BaseButton";
-import { MergedData, BackendData } from "../types/medi-types";
-import { processData } from "../components/upload_data/DataProcessor.ts";
 import { loadNaverMapsScript } from "../utils/NaverGeocode";
 import { useEffect } from "react";
 import { Progress, notification } from "antd";
 import UploadedCalendar from "../components/upload_data/UploadedCalendar.tsx";
-import useMediMapData from "../hooks/useMediMapData.tsx";
 import Loading from "../components/common/Loading.tsx";
-import { Button } from "antd"; // Import Button for styled buttons
 import { uploadDataToBackend } from "../utils/api/apis";
 import ContentHeader from "../components/common/layout/ContentHeader.tsx";
 
@@ -41,10 +31,6 @@ const UpdateDataPage = () => {
     });
   };
 
-  const { areas: areas_small } = useMediMapData("normalized_small_db.json");
-  const { areas: areas_dong } = useMediMapData("fixed_polygon.json");
-  const { areas: areas_gu } = useMediMapData("district_boundaries.json");
-
   // ✅ Load Naver Maps Script on Component Mount
   useEffect(() => {
     loadNaverMapsScript(import.meta.env.VITE_NAVER_MAPS_CLIENT_ID)
@@ -53,35 +39,6 @@ const UpdateDataPage = () => {
         console.error("❌ Failed to load Naver Maps script:", error)
       );
   }, []);
-
-  // ✅ Initialize RegionDBs on Component Mount
-  // useEffect(() => {
-  //   const initializeDatabases = async () => {
-  //     try {
-  //       await initIndexedDB();
-  //       // Initialize databases for each region type
-  //       if (areas_small && areas_small.length > 0) {
-  //         await initRegionDB(areas_small, "small");
-  //       }
-  //       if (areas_dong && areas_dong.length > 0) {
-  //         await initRegionDB(areas_dong, "dong");
-  //       }
-  //       if (areas_gu && areas_gu.length > 0) {
-  //         await initRegionDB(areas_gu, "gu");
-  //       }
-  //       console.log("✅ All RegionDBs initialized");
-  //     } catch (error) {
-  //       console.error("❌ Error initializing RegionDBs:", error);
-  //       openNotification(
-  //         "error",
-  //         "데이터베이스 오류",
-  //         "데이터베이스 초기화에 실패했습니다."
-  //       );
-  //     }
-  //   };
-
-  //   initializeDatabases();
-  // }, [areas_small, areas_dong, areas_gu]); //
 
   useEffect(() => {
     if (progress === 100) {

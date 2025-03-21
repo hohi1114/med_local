@@ -4,6 +4,7 @@ import { saveTokensToCookie } from "./token";
 import { logout, apiRequest } from "./apihelper";
 import { getCookie } from "./cookie";
 import { RangeDate } from "../../hooks/useRangeDurationDatePicker";
+import { postActiveLicenseParams } from "../../types/params";
 
 /**로그인 */
 export const postLogin = async (loginData: LoginParams) => {
@@ -16,6 +17,14 @@ export const postLogin = async (loginData: LoginParams) => {
 
   return data;
 };
+
+export const postActiveLicense = async (
+  licenseActiveParams: postActiveLicenseParams
+) => {
+  const data = await apiRequest("post", "/auth/activate", licenseActiveParams);
+  return data;
+};
+
 /**유저정보 */
 export const getUserInfo = async () => {
   return await apiRequest("get", "/users/info");

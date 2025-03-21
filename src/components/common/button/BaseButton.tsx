@@ -29,7 +29,7 @@ const BaseButton = memo(
     ) => {
       return (
         <ButtonContainer
-          color={disabled ? "#F1F1F2" : color}
+          color={disabled ? "#ffffff" : color}
           textcolor={textcolor}
           type={type}
           ref={ref}

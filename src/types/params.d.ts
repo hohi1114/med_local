@@ -12,3 +12,8 @@ type regionAnalysisParams = {
     endDate: Dayjs;
   };
 };
+
+export type postActiveLicenseParams = {
+  licenseCode: string;
+  hardwareFingerprint: string;
+};

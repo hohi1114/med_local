@@ -2,11 +2,14 @@ import styled from "styled-components";
 import BaseButton from "../components/common/button/BaseButton";
 import { useForm } from "react-hook-form";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { getUserInfo, postLogin } from "../utils/api/apis";
-import { useState } from "react";
+import { getUserInfo, postActiveLicense, postLogin } from "../utils/api/apis";
+import { useEffect, useState } from "react";
 import { AxiosError } from "axios";
 import { ErrorResponse, useNavigate } from "react-router-dom";
 import userStore, { User } from "../store/userStore";
+import LicenseModal from "../components/common/modal/LicenseModal";
+import { postActiveLicenseParams } from "../types/params";
+import useFingerPrintNumber from "../hooks/useFingerPrintNumber";
 
 export type LoginParams = {
   email: string;
@@ -20,8 +23,16 @@ const LoginPage = () => {
     formState: { errors }
   } = useForm<LoginParams>();
   const [error, setError] = useState<string | null>(null);
+  const {
+    getSavedFingerPrintNumber,
+    getFingerPrint,
+    setFingurePrintNumber,
+    saveFingerPrint
+  } = useFingerPrintNumber();
   const { setUser } = userStore();
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [licenseCode, setLicenseCode] = useState<string | null>(null);
+  const [isLicenseModalOpen, setIsLicenseModalOpen] = useState<boolean>(false);
   const { data, refetch: loginRefetch } = useQuery({
     queryKey: ["userInfo"],
     queryFn: () => getUserInfo(),
@@ -29,15 +40,50 @@ const LoginPage = () => {
     retry: false
   });
 
+  const {
+    mutateAsync: postActiveLicenseMutation,
+    isError,
+    error: activeLicneseError
+  } = useMutation({
+    mutationFn: async (params: postActiveLicenseParams) =>
+      await postActiveLicense(params),
+    onSuccess: (data) => {
+      saveFingerPrint();
+      loginRefetch().then(async (result) => {
+        const userData = result.data as User;
+        setUser(userData);
+        navigate("/dashboard");
+      });
+    },
+    onError: (error) => {
+      const errorMessage = error?.response?.data?.error;
+      alert(errorMessage);
+    }
+  });
+
+  useEffect(() => {
+    const getSystemUUID = async () => {};
+
+    getSystemUUID();
+  }, []);
+
+  /**Get HardwareFingerprint */
+
   const loginMutation = useMutation({
     mutationFn: (userData: LoginParams) => postLogin(userData),
     onSuccess: () => {
       setIsLoading(false);
 
-      loginRefetch().then((result) => {
-        const userData = result.data as User;
-        setUser(userData);
-        navigate("/dashboard");
+      loginRefetch().then(async (result) => {
+        const isVerified = getSavedFingerPrintNumber();
+        console.log(isVerified);
+        if (isVerified) {
+          const userData = result.data as User;
+          setUser(userData);
+          navigate("/dashboard");
+        } else {
+          setIsLicenseModalOpen(true);
+        }
       });
     },
     onError: (error: AxiosError<ErrorResponse>) => {
@@ -47,13 +93,39 @@ const LoginPage = () => {
     }
   });
 
+  const handleConfirmButton = () => {
+    const verifyLicense = async () => {
+      const hardwareNumber = await getFingerPrint();
+
+      setFingurePrintNumber(hardwareNumber);
+      if (licenseCode && hardwareNumber) {
+        postActiveLicenseMutation({
+          licenseCode: licenseCode,
+          hardwareFingerprint: hardwareNumber
+        });
+      } else {
+        alert("라이센스 코드를 입력해주세요.");
+      }
+    };
+    verifyLicense();
+  };
+
   const onSubmit = (data: LoginParams) => {
     setIsLoading(true);
     loginMutation.mutate(data);
   };
 
+  const handleLicenseModal = () => {
+    setIsLicenseModalOpen(!isLicenseModalOpen);
+  };
   return (
     <LoginContainer>
+      <LicenseModal
+        isModalOpen={isLicenseModalOpen}
+        handleLicenseInput={setLicenseCode}
+        handleComfirmButton={handleConfirmButton}
+        handleLicenseModal={handleLicenseModal}
+      />
       <LoginWrapper onSubmit={handleSubmit(onSubmit)}>
         <img
           src="/logo.png"
