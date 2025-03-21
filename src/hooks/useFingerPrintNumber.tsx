@@ -10,8 +10,7 @@ const useFingerPrintNumber = () => {
     return storedFingerprint;
   };
   const getFingerPrint = async () => {
-    const { hardware } = await window.electron.getSystemUUID();
-    console.log(hardware);
+    const hardware = await window.electron.getSystemUUID();
     return hardware;
   };
 

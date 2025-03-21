@@ -2,8 +2,13 @@ import styled from "styled-components";
 import BaseButton from "../components/common/button/BaseButton";
 import { useForm } from "react-hook-form";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { getUserInfo, postActiveLicense, postLogin } from "../utils/api/apis";
-import { useEffect, useState } from "react";
+import {
+  getUserInfo,
+  postActiveLicense,
+  postLogin,
+  postVerifyCode
+} from "../utils/api/apis";
+import { useState } from "react";
 import { AxiosError } from "axios";
 import { ErrorResponse, useNavigate } from "react-router-dom";
 import userStore, { User } from "../store/userStore";
@@ -33,18 +38,14 @@ const LoginPage = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [licenseCode, setLicenseCode] = useState<string | null>(null);
   const [isLicenseModalOpen, setIsLicenseModalOpen] = useState<boolean>(false);
-  const { data, refetch: loginRefetch } = useQuery({
+  const { refetch: loginRefetch } = useQuery({
     queryKey: ["userInfo"],
     queryFn: () => getUserInfo(),
     enabled: false,
     retry: false
   });
 
-  const {
-    mutateAsync: postActiveLicenseMutation,
-    isError,
-    error: activeLicneseError
-  } = useMutation({
+  const { mutateAsync: postActiveLicenseMutation } = useMutation({
     mutationFn: async (params: postActiveLicenseParams) =>
       await postActiveLicense(params),
     onSuccess: (data) => {
@@ -61,11 +62,17 @@ const LoginPage = () => {
     }
   });
 
-  useEffect(() => {
-    const getSystemUUID = async () => {};
-
-    getSystemUUID();
-  }, []);
+  const { mutateAsync: postVerifyMutation } = useMutation({
+    mutationFn: async (hardwareNumber: string) =>
+      await postVerifyCode(hardwareNumber),
+    onSuccess: (data) => {
+      loginRefetch().then(async (result) => {
+        const userData = result.data as User;
+        setUser(userData);
+        navigate("/dashboard");
+      });
+    }
+  });
 
   /**Get HardwareFingerprint */
 
@@ -75,12 +82,9 @@ const LoginPage = () => {
       setIsLoading(false);
 
       loginRefetch().then(async (result) => {
-        const isVerified = getSavedFingerPrintNumber();
-        console.log(isVerified);
-        if (isVerified) {
-          const userData = result.data as User;
-          setUser(userData);
-          navigate("/dashboard");
+        const hardwareNumber = getSavedFingerPrintNumber();
+        if (hardwareNumber) {
+          postVerifyMutation(hardwareNumber);
         } else {
           setIsLicenseModalOpen(true);
         }

@@ -25,6 +25,14 @@ export const postActiveLicense = async (
   return data;
 };
 
+export const postVerifyCode = async (hardwareNumber: string) => {
+  console.log(hardwareNumber);
+  const data = await apiRequest("post", "auth/verify", {
+    hardwareFingerprint: hardwareNumber
+  });
+  return data;
+};
+
 /**유저정보 */
 export const getUserInfo = async () => {
   return await apiRequest("get", "/users/info");
