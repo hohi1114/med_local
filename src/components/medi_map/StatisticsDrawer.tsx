@@ -166,7 +166,6 @@ const StatisticsDrawer = () => {
   };
 
   const [toggleValue, setToggleValue] = useState<string>("지역");
-
   return (
     <Drawer
       width={toggleValue === "전체" ? "70rem" : "35rem"}
@@ -187,32 +186,6 @@ const StatisticsDrawer = () => {
       }}
       open={isOpenDrawer}
     >
-      {/** 날짜 필터 */}
-      {/* <DateFilterWrapper>
-        <DurationDatePicker
-          rangeDate={{
-            startDate: drawerDate.startDate,
-            endDate: drawerDate.endDate
-          }}
-          handleDateChange={(dates) => {
-            if (dates) {
-              setDrawerDate({
-                startDate: dayjs(dates[0]),
-                endDate: dayjs(dates[1])
-              });
-            }
-          }}
-        />
-        <div style={{ width: 100 }}>
-          <BaseButton
-            type="button"
-            onClick={handleTodayButton}
-            textcolor="#Ffffff"
-          >
-            오늘
-          </BaseButton>
-        </div>
-      </DateFilterWrapper> */}
       <div
         style={{
           display: "flex",
@@ -335,10 +308,4 @@ export const GrapWrapper = styled.div`
   background-color: #ffffff;
   border-radius: 1rem;
   padding: 2rem 1rem 0rem 1rem;
-`;
-
-const DateFilterWrapper = styled.div`
-  display: flex;
-  gap: 1rem;
-  justify-content: end;
 `;

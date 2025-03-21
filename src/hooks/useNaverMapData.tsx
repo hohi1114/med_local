@@ -71,7 +71,6 @@ const useNaverMapData = () => {
             const matchedEtc = etc_data.find(
               (item) => item[etcKeys[index] + "_region_name"] === region.name
             );
-            // console.log(matchedEtc);
             return {
               ...region,
               polygon: JSON.parse(region.polygon)[0],
@@ -89,12 +88,6 @@ const useNaverMapData = () => {
     if (smallRegionEtc && dongRegionEtc && guRegionEtc) {
       fetchAndTransformRegions();
     }
-  }, [smallRegionEtc, dongRegionEtc, guRegionEtc]);
-
-  useEffect(() => {
-    console.log(smallRegionEtc);
-    // console.log(dongRegionEtc);
-    // console.log(guRegionEtc);
   }, [smallRegionEtc, dongRegionEtc, guRegionEtc]);
 
   const getRegionName = (currentZoom: number) => {

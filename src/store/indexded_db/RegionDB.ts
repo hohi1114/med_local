@@ -3,14 +3,7 @@ import { openDB, IDBPDatabase } from "idb";
 // Database constants
 const REGION_DB_NAME = "RegionDB";
 const REGION_DB_VERSION = 1;
-const TABLE = [
-  "small_regions",
-  "dong_regions",
-  "gu_regions",
-  "small_region_etc",
-  "dong_region_etc",
-  "gu_region_etc"
-];
+const TABLE = ["small_regions", "dong_regions", "gu_regions"];
 
 export const getDataFromRegionDB = async (regionType: string) => {
   const db = await openDB(REGION_DB_NAME, REGION_DB_VERSION);

@@ -130,10 +130,6 @@ const NaverMap: FC<NaverMapProps> = ({
       });
     }
 
-    // polygonsRef.current.forEach((polygon, areaName) => {
-    //   console.log(areaName);
-    // });
-
     crearClusters(regionMarkerClusterRef);
     crearClusters(patientGroupsMarkerClusterRef);
 
@@ -165,13 +161,13 @@ const NaverMap: FC<NaverMapProps> = ({
           regionMarkers.push(marker);
         }
 
-        // if (currentZoom >= 16) {
-        //   const groupPatients = groupPatientsByProximity(
-        //     area.patient_locations,
-        //     300
-        //   );
-        //   createPatientGroupMarkers(groupPatients, patientGroupsMarkers);
-        // }
+        if (currentZoom >= 16) {
+          const groupPatients = groupPatientsByProximity(
+            area.patient_locations,
+            300
+          );
+          createPatientGroupMarkers(groupPatients, patientGroupsMarkers);
+        }
       }
     });
 

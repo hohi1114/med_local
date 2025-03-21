@@ -17,8 +17,8 @@ export default function StatisticsByRegionPage() {
   if (isError) return <div>{error?.message}</div>;
   return (
     <>
+      <ContentHeader title="지역 별 통계" />
       <DashBoardContainer>
-        <ContentHeader title="지역 별 통계" />
         <StatisticByRegionFilter
           rangeDate={rangeDate}
           handleDateChange={handleDateChange}
@@ -35,7 +35,6 @@ export default function StatisticsByRegionPage() {
 const DashBoardContainer = styled.div`
   display: flex;
   flex-direction: column;
-  width: 100%;
 `;
 
 const DashBoardTableContainer = styled.div`
