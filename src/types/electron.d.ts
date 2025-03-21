@@ -2,9 +2,13 @@
 declare global {
   interface Window {
     electron: {
-      getSystemUUID: () => Promise<string>;
+      getSystemUUID: () => Promise<SystemUUID>;
     };
   }
+}
+
+interface SystemUUID {
+  hardware: string;
 }
 
 export {};

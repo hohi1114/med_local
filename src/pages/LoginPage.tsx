@@ -27,7 +27,6 @@ const LoginPage = () => {
     handleSubmit,
     formState: { errors }
   } = useForm<LoginParams>();
-  const [error, setError] = useState<string | null>(null);
   const {
     getSavedFingerPrintNumber,
     getFingerPrint,
@@ -35,60 +34,54 @@ const LoginPage = () => {
     saveFingerPrint
   } = useFingerPrintNumber();
   const { setUser } = userStore();
+
+  const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [licenseCode, setLicenseCode] = useState<string | null>(null);
   const [isLicenseModalOpen, setIsLicenseModalOpen] = useState<boolean>(false);
+
+  //**APIs
   const { refetch: loginRefetch } = useQuery({
     queryKey: ["userInfo"],
     queryFn: () => getUserInfo(),
     enabled: false,
     retry: false
   });
-
-  const { mutateAsync: postActiveLicenseMutation } = useMutation({
+  //Check License (check every time)
+  const { mutate: postActiveLicenseMutation } = useMutation({
     mutationFn: async (params: postActiveLicenseParams) =>
       await postActiveLicense(params),
-    onSuccess: (data) => {
+    onSuccess: async () => {
       saveFingerPrint();
-      loginRefetch().then(async (result) => {
-        const userData = result.data as User;
-        setUser(userData);
-        navigate("/dashboard");
-      });
+      const { data } = await loginRefetch();
+      setUser(data as User);
+      navigate("/dashboard");
     },
-    onError: (error) => {
-      const errorMessage = error?.response?.data?.error;
-      alert(errorMessage);
-    }
+    onError: (err: AxiosError) =>
+      alert(
+        (err.response?.data as { error?: string })?.error ||
+          "License activation failed"
+      )
   });
-
-  const { mutateAsync: postVerifyMutation } = useMutation({
+  //Check VerifyCode (for first user)
+  const { mutate: postVerifyMutation } = useMutation({
     mutationFn: async (hardwareNumber: string) =>
       await postVerifyCode(hardwareNumber),
-    onSuccess: (data) => {
-      loginRefetch().then(async (result) => {
-        const userData = result.data as User;
-        setUser(userData);
-        navigate("/dashboard");
-      });
+    onSuccess: async () => {
+      const { data } = await loginRefetch();
+      setUser(data as User);
+      navigate("/dashboard");
     }
   });
-
-  /**Get HardwareFingerprint */
-
+  //Login
   const loginMutation = useMutation({
     mutationFn: (userData: LoginParams) => postLogin(userData),
     onSuccess: () => {
       setIsLoading(false);
-
-      loginRefetch().then(async (result) => {
-        const hardwareNumber = getSavedFingerPrintNumber();
-        if (hardwareNumber) {
-          postVerifyMutation(hardwareNumber);
-        } else {
-          setIsLicenseModalOpen(true);
-        }
-      });
+      const hardwareNumber = getSavedFingerPrintNumber();
+      hardwareNumber
+        ? postVerifyMutation(hardwareNumber)
+        : setIsLicenseModalOpen(true);
     },
     onError: (error: AxiosError<ErrorResponse>) => {
       setIsLoading(false);
@@ -100,6 +93,7 @@ const LoginPage = () => {
   const handleConfirmButton = () => {
     const verifyLicense = async () => {
       const hardwareNumber = await getFingerPrint();
+      console.log(hardwareNumber);
 
       setFingurePrintNumber(hardwareNumber);
       if (licenseCode && hardwareNumber) {
@@ -108,7 +102,7 @@ const LoginPage = () => {
           hardwareFingerprint: hardwareNumber
         });
       } else {
-        alert("라이센스 코드를 입력해주세요.");
+        alert("Plsease enter license code");
       }
     };
     verifyLicense();
@@ -119,16 +113,13 @@ const LoginPage = () => {
     loginMutation.mutate(data);
   };
 
-  const handleLicenseModal = () => {
-    setIsLicenseModalOpen(!isLicenseModalOpen);
-  };
   return (
     <LoginContainer>
       <LicenseModal
         isModalOpen={isLicenseModalOpen}
         handleLicenseInput={setLicenseCode}
         handleComfirmButton={handleConfirmButton}
-        handleLicenseModal={handleLicenseModal}
+        handleLicenseModal={() => setIsLicenseModalOpen(!isLicenseModalOpen)}
       />
       <LoginWrapper onSubmit={handleSubmit(onSubmit)}>
         <img
@@ -156,15 +147,9 @@ const LoginPage = () => {
           </StyledButton>
         </div>
         {/**Error Messages */}
-        <div
-          style={{
-            color: "#E53E3E"
-          }}
-        >
-          <div>{errors.email?.message}</div>
-          <div>{errors.password?.message}</div>
-          <div>{error}</div>
-        </div>
+        <ErrorMessage>
+          {errors.email?.message || errors.password?.message || error}
+        </ErrorMessage>
       </LoginWrapper>
     </LoginContainer>
   );
@@ -223,4 +208,8 @@ const LoginWrapper = styled.form`
 const TitleStyle = styled.div`
   font-size: 1.5rem;
   font-weight: bold;
+`;
+const ErrorMessage = styled.div`
+  color: #e53e3e;
+  text-align: center;
 `;
