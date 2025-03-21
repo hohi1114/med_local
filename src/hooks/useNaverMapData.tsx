@@ -11,9 +11,13 @@ const useNaverMapData = () => {
   const [smallRegions, setSmallRegions] = useState<RegionData[]>([]);
   const [dongRegions, setDongRegions] = useState<RegionData[]>([]);
   const [guRegions, setGuRegions] = useState<RegionData[]>([]);
-  const [smallRegionEtc, setSmallRegionEtc] = useState<RegionEtcData[]>([]);
-  const [dongRegionEtc, setDongRegionEtc] = useState<RegionEtcData[]>([]);
-  const [guRegionEtc, setGuRegionEtc] = useState<RegionEtcData[]>([]);
+  const [smallRegionEtc, setSmallRegionEtc] = useState<RegionEtcData[] | null>(
+    null
+  );
+  const [dongRegionEtc, setDongRegionEtc] = useState<RegionEtcData[] | null>(
+    null
+  );
+  const [guRegionEtc, setGuRegionEtc] = useState<RegionEtcData[] | null>(null);
 
   const {
     data: allRegionEtcData,
@@ -37,11 +41,11 @@ const useNaverMapData = () => {
     if (allRegionEtcData) {
       Object.keys(allRegionEtcData).forEach((key) => {
         if (key === "small_regions") {
-          setSmallRegionEtc(allRegionEtcData[key]?.small_region_costs);
+          setSmallRegionEtc(allRegionEtcData[key]?.small_region_costs ?? []);
         } else if (key === "dong_regions") {
-          setDongRegionEtc(allRegionEtcData[key]?.dong_region_costs);
+          setDongRegionEtc(allRegionEtcData[key]?.dong_region_costs ?? []);
         } else {
-          setGuRegionEtc(allRegionEtcData[key]?.gu_region_costs);
+          setGuRegionEtc(allRegionEtcData[key]?.gu_region_costs ?? []);
         }
       });
     }
@@ -51,7 +55,6 @@ const useNaverMapData = () => {
     const fetchAndTransformRegions = async () => {
       const regionKeys = ["small_regions", "dong_regions", "gu_regions"];
       const etcKeys = ["small", "dong", "gu"];
-
       const regionData = await Promise.all(
         regionKeys.map(async (key, index) => {
           const regions = await getDataFromRegionDB(key);
@@ -68,6 +71,7 @@ const useNaverMapData = () => {
             const matchedEtc = etc_data.find(
               (item) => item[etcKeys[index] + "_region_name"] === region.name
             );
+            // console.log(matchedEtc);
             return {
               ...region,
               polygon: JSON.parse(region.polygon)[0],
@@ -82,19 +86,13 @@ const useNaverMapData = () => {
       setDongRegions(regionData[1]);
       setGuRegions(regionData[2]);
     };
-    if (
-      smallRegionEtc.length > 0 &&
-      dongRegionEtc.length > 0 &&
-      guRegionEtc.length > 0
-    ) {
+    if (smallRegionEtc && dongRegionEtc && guRegionEtc) {
       fetchAndTransformRegions();
     }
-
-    // console.log(privateRegion);
   }, [smallRegionEtc, dongRegionEtc, guRegionEtc]);
 
   useEffect(() => {
-    // console.log(smallRegionEtc);
+    console.log(smallRegionEtc);
     // console.log(dongRegionEtc);
     // console.log(guRegionEtc);
   }, [smallRegionEtc, dongRegionEtc, guRegionEtc]);
@@ -122,50 +120,49 @@ const useNaverMapData = () => {
   };
 
   //** Calculate Polygon Opacity */
-  // const getPolygonColorOpacity = (totalCost: number, name: string): string => {
-  //   const baseColor = { r: 146, g: 191, b: 2255 };
-
-  //   // 단계별 투명도 설정
-  //   const opacityLevels = [
-  //     { max: 10000, opacity: 0.1 },
-  //     { max: 50000, opacity: 0.15 },
-  //     { max: 100000, opacity: 0.2 },
-  //     { max: 500000, opacity: 0.3 },
-  //     { max: 1000000, opacity: 0.4 },
-  //     { max: 10000000, opacity: 0.5 },
-  //     { max: 50000000, opacity: 0.6 },
-  //     { max: 100000000, opacity: 0.7 },
-  //     { max: Infinity, opacity: 0.8 }
-  //   ];
-
-  //   const opacity =
-  //     opacityLevels.find((level) => totalCost <= level.max)?.opacity || 0.05;
-
-  //   return `rgba(${baseColor.r}, ${baseColor.g}, ${baseColor.b}, ${opacity})`;
-  // };
   const getPolygonColorOpacity = (totalCost: number, name: string): string => {
-    const minCost = 0;
-    const hightestCost = 100000000 || 0;
-    const normalizedCost =
-      hightestCost === 0
-        ? 1
-        : Math.min(Math.max(totalCost, minCost), hightestCost) / hightestCost;
-    const startColor = { r: 208, g: 232, b: 255 };
-    const endColor = { r: 76, g: 140, b: 255 };
+    const baseColor = { r: 146, g: 191, b: 2255 };
 
-    const r = Math.round(
-      startColor.r + (endColor.r - startColor.r) * normalizedCost
-    );
-    const g = Math.round(
-      startColor.g + (endColor.g - startColor.g) * normalizedCost
-    );
-    const b = Math.round(
-      startColor.b + (endColor.b - startColor.b) * normalizedCost
-    );
+    // 단계별 투명도 설정
+    const opacityLevels = [
+      { max: 10000, opacity: 0.1 },
+      { max: 50000, opacity: 0.15 },
+      { max: 100000, opacity: 0.2 },
+      { max: 500000, opacity: 0.3 },
+      { max: 1000000, opacity: 0.4 },
+      { max: 10000000, opacity: 0.5 },
+      { max: 50000000, opacity: 0.6 },
+      { max: 100000000, opacity: 0.7 },
+      { max: Infinity, opacity: 0.8 }
+    ];
 
-    const opacity = 0.5;
-    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+    const opacity =
+      opacityLevels.find((level) => totalCost <= level.max)?.opacity || 0.1;
+
+    return `rgba(${baseColor.r}, ${baseColor.g}, ${baseColor.b}, ${opacity})`;
   };
+  // const getPolygonColorOpacity = (totalCost: number, name: string): string => {
+  //   const minCost = 0;
+  //   const hightestCost = 100000000 || 0;
+  //   const normalizedCost =
+  //     hightestCost === 0
+  //       ? 1
+  //       : Math.min(Math.max(totalCost, minCost), hightestCost) / hightestCost;
+  //   const startColor = { r: 208, g: 232, b: 255 };
+  //   const endColor = { r: 76, g: 140, b: 255 };
+
+  //   const r = Math.round(
+  //     startColor.r + (endColor.r - startColor.r) * normalizedCost
+  //   );
+  //   const g = Math.round(
+  //     startColor.g + (endColor.g - startColor.g) * normalizedCost
+  //   );
+  //   const b = Math.round(
+  //     startColor.b + (endColor.b - startColor.b) * normalizedCost
+  //   );
+  //   const opacity = totalCost === 0 ? 0.1 : 0.5;
+  //   return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  // };
 
   const expandBounds = (
     bounds: naver.maps.LatLngBounds,
