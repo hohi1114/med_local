@@ -151,7 +151,11 @@ export const uploadDataToBackend = async (
 ): Promise<BackendResponse> => {
   const dataToUpload = { visits, patients };
   try {
-    const response = await apiRequest("post", "/data/process_e", dataToUpload);
+    const response = await apiRequest(
+      "post",
+      "/data/process_euisarang",
+      dataToUpload
+    );
     console.log("Successfully uploaded data to backend:", response);
     return response as BackendResponse;
   } catch (error) {
