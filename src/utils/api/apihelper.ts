@@ -42,35 +42,12 @@ const isTokenExpired = (token: string): boolean => {
   return currentTime > expirationTime;
 };
 
-let isRefresing = false;
 //요청 interceptor
 authApi.interceptors.request.use(
   async (config) => {
     const accessToken = getCookie("accessToken");
-    const isLoginPage = window.location.pathname === "/login";
-    if (config.url !== "/auth/login") {
-      if (accessToken) {
-        //토큰이 만료 되었을때
-        if (isTokenExpired(accessToken)) {
-          if (!isRefresing) {
-            isRefresing = true;
-            //refresh 토큰을 이용하여 다시 받아옴
-            try {
-              const newAccessToken = await postRefreshToken();
-              config.headers.Authorization = `Bearer ${newAccessToken}`;
-            } catch (error) {
-              console.log("Failed to refresh token", error);
-              window.location.href = "/login";
-            } finally {
-              isRefresing = false;
-            }
-          }
-        } else {
-          config.headers.Authorization = `Bearer ${accessToken}`;
-        }
-      } else {
-        window.location.href = "/login";
-      }
+    if (accessToken) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
     }
     return config;
   },
@@ -79,18 +56,56 @@ authApi.interceptors.request.use(
   }
 );
 
+let isRefreshing = false;
+let refreshSubscribers: ((token: string) => void)[] = [];
+let refreshTokenPromise = null;
+
 //응답 interceptor
 authApi.interceptors.response.use(
   (response) => {
     return response;
   },
   async (error) => {
-    const { response } = error;
-    const isLoginPage = window.location.pathname === "/login";
+    const {
+      config,
+      response: { status }
+    } = error;
+    const accessToken = getCookie("accessToken");
+    if (status === 401) {
+      const originalRequest = config;
+      if (isTokenExpired(accessToken)) {
+        if (!isRefreshing) {
+          isRefreshing = true;
 
-    if (response?.status === 401 && !isLoginPage) {
-      window.location.href = "/login"; //로그인 페이지가 아닌 경우 로그아웃
+          refreshTokenPromise = postRefreshToken()
+            .then((newAccessToken) => {
+              console.log(newAccessToken);
+              refreshSubscribers.forEach((callback) =>
+                callback(newAccessToken)
+              );
+              refreshSubscribers = [];
+              return newAccessToken;
+            })
+            .catch((error) => {
+              logout();
+              throw error;
+            })
+            .finally(() => {
+              isRefreshing = false;
+              console.log(isRefreshing);
+            });
+        }
+      }
+      return new Promise((resolve) => {
+        console.log(refreshSubscribers.length);
+        refreshSubscribers.push((newAccessToken) => {
+          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+
+          resolve(authApi(originalRequest)); // 새 토큰으로 요청 재시도
+        });
+      });
     }
+
     return Promise.reject(error);
   }
 );

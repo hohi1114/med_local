@@ -9,6 +9,7 @@ import BaseLineChart from "../components/medi_map/chart/BaseLineChart";
 import BaseTable from "../components/medi_map/chart/BaseTable";
 import DashboardStats from "../components/dashboard/DashboardStats";
 import Loading from "../components/common/Loading";
+import Error from "../components/common/Error";
 
 const FILTERDATA = ["오늘", "3일", "7일", "1개월", "3개월", "1년", "직접 선택"];
 const LOADINGCONTENT = "데이터를 불러오는 중입니다.";
@@ -42,7 +43,14 @@ export default function DashBoardPage() {
       value
     }));
   };
-  if (isError) return <div>{error?.message}</div>;
+
+  if (isError)
+    return (
+      <Error
+        status={error?.status ?? "Unknown"}
+        message={error?.response?.data?.error ?? "An unexpected error occurred"}
+      />
+    );
 
   return (
     <>
