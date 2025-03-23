@@ -36,6 +36,7 @@ const NaverMap: FC<NaverMapProps> = ({
   const MarkerClustering = makeMarkerClustering(window.naver) as any;
   const mapElement = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<naver.maps.Map | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
   //**Refs
   const polygonsRef = useRef<Map<string, naver.maps.Polygon>>(new Map());
   const regionMarkerClusterRef = useRef<any | null>(null);
@@ -57,6 +58,7 @@ const NaverMap: FC<NaverMapProps> = ({
     guRegions,
     isFetching
   } = useNaverMapData();
+
   const clickedAreaRef = useRef<string>(null);
   let [clickedArea, setClickedArea] = useState<string>("");
   const { data, name, fontSize, color, hilightColor } =
@@ -164,7 +166,7 @@ const NaverMap: FC<NaverMapProps> = ({
           regionMarkers.push(marker);
         }
 
-        if (currentZoom >= 16) {
+        if (currentZoom >= 17) {
           const groupPatients = groupPatientsByProximity(
             area.patient_locations,
             300
@@ -272,7 +274,7 @@ const NaverMap: FC<NaverMapProps> = ({
           icon: {
             content: `<div style="display: flex; align-items: center; justify-content: center;">
                       <span style="font-size:11px; color:#fff; text-align: center;
-                      background-color: #2c2c2c; padding: 3px 10px; border-radius: 50px;">
+                      background-color: rgba(44, 44, 44, 1); padding: 3px 10px; border-radius: 50px;">
                         ${patients.length}
                       </span>
                     </div>`
@@ -322,7 +324,7 @@ const NaverMap: FC<NaverMapProps> = ({
                      border-radius: 16px;
                      padding: 4px 10px;
                      box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
-                     text-align: center;">
+                     text-align: center; z-index:100">
           ${region === "dong" ? areaName.split(" ")[2] : areaName}
         </span>
       </div>
@@ -352,7 +354,7 @@ const NaverMap: FC<NaverMapProps> = ({
         backgroundColor: "#e0e0e0"
       }}
     >
-      {isFetching && <Loading />}
+      {isFetching || (loading && <Loading />)}
       <div
         style={{
           position: "absolute",

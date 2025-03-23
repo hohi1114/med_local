@@ -64,20 +64,14 @@ const StatisticsDrawer = () => {
   } = mapStore();
 
   const [regionInfo, setRegionInfo] = useState<RegionData | null>(null);
-  const getPrivateData = useMutation({
-    mutationFn: (params: RegionPrivateParams) => getRegionPrivateData(params),
-    onSuccess: (data) => {
-      console.log(data);
-    }
-  });
 
   const params = useMemo(() => {
     if (!areaName || !region || !drawerDate) return;
     return {
       name: areaName,
       regionType: region,
-      startDate: drawerDate?.startDate,
-      endDate: drawerDate?.endDate
+      startDate: drawerDate?.startDate.format("YYYY-MM-DD"),
+      endDate: drawerDate?.endDate.format("YYYY-MM-DD")
     };
   }, [areaName, region, drawerDate]);
 
@@ -102,6 +96,7 @@ const StatisticsDrawer = () => {
   useEffect(() => {
     const fetchData = async () => {
       if (region === "small") {
+        if (!smallPolygons[0]) return;
         const containingDong = await findContainingDong(smallPolygons[0]);
 
         if (containingDong) {
