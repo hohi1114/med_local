@@ -24,12 +24,13 @@ import {
 } from "../store/indexded_db/RegionDB.ts";
 import Loading from "../components/common/Loading.tsx";
 import { Button } from "antd"; // Import Button for styled buttons
-import { uploadDataToBackend, uploadDataToBackendEgis, uploadDataToBackendEuisarang } from "../utils/api/apis";
+import {uploadDataToBackendEgis, uploadDataToBackendEuisarang } from "../utils/api/apis";
 import ContentHeader from "../components/common/layout/ContentHeader.tsx";
 
 const UpdateDataPage = () => {
-  const [daysFiles, setDaysFiles] = useState<FileList | null>(null);
+  const [dailyIncome, setDailyIncomeFiles] = useState<FileList | null>(null);
   const [placeFiles, setPlaceFiles] = useState<FileList | null>(null);
+  const [patient, setPatientFiles]= useState<FileList | null>(null);
   const [progress, setProgress] = useState<number>(0);
   const [api, contextHolder] = notification.useNotification();
   const [localData, setLocalData] = useState<number>(0);
@@ -89,7 +90,7 @@ const UpdateDataPage = () => {
   }, [progress]);
 
 
-
+/*
   // Process and upload data
   const handleProcessDataEuisarang = async () => {
     if (!placeFiles || !daysFiles) {
@@ -123,9 +124,9 @@ const UpdateDataPage = () => {
     }
   };
 
-
+*/
   const handleProcessDataEgis = async () => {
-    if (!placeFiles || !daysFiles) {
+    if (!placeFiles || !dailyIncome || !patient) {
       openNotification("warning", "파일 누락", "모든 파일을 업로드해주세요.");
       return;
     }
@@ -134,9 +135,9 @@ const UpdateDataPage = () => {
   
     try {
       // New parsing logic for Version 2 (assuming new parser functions exist)
-      const dailyIncomeData = await parseDailyIncomeEgis(daysFiles);
+      const dailyIncomeData = await parseDailyIncomeEgis(dailyIncome);
       const patientListData = await parsePatientListEgis(placeFiles);
-      const patientIncomeData = await parsePatientIncomeEgis(daysFiles);
+      const patientIncomeData = await parsePatientIncomeEgis(patient);
   
       setProgress(20);
   
@@ -212,7 +213,7 @@ const UpdateDataPage = () => {
             <div style={{ width: "50vh" }}>
               <BaseButton
                 type="button"
-                onClick={handleProcessData}
+                onClick={handleProcessDataEgis}
                 disabled={!daysFiles || !placeFiles || progress > 0}
               >
                 데이터 처리하기
