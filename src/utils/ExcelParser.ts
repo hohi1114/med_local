@@ -1,9 +1,13 @@
 import * as XLSX from "xlsx";
+import { VisitData,PatientData,PatientIncomeEgis,DailyIncomeEgis,PatientListEgis } from "../types/backend";
 
 /**
  * Converts an Excel serial date (e.g. 45329) to a "YYYY-MM-DD" string.
  * 엑셀 date 저장 오류 해결
  */
+
+
+
 
 function excelSerialToDate(serial: number): string {
   // Input validation
@@ -40,7 +44,7 @@ function excelSerialToDate(serial: number): string {
   return `${year}-${month}-${day}`;
 }
 
-export const parseDaysFiles = async (files: FileList): Promise<VisitData[]> => {
+export const parseDaysFilesEuiSarang= async (files: FileList): Promise<VisitData[]> => {
   let data: VisitData[] = [];
 
   for (const file of Array.from(files)) {
@@ -85,7 +89,10 @@ export const parseDaysFiles = async (files: FileList): Promise<VisitData[]> => {
   );
 };
 
-export const parsePlaceFiles = async (
+/* chartNumber, visitDate, totalCost 임 */
+
+
+export const parsePlaceFilesEuiSarang = async (
   files: FileList
 ): Promise<PatientData[]> => {
   let data: PatientData[] = [];
@@ -121,3 +128,135 @@ export const parsePlaceFiles = async (
   }
   return data.filter((item) => !isNaN(item.chartNumber));
 };
+
+
+
+
+
+export async function parseDailyIncomeEgis(
+  files: FileList
+): Promise<DailyIncomeEgis[]> {
+  const data: DailyIncomeEgis[] = [];
+
+  for (const file of Array.from(files)) {
+    const buffer = await file.arrayBuffer();
+    const workbook = XLSX.read(buffer, { type: "array" });
+    if (workbook.SheetNames.length === 0) {
+      console.error("❌ No worksheets found in file:", file.name);
+      continue;
+    }
+
+    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+
+    // header: 1 => each row is an array
+    // range: 1 => start reading from the 2nd row (skip the 1st/header row)
+    const rows = XLSX.utils.sheet_to_json<any[]>(worksheet, {
+      header: 1,
+      range: 1,
+    });
+
+    for (const row of rows) {
+      // We need at least 8 columns: chartNumber(1st), visitDate(3rd), totalCost(8th)
+      if (row.length < 8) continue;
+
+      let visitDate = row[2]; // 3rd column
+      // Convert if it's an Excel serial date (number)
+      if (typeof visitDate === "number") {
+        visitDate = excelSerialToDate(visitDate);
+      }
+
+      data.push({
+        chartNumber: Number(row[0]),  // 1st column
+        visitDate: String(visitDate), // 3rd column
+        totalCost: Number(row[7]),    // 8th column
+      });
+    }
+  }
+
+  // Filter invalid entries (e.g., non-numeric chartNumber)
+  return data.filter(
+    (item) => !isNaN(item.chartNumber) && !isNaN(item.totalCost)
+  );
+  
+}
+
+
+
+export async function parsePatientListEgis(
+  files: FileList
+): Promise<PatientListEgis[]> {
+  const data: PatientListEgis[] = [];
+
+  for (const file of Array.from(files)) {
+    const buffer = await file.arrayBuffer();
+    const workbook = XLSX.read(buffer, { type: "array" });
+    if (workbook.SheetNames.length === 0) {
+      console.error("❌ No worksheets found in file:", file.name);
+      continue;
+    }
+
+    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json<any[]>(worksheet, {
+      header: 1,
+      range: 1,
+    });
+
+    for (const row of rows) {
+      if (row.length < 8) continue;
+
+      data.push({
+        chartNumber: Number(row[0]), // 1st column
+        address: row[7] ? String(row[7]) : "N/A", // 8th column
+      });
+    }
+  }
+
+  return data.filter(
+    (item) =>
+      !isNaN(item.chartNumber) && // chartNumber must be a valid number
+      typeof item.address === "string" && // ensure it's a string
+      item.address.trim().length > 0 // ensure it's not just whitespace
+  );
+}
+
+
+
+
+export async function parsePatientIncomeEgis(
+  files: FileList
+): Promise<PatientIncomeEgis[]> {
+  const data: PatientIncomeEgis[] = [];
+
+  for (const file of Array.from(files)) {
+    const buffer = await file.arrayBuffer();
+    const workbook = XLSX.read(buffer, { type: "array" });
+    if (workbook.SheetNames.length === 0) {
+      console.error("❌ No worksheets found in file:", file.name);
+      continue;
+    }
+
+    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json<any[]>(worksheet, {
+      header: 1,
+      range: 1,
+    });
+
+    for (const row of rows) {
+      if (row.length < 4) continue;
+
+      data.push({
+        chartNumber: Number(row[0]), // 1st column
+        age: Number(row[3]),         // 4th column
+      });
+    }
+  }
+  return data.filter(
+    (item) => !isNaN(item.chartNumber) && !isNaN(item.age)
+  );
+  
+}
+
+
+
+
+

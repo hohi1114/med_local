@@ -5,6 +5,7 @@ import { getCookie, removeCookie } from "./cookie";
 import { jwtDecode } from "jwt-decode";
 import { apiRequest } from "./apihelper";
 import { BackendData } from "../../types/medi-types";
+import { BackendResponse,PatientData, VisitData,DailyIncomeEgis,PatientIncomeEgis,PatientListEgis} from "../../types/backend";
 
 //axios instance
 export const authApi = axios.create({
@@ -145,13 +146,13 @@ export async function fetchDataFromBackend(): Promise<BackendData | undefined> {
   }
 }
 // Function to upload parsed data to the backend
-export const uploadDataToBackend = async (
+export const uploadDataToBackendEuisarang = async (
   visits: VisitData[],
   patients: PatientData[]
 ): Promise<BackendResponse> => {
   const dataToUpload = { visits, patients };
   try {
-    const response = await apiRequest("post", "/data/process_e", dataToUpload);
+    const response = await apiRequest("post", "/data/process_euisarang", dataToUpload);
     console.log("Successfully uploaded data to backend:", response);
     return response as BackendResponse;
   } catch (error) {
@@ -159,3 +160,27 @@ export const uploadDataToBackend = async (
     throw error; // Re-throw to handle in the component
   }
 };
+
+
+// Function to upload parsed data to the backend
+export const uploadDataToBackendEgis = async (
+  dailyIncomeData: DailyIncomeEgis[],
+  patientListData: PatientListEgis[],
+  patientIncomeData: PatientIncomeEgis[]
+): Promise<BackendResponse> => {
+  const dataToUpload = {
+    dailyIncome: dailyIncomeData,
+    patientList: patientListData,
+    patientIncome: patientIncomeData,
+  };
+
+  try {
+    const response = await apiRequest("post", "/data/process_egis", dataToUpload);
+    console.log("✅ Successfully uploaded data to backend:", response);
+    return response as BackendResponse;
+  } catch (error) {
+    console.error("❌ Error in uploadDataToBackendEgis:", error);
+    throw error; // Re-throw to handle in the component
+  }
+};
+

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import FileUpload from "../components/upload_data/FileUpload.tsx";
-import { parseDaysFiles, parsePlaceFiles } from "../utils/ExcelParser.ts"
+import { parseDailyIncomeEgis, parseDaysFilesEuiSarang, parsePatientIncomeEgis, parsePatientListEgis, parsePlaceFilesEuiSarang } from "../utils/ExcelParser.ts"
 import {
   saveToIndexedDB,
   getDataFromIndexedDB,
@@ -24,7 +24,7 @@ import {
 } from "../store/indexded_db/RegionDB.ts";
 import Loading from "../components/common/Loading.tsx";
 import { Button } from "antd"; // Import Button for styled buttons
-import { uploadDataToBackend } from "../utils/api/apis";
+import { uploadDataToBackend, uploadDataToBackendEgis, uploadDataToBackendEuisarang } from "../utils/api/apis";
 import ContentHeader from "../components/common/layout/ContentHeader.tsx";
 
 const UpdateDataPage = () => {
@@ -91,7 +91,7 @@ const UpdateDataPage = () => {
 
 
   // Process and upload data
-  const handleProcessData = async () => {
+  const handleProcessDataEuisarang = async () => {
     if (!placeFiles || !daysFiles) {
       openNotification("warning", "파일 누락", "모든 파일을 업로드해주세요.");
       return;
@@ -101,15 +101,15 @@ const UpdateDataPage = () => {
 
     try {
       // Parse files
-      const visits = await parseDaysFiles(daysFiles);
-      const patients = await parsePlaceFiles(placeFiles);
+      const visits = await parseDaysFilesEuiSarang(daysFiles);
+      const patients = await parsePlaceFilesEuiSarang(placeFiles);
       setProgress(20);
 
       // Simulate progress for parsing
       setProgress(40);
 
       // Upload to backend (token is handled by authApi interceptor)
-      const backendResponse = await uploadDataToBackend(visits, patients);
+      const backendResponse = await uploadDataToBackendEuisarang(visits, patients);
       setProgress(100);
 
       // Update local data count
@@ -122,6 +122,42 @@ const UpdateDataPage = () => {
       setProgress(0); // Reset progress on error
     }
   };
+
+
+  const handleProcessDataEgis = async () => {
+    if (!placeFiles || !daysFiles) {
+      openNotification("warning", "파일 누락", "모든 파일을 업로드해주세요.");
+      return;
+    }
+  
+    setProgress(1); // Start progress
+  
+    try {
+      // New parsing logic for Version 2 (assuming new parser functions exist)
+      const dailyIncomeData = await parseDailyIncomeEgis(daysFiles);
+      const patientListData = await parsePatientListEgis(placeFiles);
+      const patientIncomeData = await parsePatientIncomeEgis(daysFiles);
+  
+      setProgress(20);
+  
+      // Simulate progress for parsing
+      setProgress(40);
+  
+      // Upload to backend (V2 API with multiple datasets)
+      await uploadDataToBackendEgis(dailyIncomeData, patientListData, patientIncomeData);
+      setProgress(100);
+  
+      // Update local data count
+      setLocalData(dailyIncomeData.length);
+  
+      console.log("✅ Backend V2 processing completed successfully.");
+    } catch (error) {
+      console.error("❌ Error processing V2 data:", error);
+      openNotification("error", "데이터 처리 실패", error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다.");
+      setProgress(0);
+    }
+  };
+  
 
 
 
