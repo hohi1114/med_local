@@ -95,7 +95,7 @@ const useNaverMapData = () => {
       return {
         data: smallRegions,
         name: "small",
-        fontSize: "1.2rem",
+        fontSize: "1rem",
         color: "#82C0FF",
         hilightColor: "#409EFF"
       };
@@ -103,7 +103,7 @@ const useNaverMapData = () => {
       return {
         data: dongRegions,
         name: "dong",
-        fontSize: "1.2rem",
+        fontSize: "1rem",
         color: "#3F8FD9",
         hilightColor: "#1B6DBF"
       };
@@ -111,7 +111,7 @@ const useNaverMapData = () => {
       return {
         data: guRegions,
         name: "gu",
-        fontSize: "1.5rem",
+        fontSize: "1.2rem",
         color: "#005A9B",
         hilightColor: "#003F7F"
       };

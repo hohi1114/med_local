@@ -314,15 +314,18 @@ const NaverMap: FC<NaverMapProps> = ({
       position: center,
       icon: {
         content: `
-            <div style="display: flex; align-items: center; justify-content: center;">
-              <span style="font-size:${fontSize}; color:#2c2c2c; text-align: center;
-                           text-shadow: -0.75px -0.75px 0 #fafaf8,
-                                        0.75px 0.75px 0 #fafaf8,
-                                        -0.75px -0.75px 0 #fafaf8,
-                                        0.75px 0.75px 0 #fafaf8;">
-                ${region === "dong" ? areaName.split(" ")[2] : areaName}
-              </span>
-            </div>
+        <div style="display: flex; align-items: center; justify-content: center;">
+        <span style="font-size: ${fontSize}; 
+                     color: #4A4A4A;
+                     white-space: nowrap;
+                     background-color: rgba(255, 255, 255, 0.8);
+                     border-radius: 16px;
+                     padding: 4px 10px;
+                     box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+                     text-align: center;">
+          ${region === "dong" ? areaName.split(" ")[2] : areaName}
+        </span>
+      </div>
           `,
         origin: new naver.maps.Point(0, 67),
         anchor: new naver.maps.Point(20, 67)

@@ -200,12 +200,12 @@ const StatisticsDrawer = () => {
           handleToggle={setToggleValue}
           selectedValue={toggleValue}
         /> */}
-        {/* <StyledSegmented
+        <Segmented
           options={["지역", "매출", "전체"]}
           value={toggleValue}
           onChange={setToggleValue}
           shape="round"
-        /> */}
+        />
       </div>
 
       <div style={{ padding: "0.8rem 0rem" }}>
