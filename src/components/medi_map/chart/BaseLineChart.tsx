@@ -39,17 +39,17 @@ const BaseLineChart = ({
   useEffect(() => {
     if (data) {
       const formattedData = formatData(data);
-      let selectedData: ILineData[] = [];
-      if (formattedData.length > number_of_points) {
-        selectedData = formattedData.filter(
-          (_, index) =>
-            index % Math.floor(formattedData.length / number_of_points) === 0
-        );
-      } else {
-        selectedData = formattedData;
-      }
+      // let selectedData: ILineData[] = [];
+      // if (formattedData.length > number_of_points) {
+      //   selectedData = formattedData.filter(
+      //     (_, index) =>
+      //       index % Math.floor(formattedData.length / number_of_points) === 0
+      //   );
+      // } else {
+      //   selectedData = formattedData;
+      // }
 
-      setLineData(selectedData);
+      setLineData(formattedData);
     }
   }, [data, formatData]);
 
@@ -62,6 +62,12 @@ const BaseLineChart = ({
     autoFit: true,
     height: height,
     forceFit: true,
+    tooltip: {
+      channel: "y",
+      valueFormatter: (value: number) => {
+        return value.toLocaleString() + " ₩";
+      }
+    },
     axis: {
       y: {
         labelFormatter: labelFormatterY || ((v: number) => `${v / 1000}K`)
@@ -74,12 +80,7 @@ const BaseLineChart = ({
     scale: {
       x: { utc: true },
       y: { nice: true }
-    },
-    lineStyle: {
-      stroke: "#F4664A",
-      lineWidth: 4
-    },
-    color: undefined
+    }
   };
 
   return lineData.length > 0 ? (

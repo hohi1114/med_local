@@ -43,3 +43,10 @@ export interface DashBoard {
   diff_rates: DiffRates;
   topRegions: TopRegion;
 }
+export type RangeDateMapKey =
+  | "오늘"
+  | "3일"
+  | "7일"
+  | "1개월"
+  | "3개월"
+  | "1년";

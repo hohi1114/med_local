@@ -2,7 +2,7 @@ import styled from "styled-components";
 
 type CardWithChangeProps = {
   title: string;
-  value: number | string;
+  value: number;
   pastValue?: number | string;
   diffRate: number;
   currencySymbol?: string;
@@ -11,7 +11,6 @@ type CardWithChangeProps = {
 const DashboardStats: React.FC<CardWithChangeProps> = ({
   title,
   value,
-  pastValue,
   diffRate,
   currencySymbol = "₩"
 }) => {
@@ -33,7 +32,8 @@ const DashboardStats: React.FC<CardWithChangeProps> = ({
         <Percentage isDecreased={isDecreased}>{diffRate} %</Percentage>
       </ValueWrapper>
       <SubText>
-        동일 기간 작년 {title} {diffRate?.toLocaleString()}
+        동일 기간 작년 {title}{" "}
+        {Math.ceil(value / (1 + diffRate / 100)).toLocaleString()}
         {currencySymbol}
       </SubText>
     </Card>

@@ -30,7 +30,6 @@ export const postActiveLicense = async (
 };
 
 export const postVerifyCode = async (hardwareNumber: string) => {
-  console.log(hardwareNumber);
   const data = await apiRequest("post", "auth/verify", {
     hardwareFingerprint: hardwareNumber
   });
@@ -44,12 +43,10 @@ export const getUserInfo = async () => {
 
 /**대시보드 */
 export const getDashboardData = async (rangeDate: RangeDate) => {
-  const data = await apiRequest(
-    "post",
-    "/fetch/dashboard_date_patient",
-    rangeDate
-  );
-
+  const data = await apiRequest("post", "/fetch/dashboard_date_patient", {
+    startDate: rangeDate.startDate.format("YYYY-MM-DD"),
+    endDate: rangeDate.endDate.format("YYYY-MM-DD")
+  });
   return data;
 };
 
@@ -60,11 +57,10 @@ export const getAllRegions = async () => {
 };
 
 export const getAllRegionsEtc = async (rangeDate: RangeDate) => {
-  const data = await apiRequest(
-    "post",
-    "/fetch/all_region_patient_cost",
-    rangeDate
-  );
+  const data = await apiRequest("post", "/fetch/all_region_patient_cost", {
+    startDate: rangeDate.startDate.format("YYYY-MM-DD"),
+    endDate: rangeDate.endDate.format("YYYY-MM-DD")
+  });
   return data;
 };
 
@@ -87,18 +83,20 @@ export const getRegionAnalysis = async (
   const data = await apiRequest(
     "post",
     `/fetch/dashboard_${region}_date_region`,
-    rangeDate
+    {
+      startDate: rangeDate.startDate.format("YYYY-MM-DD"),
+      endDate: rangeDate.endDate.format("YYYY-MM-DD")
+    }
   );
   return data;
 };
 
 export const postRefreshToken = async () => {
   const refreshToken = await getCookie("refreshToken");
-
   if (!refreshToken) {
     logout();
   }
-  const data = await apiRequest("post", "/auth/refresh", {
+  const data = await apiRequest("post", "/anpm uth/refresh", {
     refresh_token: refreshToken
   });
   await saveTokensToCookie({

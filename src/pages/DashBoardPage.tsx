@@ -11,7 +11,6 @@ import DashboardStats from "../components/dashboard/DashboardStats";
 import Loading from "../components/common/Loading";
 import Error from "../components/common/Error";
 
-const FILTERDATA = ["오늘", "3일", "7일", "1개월", "3개월", "1년", "직접 선택"];
 const LOADINGCONTENT = "데이터를 불러오는 중입니다.";
 export default function DashBoardPage() {
   const {
@@ -23,7 +22,8 @@ export default function DashBoardPage() {
     error,
     dashboardInfo,
     buttonType,
-    setButtonType
+    RANGE_DATE_MAP,
+    setDateChanged
   } = useDashBoard();
 
   const barFormatData = () => {
@@ -51,7 +51,6 @@ export default function DashBoardPage() {
         message={error?.response?.data?.error ?? "An unexpected error occurred"}
       />
     );
-
   return (
     <>
       <ContentHeader title="대시보드" />
@@ -59,30 +58,31 @@ export default function DashBoardPage() {
       {dashboardInfo && (
         <DashBoardContainer>
           <FilterContainer>
-            {FILTERDATA.map((content, index) => {
-              return (
-                <div style={{ width: "85px" }} key={index}>
-                  <CutomButton
-                    selected={content === buttonType}
-                    onClick={() =>
-                      content !== "직접 선택" && handleDateFilterButton(content)
-                    }
-                    type="button"
-                    textcolor="#000000"
-                    color={"직접 선택" === content ? "#EDEEFC" : "#ffffff"}
-                    key={index}
-                    disabled={content === "직접 선택"}
-                  >
-                    {content}
-                  </CutomButton>
-                </div>
-              );
-            })}
+            {Object.keys(RANGE_DATE_MAP).map(
+              (content: string, index: number) => {
+                const contentKey = content as keyof typeof RANGE_DATE_MAP;
+                return (
+                  <div style={{ width: "85px" }} key={index}>
+                    <CutomButton
+                      selected={contentKey === buttonType}
+                      onClick={() => handleDateFilterButton(contentKey)}
+                      type="button"
+                      textcolor="#000000"
+                      color={"#ffffff"}
+                      key={index}
+                    >
+                      {contentKey}
+                    </CutomButton>
+                  </div>
+                );
+              }
+            )}
+            <DateLabel>직접 선택</DateLabel>
             <DurationDatePicker
               rangeDate={rangeDate}
               handleDateChange={(date) => {
                 if (date?.length === 2 && date[0] && date[1]) {
-                  setButtonType(date[0]?.toString() + date[1]?.toString());
+                  setDateChanged(true);
                   handleDateChange({ startDate: date[0], endDate: date[1] });
                 }
               }}
@@ -143,7 +143,7 @@ export default function DashBoardPage() {
                 xField="age"
                 yField="value"
                 formatData={barFormatData}
-                height={350}
+                height={430}
               />
             </Card>
           </CardGrid>
@@ -194,15 +194,31 @@ const ChartTitle = styled.span`
 `;
 
 const CutomButton = styled(BaseButton)<{ selected?: boolean }>`
-  font-weight: 500;
+  font-weight: ${(props) => (props.selected ? "bold" : 500)};
   min-width: 85px;
   max-width: 100px;
   flex-grow: 0;
   transition: border 0.2s ease;
   border: ${(props) =>
     props.selected ? "1.5px solid #0F52BA" : "1.5px solid #f3f2f3"};
+  color: ${(props) => (props.selected ? "#0F52BA" : "#000000")};
 
   &:hover {
     border: 1.5px solid #0f52ba;
+    color: #0f52ba;
   }
+`;
+
+const DateLabel = styled.div`
+  min-width: 85px;
+  max-width: 100px;
+  flex-grow: 0;
+  border-radius: 6px;
+  color: white;
+  font-weight: bold;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #0f52ba;
 `;
