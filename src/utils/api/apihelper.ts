@@ -79,7 +79,6 @@ authApi.interceptors.response.use(
 
           refreshTokenPromise = postRefreshToken()
             .then((newAccessToken) => {
-              console.log(newAccessToken);
               refreshSubscribers.forEach((callback) =>
                 callback(newAccessToken)
               );

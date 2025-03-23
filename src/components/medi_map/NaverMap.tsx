@@ -40,6 +40,7 @@ const NaverMap: FC<NaverMapProps> = ({
   const polygonsRef = useRef<Map<string, naver.maps.Polygon>>(new Map());
   const regionMarkerClusterRef = useRef<any | null>(null);
   const patientGroupsMarkerClusterRef = useRef<any | null>(null);
+  const [currentZoom, setCurrentZoom] = useState<number>(15);
 
   //** Map Logic
   const {
@@ -58,6 +59,8 @@ const NaverMap: FC<NaverMapProps> = ({
   } = useNaverMapData();
   const clickedAreaRef = useRef<string>(null);
   let [clickedArea, setClickedArea] = useState<string>("");
+  const { data, name, fontSize, color, hilightColor } =
+    getRegionName(currentZoom);
 
   // ✅ Initialize map only once
   useEffect(() => {
@@ -80,7 +83,7 @@ const NaverMap: FC<NaverMapProps> = ({
         const paths = polygon.getPaths();
         polygon.setOptions({
           paths: paths,
-          strokeColor: "#6FA8FF",
+          strokeColor: color,
           strokeWeight: 1.5
         });
       }
@@ -89,14 +92,14 @@ const NaverMap: FC<NaverMapProps> = ({
 
   const handleZoomChange = debounce(async (dateChanged) => {
     //📌Init Map
-    const currentZoom = map.getZoom();
+    if (!map) return;
+    setCurrentZoom(map.getZoom());
     const patientTemp: { areaName: string; patients: PatientData[] }[] = [];
     const regionMarkers: naver.maps.Marker[] = [];
     const patientGroupsMarkers: naver.maps.Marker[] = [];
 
     //1. Get Regioin Info
     //the area of the map currently displayed is changed by zooming or moving the map.
-    const { data, name, fontSize } = getRegionName(currentZoom);
 
     setRegion(name);
     const mapBounds = expandBounds(
@@ -141,7 +144,7 @@ const NaverMap: FC<NaverMapProps> = ({
       if (!polygon) {
         polygon = new window.naver.maps.Polygon({
           paths: latLngs,
-          strokeColor: "#6FA8FF",
+          strokeColor: color,
           strokeWeight: 1.5,
           clickable: true,
           fillColor: `${getPolygonColorOpacity(area.total_cost, name)}`
@@ -186,7 +189,7 @@ const NaverMap: FC<NaverMapProps> = ({
       window.naver.maps.Event.clearListeners(map, "idle");
     }
     handleZoomChange(true);
-  }, [drawerDate, map]);
+  }, [drawerDate, map, currentZoom]);
 
   useEffect(() => {
     if (!map) return;
@@ -215,7 +218,8 @@ const NaverMap: FC<NaverMapProps> = ({
     guRegions,
     smallRegionEtc,
     dongRegionEtc,
-    guRegionEtc
+    guRegionEtc,
+    currentZoom
   ]);
 
   const setPolygonClickListener = (
@@ -233,7 +237,7 @@ const NaverMap: FC<NaverMapProps> = ({
           if (clickedPolygon) {
             clickedPolygon.setOptions({
               paths: clickedPolygon.getPaths(),
-              strokeColor: "#6FA8FF",
+              strokeColor: color,
               strokeWeight: 1.5
             });
           }
@@ -245,7 +249,7 @@ const NaverMap: FC<NaverMapProps> = ({
           setAreaName(area.name);
           polygon.setOptions({
             paths: polygon.getPaths(),
-            strokeColor: "#4692ff",
+            strokeColor: hilightColor,
             strokeWeight: 3,
             zIndex: 100
           });
