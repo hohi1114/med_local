@@ -96,7 +96,7 @@ export const postRefreshToken = async () => {
   if (!refreshToken) {
     logout();
   }
-  const data = await apiRequest("post", "/anpm uth/refresh", {
+  const data = await apiRequest("post", "/auth/refresh", {
     refresh_token: refreshToken
   });
   await saveTokensToCookie({
