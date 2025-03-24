@@ -27,10 +27,10 @@ const NaverMap: FC<NaverMapProps> = ({
     handleIsDrawerOpen,
     setAreaName,
     setPatients,
-    highestCost,
     setRegion,
     setSelctedRegionData,
-    setSmallPolygons
+    setSmallPolygons,
+    setBoundArea
   } = mapStore();
 
   const MarkerClustering = makeMarkerClustering(window.naver) as any;
@@ -113,7 +113,7 @@ const NaverMap: FC<NaverMapProps> = ({
 
     //2. Get Bound Areas
     const { boundAreas } = getBoundAreas(polygonsToRender, mapBounds);
-
+    setBoundArea(boundAreas);
     if (boundAreas.length === 0) {
       polygonsRef.current.forEach((polygon) => polygon.setMap(null));
       polygonsRef.current.clear();
@@ -214,7 +214,6 @@ const NaverMap: FC<NaverMapProps> = ({
     };
   }, [
     map,
-    highestCost,
     smallRegions,
     dongRegions,
     guRegions,

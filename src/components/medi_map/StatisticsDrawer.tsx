@@ -60,10 +60,13 @@ const StatisticsDrawer = () => {
     region,
     selectedRegionData,
     setDrawerDate,
-    smallPolygons
+    smallPolygons,
+    boundArea
   } = mapStore();
 
+  const [statsData, setStatsData] = useState<{ [key: number]: string }>({});
   const [regionInfo, setRegionInfo] = useState<RegionData | null>(null);
+  const [population, setPopulation] = useState<number>(0);
 
   const params = useMemo(() => {
     if (!areaName || !region || !drawerDate) return;
@@ -92,6 +95,15 @@ const StatisticsDrawer = () => {
   useEffect(() => {
     regionPrivateFetch();
   }, [params]);
+
+  useEffect(() => {
+    if (boundArea && boundArea.length > 0) {
+      const selectedArea: RegionData[] = boundArea.filter(
+        (area) => area.name === areaName
+      );
+      setPopulation(selectedArea[0]?.total_population);
+    }
+  }, [boundArea]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -146,20 +158,31 @@ const StatisticsDrawer = () => {
     );
   };
 
-  const statsData: { [key: number]: string } = {
-    1: `${regionPrivate?.total_patient_count || 0}명`,
-    2: `${Math.ceil(regionPrivate?.total_cost)?.toLocaleString() || 0} ₩`,
-    3: `${
-      Math.ceil(regionPrivate?.average_cost_per_visit)?.toLocaleString() || 0
-    } ₩`, //1인당 평균 매출 = 총 매출 / 총 환자수
-    4: `${
-      Math.ceil(regionPrivate?.average_cost_per_patient)?.toLocaleString() || 0
-    } ₩`,
-    5: `${regionPrivate?.chojin_rejin_visit_count || 0}명`,
-    6: `${regionPrivate?.sinhwan_visit_count || 0}명`,
-    7: `${0}명`,
-    8: `${0}%`
-  };
+  useEffect(() => {
+    setStatsData({
+      1: `${regionPrivate?.total_patient_count || 0}명`,
+      2: `${Math.ceil(regionPrivate?.total_cost)?.toLocaleString() || 0} ₩`,
+      3: `${
+        Math.ceil(regionPrivate?.average_cost_per_visit)?.toLocaleString() || 0
+      } ₩`,
+      4: `${
+        Math.ceil(regionPrivate?.average_cost_per_patient)?.toLocaleString() ||
+        0
+      } ₩`,
+      5: `${regionPrivate?.chojin_rejin_visit_count || 0}명`,
+      6: `${regionPrivate?.sinhwan_visit_count || 0}명`,
+      7: `${0}명`,
+      8: `${
+        population
+          ? Math.ceil((regionPrivate?.total_patient_count / population) * 100)
+          : 0
+      } %`
+    });
+  }, [population, regionPrivate]);
+
+  useEffect(() => {
+    console.log(population);
+  }, [population]);
 
   const [toggleValue, setToggleValue] = useState<string>("지역");
   const handleToggle = (value: string) => {};

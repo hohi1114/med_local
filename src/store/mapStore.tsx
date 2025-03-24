@@ -8,21 +8,17 @@ interface IMapStore {
   selectedRegionData: RegionData | null;
   drawerDate: { startDate: Dayjs; endDate: Dayjs } | null;
   isOpenDrawer: boolean;
-  highestCost: { small: number; dong: number; gu: number };
   dongPolygons: Polygon[];
   smallPolygons: Polygon[];
+  boundArea: RegionData[] | null;
 
   setRegion: (region: string) => void;
   setDrawerDate: (drawerDate: { startDate: Dayjs; endDate: Dayjs }) => void;
   handleIsDrawerOpen: (isDrawerOpen: boolean) => void;
-  setHighestCost: (highestCost: {
-    small: number;
-    dong: number;
-    gu: number;
-  }) => void;
   setSelctedRegionData: (data: RegionData) => void;
   setDongPolygons: (dongPolygons: Polygon[]) => void;
   setSmallPolygons: (smallPolygons: Polygon[]) => void;
+  setBoundArea: (boundArea: RegionData[]) => void;
 
   areaName: string; //지역이름
   totalPatients: number; //전체 환자 수
@@ -68,11 +64,12 @@ const mapStore = create<IMapStore>((set) => ({
   region: "small",
   drawerDate: null,
   isOpenDrawer: false,
-  highestCost: { small: 175661741, dong: 417978115, gu: 123328002 },
   selectedRegionData: null,
   dongPolygons: [],
   smallPolygons: [],
+  boundArea: null,
 
+  setBoundArea: (boundArea) => set({ boundArea }),
   setAreaName: (areaName) => set({ areaName }),
   setTotalPatients: (totalPatients) => set({ totalPatients }),
   setTotalCost: (totalCost) => set({ totalCost }),
@@ -86,11 +83,10 @@ const mapStore = create<IMapStore>((set) => ({
   setPatients: (patients) => set({ patients }),
   setDrawerDate: (drawerDate) => set({ drawerDate }),
   handleIsDrawerOpen: (isOpenDrawer) => set({ isOpenDrawer }),
-  setHighestCost: (highestCost) => set({ highestCost }),
   setRegion: (region) => set({ region }),
   setSelctedRegionData: (selectedRegionData: RegionData) =>
     set({ selectedRegionData }),
-  setDongpolygons: (dongPolygons: Polygon[]) => set({ dongPolygons }),
+  setDongPolygons: (dongPolygons: Polygon[]) => set({ dongPolygons }),
   setSmallPolygons: (smallPolygons: Polygon[]) => set({ smallPolygons })
 }));
 
