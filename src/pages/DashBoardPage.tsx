@@ -94,24 +94,28 @@ export default function DashBoardPage() {
               title={"누적 매출"}
               value={dashboardInfo.total_cost}
               diffRate={dashboardInfo.diff_rates.total_cost}
+              buttonType={buttonType}
               currencySymbol="₩"
             />
             <DashboardStats
               title={"전체 환자 수"}
               value={dashboardInfo.total_visit_count}
               diffRate={dashboardInfo.diff_rates.total_visit_count}
+              buttonType={buttonType}
               currencySymbol="명"
             />
             <DashboardStats
               title={"신규 환자 수"}
               value={dashboardInfo.sinhwan_visit_count}
               diffRate={dashboardInfo.diff_rates.sinhwan_visit_count}
+              buttonType={buttonType}
               currencySymbol="명"
             />
             <DashboardStats
               title={"재방문 환자 수"}
               value={dashboardInfo.chojin_rejin_visit_count}
               diffRate={dashboardInfo.diff_rates.chojin_rejin_visit_count}
+              buttonType={buttonType}
               currencySymbol="명"
             />
           </CardGrid>

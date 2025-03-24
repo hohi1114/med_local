@@ -31,7 +31,7 @@ const StatsBox = ({ title, data }: StatsBoxProps) => {
       <ChipTextStyle>{title}</ChipTextStyle>
       <div style={{ display: "flex", alignItems: "center" }}>
         <ChipTitleTextStyle fontSize={calculateFontsize()}>
-          {data || 0}
+          {data}
         </ChipTitleTextStyle>
       </div>
     </StatsBoxContainer>
