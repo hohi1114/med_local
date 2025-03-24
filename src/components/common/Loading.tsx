@@ -24,7 +24,7 @@ const Overlay = styled.div`
   width: 100%;
   justify-content: center;
   align-items: center;
-  background-color: rgba(255, 255, 255, 0.6);
+  background-color: rgba(255, 255, 255, 0.2);
   position: absolute;
   top: 0;
   left: 0;

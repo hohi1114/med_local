@@ -32,7 +32,8 @@ const NaverMap: FC<NaverMapProps> = ({
     setSelctedRegionData,
     setSmallPolygons,
     setBoundArea,
-    setLoading
+    setLoading,
+    loading
   } = mapStore();
 
   const MarkerClustering = makeMarkerClustering(window.naver) as any;
@@ -161,11 +162,13 @@ const NaverMap: FC<NaverMapProps> = ({
         polygon.setMap(map);
         //Set click event listener
         setPolygonClickListener(polygon, area);
+
         //Set region name marker
         const bounds = polygon.getBounds();
         if (bounds) {
           const center = bounds.getCenter();
           const marker = createRegionMarker(center, fontSize, area.name, name);
+          setMarkerClickListener(marker, area, polygon);
           regionMarkers.push(marker);
         }
 
@@ -208,7 +211,6 @@ const NaverMap: FC<NaverMapProps> = ({
     });
 
     window.naver.maps.Event.addListener(map, "idle", () => {
-      setLoading(true);
       handleZoomChange(false);
     });
 
@@ -226,7 +228,8 @@ const NaverMap: FC<NaverMapProps> = ({
     smallRegionEtc,
     dongRegionEtc,
     guRegionEtc,
-    currentZoom
+    currentZoom,
+    isOpenDrawer
   ]);
 
   const setPolygonClickListener = (
@@ -251,6 +254,46 @@ const NaverMap: FC<NaverMapProps> = ({
         }
 
         if (polygon) {
+          //highlight polygon
+          clickedAreaRef.current = area.name;
+          setAreaName(area.name);
+          polygon.setOptions({
+            paths: polygon.getPaths(),
+            strokeColor: hilightColor,
+            strokeWeight: 3,
+            zIndex: 100
+          });
+          setClickedArea(area.name);
+          setSelctedRegionData(area);
+          setSmallPolygons(area.polygon);
+        }
+      });
+    }
+  };
+
+  const setMarkerClickListener = (
+    marker: naver.maps.Marker,
+    area: RegionData,
+    polygon: naver.maps.Polygon
+  ) => {
+    if (!marker.hasListener("click")) {
+      marker.addListener("click", () => {
+        if (!isOpenDrawer) handleIsDrawerOpen(true);
+        //remove previous highlight polygon
+        if (clickedAreaRef.current) {
+          const clickedPolygon = polygonsRef.current.get(
+            clickedAreaRef.current
+          );
+          if (clickedPolygon) {
+            clickedPolygon.setOptions({
+              paths: clickedPolygon.getPaths(),
+              strokeColor: color,
+              strokeWeight: 1.5
+            });
+          }
+        }
+
+        if (marker) {
           //highlight polygon
           clickedAreaRef.current = area.name;
           setAreaName(area.name);
@@ -361,7 +404,7 @@ const NaverMap: FC<NaverMapProps> = ({
         backgroundColor: "#e0e0e0"
       }}
     >
-      {isFetching && <Loading />}
+      {(isFetching || loading) && <Loading />}
       <div
         style={{
           position: "absolute",

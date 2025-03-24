@@ -7,8 +7,10 @@ import { postRefreshToken } from "./apis";
 
 //axios instance
 export const authApi = axios.create({
-  baseURL: "http://localhost:3001/api"
+  baseURL: import.meta.env.VITE_API_URL
 });
+
+console.log(import.meta.env.VITE_API_URL);
 authApi.defaults.headers.common["Content-Type"] = "application/json";
 
 export const logout = () => {
