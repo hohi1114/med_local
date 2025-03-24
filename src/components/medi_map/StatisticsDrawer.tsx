@@ -182,10 +182,6 @@ const StatisticsDrawer = () => {
     });
   }, [population, regionPrivate]);
 
-  useEffect(() => {
-    console.log(population);
-  }, [population]);
-
   const [toggleValue, setToggleValue] = useState<string>("지역");
   const handleToggle = (value: string) => {};
   return (

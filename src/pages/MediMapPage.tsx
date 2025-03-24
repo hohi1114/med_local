@@ -6,13 +6,16 @@ import mapStore from "../store/mapStore";
 import useRangeDurationDatePicker from "../hooks/useRangeDurationDatePicker";
 
 function MediMapPage() {
-  const { drawerDate, setDrawerDate } = mapStore();
+  const { drawerDate, setDrawerDate, handleIsDrawerOpen } = mapStore();
   const { rangeDate, handleDateChange } = useRangeDurationDatePicker();
   useEffect(() => {
     setDrawerDate({
       startDate: dayjs().subtract(1, "year"),
       endDate: dayjs()
     });
+    return () => {
+      handleIsDrawerOpen(false);
+    };
   }, []);
   useEffect(() => {
     if (drawerDate) {
