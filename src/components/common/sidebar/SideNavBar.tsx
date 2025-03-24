@@ -75,6 +75,7 @@ const LogoContainer = styled.div<{ collapsed: boolean }>`
   display: flex;
   align-items: center;
   gap: 6px;
+  border-right: 1px solid #f3f2f3;
 `;
 
 const MenuIcon = styled.img`
