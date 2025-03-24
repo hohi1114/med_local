@@ -113,14 +113,17 @@ const DashBoardTable: FC<DashBoardTableProps> = ({ isLoading }) => {
       ) => a.average_patient_age - b.average_patient_age
     }
   ];
-  const [data, setData] = useState<RegionStatistics[]>([]);
-  const [filteredData, setFilteredData] = useState<RegionStatistics[]>([]);
+
   const {
     smallSectionData,
     dongSectionData,
     guSectionData,
     localSection,
-    searchWord
+
+    filteredData,
+    setFilteredData,
+    setData,
+    data
   } = useRegionAnalysisStore();
 
   useEffect(() => {
@@ -132,22 +135,16 @@ const DashBoardTable: FC<DashBoardTableProps> = ({ isLoading }) => {
       setData(guSectionData);
     }
   }, [localSection, smallSectionData, dongSectionData, guSectionData]);
-  const handleSearch = () => {
-    if (!searchWord) {
-      setFilteredData(data);
-      return;
-    }
-    const filtered = data.filter((item) => {
-      item.region_name.includes(searchWord);
-    });
-    setFilteredData(filtered);
-  };
+
+  useEffect(() => {
+    setFilteredData(data);
+  }, [data]);
 
   return (
     <DashBoardTableContainer
       columns={columns}
       loading={isLoading}
-      dataSource={data}
+      dataSource={filteredData}
       pagination={{
         position: ["bottomCenter"]
       }}

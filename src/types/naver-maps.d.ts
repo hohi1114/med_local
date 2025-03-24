@@ -13,6 +13,18 @@ type PopulationByTime = {
   [hour: number]: number;
 };
 
+// Days of the week in Korean
+type PopulationByDay = {
+  월요일?: number; // Monday
+  화요일?: number; // Tuesday
+  수요일?: number; // Wednesday
+  목요일?: number; // Thursday
+  금요일?: number; // Friday
+  토요일?: number; // Saturday
+  일요일?: number; // Sunday
+  [otherDay: string]: number | undefined;
+};
+
 type AgeGroupPopulation = {
   "0-9": number;
   "10-19": number;
@@ -50,6 +62,8 @@ type RegionData = {
   population: number;
   total_cost: number;
   patient_locations: Point[];
+  population_by_time: PopulationByTime;
+  population_by_day: PopulationByDay;
 };
 
 export interface AgeGroupPopulation {

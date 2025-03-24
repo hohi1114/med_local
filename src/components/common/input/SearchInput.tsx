@@ -10,7 +10,8 @@ const SearchInput = ({ handleInputChange }: SearchInputProps) => {
     <Search
       placeholder="검색어"
       style={{ width: 200 }}
-      onChange={handleInputChange}
+      // onChange={handleInputChange}
+      onClick={handleInputChange}
     />
   );
 };
