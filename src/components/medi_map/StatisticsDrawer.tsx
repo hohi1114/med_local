@@ -115,10 +115,6 @@ const StatisticsDrawer = () => {
         const containingDong = await findContainingDong(smallPolygons[0]);
 
         if (containingDong) {
-          const sortedPopulationByDay = sortPopulationByDay(
-            containingDong.population_by_day
-          );
-
           const newSmallRegion = {
             name: selectedRegionData.name,
             population: selectedRegionData.population,
@@ -131,39 +127,16 @@ const StatisticsDrawer = () => {
             medical_expense: containingDong.medical_expense,
             age_group_population: containingDong.age_group_population,
             population_by_time: containingDong.population_by_time,
-            population_by_day: sortedPopulationByDay
+            population_by_day: containingDong.population_by_day
           };
           setRegionInfo(newSmallRegion);
         }
       } else {
-        setRegionInfo({
-          ...selectedRegionData,
-          population_by_day: sortPopulationByDay(
-            selectedRegionData.population_by_day
-          )
-        });
+        setRegionInfo(selectedRegionData);
       }
     };
     fetchData();
   }, [areaName]);
-
-  const sortPopulationByDay = (data) => {
-    const daysOfWeek = [
-      "월요일",
-      "화요일",
-      "수요일",
-      "목요일",
-      "금요일",
-      "토요일",
-      "일요일"
-    ];
-    return daysOfWeek.reduce((sortedData, day) => {
-      if (data[day]) {
-        sortedData[day] = data[day]; // 해당 요일이 존재하면 추가
-      }
-      return sortedData;
-    }, {});
-  };
 
   const formatDataForAverageRevenue = (data: any) => {
     return Object.entries(regionPrivate?.average_cost_per_visit_by_date).map(
@@ -193,19 +166,18 @@ const StatisticsDrawer = () => {
   useEffect(() => {
     setStatsData({
       1: `${regionPrivate?.total_patient_count || 0}명`,
-      2: `${Math.ceil(regionPrivate?.total_cost)?.toLocaleString() || 0} ₩`,
-      3: `${
-        Math.ceil(regionPrivate?.average_cost_per_visit)?.toLocaleString() || 0
-      } ₩`,
-      4: `${
-        Math.ceil(regionPrivate?.average_cost_per_patient)?.toLocaleString() ||
-        0
-      } ₩`,
+      2: `${Math.ceil(regionPrivate?.total_cost || 0)?.toLocaleString()} ₩`,
+      3: `${Math.ceil(
+        regionPrivate?.average_cost_per_visit || 0
+      )?.toLocaleString()} ₩`,
+      4: `${Math.ceil(
+        regionPrivate?.average_cost_per_patient || 0
+      )?.toLocaleString()} ₩`,
       5: `${regionPrivate?.chojin_rejin_visit_count || 0}명`,
       6: `${regionPrivate?.sinhwan_visit_count || 0}명`,
       7: `준비중`,
       8: `${
-        population
+        population && regionPrivate?.total_patient_count
           ? Math.ceil((regionPrivate?.total_patient_count / population) * 100)
           : 0
       } %`

@@ -83,7 +83,7 @@ const useDashBoard = () => {
 
   useEffect(() => {
     if (allregionData) {
-      saveDataToIndexDB(allregionData, 6);
+      saveDataToIndexDB(allregionData, 7);
     }
   }, [allregionData]);
 

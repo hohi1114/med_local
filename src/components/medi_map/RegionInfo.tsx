@@ -62,9 +62,9 @@ const RegionInfo = ({ data }: RegionInfoProps) => {
     : [];
 
   const dayPopulationData = data.population_by_day
-    ? Object.entries(data.population_by_day).map(([day, value]) => ({
-        day,
-        value
+    ? data.population_by_day.map((item) => ({
+        day: item.day,
+        value: item.value
       }))
     : [];
 

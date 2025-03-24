@@ -1,4 +1,5 @@
 import React, { useEffect, useState, ReactNode } from "react";
+import Loading from "../components/common/Loading";
 
 interface NaverScriptLoaderProps {
   children: ReactNode;
@@ -39,7 +40,7 @@ export default function NaverScriptLoader({
 
   // Render fallback if script not loaded yet
   if (!loaded) {
-    return <div>Loading Naver Maps...</div>;
+    return <Loading content="지도를 불러오고 있습니다." />;
   }
 
   // Once loaded, render children (like your <NaverMap />)

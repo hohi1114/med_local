@@ -22,7 +22,7 @@ const BarChart = <T, U extends { [key: string]: any }>({
   const [barData, setBarData] = useState<U[]>([]);
 
   useEffect(() => {
-    if (data && Object.keys(data).length > 0) {
+    if (data) {
       const formattedData = formatData(data);
       setBarData(formattedData);
     }
