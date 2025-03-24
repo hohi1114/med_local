@@ -9,9 +9,7 @@ interface ILineData {
 }
 
 interface IBaseLineChartProps {
-  data:
-    | Record<string, { totalCost: number; patientCount: number }>
-    | Record<string, number>;
+  data: Record<string, number>;
   xField: string;
   yField: string;
   height: number;
@@ -30,26 +28,49 @@ const BaseLineChart = ({
   width,
   labelFormatterX,
   labelFormatterY,
-  formatData,
-  number_of_points = 5
+  formatData
 }: IBaseLineChartProps) => {
   const [lineData, setLineData] = useState<ILineData[]>([]);
 
-  //Data Formatting for Many Data Points
-  useEffect(() => {
-    if (data) {
-      const formattedData = formatData(data);
-      console.log(formattedData);
-      // let selectedData: ILineData[] = [];
-      // if (formattedData.length > number_of_points) {
-      //   selectedData = formattedData.filter(
-      //     (_, index) =>
-      //       index % Math.floor(formattedData.length / number_of_points) === 0
-      //   );
-      // } else {
-      //   selectedData = formattedData;
-      // }
+  const formatDataWithAggregation = (
+    data: Record<string, number>
+  ): ILineData[] => {
+    const aggregatedData: { [key: string]: number } = {};
 
+    // 데이터를 순회하며 집계
+    Object.keys(data).forEach((key) => {
+      const date = dayjs(key);
+      const weekStart = date.startOf("week").format("YYYY-MM-DD");
+
+      if (!aggregatedData[weekStart]) {
+        aggregatedData[weekStart] = 0;
+      }
+
+      aggregatedData[weekStart] += data[key]; // totalCost 값을 주별로 합산
+    });
+
+    // 집계된 데이터를 ILineData 포맷으로 변환
+    const result = Object.keys(aggregatedData).map((weekStart) => ({
+      date: weekStart,
+      value: aggregatedData[weekStart]
+    }));
+
+    return result;
+  };
+
+  useEffect(() => {
+    let formattedData = null;
+
+    if (data) {
+      if (xField === "time") {
+        formattedData = formatData(data);
+      } else {
+        if (Object.keys(data).length > 50) {
+          formattedData = formatDataWithAggregation(data);
+        } else {
+          formattedData = formatData(data);
+        }
+      }
       setLineData(formattedData);
     }
   }, [data, formatData]);

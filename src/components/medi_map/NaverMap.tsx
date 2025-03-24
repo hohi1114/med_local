@@ -9,6 +9,7 @@ import DurationDatePicker from "../common/datepicker/DurationDatePicker.js";
 import BaseButton from "../common/button/BaseButton.js";
 import { Dayjs } from "dayjs";
 import Loading from "../common/Loading.js";
+import styled from "styled-components";
 
 interface NaverMapProps {
   rangeDate: { startDate: Dayjs; endDate: Dayjs };
@@ -366,7 +367,7 @@ const NaverMap: FC<NaverMapProps> = ({
           boxShadow: "0px 4px 6px rgba(0,0,0,0.1)"
         }}
       >
-        <div style={{ display: "flex", gap: "10px" }}>
+        <div style={{ display: "flex", gap: "10px", marginBottom: "10px" }}>
           <DurationDatePicker
             rangeDate={rangeDate}
             handleDateChange={handleDateChange}
@@ -382,9 +383,16 @@ const NaverMap: FC<NaverMapProps> = ({
             </BaseButton>
           </div>
         </div>
+        <SubText>
+          * Zoom In을 하면, 환자들이 온 지역의 수치를 확인할 수 있습니다.
+        </SubText>
       </div>
     </div>
   );
 };
 
+const SubText = styled.span`
+  font-size: 1rem;
+  color: #969696;
+`;
 export default NaverMap;

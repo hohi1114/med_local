@@ -20,7 +20,7 @@ const StatisticByRegionSearch = () => {
 
   return (
     <SearchContainer>
-      <span className="title">검색하기</span>
+      {/* <span className="title">검색하기</span> */}
       {/* <SearchInput handleInputChange={handleSearch} /> */}
     </SearchContainer>
   );
