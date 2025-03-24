@@ -2,6 +2,8 @@ import { app, BrowserWindow } from "electron";
 import {session} from "electron";
 import path from "path";
 
+
+
 const isDev = process.env.NODE_ENV === "development";
 
 let mainWindow: BrowserWindow | null = null;

@@ -1,13 +1,16 @@
 import * as XLSX from "xlsx";
-import { VisitData,PatientData,PatientIncomeEgis,DailyIncomeEgis,PatientListEgis } from "../types/backend";
+import {
+  VisitData,
+  PatientData,
+  PatientIncomeEgis,
+  DailyIncomeEgis,
+  PatientListEgis,
+} from "../types/backend";
 
 /**
  * Converts an Excel serial date (e.g. 45329) to a "YYYY-MM-DD" string.
  * 엑셀 date 저장 오류 해결
  */
-
-
-
 
 function excelSerialToDate(serial: number): string {
   // Input validation
@@ -44,7 +47,9 @@ function excelSerialToDate(serial: number): string {
   return `${year}-${month}-${day}`;
 }
 
-export const parseDaysFilesEuiSarang= async (files: FileList): Promise<VisitData[]> => {
+export const parseDaysFilesEuiSarang = async (
+  files: FileList
+): Promise<VisitData[]> => {
   let data: VisitData[] = [];
 
   for (const file of Array.from(files)) {
@@ -91,7 +96,6 @@ export const parseDaysFilesEuiSarang= async (files: FileList): Promise<VisitData
 
 /* chartNumber, visitDate, totalCost 임 */
 
-
 export const parsePlaceFilesEuiSarang = async (
   files: FileList
 ): Promise<PatientData[]> => {
@@ -129,10 +133,6 @@ export const parsePlaceFilesEuiSarang = async (
   return data.filter((item) => !isNaN(item.chartNumber));
 };
 
-
-
-
-
 export async function parseDailyIncomeEgis(
   files: FileList
 ): Promise<DailyIncomeEgis[]> {
@@ -166,21 +166,19 @@ export async function parseDailyIncomeEgis(
       }
 
       data.push({
-        chartNumber: Number(row[0]),  // 1st column
+        chartNumber: Number(row[0]), // 1st column
         visitDate: String(visitDate), // 3rd column
-        totalCost: Number(row[7]),    // 8th column
+        totalCost: Number(row[7]), // 8th column
       });
     }
   }
+  console.log("DailYincome" + data);
 
   // Filter invalid entries (e.g., non-numeric chartNumber)
   return data.filter(
     (item) => !isNaN(item.chartNumber) && !isNaN(item.totalCost)
   );
-  
 }
-
-
 
 export async function parsePatientListEgis(
   files: FileList
@@ -210,7 +208,7 @@ export async function parsePatientListEgis(
       });
     }
   }
-
+  console.log("patientLKist" + data);
   return data.filter(
     (item) =>
       !isNaN(item.chartNumber) && // chartNumber must be a valid number
@@ -218,9 +216,6 @@ export async function parsePatientListEgis(
       item.address.trim().length > 0 // ensure it's not just whitespace
   );
 }
-
-
-
 
 export async function parsePatientIncomeEgis(
   files: FileList
@@ -246,17 +241,10 @@ export async function parsePatientIncomeEgis(
 
       data.push({
         chartNumber: Number(row[0]), // 1st column
-        age: Number(row[3]),         // 4th column
+        age: Number(row[3]), // 4th column
       });
     }
   }
-  return data.filter(
-    (item) => !isNaN(item.chartNumber) && !isNaN(item.age)
-  );
-  
+  console.log("patientIncome" + data);
+  return data.filter((item) => !isNaN(item.chartNumber) && !isNaN(item.age));
 }
-
-
-
-
-
