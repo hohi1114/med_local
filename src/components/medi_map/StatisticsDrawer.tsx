@@ -112,6 +112,10 @@ const StatisticsDrawer = () => {
         const containingDong = await findContainingDong(smallPolygons[0]);
 
         if (containingDong) {
+          const sortedPopulationByDay = sortPopulationByDay(
+            containingDong.population_by_day
+          );
+
           const newSmallRegion = {
             name: selectedRegionData.name,
             population: selectedRegionData.population,
@@ -124,16 +128,39 @@ const StatisticsDrawer = () => {
             medical_expense: containingDong.medical_expense,
             age_group_population: containingDong.age_group_population,
             population_by_time: containingDong.population_by_time,
-            population_by_day: containingDong.population_by_day
+            population_by_day: sortedPopulationByDay
           };
           setRegionInfo(newSmallRegion);
         }
       } else {
-        setRegionInfo(selectedRegionData);
+        setRegionInfo({
+          ...selectedRegionData,
+          population_by_day: sortPopulationByDay(
+            selectedRegionData.population_by_day
+          )
+        });
       }
     };
     fetchData();
   }, [areaName]);
+
+  const sortPopulationByDay = (data) => {
+    const daysOfWeek = [
+      "월요일",
+      "화요일",
+      "수요일",
+      "목요일",
+      "금요일",
+      "토요일",
+      "일요일"
+    ];
+    return daysOfWeek.reduce((sortedData, day) => {
+      if (data[day] !== undefined) {
+        sortedData[day] = data[day]; // 해당 요일이 존재하면 추가
+      }
+      return sortedData;
+    }, {});
+  };
 
   const formatDataForAverageRevenue = (data: any) => {
     return Object.entries(regionPrivate?.average_cost_per_visit_by_date).map(
@@ -173,7 +200,7 @@ const StatisticsDrawer = () => {
       } ₩`,
       5: `${regionPrivate?.chojin_rejin_visit_count || 0}명`,
       6: `${regionPrivate?.sinhwan_visit_count || 0}명`,
-      7: `${0}명`,
+      7: `준비중`,
       8: `${
         population
           ? Math.ceil((regionPrivate?.total_patient_count / population) * 100)

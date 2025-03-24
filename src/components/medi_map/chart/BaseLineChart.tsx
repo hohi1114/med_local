@@ -16,6 +16,7 @@ interface IBaseLineChartProps {
   width?: number;
   labelFormatterX?: (value: string) => string;
   labelFormatterY?: (value: number) => string;
+  valueXSymbol?: string;
   formatData: (data: any) => ILineData[];
   number_of_points?: number;
 }
@@ -28,7 +29,8 @@ const BaseLineChart = ({
   width,
   labelFormatterX,
   labelFormatterY,
-  formatData
+  formatData,
+  valueXSymbol
 }: IBaseLineChartProps) => {
   const [lineData, setLineData] = useState<ILineData[]>([]);
 
@@ -87,7 +89,10 @@ const BaseLineChart = ({
     tooltip: {
       channel: "y",
       valueFormatter: (value: number) => {
-        return value.toLocaleString() + " ₩";
+        return (
+          Math.ceil(value).toLocaleString() +
+          (valueXSymbol ? valueXSymbol : " ₩")
+        );
       }
     },
     axis: {

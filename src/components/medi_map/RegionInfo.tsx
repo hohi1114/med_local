@@ -139,6 +139,7 @@ const RegionInfo = ({ data }: RegionInfoProps) => {
             data={data.population_by_time}
             xField="time"
             yField="value"
+            valueXSymbol={"명"}
             formatData={() => timePopulationData}
           />
         ) : (
