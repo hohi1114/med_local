@@ -305,13 +305,15 @@ const NaverMap: FC<NaverMapProps> = ({
 
     ref.current = cluster;
   };
-
   const createRegionMarker = (
     center: naver.maps.Coord,
     fontSize: string,
     areaName: string,
     region: string
   ) => {
+    const reNamedDong = areaName
+      .split(" ")
+      .slice(areaName.split(" ").length - 1);
     return new naver.maps.Marker({
       position: center,
       icon: {
@@ -325,7 +327,7 @@ const NaverMap: FC<NaverMapProps> = ({
                      padding: 4px 10px;
                      box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
                      text-align: center; z-index:100">
-          ${region === "dong" ? areaName.split(" ")[2] : areaName}
+          ${region === "dong" ? reNamedDong : areaName}
         </span>
       </div>
           `,
