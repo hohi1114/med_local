@@ -38,7 +38,8 @@ const BarChart = <T, U extends { [key: string]: any }>({
     width: width ? width : null,
     legend: false,
     style: {
-      radius: 8
+      radius: 8,
+      maxWidth: 40
     },
     scale: {
       color: {
@@ -54,7 +55,7 @@ const BarChart = <T, U extends { [key: string]: any }>({
       }
     },
     tooltip: {
-      items: ["age", "value"]
+      items: [xField, "value"]
     }
   };
   return barData.length > 0 ? (

@@ -39,6 +39,7 @@ const BaseLineChart = ({
   useEffect(() => {
     if (data) {
       const formattedData = formatData(data);
+      console.log(formattedData);
       // let selectedData: ILineData[] = [];
       // if (formattedData.length > number_of_points) {
       //   selectedData = formattedData.filter(
@@ -74,11 +75,12 @@ const BaseLineChart = ({
       },
       x: {
         labelFormatter:
-          labelFormatterX || ((v: string) => dayjs(v).format("MM/DD"))
+          labelFormatterX ||
+          ((v: string) => (xField === "time" ? v : dayjs(v).format("MM/DD")))
       }
     },
     scale: {
-      x: { utc: true },
+      x: { utc: xField !== "time" },
       y: { nice: true }
     }
   };

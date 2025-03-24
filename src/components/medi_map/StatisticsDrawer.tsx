@@ -114,7 +114,7 @@ const StatisticsDrawer = () => {
         if (containingDong) {
           const newSmallRegion = {
             name: selectedRegionData.name,
-            total_population: selectedRegionData.population,
+            population: selectedRegionData.population,
             male_avg_age: containingDong.male_avg_age,
             female_avg_age: containingDong.female_avg_age,
             total_avg_age: containingDong.total_avg_age,
@@ -122,7 +122,9 @@ const StatisticsDrawer = () => {
             male_population: containingDong.male_population,
             female_population: containingDong.female_population,
             medical_expense: containingDong.medical_expense,
-            age_group_population: containingDong.age_group_population
+            age_group_population: containingDong.age_group_population,
+            population_by_time: containingDong.population_by_time,
+            population_by_day: containingDong.population_by_day
           };
           setRegionInfo(newSmallRegion);
         }
@@ -213,11 +215,6 @@ const StatisticsDrawer = () => {
           alignItems: "center"
         }}
       >
-        {/* <CustomSegmentedControl
-          options={[["지역", "매출", "전체"]]}
-          handleToggle={setToggleValue}
-          selectedValue={toggleValue}
-        /> */}
         <Segmented
           options={["지역", "매출", "전체"]}
           value={toggleValue}
