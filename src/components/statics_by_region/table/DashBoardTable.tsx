@@ -114,8 +114,14 @@ const DashBoardTable: FC<DashBoardTableProps> = ({ isLoading }) => {
     }
   ];
   const [data, setData] = useState<RegionStatistics[]>([]);
-  const { smallSectionData, dongSectionData, guSectionData, localSection } =
-    useRegionAnalysisStore();
+  const [filteredData, setFilteredData] = useState<RegionStatistics[]>([]);
+  const {
+    smallSectionData,
+    dongSectionData,
+    guSectionData,
+    localSection,
+    searchWord
+  } = useRegionAnalysisStore();
 
   useEffect(() => {
     if (localSection === "시") {
@@ -126,6 +132,16 @@ const DashBoardTable: FC<DashBoardTableProps> = ({ isLoading }) => {
       setData(guSectionData);
     }
   }, [localSection, smallSectionData, dongSectionData, guSectionData]);
+  const handleSearch = () => {
+    if (!searchWord) {
+      setFilteredData(data);
+      return;
+    }
+    const filtered = data.filter((item) => {
+      item.region_name.includes(searchWord);
+    });
+    setFilteredData(filtered);
+  };
 
   return (
     <DashBoardTableContainer

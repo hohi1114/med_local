@@ -4,6 +4,7 @@ import { getRegionAnalysis } from "../utils/api/apis";
 import { useEffect, useState } from "react";
 import { RegionStatistics } from "../types/region-analysis";
 import { useRegionAnalysisStore } from "../store/useRegionAnalysisStore";
+import { regionAnalysisParams } from "../types/params";
 
 export const LOCAL_SECTIONS_MAP = {
   시: "small",

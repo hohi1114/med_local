@@ -7,6 +7,7 @@ import { RangeDate } from "../../hooks/useRangeDurationDatePicker";
 import { LOCAL_SECTIONS_MAP } from "../../hooks/useRegionAnalysis";
 import { Dayjs } from "dayjs";
 import { useRegionAnalysisStore } from "../../store/useRegionAnalysisStore";
+import StatisticByRegionSearch from "./StatisticByRegionSearch";
 
 interface StatisticByRegionFilterProps {
   rangeDate: RangeDate;
@@ -50,10 +51,7 @@ const StatisticByRegionFilter: FC<StatisticByRegionFilterProps> = (props) => {
       </FilterContainer>
 
       {/* Right Filter Section */}
-      <SearchContainer>
-        <span className="title">검색하기</span>
-        {/* <SearchInput handleInputChange={handleSearchwordChange} /> */}
-      </SearchContainer>
+      <StatisticByRegionSearch />
     </FilterWrapper>
   );
 };
@@ -77,16 +75,6 @@ const FilterItemContainer = styled.div`
   display: flex;
   flex-direction: column;
   gap: 5px;
-  .title {
-    font-weight: bold;
-  }
-`;
-
-const SearchContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.5rem;
   .title {
     font-weight: bold;
   }

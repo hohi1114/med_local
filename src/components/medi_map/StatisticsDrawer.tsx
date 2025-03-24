@@ -101,7 +101,7 @@ const StatisticsDrawer = () => {
       const selectedArea: RegionData[] = boundArea.filter(
         (area) => area.name === areaName
       );
-      setPopulation(selectedArea[0]?.total_population);
+      setPopulation(selectedArea[0]?.population);
     }
   }, [boundArea]);
 

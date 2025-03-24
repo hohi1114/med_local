@@ -47,7 +47,7 @@ type RegionData = {
   polygon: Polygon[];
   population_by_time: PopulationByTime;
   total_avg_age: number;
-  total_population: number;
+  population: number;
   total_cost: number;
   patient_locations: Point[];
 };
