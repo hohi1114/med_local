@@ -48,7 +48,7 @@ const RevenuInfo: React.FC<RegionStatisticsProps> = ({
             width={350}
             data={revenueTrend}
             xField="date"
-            yField="value"
+            yField="매출액"
             labelFormatterY={(v: number) => `${v / 1000}K`}
             labelFormatterX={(v: string) => dayjs(v).format("MM/DD")}
             formatData={formatDataForRevenueTrend}
@@ -60,8 +60,8 @@ const RevenuInfo: React.FC<RegionStatisticsProps> = ({
             height={280}
             width={350}
             data={ageGroups}
-            xField="age"
-            yField="value"
+            xField="연령"
+            yField="세"
             formatData={barFormatData}
           />
         </GrapWrapper>
@@ -71,7 +71,7 @@ const RevenuInfo: React.FC<RegionStatisticsProps> = ({
             width={350}
             data={dailyRevenue}
             xField="date"
-            yField="value"
+            yField="매출액"
             labelFormatterY={(v: number) => `${v / 1000}K`}
             labelFormatterX={(v: string) => dayjs(v).format("MM/DD")}
             formatData={formatDataForAverageRevenue}

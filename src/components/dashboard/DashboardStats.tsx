@@ -89,8 +89,9 @@ const SubText = styled.div`
   font-size: 1rem;
   color: #969696;
 `;
-
-const Percentage = styled.div<{ isDecreased: boolean }>`
+const Percentage = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== "isDecreased"
+})<{ isDecreased: boolean }>`
   font-size: 1rem;
   color: ${(props) => (props.isDecreased ? "#EF4261" : "#30bf78")};
 `;

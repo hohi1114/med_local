@@ -31,13 +31,14 @@ const NaverMap: FC<NaverMapProps> = ({
     setRegion,
     setSelctedRegionData,
     setSmallPolygons,
-    setBoundArea
+    setBoundArea,
+    setLoading
   } = mapStore();
 
   const MarkerClustering = makeMarkerClustering(window.naver) as any;
   const mapElement = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<naver.maps.Map | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
+
   //**Refs
   const polygonsRef = useRef<Map<string, naver.maps.Polygon>>(new Map());
   const regionMarkerClusterRef = useRef<any | null>(null);
@@ -96,6 +97,7 @@ const NaverMap: FC<NaverMapProps> = ({
   const handleZoomChange = debounce(async (dateChanged) => {
     //📌Init Map
     if (!map) return;
+
     setCurrentZoom(map.getZoom());
     const patientTemp: { areaName: string; patients: PatientData[] }[] = [];
     const regionMarkers: naver.maps.Marker[] = [];
@@ -184,6 +186,7 @@ const NaverMap: FC<NaverMapProps> = ({
     createMarkerCluster(regionMarkers, regionMarkerClusterRef);
     createMarkerCluster(patientGroupsMarkers, patientGroupsMarkerClusterRef);
     setPatients(patientTemp);
+    setLoading(false);
   }, 500);
 
   useEffect(() => {
@@ -200,10 +203,12 @@ const NaverMap: FC<NaverMapProps> = ({
     handleZoomChange(true);
 
     window.naver.maps.Event.addListener(map, "zoom_changed", () => {
+      setLoading(true);
       handleZoomChange(false);
     });
 
     window.naver.maps.Event.addListener(map, "idle", () => {
+      setLoading(true);
       handleZoomChange(false);
     });
 
@@ -356,7 +361,7 @@ const NaverMap: FC<NaverMapProps> = ({
         backgroundColor: "#e0e0e0"
       }}
     >
-      {isFetching || (loading && <Loading />)}
+      {isFetching && <Loading />}
       <div
         style={{
           position: "absolute",

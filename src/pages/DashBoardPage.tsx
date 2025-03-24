@@ -40,7 +40,7 @@ export default function DashBoardPage() {
     if (!dashboardInfo) return [];
     return Object.entries(dashboardInfo?.cost_by_date).map(([date, value]) => ({
       date,
-      value
+      매출액: value
     }));
   };
 
@@ -126,7 +126,7 @@ export default function DashBoardPage() {
               <BaseLineChart
                 data={dashboardInfo.cost_by_date}
                 xField="date"
-                yField="value"
+                yField="매출액"
                 labelFormatterY={(v: number) => `${v / 1000}K`}
                 labelFormatterX={(v: string) => dayjs(v).format("MM/DD")}
                 formatData={chartFormatData}

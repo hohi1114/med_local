@@ -18,6 +18,7 @@ const SexPieChart = ({ data }: SexPieChartComponentProps) => {
     angleField: "value",
     colorField: "type",
     autoFit: true,
+    tooltip: false,
     label: {
       text: "value",
       style: {
@@ -26,7 +27,7 @@ const SexPieChart = ({ data }: SexPieChartComponentProps) => {
     },
     scale: {
       color: {
-        range: ["#92BFFF", "#F0A1C0"]
+        range: ["#22577A", "#F4A7B9"]
       }
     },
     legend: {

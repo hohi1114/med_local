@@ -11,6 +11,7 @@ interface IMapStore {
   dongPolygons: Polygon[];
   smallPolygons: Polygon[];
   boundArea: RegionData[] | null;
+  loading: boolean;
 
   setRegion: (region: string) => void;
   setDrawerDate: (drawerDate: { startDate: Dayjs; endDate: Dayjs }) => void;
@@ -19,6 +20,7 @@ interface IMapStore {
   setDongPolygons: (dongPolygons: Polygon[]) => void;
   setSmallPolygons: (smallPolygons: Polygon[]) => void;
   setBoundArea: (boundArea: RegionData[]) => void;
+  setLoading: (loading: boolean) => void;
 
   areaName: string; //지역이름
   totalPatients: number; //전체 환자 수
@@ -68,7 +70,9 @@ const mapStore = create<IMapStore>((set) => ({
   dongPolygons: [],
   smallPolygons: [],
   boundArea: null,
+  loading: false,
 
+  setLoading: (loading: boolean) => set({ loading }),
   setBoundArea: (boundArea) => set({ boundArea }),
   setAreaName: (areaName) => set({ areaName }),
   setTotalPatients: (totalPatients) => set({ totalPatients }),

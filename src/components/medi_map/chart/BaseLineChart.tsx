@@ -35,7 +35,8 @@ const BaseLineChart = ({
   const [lineData, setLineData] = useState<ILineData[]>([]);
 
   const formatDataWithAggregation = (
-    data: Record<string, number>
+    data: Record<string, number>,
+    yField: string
   ): ILineData[] => {
     const aggregatedData: { [key: string]: number } = {};
 
@@ -54,7 +55,7 @@ const BaseLineChart = ({
     // 집계된 데이터를 ILineData 포맷으로 변환
     const result = Object.keys(aggregatedData).map((weekStart) => ({
       date: weekStart,
-      value: aggregatedData[weekStart]
+      [yField]: aggregatedData[weekStart]
     }));
 
     return result;
@@ -68,7 +69,7 @@ const BaseLineChart = ({
         formattedData = formatData(data);
       } else {
         if (Object.keys(data).length > 50) {
-          formattedData = formatDataWithAggregation(data);
+          formattedData = formatDataWithAggregation(data, yField);
         } else {
           formattedData = formatData(data);
         }

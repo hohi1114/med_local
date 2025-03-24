@@ -49,15 +49,15 @@ const RegionInfo = ({ data }: RegionInfoProps) => {
 
   const ageGroupData = Object.entries(data.age_group_population).map(
     ([age, value]) => ({
-      age,
-      value
+      연령: age,
+      세: value
     })
   );
 
   const timePopulationData = data.population_by_time
     ? Object.entries(data.population_by_time).map(([key, value]) => ({
         time: `${key}시`,
-        value
+        "유동 인구 수": value // 올바른 문자열 키 사용
       }))
     : [];
 
@@ -124,8 +124,8 @@ const RegionInfo = ({ data }: RegionInfoProps) => {
           width={350}
           height={280}
           data={data.age_group_population}
-          xField="age"
-          yField="value"
+          xField="연령"
+          yField="세"
           formatData={() => ageGroupData}
         />
       )}
@@ -138,7 +138,7 @@ const RegionInfo = ({ data }: RegionInfoProps) => {
             height={280}
             data={data.population_by_time}
             xField="time"
-            yField="value"
+            yField="유동 인구 수"
             valueXSymbol={"명"}
             formatData={() => timePopulationData}
           />

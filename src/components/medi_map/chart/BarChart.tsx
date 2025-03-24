@@ -55,7 +55,7 @@ const BarChart = <T, U extends { [key: string]: any }>({
       }
     },
     tooltip: {
-      items: [xField, "value"]
+      items: [yField]
     }
   };
   return barData.length > 0 ? (

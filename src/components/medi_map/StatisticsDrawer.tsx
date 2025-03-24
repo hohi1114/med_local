@@ -15,6 +15,7 @@ import { Polygon, RegionData } from "../../types/naver-maps";
 import { getDataFromRegionDB } from "../../store/indexded_db/RegionDB";
 import Loading from "../common/Loading";
 import CustomSegmentedControl from "../common/toggle/BaseToggle";
+import { debounce } from "lodash";
 dayjs.extend(isBetween);
 
 function fixPolygonCoordinates(
@@ -59,9 +60,9 @@ const StatisticsDrawer = () => {
     drawerDate,
     region,
     selectedRegionData,
-    setDrawerDate,
     smallPolygons,
-    boundArea
+    boundArea,
+    loading
   } = mapStore();
 
   const [statsData, setStatsData] = useState<{ [key: number]: string }>({});
@@ -69,14 +70,14 @@ const StatisticsDrawer = () => {
   const [population, setPopulation] = useState<number>(0);
 
   const params = useMemo(() => {
-    if (!areaName || !region || !drawerDate) return;
+    if (!areaName || !region || !drawerDate || loading) return;
     return {
       name: areaName,
       regionType: region,
       startDate: drawerDate?.startDate.format("YYYY-MM-DD"),
       endDate: drawerDate?.endDate.format("YYYY-MM-DD")
     };
-  }, [areaName, region, drawerDate]);
+  }, [areaName, region, drawerDate, loading]);
 
   const {
     data: regionPrivate,
@@ -93,7 +94,9 @@ const StatisticsDrawer = () => {
   });
 
   useEffect(() => {
-    regionPrivateFetch();
+    if (params) {
+      regionPrivateFetch();
+    }
   }, [params]);
 
   useEffect(() => {
@@ -155,7 +158,7 @@ const StatisticsDrawer = () => {
       "일요일"
     ];
     return daysOfWeek.reduce((sortedData, day) => {
-      if (data[day] !== undefined) {
+      if (data[day]) {
         sortedData[day] = data[day]; // 해당 요일이 존재하면 추가
       }
       return sortedData;
@@ -166,7 +169,7 @@ const StatisticsDrawer = () => {
     return Object.entries(regionPrivate?.average_cost_per_visit_by_date).map(
       ([date, value]) => ({
         date,
-        value
+        매출액: value
       })
     );
   };
@@ -174,15 +177,15 @@ const StatisticsDrawer = () => {
   const formatDataForRevenueTrend = (data: any) => {
     return Object.entries(regionPrivate?.cost_by_date).map(([date, value]) => ({
       date,
-      value
+      매출액: value
     }));
   };
 
   const barFormatData = () => {
     return Object.entries(regionPrivate?.patient_count_by_age_group).map(
       ([age, value]) => ({
-        age,
-        value
+        연령: age,
+        세: value
       })
     );
   };

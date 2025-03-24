@@ -14,7 +14,6 @@ const StatisticByRegionSearch = () => {
     const filtered = data.filter((item) => {
       item.region_name.includes(searchWord);
     });
-    console.log(filtered);
     setFilteredData(filtered);
   };
 
