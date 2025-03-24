@@ -61,7 +61,7 @@ const useRegionAnalysis = () => {
       ) as LocalSectionKey[];
       fetchOtherRegions(others);
     } catch (err) {
-      console.log(err);
+      console.error(err);
     }
   };
 
@@ -75,7 +75,7 @@ const useRegionAnalysis = () => {
 
         saveData(section, data);
       } catch (err) {
-        console.log(err);
+        console.error(err);
       }
 
       await Promise.all(fetchPromises);

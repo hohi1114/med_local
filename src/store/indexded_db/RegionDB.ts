@@ -17,18 +17,14 @@ const createDatabase = async (
   try {
     const db = await openDB(REGION_DB_NAME, version, {
       upgrade(db, oldVersion, newVersion) {
-        console.log(`Upgrade triggered: ${oldVersion} -> ${newVersion}`);
-
         // 메타데이터 저장소 생성
         if (!db.objectStoreNames.contains("metadata")) {
-          console.log("Creating metadata store...");
           db.createObjectStore("metadata", { keyPath: "id" });
         }
 
         // 지역 저장소 생성
         TABLE.forEach((store) => {
           if (!db.objectStoreNames.contains(store)) {
-            console.log(`Creating ${store} store...`);
             db.createObjectStore(store, { keyPath: "id", autoIncrement: true });
           }
         });
@@ -56,7 +52,6 @@ const saveDataToStore = async (
     await Promise.all(data.map((item) => store.put(item)));
 
     await tx.done; // 트랜잭션 완료 보장
-    console.log(`Data successfully saved to ${storeName}`);
   } catch (error) {
     console.error(`Error saving data to ${storeName}:`, error);
   }
@@ -86,17 +81,8 @@ export const saveDataToIndexDB = async (
 
     // 현재 버전과 새 버전이 같으면 업데이트 불필요
     if (currentVersion === newVersion) {
-      console.log(
-        `Database already at version ${newVersion}, no update needed`
-      );
       return;
     }
-
-    console.log(
-      `Updating database from version ${
-        currentVersion || "none"
-      } to ${newVersion}`
-    );
 
     // 새 버전으로 데이터베이스 생성/업그레이드
     const db = await createDatabase(newVersion);
@@ -131,7 +117,6 @@ export const saveDataToIndexDB = async (
       await tx.done;
     }
 
-    console.log(`Database successfully updated to version ${newVersion}`);
     db.close();
   } catch (error) {
     console.error("Error saving data to regionDB:", error);

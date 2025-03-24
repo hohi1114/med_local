@@ -32,7 +32,7 @@ const RegionInfo = ({ data }: RegionInfoProps) => {
   // Format data for charts once
   const statsData = {
     1: `${data.monthly_avg_income?.toLocaleString()} ₩`,
-    2: `${data.medical_expense?.toLocaleString()} ₩`,
+    2: `${Math.ceil(data.medical_expense / 3).toLocaleString()} ₩`,
     3: `${data.total_avg_age}세`,
     4: `${Math.ceil(data.population)?.toLocaleString()}명`
   };

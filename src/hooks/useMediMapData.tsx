@@ -109,7 +109,6 @@ const useMediMapData = (jsonFilePath: string): { areas: Area[] } => {
         if (isMounted) {
           setAreas(parsedAreas);
           // Add a single console log here if needed for debugging
-          console.log(`Loaded ${parsedAreas.length} areas`);
         }
       } catch (error) {
         console.error("Error loading JSON data:", error);

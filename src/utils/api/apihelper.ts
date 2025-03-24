@@ -91,12 +91,10 @@ authApi.interceptors.response.use(
             })
             .finally(() => {
               isRefreshing = false;
-              console.log(isRefreshing);
             });
         }
       }
       return new Promise((resolve) => {
-        console.log(refreshSubscribers.length);
         refreshSubscribers.push((newAccessToken) => {
           originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
 
@@ -115,7 +113,6 @@ export const apiRequest = async (
   data?: any,
   config?: AxiosRequestConfig
 ) => {
-  console.log("📢 API 요청:", { method, url, data, config });
   try {
     const response =
       method === "get"

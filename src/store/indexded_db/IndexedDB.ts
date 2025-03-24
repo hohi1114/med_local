@@ -18,11 +18,8 @@ const GU_AREA_STORE = "df_areas_gu"; // ✅ Separate store for areas_gu
 // Initialize database without deleting existing data
 export const initIndexedDB = async () => {
   try {
-    console.log(`Opening database ${DB_NAME} with version ${DB_VERSION}...`);
     const db = await openDB(DB_NAME, DB_VERSION, {
       upgrade(db, oldVersion, newVersion) {
-        console.log(`Upgrade triggered: ${oldVersion} -> ${newVersion}`);
-
         [
           MERGED_STORE,
           FILTERED_STORE,
@@ -32,7 +29,6 @@ export const initIndexedDB = async () => {
           GU_AREA_STORE
         ].forEach((store) => {
           if (!db.objectStoreNames.contains(store)) {
-            console.log(`Creating ${store} store...`);
             db.createObjectStore(store, { keyPath: "id", autoIncrement: true }); // "name" is the unique key for each area
           }
         });
@@ -40,9 +36,6 @@ export const initIndexedDB = async () => {
     });
     // Verify stores exist
     const storeNames = Array.from(db.objectStoreNames);
-    console.log(
-      `Database initialized. Available stores: ${storeNames.join(", ")}`
-    );
 
     return db;
   } catch (error) {
@@ -56,8 +49,6 @@ const saveDataToStore = async (
   storeName: string,
   data: any[]
 ) => {
-  console.log(storeName, data);
-
   try {
     const tx = db.transaction(storeName, "readwrite");
     const store = tx.objectStore(storeName);
@@ -69,7 +60,6 @@ const saveDataToStore = async (
     // 트랜잭션 완료 대기
     return new Promise<void>((resolve, reject) => {
       tx.oncomplete = () => {
-        console.log(`Transaction completed for store: ${storeName}`);
         resolve();
       };
       tx.onerror = (event) => {
@@ -102,15 +92,6 @@ export const saveToIndexedDB = async (
     await saveDataToStore(db, FILTERED_STORE, filtered);
     await saveDataToStore(db, DATE_STORE, df_date);
 
-    console.log("Small areas", areas_small);
-    // Log area names before saving
-    /*
-    console.log("Small areas:", areas_small.map(area => area.area));
-    console.log("Dong areas:", areas_dong.map(area => area.area));
-    console.log("Gu areas:", areas_gu.map(area => area.area));
-
-*/
-
     // ✅ Save areas separately
     await saveDataToStore(
       db,
@@ -128,9 +109,6 @@ export const saveToIndexedDB = async (
       areas_gu.map((area) => ({ name: area.areaName }))
     );
 
-    console.log(
-      "✅ All data saved successfully, including separate area names!"
-    );
     return true;
   } catch (error) {
     console.error("❌ Error saving to IndexedDB:", error);
@@ -147,9 +125,6 @@ export const getDataFromIndexedDB = async () => {
     const df_filtered = await db.getAll(FILTERED_STORE);
     const df_date = await db.getAll(DATE_STORE);
 
-    console.log(
-      `Retrieved ${df_merged.length} merged items and ${df_filtered.length} filtered items`
-    );
     return { df_merged, df_filtered, df_date };
   } catch (error) {
     console.error("Error retrieving from IndexedDB:", error);

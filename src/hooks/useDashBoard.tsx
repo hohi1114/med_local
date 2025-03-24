@@ -152,7 +152,7 @@ const useDashBoard = () => {
         const data = await dashboardInfoMutation(RANGE_DATE_MAP[date]);
         saveData(date, data);
       } catch (err) {
-        console.log(err);
+        console.error(err);
       }
 
       await Promise.all(fetchPromises);

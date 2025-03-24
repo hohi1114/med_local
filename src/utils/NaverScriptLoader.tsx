@@ -17,14 +17,14 @@ export default function NaverScriptLoader({
     }
     // 3) Dynamically create the <script> for basic Naver Maps
     const script = document.createElement("script");
-    script.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpClientId=${import.meta.env.VITE_NAVER_MAPS_CLIENT_ID
-      }`; // No &submodules=geometry anymore
+    script.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpClientId=${
+      import.meta.env.VITE_NAVER_MAPS_CLIENT_ID
+    }`; // No &submodules=geometry anymore
     script.async = true;
 
     // 4) Once script loads, mark as loaded
     script.addEventListener("load", () => {
       if (window.naver?.maps) {
-        console.log("Naver Maps loaded (no geometry submodule).");
         setLoaded(true);
       } else {
         console.error(

@@ -7,7 +7,7 @@ import { RangeDate } from "../../hooks/useRangeDurationDatePicker";
 import {
   postActiveLicenseParams,
   RegionPrivateParams,
-  regionAnalysisParams,
+  regionAnalysisParams
 } from "../../types/params";
 import {
   VisitData,
@@ -15,7 +15,7 @@ import {
   DailyIncomeEgis,
   PatientListEgis,
   PatientIncomeEgis,
-  BackendResponse,
+  BackendResponse
 } from "../ExcelParser";
 
 /**로그인 */
@@ -24,7 +24,7 @@ export const postLogin = async (loginData: LoginParams) => {
   await saveTokensToCookie({
     access_token: data.access_token,
     refresh_token: data.refresh_token,
-    expires_in: data.expires_in,
+    expires_in: data.expires_in
   });
 
   return data;
@@ -39,7 +39,7 @@ export const postActiveLicense = async (
 
 export const postVerifyCode = async (hardwareNumber: string) => {
   const data = await apiRequest("post", "auth/verify", {
-    hardwareFingerprint: hardwareNumber,
+    hardwareFingerprint: hardwareNumber
   });
   return data;
 };
@@ -53,7 +53,7 @@ export const getUserInfo = async () => {
 export const getDashboardData = async (rangeDate: RangeDate) => {
   const data = await apiRequest("post", "/fetch/dashboard_date_patient", {
     startDate: rangeDate.startDate.format("YYYY-MM-DD"),
-    endDate: rangeDate.endDate.format("YYYY-MM-DD"),
+    endDate: rangeDate.endDate.format("YYYY-MM-DD")
   });
   return data;
 };
@@ -67,7 +67,7 @@ export const getAllRegions = async () => {
 export const getAllRegionsEtc = async (rangeDate: RangeDate) => {
   const data = await apiRequest("post", "/fetch/all_region_patient_cost", {
     startDate: rangeDate.startDate.format("YYYY-MM-DD"),
-    endDate: rangeDate.endDate.format("YYYY-MM-DD"),
+    endDate: rangeDate.endDate.format("YYYY-MM-DD")
   });
   return data;
 };
@@ -93,7 +93,7 @@ export const getRegionAnalysis = async (
     `/fetch/dashboard_${region}_date_region`,
     {
       startDate: rangeDate.startDate.format("YYYY-MM-DD"),
-      endDate: rangeDate.endDate.format("YYYY-MM-DD"),
+      endDate: rangeDate.endDate.format("YYYY-MM-DD")
     }
   );
   return data;
@@ -105,11 +105,11 @@ export const postRefreshToken = async () => {
     logout();
   }
   const data = await apiRequest("post", "/auth/refresh", {
-    refresh_token: refreshToken,
+    refresh_token: refreshToken
   });
   await saveTokensToCookie({
     access_token: data.access_token,
-    refresh_token: data.refresh_token,
+    refresh_token: data.refresh_token
   });
 
   return data.access_token;
@@ -152,7 +152,7 @@ export const uploadDataToBackendEuisarang = async (
       "/data/process_euisarang",
       dataToUpload
     );
-    console.log("Successfully uploaded data to backend:", response);
+
     return response as BackendResponse;
   } catch (error) {
     console.error("Error in uploadDataToBackend:", error);
@@ -169,7 +169,7 @@ export const uploadDataToBackendEgis = async (
   const dataToUpload = {
     dailyIncome: dailyIncomeData,
     patientList: patientListData,
-    patientIncome: patientIncomeData,
+    patientIncome: patientIncomeData
   };
 
   try {
@@ -178,7 +178,7 @@ export const uploadDataToBackendEgis = async (
       "/data/process_egis",
       dataToUpload
     );
-    console.log("✅ Successfully uploaded data to backend:", response);
+
     return response as BackendResponse;
   } catch (error) {
     console.error("❌ Error in uploadDataToBackendEgis:", error);

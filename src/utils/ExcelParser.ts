@@ -89,19 +89,16 @@ export const parseDaysFilesEuisarang = async (
     const buffer = await file.arrayBuffer();
     const workbook = XLSX.read(buffer, { type: "array" });
 
-    console.log("📌 Workbook Loaded:", workbook);
-
     if (workbook.SheetNames.length === 0) {
       console.error("❌ No worksheets found in the file:", file.name);
       continue; // Skip this file
     }
 
     const worksheet = workbook.Sheets[workbook.SheetNames[0]]; // First sheet
-    console.log("✅ Worksheet Name:", workbook.SheetNames[0]);
 
     const jsonData = XLSX.utils.sheet_to_json<any>(worksheet, {
       header: 1,
-      range: 3,
+      range: 3
     }); // Skip first 3 rows
 
     jsonData.forEach((row: any) => {
@@ -116,7 +113,7 @@ export const parseDaysFilesEuisarang = async (
         data.push({
           chartNumber: Number(row[0]),
           visitDate: visitDate,
-          totalCost: Number(row[3]),
+          totalCost: Number(row[3])
         });
       }
     });
@@ -142,11 +139,10 @@ export const parsePlaceFilesEuisarang = async (
     }
 
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-    console.log("✅ Worksheet Name:", workbook.SheetNames[0]);
 
     const jsonData = XLSX.utils.sheet_to_json<any>(worksheet, {
       header: 1,
-      range: 3,
+      range: 3
     });
 
     jsonData.forEach((row: any) => {
@@ -156,7 +152,7 @@ export const parsePlaceFilesEuisarang = async (
           age: row[4] || "N/D",
           address: row[8] || "N/D",
           latitude: null,
-          longitude: null,
+          longitude: null
         });
       }
     });
@@ -183,7 +179,7 @@ export async function parseDailyIncomeEgis(
     // range: 1 => start reading from the 2nd row (skip the 1st/header row)
     const rows = XLSX.utils.sheet_to_json<any[]>(worksheet, {
       header: 1,
-      range: 1,
+      range: 1
     });
 
     for (const row of rows) {
@@ -199,11 +195,10 @@ export async function parseDailyIncomeEgis(
       data.push({
         chartNumber: Number(row[0]), // 1st column
         visitDate: String(visitDate), // 3rd column
-        totalCost: Number(row[7]), // 8th column
+        totalCost: Number(row[7]) // 8th column
       });
     }
   }
-  console.log("DailYincome" + data);
 
   // Filter invalid entries (e.g., non-numeric chartNumber)
   return data.filter(
@@ -227,7 +222,7 @@ export async function parsePatientListEgis(
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json<any[]>(worksheet, {
       header: 1,
-      range: 1,
+      range: 1
     });
 
     for (const row of rows) {
@@ -235,11 +230,11 @@ export async function parsePatientListEgis(
 
       data.push({
         chartNumber: Number(row[0]), // 1st column
-        address: row[7] ? String(row[7]) : "N/A", // 8th column
+        address: row[7] ? String(row[7]) : "N/A" // 8th column
       });
     }
   }
-  console.log("patientLKist" + data);
+
   return data.filter(
     (item) =>
       !isNaN(item.chartNumber) && // chartNumber must be a valid number
@@ -264,7 +259,7 @@ export async function parsePatientIncomeEgis(
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json<any[]>(worksheet, {
       header: 1,
-      range: 1,
+      range: 1
     });
 
     for (const row of rows) {
@@ -272,10 +267,10 @@ export async function parsePatientIncomeEgis(
 
       data.push({
         chartNumber: Number(row[0]), // 1st column
-        age: Number(row[3]), // 4th column
+        age: Number(row[3]) // 4th column
       });
     }
   }
-  console.log("patientIncome" + data);
+
   return data.filter((item) => !isNaN(item.chartNumber) && !isNaN(item.age));
 }
