@@ -1,19 +1,22 @@
 import { useState } from "react";
 import FileUpload from "../components/upload_data/FileUpload.tsx";
-import { parseDaysFiles, parsePlaceFiles } from "../utils/ExcelParser.ts";
+import { parseDaysFilesEuisarang, parsePlaceFilesEuisarang, parseDailyIncomeEgis, parsePatientIncomeEgis, parsePatientListEgis } from "../utils/ExcelParser.ts";
 import styled from "styled-components";
 import BaseButton from "../components/common/button/BaseButton";
 import { loadNaverMapsScript } from "../utils/NaverGeocode";
 import { useEffect } from "react";
-import { Progress, notification } from "antd";
+import { Progress, notification, Select } from "antd";
 import UploadedCalendar from "../components/upload_data/UploadedCalendar.tsx";
 import Loading from "../components/common/Loading.tsx";
-import { uploadDataToBackend } from "../utils/api/apis";
+import { uploadDataToBackendEgis, uploadDataToBackendEuisarang, getUserEMR } from "../utils/api/apis";
 import ContentHeader from "../components/common/layout/ContentHeader.tsx";
 
 const UpdateDataPage = () => {
-  const [daysFiles, setDaysFiles] = useState<FileList | null>(null);
-  const [placeFiles, setPlaceFiles] = useState<FileList | null>(null);
+  const [dataType, setDataType] = useState<"euisarang" | "egis">("euisarang"); // Track data type
+  const [daysFiles, setDaysFiles] = useState<FileList | null>(null); // Euisarang
+  const [placeFiles, setPlaceFiles] = useState<FileList | null>(null); // Euisarang & Egis
+  const [dailyIncome, setDailyIncome] = useState<FileList | null>(null); // Egis
+  const [patient, setPatient] = useState<FileList | null>(null); // Egis
   const [progress, setProgress] = useState<number>(0);
   const [api, contextHolder] = notification.useNotification();
   const [localData, setLocalData] = useState<number>(0);
@@ -34,11 +37,28 @@ const UpdateDataPage = () => {
   // ✅ Load Naver Maps Script on Component Mount
   useEffect(() => {
     loadNaverMapsScript(import.meta.env.VITE_NAVER_MAPS_CLIENT_ID)
-      .then(() => {})
+      .then(() => { })
       .catch((error) =>
         console.error("❌ Failed to load Naver Maps script:", error)
       );
   }, []);
+
+  useEffect(() => {
+    const fetchEMRType = async () => {
+      try {
+        const emrType = await getUserEMR();
+        if (emrType === "euisarang" || emrType === "egis") {
+          setDataType(emrType);
+        }
+      } catch (error) {
+        console.error("❌ Error fetching EMR type:", error);
+      }
+    };
+
+    fetchEMRType();
+  }, []);
+
+
 
   useEffect(() => {
     if (progress === 100) {
@@ -51,7 +71,7 @@ const UpdateDataPage = () => {
   }, [progress]);
 
   // Process and upload data
-  const handleProcessData = async () => {
+  const handleProcessDataEuisarang = async () => {
     if (!placeFiles || !daysFiles) {
       openNotification("warning", "파일 누락", "모든 파일을 업로드해주세요.");
       return;
@@ -61,34 +81,76 @@ const UpdateDataPage = () => {
 
     try {
       // Parse files
-      const visits = await parseDaysFiles(daysFiles);
-      const patients = await parsePlaceFiles(placeFiles);
+      const visits = await parseDaysFilesEuisarang(daysFiles);
+      const patients = await parsePlaceFilesEuisarang(placeFiles);
       setProgress(20);
 
       // Simulate progress for parsing
       setProgress(40);
 
       // Upload to backend (token is handled by authApi interceptor)
-      const backendResponse = await uploadDataToBackend(visits, patients);
+      const backendResponse = await uploadDataToBackendEuisarang(visits, patients);
       setProgress(100);
 
       // Update local data count
       setLocalData(visits.length); // Adjust as needed
 
-      console.log(
-        `✅ Backend response: ${backendResponse.message}, Processed: ${backendResponse.processedRecords}`
-      );
+      console.log(`✅ Backend response: ${backendResponse.message}, Processed: ${backendResponse.processedRecords}`);
     } catch (error) {
       console.error("❌ Error processing data:", error);
-      openNotification(
-        "error",
-        "데이터 처리 실패",
-        error instanceof Error
-          ? error.message
-          : "알 수 없는 오류가 발생했습니다."
-      );
+      openNotification("error", "데이터 처리 실패", error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다.");
       setProgress(0); // Reset progress on error
     }
+  };
+
+
+  const handleProcessDataEgis = async () => {
+    if (!placeFiles || !dailyIncome || !patient) {
+      openNotification("warning", "파일 누락", "모든 파일을 업로드해주세요.");
+      return;
+    }
+
+    setProgress(1); // Start progress
+
+    try {
+      // New parsing logic for Version 2 (assuming new parser functions exist)
+      const dailyIncomeData = await parseDailyIncomeEgis(dailyIncome);
+      const patientListData = await parsePatientListEgis(placeFiles);
+      const patientIncomeData = await parsePatientIncomeEgis(patient);
+
+      setProgress(20);
+
+      // Simulate progress for parsing
+      setProgress(40);
+
+      // Upload to backend (V2 API with multiple datasets)
+      await uploadDataToBackendEgis(dailyIncomeData, patientListData, patientIncomeData);
+      setProgress(100);
+
+      // Update local data count
+      setLocalData(dailyIncomeData.length);
+
+      console.log("✅ Backend V2 processing completed successfully.");
+    } catch (error) {
+      console.error("❌ Error processing V2 data:", error);
+      openNotification("error", "데이터 처리 실패", error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다.");
+      setProgress(0);
+    }
+  };
+
+  const handleProcessData = () => {
+    if (dataType === "euisarang") {
+      handleProcessDataEuisarang();
+    } else {
+      handleProcessDataEgis();
+    }
+  };
+
+  const isButtonDisabled = () => {
+    if (dataType === "euisarang") {
+      return !daysFiles || !placeFiles || progress > 0;
+    }
+    return !dailyIncome || !placeFiles || !patient || progress > 0;
   };
 
   return (
@@ -106,18 +168,40 @@ const UpdateDataPage = () => {
             <DataInfo>현재 로컬 데이터 개수: {localData}개</DataInfo>
           </ContentContainer>
         </div>
-        <ContentContainer>
-          <FileUpload
-            title="일일 수입 업로드"
-            onFilesUploaded={(files) => setDaysFiles(files)}
-          />
 
-          <FileUpload
-            title="연령대별 환자현황 업로드"
-            onFilesUploaded={(files) => setPlaceFiles(files)}
-          />
+
+        {/* Conditional File Uploads */}
+        <ContentContainer>
+          {dataType === "euisarang" ? (
+            <>
+              <FileUpload
+                title="일일 수입 데이터 업로드"
+                onFilesUploaded={(files) => setDaysFiles(files)}
+              />
+              <FileUpload
+                title="장소별 환자 데이터 업로드"
+                onFilesUploaded={(files) => setPlaceFiles(files)}
+              />
+            </>
+          ) : (
+            <>
+              <FileUpload
+                title="일자별 수입 현황 업로드"
+                onFilesUploaded={(files) => setDailyIncome(files)}
+              />
+              <FileUpload
+                title="환자 목록 업로드"
+                onFilesUploaded={(files) => setPlaceFiles(files)}
+              />
+              <FileUpload
+                title="환자별 수입 현황 업로드"
+                onFilesUploaded={(files) => setPatient(files)}
+              />
+            </>
+          )}
         </ContentContainer>
-        {/**버튼 및 프로그래스바 */}
+
+        {/* Button and Progress Bar */}
         <div style={{ marginTop: "2rem" }}>
           {progress > 0 ? (
             <Progress
@@ -131,7 +215,7 @@ const UpdateDataPage = () => {
               <BaseButton
                 type="button"
                 onClick={handleProcessData}
-                disabled={!daysFiles || !placeFiles || progress > 0}
+                disabled={isButtonDisabled()}
               >
                 데이터 처리하기
               </BaseButton>

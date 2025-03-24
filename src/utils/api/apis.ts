@@ -7,8 +7,16 @@ import { RangeDate } from "../../hooks/useRangeDurationDatePicker";
 import {
   postActiveLicenseParams,
   RegionPrivateParams,
-  regionAnalysisParams
+  regionAnalysisParams,
 } from "../../types/params";
+import {
+  VisitData,
+  PatientData,
+  DailyIncomeEgis,
+  PatientListEgis,
+  PatientIncomeEgis,
+  BackendResponse,
+} from "../ExcelParser";
 
 /**로그인 */
 export const postLogin = async (loginData: LoginParams) => {
@@ -16,7 +24,7 @@ export const postLogin = async (loginData: LoginParams) => {
   await saveTokensToCookie({
     access_token: data.access_token,
     refresh_token: data.refresh_token,
-    expires_in: data.expires_in
+    expires_in: data.expires_in,
   });
 
   return data;
@@ -31,7 +39,7 @@ export const postActiveLicense = async (
 
 export const postVerifyCode = async (hardwareNumber: string) => {
   const data = await apiRequest("post", "auth/verify", {
-    hardwareFingerprint: hardwareNumber
+    hardwareFingerprint: hardwareNumber,
   });
   return data;
 };
@@ -45,7 +53,7 @@ export const getUserInfo = async () => {
 export const getDashboardData = async (rangeDate: RangeDate) => {
   const data = await apiRequest("post", "/fetch/dashboard_date_patient", {
     startDate: rangeDate.startDate.format("YYYY-MM-DD"),
-    endDate: rangeDate.endDate.format("YYYY-MM-DD")
+    endDate: rangeDate.endDate.format("YYYY-MM-DD"),
   });
   return data;
 };
@@ -59,7 +67,7 @@ export const getAllRegions = async () => {
 export const getAllRegionsEtc = async (rangeDate: RangeDate) => {
   const data = await apiRequest("post", "/fetch/all_region_patient_cost", {
     startDate: rangeDate.startDate.format("YYYY-MM-DD"),
-    endDate: rangeDate.endDate.format("YYYY-MM-DD")
+    endDate: rangeDate.endDate.format("YYYY-MM-DD"),
   });
   return data;
 };
@@ -85,7 +93,7 @@ export const getRegionAnalysis = async (
     `/fetch/dashboard_${region}_date_region`,
     {
       startDate: rangeDate.startDate.format("YYYY-MM-DD"),
-      endDate: rangeDate.endDate.format("YYYY-MM-DD")
+      endDate: rangeDate.endDate.format("YYYY-MM-DD"),
     }
   );
   return data;
@@ -97,19 +105,34 @@ export const postRefreshToken = async () => {
     logout();
   }
   const data = await apiRequest("post", "/auth/refresh", {
-    refresh_token: refreshToken
+    refresh_token: refreshToken,
   });
   await saveTokensToCookie({
     access_token: data.access_token,
-    refresh_token: data.refresh_token
+    refresh_token: data.refresh_token,
   });
 
   return data.access_token;
 };
+
+export const getUserEMR = async () => {
+  try {
+    const data = await apiRequest("post", "/auth/getemr");
+
+    if (!data || data.error) {
+      console.error("Error fetching EMR:", data?.error || "No data returned");
+      return null;
+    }
+
+    return data.emr;
+  } catch (error) {
+    console.error("Error in getUserEMR function:", error);
+    return null;
+  }
+};
 export async function fetchDataFromBackend(): Promise<BackendData | undefined> {
   try {
     const data = await apiRequest("get", "/data/get_all");
-    console.log("Fetched data:", data);
     return data as BackendData;
   } catch (error) {
     console.error("Error in fetchDataFromBackend:", error);
@@ -117,15 +140,48 @@ export async function fetchDataFromBackend(): Promise<BackendData | undefined> {
   }
 }
 
-export async function uploadDataToBackend(
-  dataToUpload: BackendData
-): Promise<boolean> {
+// Function to upload parsed data to the backend
+export const uploadDataToBackendEuisarang = async (
+  visits: VisitData[],
+  patients: PatientData[]
+): Promise<BackendResponse> => {
+  const dataToUpload = { visits, patients };
   try {
-    await apiRequest("post", "/data/sync", dataToUpload);
-    console.log("Successfully uploaded data to backend:", dataToUpload);
-    return true; // Return true on successful upload
+    const response = await apiRequest(
+      "post",
+      "/data/process_euisarang",
+      dataToUpload
+    );
+    console.log("Successfully uploaded data to backend:", response);
+    return response as BackendResponse;
   } catch (error) {
     console.error("Error in uploadDataToBackend:", error);
-    return false; // Return false on failure
+    throw error; // Re-throw to handle in the component
   }
-}
+};
+
+// Function to upload parsed data to the backend
+export const uploadDataToBackendEgis = async (
+  dailyIncomeData: DailyIncomeEgis[],
+  patientListData: PatientListEgis[],
+  patientIncomeData: PatientIncomeEgis[]
+): Promise<BackendResponse> => {
+  const dataToUpload = {
+    dailyIncome: dailyIncomeData,
+    patientList: patientListData,
+    patientIncome: patientIncomeData,
+  };
+
+  try {
+    const response = await apiRequest(
+      "post",
+      "/data/process_egis",
+      dataToUpload
+    );
+    console.log("✅ Successfully uploaded data to backend:", response);
+    return response as BackendResponse;
+  } catch (error) {
+    console.error("❌ Error in uploadDataToBackendEgis:", error);
+    throw error; // Re-throw to handle in the component
+  }
+};
