@@ -27,7 +27,7 @@ const SexPieChart = ({ data }: SexPieChartComponentProps) => {
     },
     scale: {
       color: {
-        range: ["#22577A", "#F4A7B9"]
+        range: ["#3897f0", "#F4A7B9"]
       }
     },
     legend: {
