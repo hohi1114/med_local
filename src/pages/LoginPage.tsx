@@ -76,15 +76,11 @@ const LoginPage = () => {
   //Login
   const loginMutation = useMutation({
     mutationFn: (userData: LoginParams) => postLogin(userData),
-    onSuccess: async () => {
+    onSuccess: async (data) => {
+      const { activated } = data;
       setIsLoading(false);
-      // const { data } = await loginRefetch();
-      // setUser(data as User);
-      // navigate("/dashboard");
-      const hardwareNumber = getSavedFingerPrintNumber();
-      hardwareNumber
-        ? postVerifyMutation(hardwareNumber)
-        : setIsLicenseModalOpen(true);
+      const { hardware } = await window.electron.getSystemUUID();
+      activated ? postVerifyMutation(hardware) : setIsLicenseModalOpen(true);
     },
     onError: (error: AxiosError<ErrorResponse>) => {
       setIsLoading(false);
