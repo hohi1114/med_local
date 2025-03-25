@@ -40,12 +40,14 @@ const NaverMap: FC<NaverMapProps> = ({
   const MarkerClustering = makeMarkerClustering(window.naver) as any;
   const mapElement = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<naver.maps.Map | null>(null);
+  const [hospitalMarker, setHospitalMarker] =
+    useState<naver.maps.Marker | null>(null);
 
   //**Refs
   const polygonsRef = useRef<Map<string, naver.maps.Polygon>>(new Map());
   const regionMarkerClusterRef = useRef<any | null>(null);
   const patientGroupsMarkerClusterRef = useRef<any | null>(null);
-  const [currentZoom, setCurrentZoom] = useState<number>(15);
+  const [currentZoom, setCurrentZoom] = useState<number>(16);
 
   //** Map Logic
   const {
@@ -60,7 +62,8 @@ const NaverMap: FC<NaverMapProps> = ({
     smallRegions,
     dongRegions,
     guRegions,
-    isFetching
+    isFetching,
+    hospitalLocation
   } = useNaverMapData();
 
   const clickedAreaRef = useRef<string>(null);
@@ -69,16 +72,36 @@ const NaverMap: FC<NaverMapProps> = ({
 
   // ✅ Initialize map only once
   useEffect(() => {
-    if (!mapElement.current || map) return;
+    if (!mapElement.current || map || !hospitalLocation) return;
 
     const newMap = new window.naver.maps.Map(mapElement.current, {
-      center: new window.naver.maps.LatLng(37.51, 126.88),
-      zoom: 15,
+      center: new window.naver.maps.LatLng(
+        new window.naver.maps.LatLng(
+          hospitalLocation.lat,
+          hospitalLocation.long
+        )
+      ),
+      zoom: 16,
       zoomControl: true
     });
 
     setMap(newMap);
-  }, [map, isFetching]);
+
+    if (!hospitalMarker) {
+      const newMarker = new window.naver.maps.Marker({
+        position: new window.naver.maps.LatLng(
+          hospitalLocation.lat,
+          hospitalLocation.long
+        ),
+        map: newMap,
+        icon: {
+          content: `<img src="/images/hospital.png" style="width: 40px; height: 40px; z-index:20;"/>`,
+          anchor: new window.naver.maps.Point(15, 30)
+        }
+      });
+      setHospitalMarker(newMarker);
+    }
+  }, [map, isFetching, hospitalLocation]);
 
   // ✅ Change PolyStyle and patinetMarkers when drawer is open
   useEffect(() => {
@@ -372,7 +395,7 @@ const NaverMap: FC<NaverMapProps> = ({
                      border-radius: 16px;
                      padding: 4px 10px;
                      box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
-                     text-align: center; z-index:100">
+                     text-align: center; z-index:10;">
           ${region === "dong" ? reNamedDong : areaName}
         </span>
       </div>
