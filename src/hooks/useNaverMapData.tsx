@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { getDataFromRegionDB } from "../store/indexded_db/RegionDB";
 import { Point, RegionData, RegionEtcData } from "../types/naver-maps";
 import { useQuery } from "@tanstack/react-query";
-import { getAllRegionsEtc } from "../utils/api/apis";
+import { getAllRegionsEtc, getHospitalLocation } from "../utils/api/apis";
 import mapStore from "../store/mapStore";
 
 const useNaverMapData = () => {
@@ -19,6 +19,7 @@ const useNaverMapData = () => {
     null
   );
   const [guRegionEtc, setGuRegionEtc] = useState<RegionEtcData[] | null>(null);
+  const [hospitalLocation, setHospitalLocation] = useState<Point | null>(null);
 
   const {
     data: allRegionEtcData,
@@ -28,15 +29,31 @@ const useNaverMapData = () => {
     queryKey: ["allRegionsEtc"],
     queryFn: () => getAllRegionsEtc(drawerDate),
     retry: false,
-
     enabled: !!drawerDate
   });
+  const { data: hospitalLocationData, refetch: hospitalLocationFetch } =
+    useQuery({
+      queryKey: ["hospitalLocation"],
+      queryFn: () => getHospitalLocation(),
+      retry: false
+    });
+
+  useEffect(() => {
+    hospitalLocationFetch();
+  }, []);
 
   useEffect(() => {
     if (drawerDate) {
       allRegionEtcFetch();
     }
   }, [drawerDate]);
+
+  useEffect(() => {
+    if (hospitalLocationData) {
+      const { location } = hospitalLocationData;
+      setHospitalLocation(location);
+    }
+  }, [hospitalLocationData]);
 
   useEffect(() => {
     if (allRegionEtcData) {
@@ -266,6 +283,7 @@ const useNaverMapData = () => {
     getBoundAreas,
     getPolygonColorOpacity,
     groupPatientsByProximity,
+    hospitalLocation,
     isFetching
   };
 };
