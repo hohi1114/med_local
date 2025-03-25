@@ -78,7 +78,7 @@ const NaverMap: FC<NaverMapProps> = ({
       center: new window.naver.maps.LatLng(
         new window.naver.maps.LatLng(
           hospitalLocation.lat,
-          hospitalLocation.long,
+          hospitalLocation.long
         )
       ),
       zoom: 16,
@@ -91,7 +91,7 @@ const NaverMap: FC<NaverMapProps> = ({
       const newMarker = new window.naver.maps.Marker({
         position: new window.naver.maps.LatLng(
           hospitalLocation.lat,
-          hospitalLocation.long,
+          hospitalLocation.long
         ),
         map: newMap,
         icon: {
@@ -438,21 +438,17 @@ const NaverMap: FC<NaverMapProps> = ({
           boxShadow: "0px 4px 6px rgba(0,0,0,0.1)"
         }}
       >
-        <div style={{ display: "flex", gap: "10px", marginBottom: "10px" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: "10px",
+            marginBottom: "10px"
+          }}
+        >
           <DurationDatePicker
             rangeDate={rangeDate}
             handleDateChange={handleDateChange}
           />
-
-          <div style={{ width: "80px" }}>
-            <BaseButton
-              type="button"
-              onClick={handleTodayButton}
-              textcolor="#Ffffff"
-            >
-              오늘
-            </BaseButton>
-          </div>
         </div>
         <SubText>
           * Zoom In을 하면, 환자들이 온 지역의 수치를 확인할 수 있습니다.

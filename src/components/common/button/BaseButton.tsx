@@ -19,7 +19,7 @@ const BaseButton = memo(
         children,
         type,
         disabled,
-        color = "#0F52BA",
+        color = "#3897f0",
         textcolor = "#ffffff",
         isLoading,
         onClick,

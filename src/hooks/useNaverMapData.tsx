@@ -126,24 +126,24 @@ const useNaverMapData = () => {
         data: smallRegions,
         name: "small",
         fontSize: "1rem",
-        color: "#82C0FF",
-        hilightColor: "#409EFF"
+        color: "#6666E0",
+        hilightColor: "#0000b4"
       };
     } else if (currentZoom < 15 && currentZoom >= 14) {
       return {
         data: dongRegions,
         name: "dong",
         fontSize: "1rem",
-        color: "#3F8FD9",
-        hilightColor: "#1B6DBF"
+        color: "#6666E0",
+        hilightColor: "#0000b4"
       };
     } else {
       return {
         data: guRegions,
         name: "gu",
         fontSize: "1.2rem",
-        color: "#005A9B",
-        hilightColor: "#003F7F"
+        color: "#6666E0",
+        hilightColor: "#0000b4F"
       };
     }
   };
@@ -160,18 +160,22 @@ const useNaverMapData = () => {
 
     // 색상 범위 설정 (더 넓은 범위)
     const startColor = { r: 240, g: 248, b: 255 }; // 거의 흰색에 가까운 파랑
-    const endColor = { r: 0, g: 0, b: 180 };       // 매우 짙은 파랑
+    const endColor = { r: 0, g: 0, b: 180 }; // 매우 짙은 파랑
 
-    const r = Math.round(startColor.r + (endColor.r - startColor.r) * normalizedCost);
-    const g = Math.round(startColor.g + (endColor.g - startColor.g) * normalizedCost);
-    const b = Math.round(startColor.b + (endColor.b - startColor.b) * normalizedCost);
+    const r = Math.round(
+      startColor.r + (endColor.r - startColor.r) * normalizedCost
+    );
+    const g = Math.round(
+      startColor.g + (endColor.g - startColor.g) * normalizedCost
+    );
+    const b = Math.round(
+      startColor.b + (endColor.b - startColor.b) * normalizedCost
+    );
 
     const opacity = totalCost === 0 ? 0.1 : 0.5;
 
     return `rgba(${r}, ${g}, ${b}, ${opacity})`;
   };
-
-
 
   const expandBounds = (
     bounds: naver.maps.LatLngBounds,
@@ -225,9 +229,9 @@ const useNaverMapData = () => {
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
 
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     const distance = R * c * 1000;

@@ -203,12 +203,12 @@ const CutomButton = styled(BaseButton)<{ selected?: boolean }>`
   max-width: 100px;
   flex-grow: 0;
   transition: border 0.2s ease;
-  border: 1.5px solid ${(props) => (props.selected ? "#0F52BA" : "#d9d9d9")};
-  color: ${(props) => (props.selected ? "#0F52BA" : "#000000")};
+  border: 1.5px solid ${(props) => (props.selected ? "#3897f0" : "#d9d9d9")};
+  color: ${(props) => (props.selected ? "#3897f0" : "#000000")};
 
   &:hover {
-    border: 1.5px solid #0f52ba;
-    color: #0f52ba;
+    border: 1.5px solid #3897f0;
+    color: #3897f0;
   }
 `;
 
@@ -223,5 +223,5 @@ const DateLabel = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #0f52ba;
+  background-color: #3897f0;
 `;
