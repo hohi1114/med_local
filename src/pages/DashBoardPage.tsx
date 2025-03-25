@@ -62,7 +62,7 @@ export default function DashBoardPage() {
               (content: string, index: number) => {
                 const contentKey = content as keyof typeof RANGE_DATE_MAP;
                 return (
-                  <div style={{ width: "85px" }} key={index}>
+                  <div style={{ width: "85px" }} key={content}>
                     <CutomButton
                       selected={contentKey === buttonType}
                       onClick={() => handleDateFilterButton(contentKey)}
@@ -203,8 +203,7 @@ const CutomButton = styled(BaseButton)<{ selected?: boolean }>`
   max-width: 100px;
   flex-grow: 0;
   transition: border 0.2s ease;
-  border: ${(props) =>
-    props.selected ? "1.5px solid #0F52BA" : "1.5px solid #f3f2f3"};
+  border: 1.5px solid #d9d9d9;
   color: ${(props) => (props.selected ? "#0F52BA" : "#000000")};
 
   &:hover {

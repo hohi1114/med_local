@@ -9,7 +9,7 @@ const Loading = ({ content }: LoadingProps) => {
   return (
     <Overlay>
       <ContentWrapper>
-        <Spin tip="Loading" size="default" style={{ fontSize: "3rem" }} />
+        <Spin size="default" style={{ fontSize: "3rem" }} />
         {content && <Message>{content}</Message>}
       </ContentWrapper>
     </Overlay>
@@ -24,7 +24,7 @@ const Overlay = styled.div`
   width: 100%;
   justify-content: center;
   align-items: center;
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.3);
   position: absolute;
   top: 0;
   left: 0;

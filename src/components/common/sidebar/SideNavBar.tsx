@@ -59,7 +59,9 @@ const SideNavBar = () => {
 
 // Styled components
 
-const SidebarContainer = styled.div<{ collapsed: boolean }>`
+const SidebarContainer = styled.div.withConfig({
+  shouldForwardProp: (prop) => !["collapsed"].includes(prop)
+})<{ collapsed: boolean }>`
   width: ${(props) => (props.collapsed ? "7rem" : "20rem")};
   min-height: 100vh;
   display: flex;
@@ -70,7 +72,9 @@ const SidebarContainer = styled.div<{ collapsed: boolean }>`
   transition: width 0.3s ease;
 `;
 
-const LogoContainer = styled.div<{ collapsed: boolean }>`
+const LogoContainer = styled.div.withConfig({
+  shouldForwardProp: (prop) => !["collapsed"].includes(prop)
+})<{ collapsed: boolean }>`
   padding: ${(props) => (props.collapsed ? "1rem 2.3rem" : "1rem 2rem")};
   display: flex;
   align-items: center;

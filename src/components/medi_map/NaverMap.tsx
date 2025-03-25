@@ -33,6 +33,7 @@ const NaverMap: FC<NaverMapProps> = ({
     setSmallPolygons,
     setBoundArea,
     setLoading,
+    areaName,
     loading
   } = mapStore();
 
@@ -63,7 +64,6 @@ const NaverMap: FC<NaverMapProps> = ({
   } = useNaverMapData();
 
   const clickedAreaRef = useRef<string>(null);
-  let [clickedArea, setClickedArea] = useState<string>("");
   const { data, name, fontSize, color, hilightColor } =
     getRegionName(currentZoom);
 
@@ -83,7 +83,7 @@ const NaverMap: FC<NaverMapProps> = ({
   // ✅ Change PolyStyle and patinetMarkers when drawer is open
   useEffect(() => {
     if (!isOpenDrawer) {
-      const polygon = polygonsRef.current.get(clickedArea);
+      const polygon = polygonsRef.current.get(areaName);
       if (polygon) {
         const paths = polygon.getPaths();
         polygon.setOptions({
@@ -93,7 +93,7 @@ const NaverMap: FC<NaverMapProps> = ({
         });
       }
     }
-  }, [isOpenDrawer, clickedArea]);
+  }, [isOpenDrawer, areaName]);
 
   const handleZoomChange = debounce(async (dateChanged) => {
     //📌Init Map
@@ -263,7 +263,6 @@ const NaverMap: FC<NaverMapProps> = ({
             strokeWeight: 3,
             zIndex: 100
           });
-          setClickedArea(area.name);
           setSelctedRegionData(area);
           setSmallPolygons(area.polygon);
         }
@@ -303,7 +302,6 @@ const NaverMap: FC<NaverMapProps> = ({
             strokeWeight: 3,
             zIndex: 100
           });
-          setClickedArea(area.name);
           setSelctedRegionData(area);
           setSmallPolygons(area.polygon);
         }
@@ -443,6 +441,6 @@ const NaverMap: FC<NaverMapProps> = ({
 
 const SubText = styled.span`
   font-size: 1rem;
-  color: #969696;
+  color: #52555a;
 `;
 export default NaverMap;

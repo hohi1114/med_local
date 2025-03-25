@@ -29,7 +29,7 @@ const BaseButton = memo(
     ) => {
       return (
         <ButtonContainer
-          color={disabled ? "#ffffff" : color}
+          color={color}
           textcolor={textcolor}
           type={type}
           ref={ref}
@@ -48,7 +48,9 @@ BaseButton.displayName = "BaseButton";
 
 export default BaseButton;
 
-const ButtonContainer = styled.button<StyledButtonProps>`
+const ButtonContainer = styled.button.withConfig({
+  shouldForwardProp: (prop) => !["color", "textcolor"].includes(prop)
+})<StyledButtonProps>`
   height: 3rem;
   width: 100%;
   border: none;
@@ -61,4 +63,8 @@ const ButtonContainer = styled.button<StyledButtonProps>`
   cursor: pointer;
   font-weight: bold;
   background-color: ${({ color }) => color};
+
+  &:disabled {
+    opacity: 0.3;
+  }
 `;

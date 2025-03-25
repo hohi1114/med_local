@@ -187,7 +187,6 @@ const UpdateDataPage = () => {
           <ContentContainer>
             <TitleStyle>저장한 데이터 현황</TitleStyle>
             <UploadedCalendar updated={progress === 100} />
-            <DataInfo>현재 로컬 데이터 개수: {localData}개</DataInfo>
           </ContentContainer>
         </div>
 
@@ -266,9 +265,4 @@ const ContentContainer = styled.div`
   display: flex;
   flex-direction: column;
   gap: 1rem;
-`;
-const DataInfo = styled.span`
-  font-size: 1rem;
-  color: #666;
-  margin-top: 1rem;
 `;

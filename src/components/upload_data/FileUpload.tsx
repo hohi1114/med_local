@@ -29,7 +29,7 @@ const FileUpload = ({ title, onFilesUploaded }: FileUploadProps) => {
       <TitleStyle>{title}</TitleStyle>
       <StyledDragger
         onChange={handleChange}
-        multiple={false}
+        multiple={true}
         accept=".xls,.xlsx"
         height={150}
       >

@@ -1,6 +1,4 @@
 import { Drawer, Segmented } from "antd";
-import DurationDatePicker from "../common/datepicker/DurationDatePicker";
-import BaseButton from "../common/button/BaseButton";
 import styled from "styled-components";
 import mapStore from "../../store/mapStore";
 import isBetween from "dayjs/plugin/isBetween";
@@ -11,11 +9,9 @@ import * as turf from "@turf/turf";
 import RevenuInfo from "./chart/RevenueInfo";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { getRegionPrivateData } from "../../utils/api/apis";
-import { Polygon, RegionData } from "../../types/naver-maps";
+import { RegionData } from "../../types/naver-maps";
 import { getDataFromRegionDB } from "../../store/indexded_db/RegionDB";
 import Loading from "../common/Loading";
-import CustomSegmentedControl from "../common/toggle/BaseToggle";
-import { debounce } from "lodash";
 dayjs.extend(isBetween);
 
 function fixPolygonCoordinates(
@@ -80,24 +76,18 @@ const StatisticsDrawer = () => {
   }, [areaName, region, drawerDate, loading]);
 
   const {
+    mutate: regionPrivateMutation,
     data: regionPrivate,
-    isLoading,
-    isRefetching,
+    isPending,
     isError,
-    error,
-    refetch: regionPrivateFetch
-  } = useQuery({
-    queryKey: ["regionPrivateData", params],
-    queryFn: () => getRegionPrivateData(params!),
-    enabled: !!params,
-    retry: false
+    error
+  } = useMutation({
+    mutationFn: (params: any) => getRegionPrivateData(params)
   });
 
   useEffect(() => {
-    if (params) {
-      regionPrivateFetch();
-    }
-  }, [params]);
+    regionPrivateMutation(params);
+  }, [areaName]);
 
   useEffect(() => {
     if (boundArea && boundArea.length > 0) {
@@ -228,7 +218,7 @@ const StatisticsDrawer = () => {
         (toggleValue === "지역" ? (
           <RegionInfo data={regionInfo} />
         ) : toggleValue === "매출" ? (
-          isLoading || isRefetching ? (
+          isPending ? (
             <Loading />
           ) : (
             <RevenuInfo
@@ -241,7 +231,7 @@ const StatisticsDrawer = () => {
               barFormatData={barFormatData}
             />
           )
-        ) : isLoading || isRefetching ? (
+        ) : isPending ? (
           <Loading />
         ) : (
           <div style={{ display: "flex", gap: "1rem" }}>
