@@ -2,8 +2,6 @@ import { app, BrowserWindow, ipcMain } from "electron";
 import path from "path";
 import si from "systeminformation";
 
-
-
 const isDev = process.env.NODE_ENV === "development";
 
 let mainWindow: BrowserWindow | null = null;
@@ -17,8 +15,8 @@ const createMainWindow = () => {
       contextIsolation: true, // 보안을 위해 true로 설정
       preload: path.join(__dirname, "preload.js"), // Preload 파일 경로 설정
       webSecurity: false, // 외부 맵 스크립트 등의 보안 문제 해결
-      allowRunningInsecureContent: true // HTTPS 관련 문제 해결
-    }
+      allowRunningInsecureContent: true, // HTTPS 관련 문제 해결
+    },
   });
 
   if (isDev) {
@@ -26,7 +24,7 @@ const createMainWindow = () => {
     mainWindow.webContents.openDevTools();
   } else {
     //mainWindow.loadFile(path.join(__dirname, "../dist/index.html"));
-    mainWindow.loadURL("http://localhost:5173");
+    mainWindow.loadURL("http://3.39.10.210");
   }
 
   mainWindow.on("closed", () => (mainWindow = null));

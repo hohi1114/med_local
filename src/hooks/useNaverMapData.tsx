@@ -34,7 +34,7 @@ const useNaverMapData = () => {
   const { data: hospitalLocationData, refetch: hospitalLocationFetch } =
     useQuery({
       queryKey: ["hospitalLocation"],
-      queryFn: () => getHospitalLocation(),
+      queryFn: () => pitalLocation(),
       retry: false
     });
 
@@ -149,14 +149,17 @@ const useNaverMapData = () => {
   };
 
   const getPolygonColorOpacity = (totalCost: number, name: string): string => {
-    const minCost = 0;
-    const hightestCost = maxCost[name as keyof typeof maxCost];
-    const normalizedCost =
-      hightestCost === 0
-        ? 1
-        : Math.min(Math.max(totalCost, minCost), hightestCost) / hightestCost;
-    const startColor = { r: 208, g: 232, b: 255 }; // Lighter blue
-    const endColor = { r: 76, g: 140, b: 255 }; // Soft blue (less intense)
+    const minCost = 1; // Start from 1 to avoid log(0)
+    const highestCost = maxCost[name as keyof typeof maxCost];
+
+    // Use logarithmic normalization
+    const logTotal = Math.log(Math.max(totalCost, minCost));
+    const logMax = Math.log(Math.max(highestCost, minCost));
+    const normalizedCost = highestCost === 0 ? 1 : logTotal / logMax;
+
+    const startColor = { r: 208, g: 232, b: 255 }; // Light blue
+    const endColor = { r: 120, g: 170, b: 255 };   // Even softer blue than before
+
     const r = Math.round(
       startColor.r + (endColor.r - startColor.r) * normalizedCost
     );
@@ -166,9 +169,13 @@ const useNaverMapData = () => {
     const b = Math.round(
       startColor.b + (endColor.b - startColor.b) * normalizedCost
     );
+
     const opacity = totalCost === 0 ? 0.1 : 0.7;
+
     return `rgba(${r}, ${g}, ${b}, ${opacity})`;
   };
+
+
 
   const expandBounds = (
     bounds: naver.maps.LatLngBounds,
@@ -222,9 +229,9 @@ const useNaverMapData = () => {
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos((lat1 * Math.PI) / 180) *
-        Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
 
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     const distance = R * c * 1000;
