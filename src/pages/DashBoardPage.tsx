@@ -203,7 +203,7 @@ const CutomButton = styled(BaseButton)<{ selected?: boolean }>`
   max-width: 100px;
   flex-grow: 0;
   transition: border 0.2s ease;
-  border: 1.5px solid #d9d9d9;
+  border: 1.5px solid ${(props) => (props.selected ? "#0F52BA" : "#d9d9d9")};
   color: ${(props) => (props.selected ? "#0F52BA" : "#000000")};
 
   &:hover {
