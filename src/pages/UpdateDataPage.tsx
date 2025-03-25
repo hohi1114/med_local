@@ -186,7 +186,7 @@ const UpdateDataPage = () => {
         <div style={{ marginBottom: "4rem" }}>
           <ContentContainer>
             <TitleStyle>저장한 데이터 현황</TitleStyle>
-            <UploadedCalendar updated={progress === 100} />
+            <UploadedCalendar progress={progress} />
           </ContentContainer>
         </div>
 

@@ -10,7 +10,6 @@ export const authApi = axios.create({
   baseURL: import.meta.env.VITE_API_URL
 });
 
-console.log(import.meta.env.VITE_API_URL);
 authApi.defaults.headers.common["Content-Type"] = "application/json";
 
 export const logout = () => {

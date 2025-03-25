@@ -115,6 +115,11 @@ export const postRefreshToken = async () => {
   return data.access_token;
 };
 
+export const getUploadedDates = async () => {
+  const data = await apiRequest("get", "/fetch/dates");
+  return data;
+};
+
 export const getUserEMR = async () => {
   try {
     const data = await apiRequest("post", "/auth/getemr");
