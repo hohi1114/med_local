@@ -1,3 +1,5 @@
+import { PatientData } from "../utils/ExcelParser";
+
 export interface MediDataType {
   key: number;
   local: string | null;
@@ -17,7 +19,7 @@ export interface MergedData {
   totalCost: number;
   age: string;
   address: string;
-  visitType:string;
+  visitType: string;
 }
 
 export interface FilteredData {
@@ -26,7 +28,7 @@ export interface FilteredData {
   totalCost: number;
   age: string;
   address: string;
-  visitType:string;
+  visitType: string;
   latitude: number | null;
   longitude: number | null;
 }
@@ -35,8 +37,23 @@ export interface UpdatedDates {
   date: string;
 }
 
-export interface BackendData{
+export interface BackendData {
   merged_data: MergedData[];
   filtered_data: FilteredData[];
   df_date: UpdatedDates[];
+}
+
+export type RegionSummary = {
+  regionName: string;
+  totalCost: number;
+  patientCount: number;
+};
+
+export interface RankedRegion extends RegionSummary {
+  revenueRate: string; // 매출 비율 (예: "25.50%")
+}
+
+export interface AllPatientsData extends PatientData {
+  regionName: string;
+  data: PatientData[];
 }

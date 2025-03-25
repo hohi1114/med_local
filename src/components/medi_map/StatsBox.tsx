@@ -1,13 +1,13 @@
 import styled from "styled-components";
 
 export const STATSTYPE = [
-  { id: 1, title: "전체 환자 수" },
+  { id: 1, title: "내원 환자 수" },
   { id: 2, title: "누적 매출액" },
   { id: 3, title: "내원당 평균 매출액" },
-  { id: 4, title: "1인당 평균 매출" },
+  { id: 4, title: "1인당 평균 매출액" },
   { id: 5, title: "재방문 환자수" },
   { id: 6, title: "신규 환자수" },
-  { id: 7, title: "전체 인구 수" },
+  { id: 7, title: "지역 매출 순위" },
   { id: 8, title: "유입 비율" }
 ];
 
@@ -19,8 +19,8 @@ interface StatsBoxProps {
 const StatsBox = ({ title, data }: StatsBoxProps) => {
   /** If the data is too long, calculate font size */
   const calculateFontsize = () => {
-    if (data.length > 13) {
-      return 1.5;
+    if (data.length >= 15) {
+      return 1.3;
     } else {
       return 1.5;
     }

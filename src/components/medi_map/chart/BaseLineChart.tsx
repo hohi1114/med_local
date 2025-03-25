@@ -9,42 +9,72 @@ interface ILineData {
 }
 
 interface IBaseLineChartProps {
-  data:
-    | Record<string, { totalCost: number; patientCount: number }>
-    | Record<string, number>;
+  data: Record<string, number>;
   xField: string;
   yField: string;
+  height: number;
+  width?: number;
   labelFormatterX?: (value: string) => string;
   labelFormatterY?: (value: number) => string;
+  valueXSymbol?: string;
   formatData: (data: any) => ILineData[];
+  number_of_points?: number;
 }
 
-const NUMBER_OF_POINTS = 6;
 const BaseLineChart = ({
   data,
   xField,
   yField,
+  height,
+  width,
   labelFormatterX,
   labelFormatterY,
-  formatData
+  formatData,
+  valueXSymbol
 }: IBaseLineChartProps) => {
   const [lineData, setLineData] = useState<ILineData[]>([]);
 
-  //Data Formatting for Many Data Points
-  useEffect(() => {
-    if (data) {
-      const formattedData = formatData(data);
-      let selectedData: ILineData[] = [];
-      if (formattedData.length > NUMBER_OF_POINTS) {
-        selectedData = formattedData.filter(
-          (_, index) =>
-            index % Math.floor(formattedData.length / NUMBER_OF_POINTS) === 0
-        );
-      } else {
-        selectedData = formattedData;
+  const formatDataWithAggregation = (
+    data: Record<string, number>,
+    yField: string
+  ): ILineData[] => {
+    const aggregatedData: { [key: string]: number } = {};
+
+    // 데이터를 순회하며 집계
+    Object.keys(data).forEach((key) => {
+      const date = dayjs(key);
+      const weekStart = date.startOf("week").format("YYYY-MM-DD");
+
+      if (!aggregatedData[weekStart]) {
+        aggregatedData[weekStart] = 0;
       }
 
-      setLineData(selectedData);
+      aggregatedData[weekStart] += data[key]; // totalCost 값을 주별로 합산
+    });
+
+    // 집계된 데이터를 ILineData 포맷으로 변환
+    const result = Object.keys(aggregatedData).map((weekStart) => ({
+      date: weekStart,
+      [yField]: aggregatedData[weekStart]
+    }));
+
+    return result;
+  };
+
+  useEffect(() => {
+    let formattedData = null;
+
+    if (data) {
+      if (xField === "time") {
+        formattedData = formatData(data);
+      } else {
+        if (Object.keys(data).length > 50) {
+          formattedData = formatDataWithAggregation(data, yField);
+        } else {
+          formattedData = formatData(data);
+        }
+      }
+      setLineData(formattedData);
     }
   }, [data, formatData]);
 
@@ -53,37 +83,51 @@ const BaseLineChart = ({
     xField,
     yField,
     smooth: true,
+    width: width ? width : null,
     autoFit: true,
-    width: 350,
-    height: 280,
+    height: height,
+    forceFit: true,
+    tooltip: {
+      channel: "y",
+      valueFormatter: (value: number) => {
+        return (
+          Math.ceil(value).toLocaleString() +
+          (valueXSymbol ? valueXSymbol : " ₩")
+        );
+      }
+    },
     axis: {
       y: {
         labelFormatter: labelFormatterY || ((v: number) => `${v / 1000}K`)
       },
       x: {
         labelFormatter:
-          labelFormatterX || ((v: string) => dayjs(v).format("MM/DD"))
+          labelFormatterX ||
+          ((v: string) => (xField === "time" ? v : dayjs(v).format("MM/DD")))
       }
     },
     scale: {
-      x: { utc: true },
+      x: { utc: xField !== "time" },
       y: { nice: true }
-    },
-    lineStyle: {
-      stroke: "#F4664A",
-      lineWidth: 4
-    },
-    color: undefined
+    }
   };
 
   return lineData.length > 0 ? (
-    <Line {...config} />
+    <ChartContainer>
+      <Line {...config} />
+    </ChartContainer>
   ) : (
     <EmptyDataContainer>
       <div>불러올 데이터가 없습니다.</div>
     </EmptyDataContainer>
   );
 };
+const ChartContainer = styled.div`
+  display: flex;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+`;
 
 const EmptyDataContainer = styled.div`
   display: flex;

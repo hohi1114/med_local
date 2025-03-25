@@ -17,6 +17,7 @@ export default BaseLayout;
 
 const Container = styled.div`
   display: flex;
+  position: relative;
   flex-direction: column;
   width: 100%;
   background-color: #fafafb;

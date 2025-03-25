@@ -7,18 +7,16 @@ import { useState, useEffect } from "react";
 const SideNavBar = () => {
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
+  const [selectedKeys, setSelectedKeys] = useState<string[]>([
+    location.pathname
+  ]);
 
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth <= 768) {
-        setCollapsed(true);
-      } else {
-        setCollapsed(false);
-      }
+      setCollapsed(window.innerWidth <= 768);
     };
 
     window.addEventListener("resize", handleResize);
-
     handleResize();
 
     return () => window.removeEventListener("resize", handleResize);
@@ -28,56 +26,43 @@ const SideNavBar = () => {
     navigate(`/${e.key}`);
   };
 
+  const toggleCollapsed = () => {
+    setCollapsed(!collapsed);
+  };
+
+  useEffect(() => {
+    setSelectedKeys([location.pathname.replace("/", "")]);
+  }, [location.pathname]);
+
   return (
-    <SidbarContainer collapsed={collapsed}>
-      {!collapsed && (
-        <LogoContainer>
-          <IconStyle src="/images/defaultProfile.svg" alt="default_profile" />
-          <span>Logo</span>
-        </LogoContainer>
-      )}
+    <SidebarContainer collapsed={collapsed}>
+      <LogoContainer collapsed={collapsed}>
+        <MenuIcon
+          src="/images/menu.svg"
+          onClick={toggleCollapsed}
+          alt="menu icon"
+        />
+        {!collapsed && <LogoText>ORBIS</LogoText>}
+      </LogoContainer>
 
       <Menu
         onClick={onClick}
-        defaultSelectedKeys={["1"]}
-        defaultOpenKeys={["sub1"]}
+        selectedKeys={selectedKeys}
         mode="inline"
         items={MENUITEMS}
         inlineCollapsed={collapsed}
         style={{ flex: 1, overflowY: "auto" }}
       />
-
-      {/* <SettingContainer>
-        <IconStyle src="/images/settings.svg" alt="settings" />
-        설정
-      </SettingContainer> */}
-    </SidbarContainer>
+    </SidebarContainer>
   );
 };
 
-const LogoContainer = styled.div`
-  padding: 1rem;
-  font-size: 1.2rem;
-  font-weight: bold;
-  display: flex;
-  gap: 10px;
-  align-items: center;
-`;
+// Styled components
 
-const SettingContainer = styled.div`
-  position: fixed;
-  bottom: 2.8rem;
-  left: 1.5rem;
-  width: 100%;
-  display: flex;
-  gap: 0.8rem;
-  align-items: center;
-  font-size: 1.3rem;
-  cursor: pointer;
-`;
-
-const SidbarContainer = styled.div<{ collapsed: boolean }>`
-  width: ${(props) => (props.collapsed ? "8rem" : "23rem")};
+const SidebarContainer = styled.div.withConfig({
+  shouldForwardProp: (prop) => !["collapsed"].includes(prop)
+})<{ collapsed: boolean }>`
+  width: ${(props) => (props.collapsed ? "7rem" : "20rem")};
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -87,9 +72,29 @@ const SidbarContainer = styled.div<{ collapsed: boolean }>`
   transition: width 0.3s ease;
 `;
 
-const IconStyle = styled.img`
-  width: 1.5rem;
+const LogoContainer = styled.div.withConfig({
+  shouldForwardProp: (prop) => !["collapsed"].includes(prop)
+})<{ collapsed: boolean }>`
+  padding: ${(props) => (props.collapsed ? "1rem 2.3rem" : "1rem 2rem")};
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-right: 1px solid #f3f2f3;
+`;
+
+const MenuIcon = styled.img`
+  width: 2rem;
   height: auto;
+  cursor: pointer;
+`;
+
+const LogoText = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.1rem;
+  font-size: 1.5rem;
+  font-weight: bold;
 `;
 
 export default SideNavBar;

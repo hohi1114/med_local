@@ -1,11 +1,44 @@
 import * as XLSX from "xlsx";
-import {
-  VisitData,
-  PatientData,
-  PatientIncomeEgis,
-  DailyIncomeEgis,
-  PatientListEgis,
-} from "../types/backend";
+
+// Interfaces for your data structures
+export interface VisitData {
+  chartNumber: number;
+  visitDate: string;
+  totalCost: number;
+}
+
+export interface BackendResponse {
+  message: string;
+  processedRecords: number;
+  geocodedRecords: number;
+}
+
+export interface PatientData {
+  chartNumber: number;
+  age: string;
+  address: string;
+  latitude: number | null;
+  longitude: number | null;
+}
+
+// 일자별 수입 현황
+export interface DailyIncomeEgis {
+  chartNumber: number; // 1st column
+  visitDate: string; // 3rd column (date)
+  totalCost: number; // 8th column (총 진료비)
+}
+
+// 환자 목록
+export interface PatientListEgis {
+  chartNumber: number; // 1st column
+  address: string; // 8th column
+}
+
+// 환자별 수입 현황
+export interface PatientIncomeEgis {
+  chartNumber: number; // 1st column
+  age: number; // 4th column (나이)
+}
 
 /**
  * Converts an Excel serial date (e.g. 45329) to a "YYYY-MM-DD" string.
@@ -47,7 +80,7 @@ function excelSerialToDate(serial: number): string {
   return `${year}-${month}-${day}`;
 }
 
-export const parseDaysFilesEuiSarang = async (
+export const parseDaysFilesEuisarang = async (
   files: FileList
 ): Promise<VisitData[]> => {
   let data: VisitData[] = [];
@@ -56,15 +89,12 @@ export const parseDaysFilesEuiSarang = async (
     const buffer = await file.arrayBuffer();
     const workbook = XLSX.read(buffer, { type: "array" });
 
-    console.log("📌 Workbook Loaded:", workbook);
-
     if (workbook.SheetNames.length === 0) {
       console.error("❌ No worksheets found in the file:", file.name);
       continue; // Skip this file
     }
 
     const worksheet = workbook.Sheets[workbook.SheetNames[0]]; // First sheet
-    console.log("✅ Worksheet Name:", workbook.SheetNames[0]);
 
     const jsonData = XLSX.utils.sheet_to_json<any>(worksheet, {
       header: 1,
@@ -94,9 +124,7 @@ export const parseDaysFilesEuiSarang = async (
   );
 };
 
-/* chartNumber, visitDate, totalCost 임 */
-
-export const parsePlaceFilesEuiSarang = async (
+export const parsePlaceFilesEuisarang = async (
   files: FileList
 ): Promise<PatientData[]> => {
   let data: PatientData[] = [];
@@ -111,7 +139,6 @@ export const parsePlaceFilesEuiSarang = async (
     }
 
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-    console.log("✅ Worksheet Name:", workbook.SheetNames[0]);
 
     const jsonData = XLSX.utils.sheet_to_json<any>(worksheet, {
       header: 1,
@@ -172,7 +199,6 @@ export async function parseDailyIncomeEgis(
       });
     }
   }
-  console.log("DailYincome" + data);
 
   // Filter invalid entries (e.g., non-numeric chartNumber)
   return data.filter(
@@ -208,7 +234,7 @@ export async function parsePatientListEgis(
       });
     }
   }
-  console.log("patientLKist" + data);
+
   return data.filter(
     (item) =>
       !isNaN(item.chartNumber) && // chartNumber must be a valid number
@@ -245,6 +271,6 @@ export async function parsePatientIncomeEgis(
       });
     }
   }
-  console.log("patientIncome" + data);
+
   return data.filter((item) => !isNaN(item.chartNumber) && !isNaN(item.age));
 }

@@ -1,231 +1,186 @@
-import { Drawer } from "antd";
-import DurationDatePicker from "../common/datepicker/DurationDatePicker";
-import BaseButton from "../common/button/BaseButton";
+import { Drawer, Segmented } from "antd";
 import styled from "styled-components";
-import StatsBox, { STATSTYPE } from "./StatsBox";
 import mapStore from "../../store/mapStore";
-import BarChart from "./chart/BarChart";
-import BaseLineChart from "./chart/BaseLineChart";
 import isBetween from "dayjs/plugin/isBetween";
 import dayjs from "dayjs";
-import useRangeDurationDatePicker from "../../hooks/useRangeDurationDatePicker";
-import { useEffect, useState } from "react";
-import { PatientData } from "../../utils/ExcelParser";
+import { useEffect, useMemo, useState } from "react";
+import RegionInfo from "./RegionInfo";
+import * as turf from "@turf/turf";
+import RevenuInfo from "./chart/RevenueInfo";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { getRegionPrivateData } from "../../utils/api/apis";
+import { RegionData } from "../../types/naver-maps";
+import { getDataFromRegionDB } from "../../store/indexded_db/RegionDB";
+import Loading from "../common/Loading";
 dayjs.extend(isBetween);
 
-interface StatisticsDrawerProps {
-  open: boolean;
-  handleDrawerOpen: () => void;
+function fixPolygonCoordinates(
+  polygon: [number, number][]
+): [number, number][] {
+  if (
+    polygon[0][0] !== polygon[polygon.length - 1][0] ||
+    polygon[0][1] !== polygon[polygon.length - 1][1]
+  ) {
+    polygon.push(polygon[0]);
+  }
+
+  while (polygon.length < 4) {
+    polygon.push(polygon[0]);
+  }
+
+  return polygon;
 }
-const StatisticsDrawer = ({
-  open,
-  handleDrawerOpen
-}: StatisticsDrawerProps) => {
-  const { rangeDate, handleDateChange } = useRangeDurationDatePicker();
-  const [selectedPatient, setSelectedPatient] = useState<PatientData[]>([]);
+
+// ✅ `smallPolygon`을 포함하는 `dong` 찾기
+const findContainingDong = async (
+  smallPoint: number[][]
+): RegionData | undefined => {
+  const dongData = await getDataFromRegionDB("dong_regions");
+
+  return dongData.find((dong) => {
+    if (!dong.polygon) return false;
+    const dongPolygonArray = JSON.parse(dong.polygon);
+    const fixedPolygon = fixPolygonCoordinates(dongPolygonArray?.[0]);
+
+    return (
+      fixedPolygon.length >= 4 &&
+      turf.booleanContains(turf.polygon([fixedPolygon]), turf.point(smallPoint))
+    );
+  });
+};
+
+const StatisticsDrawer = () => {
+  const { isOpenDrawer, handleIsDrawerOpen } = mapStore();
   const {
     areaName,
-    totalCost,
-    totalPatients,
-    firstVisitPatients,
-    revisitedPatients,
-    dailyRevenue,
-    revenueTrend,
-    setDrawerDate,
-    setTotalCost,
-    setTotalPatients,
-    setFirstVisitPatients,
-    setRevisitedPatients,
-    setRevenueTrend,
-    setAgeGroups,
-    setDailyRevenue,
-    patients
+    drawerDate,
+    region,
+    selectedRegionData,
+    smallPolygons,
+    boundArea,
+    loading
   } = mapStore();
 
-  useEffect(() => {
-    setDrawerDate([rangeDate.startDate, rangeDate.endDate]);
-  }, []);
+  const [statsData, setStatsData] = useState<{ [key: number]: string }>({});
+  const [regionInfo, setRegionInfo] = useState<RegionData | null>(null);
+  const [population, setPopulation] = useState<number>(0);
 
-  // 연령을 숫자로 변환하는 함수
-  const parseAge = (ageString: string): number => {
-    const ageParts = ageString.split("세");
-    if (ageParts.length < 2) return 0;
+  const params = useMemo(() => {
+    if (!areaName || !region || !drawerDate || loading) return;
+    return {
+      name: areaName,
+      regionType: region,
+      startDate: drawerDate?.startDate.format("YYYY-MM-DD"),
+      endDate: drawerDate?.endDate.format("YYYY-MM-DD")
+    };
+  }, [areaName, region, drawerDate, loading]);
 
-    const ageYears = parseInt(ageParts[0].trim(), 10);
-    const ageMonths =
-      ageParts[1] && ageParts[1].includes("개월")
-        ? parseInt(ageParts[1].replace("개월", "").trim(), 10)
-        : 0;
-
-    // 1년을 12개월로 보고, 월 단위로 계산하여 나이 계산
-    return ageYears + ageMonths / 12;
-  };
-
-  const initDrawerData = () => {
-    setTotalCost(0);
-    setTotalPatients(0);
-    setFirstVisitPatients(0);
-    setFirstVisitPatients(0);
-    setRevisitedPatients(0);
-    setRevenueTrend({});
-    setAgeGroups({});
-    setDailyRevenue({});
-  };
+  const {
+    mutate: regionPrivateMutation,
+    data: regionPrivate,
+    isPending,
+    isError,
+    error
+  } = useMutation({
+    mutationFn: (params: any) => getRegionPrivateData(params)
+  });
 
   useEffect(() => {
-    if (open) {
-      initDrawerData();
+    regionPrivateMutation(params);
+  }, [areaName]);
+
+  useEffect(() => {
+    if (boundArea && boundArea.length > 0) {
+      const selectedArea: RegionData[] = boundArea.filter(
+        (area) => area.name === areaName
+      );
+      setPopulation(selectedArea[0]?.population);
     }
-  }, [open, rangeDate]);
+  }, [boundArea]);
 
   useEffect(() => {
-    if (areaName && open) {
-      if (patients.length > 0) {
-        const filteredPatients = patients.filter(
-          (data) => data.areaName === areaName
-        );
-        const filteredPatientsByDate = filteredPatients[0].patients.filter(
-          (data) => {
-            const visitDate = dayjs(data.visitDate);
-            return visitDate.isBetween(rangeDate.startDate, rangeDate.endDate);
-          }
-        );
-        setSelectedPatient(filteredPatientsByDate);
+    const fetchData = async () => {
+      if (region === "small") {
+        if (!smallPolygons[0]) return;
+        const containingDong = await findContainingDong(smallPolygons[0]);
+
+        if (containingDong) {
+          const newSmallRegion = {
+            name: selectedRegionData.name,
+            population: selectedRegionData.population,
+            male_avg_age: containingDong.male_avg_age,
+            female_avg_age: containingDong.female_avg_age,
+            total_avg_age: containingDong.total_avg_age,
+            monthly_avg_income: containingDong.monthly_avg_income,
+            male_population: containingDong.male_population,
+            female_population: containingDong.female_population,
+            medical_expense: containingDong.medical_expense,
+            age_group_population: containingDong.age_group_population,
+            population_by_time: containingDong.population_by_time,
+            population_by_day: containingDong.population_by_day
+          };
+          setRegionInfo(newSmallRegion);
+        }
       } else {
-        setSelectedPatient([]);
+        setRegionInfo(selectedRegionData);
       }
-    }
-  }, [patients, open, rangeDate, areaName]);
-
-  useEffect(() => {
-    if (selectedPatient?.length > 0) {
-      // 연령대 별 환자 분포
-      const ageGroups = {
-        아동: 0,
-        "10대": 0,
-        "20대": 0,
-        "30대": 0,
-        "40대": 0,
-        "50대": 0,
-        "60대": 0
-      };
-      let totalPatient = new Set();
-      const revenueMap: { [key: string]: number } = {};
-      const dailyRevenueMap: { [key: string]: number } = {};
-      let firstTimeCount = 0;
-      let revisitCount = 0;
-      let resultTotalCost = 0;
-
-      selectedPatient.forEach((patient) => {
-        const { totalCost, visitDate, age, visitType, chartNumber } = patient;
-        resultTotalCost += totalCost;
-
-        //총 환자 수
-        if (!totalPatient.has(chartNumber)) {
-          totalPatient.add(chartNumber);
-        }
-        //재방문 환자수 = 초진 + 재진
-        if (visitType === "초진" || visitType === "재진") {
-          revisitCount++;
-        } else if (visitType === "신환") {
-          firstTimeCount++;
-        }
-        //매출액 변화 추이
-        if (visitDate && revenueMap[visitDate]) {
-          revenueMap[visitDate] += totalCost ?? 0;
-        } else {
-          revenueMap[visitDate] = totalCost;
-        }
-        const ageInYears = parseAge(age);
-        // 연령대에 맞는 카운트 증가
-        if (ageInYears >= 0 && ageInYears <= 9) {
-          ageGroups["아동"]++;
-        } else if (ageInYears >= 10 && ageInYears <= 19) {
-          ageGroups["10대"]++;
-        } else if (ageInYears >= 20 && ageInYears <= 29) {
-          ageGroups["20대"]++;
-        } else if (ageInYears >= 30 && ageInYears <= 39) {
-          ageGroups["30대"]++;
-        } else if (ageInYears >= 40 && ageInYears <= 49) {
-          ageGroups["40대"]++;
-        } else if (ageInYears >= 50 && ageInYears <= 59) {
-          ageGroups["50대"]++;
-        } else {
-          ageGroups["60대"]++;
-        }
-        //1인당 평균 매출액
-        if (visitDate) {
-          // visitDate가 없으면 초기화
-          if (!dailyRevenueMap[visitDate]) {
-            dailyRevenueMap[visitDate] = {
-              totalCost: 0,
-              patientCount: 0
-            };
-          }
-        }
-        if (visitDate && dailyRevenueMap[visitDate].totalCost) {
-          dailyRevenueMap[visitDate].totalCost += totalCost;
-          dailyRevenueMap[visitDate].patientCount += 1;
-        } else {
-          dailyRevenueMap[visitDate].totalCost = totalCost;
-          dailyRevenueMap[visitDate].patientCount = 1;
-        }
-
-        setTotalCost(resultTotalCost);
-        setTotalPatients(totalPatient.size);
-        setFirstVisitPatients(firstTimeCount);
-        setRevisitedPatients(revisitCount);
-        setRevenueTrend(revenueMap);
-        setAgeGroups(ageGroups);
-        setDailyRevenue(dailyRevenueMap);
-      });
-    }
-  }, [selectedPatient]);
+    };
+    fetchData();
+  }, [areaName]);
 
   const formatDataForAverageRevenue = (data: any) => {
-    return Object.entries(data).map(([date, value]) => {
-      const averageRevenue =
-        value.patientCount > 0 ? value.totalCost / value.patientCount : 0;
-      return {
+    return Object.entries(regionPrivate?.average_cost_per_visit_by_date).map(
+      ([date, value]) => ({
         date,
-        value: averageRevenue
-      };
-    });
+        매출액: value
+      })
+    );
   };
 
   const formatDataForRevenueTrend = (data: any) => {
-    return Object.entries(revenueTrend).map(([date, value]) => ({
+    return Object.entries(regionPrivate?.cost_by_date).map(([date, value]) => ({
       date,
-      value
+      매출액: value
     }));
   };
-  const statsData: { [key: number]: string } = {
-    1: `${totalPatients}명`,
-    2: `${totalCost.toLocaleString()} ₩`,
-    3:
-      totalPatients > 0
-        ? `${Math.ceil(totalCost / totalPatients).toLocaleString()}` + " ₩"
-        : 0 + " ₩", //1인당 평균 매출 = 총 매출 / 총 환자수
-    4:
-      selectedPatient.length > 0
-        ? `${Math.ceil(totalCost / selectedPatient.length).toLocaleString()}` +
-          " ₩"
-        : 0 + " ₩", //내원당 평균 매출액
-    5: `${revisitedPatients}명`,
-    6: `${firstVisitPatients}명`,
-    7: `${0}명`,
-    8: `${0}명`
+
+  const barFormatData = () => {
+    return Object.entries(regionPrivate?.patient_count_by_age_group).map(
+      ([age, value]) => ({
+        연령: age,
+        세: value
+      })
+    );
   };
 
-  const handleTodayButton = () => {
-    handleDateChange([dayjs(), dayjs()]);
-  };
+  useEffect(() => {
+    setStatsData({
+      1: `${regionPrivate?.total_patient_count || 0}명`,
+      2: `${Math.ceil(regionPrivate?.total_cost || 0)?.toLocaleString()} ₩`,
+      3: `${Math.ceil(
+        regionPrivate?.average_cost_per_visit || 0
+      )?.toLocaleString()} ₩`,
+      4: `${Math.ceil(
+        regionPrivate?.average_cost_per_patient || 0
+      )?.toLocaleString()} ₩`,
+      5: `${regionPrivate?.chojin_rejin_visit_count || 0}명`,
+      6: `${regionPrivate?.sinhwan_visit_count || 0}명`,
+      7: `준비중`,
+      8: `${
+        population && regionPrivate?.total_patient_count
+          ? Math.ceil((regionPrivate?.total_patient_count / population) * 100)
+          : 0
+      } %`
+    });
+  }, [population, regionPrivate]);
 
+  const [toggleValue, setToggleValue] = useState<string>("지역");
+  const handleToggle = (value: string) => {};
   return (
     <Drawer
-      width={"35rem"}
+      width={toggleValue === "전체" ? "70rem" : "35rem"}
       placement="right"
-      onClose={handleDrawerOpen}
+      onClose={() => handleIsDrawerOpen(false)}
       style={{ backgroundColor: "#FAFAFB" }}
       styles={{
         header: {
@@ -239,70 +194,96 @@ const StatisticsDrawer = ({
           backgroundColor: "#FAFAFB"
         }
       }}
-      open={open}
+      open={isOpenDrawer}
     >
-      {/** 날짜 필터 */}
-      <DateFilterWrapper>
-        <div style={{ flex: 3 }}>
-          <DurationDatePicker
-            rangeDate={rangeDate}
-            handleDateChange={handleDateChange}
-          />
-        </div>
-        <div style={{ flex: 1 }}>
-          <BaseButton
-            type="button"
-            onClick={handleTodayButton}
-            color="#EDEEFC"
-            textcolor="#000000"
-          >
-            오늘
-          </BaseButton>
-        </div>
-      </DateFilterWrapper>
-      {/** 증가&감소 지표 */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center"
+        }}
+      >
+        <Segmented
+          options={["지역", "매출", "전체"]}
+          value={toggleValue}
+          onChange={setToggleValue}
+          shape="round"
+        />
+      </div>
+
       <div style={{ padding: "0.8rem 0rem" }}>
         <AddressTitleStyle>{areaName}</AddressTitleStyle>
       </div>
-      <GridWrapper>
-        {STATSTYPE.map((data) => {
-          return (
-            <StatsBox
-              key={data.id}
-              title={data.title}
-              data={statsData[data.id]}
+      {regionInfo &&
+        (toggleValue === "지역" ? (
+          <RegionInfo data={regionInfo} />
+        ) : toggleValue === "매출" ? (
+          isPending ? (
+            <Loading />
+          ) : (
+            <RevenuInfo
+              statsData={statsData}
+              revenueTrend={regionPrivate?.cost_by_date}
+              dailyRevenue={regionPrivate?.average_cost_per_visit_by_date}
+              ageGroups={regionPrivate?.patient_count_by_age_group}
+              formatDataForRevenueTrend={formatDataForRevenueTrend}
+              formatDataForAverageRevenue={formatDataForAverageRevenue}
+              barFormatData={barFormatData}
             />
-          );
-        })}
-      </GridWrapper>
-      <GraphContainer>
-        <GrapWrapper>
-          <ChartTitleStyle>매출액 변화 추이</ChartTitleStyle>
-          <BaseLineChart
-            data={revenueTrend}
-            xField="date"
-            yField="value"
-            labelFormatterY={(v: number) => `${v / 1000}K`}
-            labelFormatterX={(v: string) => dayjs(v).format("MM/DD")}
-            formatData={formatDataForRevenueTrend}
-          />
-        </GrapWrapper>
-        <GrapWrapper>
-          <ChartTitleStyle>연령대 별 환자 분포</ChartTitleStyle>
-          <BarChart />
-        </GrapWrapper>
-        <GrapWrapper>
-          <ChartTitleStyle>1인당 평균 매출액</ChartTitleStyle>
-          <BaseLineChart
-            data={dailyRevenue}
-            xField="date"
-            yField="value"
-            labelFormatterY={(v: number) => `${v / 1000}K`}
-            labelFormatterX={(v: string) => dayjs(v).format("MM/DD")}
-            formatData={formatDataForAverageRevenue}
-          />
-        </GrapWrapper>
-      </GraphContainer>
+          )
+        ) : isPending ? (
+          <Loading />
+        ) : (
+          <div style={{ display: "flex", gap: "1rem" }}>
+            <div
+              style={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                gap: "1rem"
+              }}
+            >
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "0.5rem 1rem",
+                  backgroundColor: "#f0f2f5"
+                }}
+              >
+                <ChartTitleStyle>지역 데이터</ChartTitleStyle>
+              </div>
+              <RegionInfo data={regionInfo} />
+            </div>
+            <div
+              style={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                gap: "1rem"
+              }}
+            >
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "0.5rem 1rem",
+                  backgroundColor: "#f0f2f5"
+                }}
+              >
+                <ChartTitleStyle>매출 데이터</ChartTitleStyle>
+              </div>
+
+              <RevenuInfo
+                statsData={statsData}
+                revenueTrend={regionPrivate?.cost_by_date}
+                dailyRevenue={regionPrivate?.average_cost_per_visit_by_date}
+                ageGroups={regionPrivate?.patient_count_by_age_group}
+                formatDataForRevenueTrend={formatDataForRevenueTrend}
+                formatDataForAverageRevenue={formatDataForAverageRevenue}
+                barFormatData={barFormatData}
+              />
+            </div>
+          </div>
+        ))}
     </Drawer>
   );
 };
@@ -314,34 +295,43 @@ const AddressTitleStyle = styled.span`
   font-weight: bold;
 `;
 
-const ChartTitleStyle = styled.span`
+export const ChartTitleStyle = styled.span`
   font-size: 1.2rem;
   margin-left: 1rem;
   font-weight: bold;
 `;
 
-const GridWrapper = styled.section`
+export const GridWrapper = styled.section`
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 1rem;
   width: 100%;
 `;
 
-const GraphContainer = styled.div`
+export const GraphContainer = styled.div`
   display: flex;
   flex-direction: column;
   gap: 1rem;
 `;
 
-const GrapWrapper = styled.div`
+export const GrapWrapper = styled.div`
   background-color: #ffffff;
   border-radius: 1rem;
   padding: 2rem 1rem 0rem 1rem;
 `;
+const StyledSegmented = styled(Segmented)`
+  .ant-segmented-item-selected {
+    background-color: #0f52ba; /* 선택된 아이템 배경색 */
+    color: #fafafa; /* 선택된 아이템 글자색 */
+  }
 
-const DateFilterWrapper = styled.div`
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-  justify-content: center;
+  .ant-segmented-item {
+    border-color: #ccc; /* 아이템의 기본 테두리 색 */
+    color: #333; /* 기본 글자 색 */
+  }
+
+  .ant-segmented-item:hover {
+    background-color: #f0f0f0; /* hover 시 배경색 */
+    color: #0f52ba; /* hover 시 글자색 */
+  }
 `;

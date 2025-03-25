@@ -1,8 +1,27 @@
 import { create } from "zustand";
 import { PatientData } from "../utils/ExcelParser";
-import dayjs from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
+import { Polygon, RegionData } from "../types/naver-maps";
 
 interface IMapStore {
+  region: string;
+  selectedRegionData: RegionData | null;
+  drawerDate: { startDate: Dayjs; endDate: Dayjs } | null;
+  isOpenDrawer: boolean;
+  dongPolygons: Polygon[];
+  smallPolygons: Polygon[];
+  boundArea: RegionData[] | null;
+  loading: boolean;
+
+  setRegion: (region: string) => void;
+  setDrawerDate: (drawerDate: { startDate: Dayjs; endDate: Dayjs }) => void;
+  handleIsDrawerOpen: (isDrawerOpen: boolean) => void;
+  setSelctedRegionData: (data: RegionData) => void;
+  setDongPolygons: (dongPolygons: Polygon[]) => void;
+  setSmallPolygons: (smallPolygons: Polygon[]) => void;
+  setBoundArea: (boundArea: RegionData[]) => void;
+  setLoading: (loading: boolean) => void;
+
   areaName: string; //지역이름
   totalPatients: number; //전체 환자 수
   totalCost: number; //누적 매출액
@@ -14,8 +33,6 @@ interface IMapStore {
   ageGroups: Record<string, number>;
   dailyRevenue: Record<string, { totalCost: number; patientCount: number }>; //객단가 = 총 매출 / 총 거래 수
   patients: { areaName: string; patients: PatientData[] }[];
-  drawerDate: [Date, Date];
-  setDrawerDate: (drawerDate: [Date, Date]) => void;
 
   setAreaName: (areaName: string) => void;
   setTotalPatients: (totalPatients: number) => void;
@@ -46,8 +63,17 @@ const mapStore = create<IMapStore>((set) => ({
   ageGroups: {},
   dailyRevenue: {},
   patients: [],
-  drawerDate: [new Date(), dayjs().subtract(1, "year").toDate()],
+  region: "small",
+  drawerDate: null,
+  isOpenDrawer: false,
+  selectedRegionData: null,
+  dongPolygons: [],
+  smallPolygons: [],
+  boundArea: null,
+  loading: false,
 
+  setLoading: (loading: boolean) => set({ loading }),
+  setBoundArea: (boundArea) => set({ boundArea }),
   setAreaName: (areaName) => set({ areaName }),
   setTotalPatients: (totalPatients) => set({ totalPatients }),
   setTotalCost: (totalCost) => set({ totalCost }),
@@ -59,7 +85,13 @@ const mapStore = create<IMapStore>((set) => ({
   setAgeGroups: (ageGroups) => set({ ageGroups }),
   setDailyRevenue: (dailyRevenue) => set({ dailyRevenue }),
   setPatients: (patients) => set({ patients }),
-  setDrawerDate: (drawerDate) => set({ drawerDate })
+  setDrawerDate: (drawerDate) => set({ drawerDate }),
+  handleIsDrawerOpen: (isOpenDrawer) => set({ isOpenDrawer }),
+  setRegion: (region) => set({ region }),
+  setSelctedRegionData: (selectedRegionData: RegionData) =>
+    set({ selectedRegionData }),
+  setDongPolygons: (dongPolygons: Polygon[]) => set({ dongPolygons }),
+  setSmallPolygons: (smallPolygons: Polygon[]) => set({ smallPolygons })
 }));
 
 export default mapStore;

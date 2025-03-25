@@ -1,83 +1,162 @@
 import { Table } from "antd";
-import type { TableColumnsType, TableProps } from "antd";
-import { useEffect } from "react";
+import { FC, useEffect, useState } from "react";
 import styled from "styled-components";
-import useMediData from "../../../hooks/useMediData";
+import { RegionStatistics } from "../../../types/region-analysis";
+import { ColumnType, TableProps } from "antd/es/table";
+import { useRegionAnalysisStore } from "../../../store/useRegionAnalysisStore";
 
-const columns: TableColumnsType<MediDataType> = [
-  {
-    title: "지역",
-    dataIndex: "address",
-  },
-  // {
-  //   title: "유동인구 수",
-  //   dataIndex: "people_of_movement",
-  //   sorter: (a, b) => a.people_of_movement - b.people_of_movement,
-  // },
-  // {
-  //   title: "방문 환자 수",
-  //   dataIndex: "visiting_patients",
-  //   sorter: (a, b) => a.visiting_patients - b.visiting_patients,
-  // },
-  // {
-  //   title: "환자 평균 연령",
-  //   dataIndex: "average_age_of_patients",
-  //   sorter: (a, b) => a.average_age_of_patients - b.average_age_of_patients,
-  // },
-  // {
-  //   title: "초진 환자 수",
-  //   dataIndex: "new_patients",
-  //   sorter: (a, b) => a.new_patients - b.new_patients,
-  // },
-  // {
-  //   title: "재진 환자 수",
-  //   dataIndex: "revisiting_patients",
-  //   sorter: (a, b) => a.revisiting_patients - b.revisiting_patients,
-  // },
-  // {
-  //   title: "유입 비율",
-  //   dataIndex: "inflow_rate",
-  //   sorter: (a, b) => a.inflow_rate - b.inflow_rate,
-  // },
-  // {
-  //   title: "1인당 평균 매출액",
-  //   dataIndex: "average_sales_per_person",
-  //   sorter: (a, b) => a.average_sales_per_person - b.average_sales_per_person,
-  // },
-  // {
-  //   title: "매출 비율",
-  //   dataIndex: "sales_rate",
-  //   sorter: (a, b) => a.sales_rate - b.sales_rate,
-  // },
-  // {
-  //   title: "누적 매출액",
-  //   dataIndex: "accumulated_sales",
-  //   sorter: (a, b) => a.accumulated_sales - b.accumulated_sales,
-  // },
-];
+interface DashBoardTableProps {
+  isLoading: boolean;
+}
 
-const DashBoardTable = () => {
-  const { mediData, loading } = useMediData();
+const DashBoardTable: FC<DashBoardTableProps> = ({ isLoading }) => {
+  const columns: ColumnType<RegionStatistics>[] = [
+    {
+      title: "지역",
+      dataIndex: "region_name",
+      key: "region_name",
+      align: "center"
+    },
+    {
+      title: "유동 인구 수",
+      dataIndex: "population",
+      key: "population",
+      align: "center",
+      render: (value: number) => `${value.toLocaleString()} 명`,
+      sorter: (a: { population: number }, b: { population: number }) =>
+        a.population - b.population
+    },
+    {
+      title: "방문 환자 수",
+      dataIndex: "total_visit_count",
+      key: "total_visit_count",
+      align: "center",
+      render: (value: number) => `${value.toLocaleString()} 명`,
+      sorter: (
+        a: { total_visit_count: number },
+        b: { total_visit_count: number }
+      ) => a.total_visit_count - b.total_visit_count
+    },
+    {
+      title: "누적 매출액",
+      dataIndex: "total_cost",
+      key: "total_cost",
+      align: "center",
+      render: (value: number) => `${value.toLocaleString()} ₩`,
+      sorter: (a: { total_cost: number }, b: { total_cost: number }) =>
+        a.total_cost - b.total_cost
+    },
+    {
+      title: "재방문 환자 수",
+      dataIndex: "chojin_rejin_visit_count",
+      key: "chojin_rejin_visit_count",
+      align: "center",
+      render: (value: number) => `${value.toLocaleString()} 명`,
+      sorter: (
+        a: { chojin_rejin_visit_count: number },
+        b: { chojin_rejin_visit_count: number }
+      ) => a.chojin_rejin_visit_count - b.chojin_rejin_visit_count
+    },
+    {
+      title: "신규 환자 수",
+      dataIndex: "sinhwan_visit_count",
+      key: "sinhwan_visit_count",
+      align: "center",
+      render: (value: number) => `${value.toLocaleString()} 명`,
+      sorter: (
+        a: { sinhwan_visit_count: number },
+        b: { sinhwan_visit_count: number }
+      ) => a.sinhwan_visit_count - b.sinhwan_visit_count
+    },
+    {
+      title: "내원당 평균 매출액",
+      dataIndex: "average_cost_per_visit",
+      key: "average_cost_per_visit",
+      align: "center",
+      render: (value: number) => `${Math.ceil(value).toLocaleString()} ₩`,
+      sorter: (
+        a: { chojin_rejin_visit_count: number },
+        b: { chojin_rejin_visit_count: number }
+      ) => a.chojin_rejin_visit_count - b.chojin_rejin_visit_count
+    },
+    {
+      title: "1인당 평균 매출액",
+      dataIndex: "average_cost_per_patient",
+      key: "average_cost_per_patient",
+      align: "center",
+      render: (value: number) => `${Math.ceil(value).toLocaleString()} ₩`,
+      sorter: (
+        a: { average_cost_per_patient: number },
+        b: { average_cost_per_patient: number }
+      ) => a.average_cost_per_patient - b.average_cost_per_patient
+    },
+    {
+      title: "총 환자 수",
+      dataIndex: "total_patient_count",
+      key: "total_patient_count",
+      align: "center",
+      render: (value: number) => `${value.toLocaleString()} 명`,
+      sorter: (
+        a: { total_patient_count: number },
+        b: { total_patient_count: number }
+      ) => a.total_patient_count - b.total_patient_count
+    },
+    {
+      title: "평균 환자 연령",
+      dataIndex: "average_patient_age",
+      key: "average_patient_age",
+      align: "center",
+      render: (value: number) => `${value} 세`,
+      sorter: (
+        a: { average_patient_age: number },
+        b: { average_patient_age: number }
+      ) => a.average_patient_age - b.average_patient_age
+    }
+  ];
 
-  // useEffect(() => {
+  const {
+    smallSectionData,
+    dongSectionData,
+    guSectionData,
+    localSection,
 
-  // }, [loading]);
+    filteredData,
+    setFilteredData,
+    setData,
+    data
+  } = useRegionAnalysisStore();
+
+  useEffect(() => {
+    if (localSection === "시") {
+      setData(smallSectionData);
+    } else if (localSection === "동") {
+      setData(dongSectionData);
+    } else {
+      setData(guSectionData);
+    }
+  }, [localSection, smallSectionData, dongSectionData, guSectionData]);
+
+  useEffect(() => {
+    setFilteredData(data);
+  }, [data]);
 
   return (
     <DashBoardTableContainer
       columns={columns}
-      dataSource={mediData}
+      loading={isLoading}
+      dataSource={filteredData}
       pagination={{
-        position: ["bottomCenter"],
+        position: ["bottomCenter"]
       }}
-      scroll={{ x: "max-content" }}
+      scroll={{ x: 1200 }}
+      rowKey="region_name"
     />
   );
 };
 
 export default DashBoardTable;
 
-const DashBoardTableContainer = styled(Table)<TableProps<DataType>>`
+const DashBoardTableContainer = styled(Table)<TableProps<RegionStatistics>>`
   .ant-table {
     background-color: #ffffff;
     font-size: 1rem;

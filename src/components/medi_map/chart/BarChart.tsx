@@ -1,41 +1,50 @@
 import { Column } from "@ant-design/plots";
-import mapStore from "../../../store/mapStore";
 import { useEffect, useState } from "react";
 import styled from "styled-components";
 
-interface IBarData {
-  age: string;
-  value: number;
+interface IBaseBarCharProps<T, U> {
+  data: T;
+  xField: string;
+  yField: string;
+  height: number;
+  width?: number;
+  formatData: (data: U) => U[];
 }
-const BarChart = () => {
-  const { ageGroups } = mapStore();
-  const [barData, setBarData] = useState<IBarData[]>([]);
+
+const BarChart = <T, U extends { [key: string]: any }>({
+  data,
+  xField,
+  yField,
+  height,
+  width,
+  formatData
+}: IBaseBarCharProps<T, U>) => {
+  const [barData, setBarData] = useState<U[]>([]);
+
   useEffect(() => {
-    if (ageGroups) {
-      const data = Object.entries(ageGroups).map(([age, value]) => ({
-        age,
-        value
-      }));
-      setBarData(data);
+    if (data) {
+      const formattedData = formatData(data);
+      setBarData(formattedData);
     }
-  }, [ageGroups]);
+  }, [data]);
 
   const config = {
     data: barData,
-    xField: "age",
-    yField: "value",
-    colorField: "age",
-    width: 350,
-    height: 260,
+    xField: xField,
+    yField: yField,
+    colorField: xField,
+    autoFit: true,
+    height: height,
+    width: width ? width : null,
     legend: false,
-
     style: {
-      radius: 8
+      radius: 8,
+      maxWidth: 40
     },
     scale: {
       color: {
         range: [
-          "#9F9FF8",
+          "#0077C0",
           "#96E2D6",
           "#000000",
           "#92BFFF",
@@ -46,11 +55,13 @@ const BarChart = () => {
       }
     },
     tooltip: {
-      items: ["age", "value"]
+      items: [yField]
     }
   };
   return barData.length > 0 ? (
-    <Column {...config} />
+    <BarChartContainer>
+      <Column {...config} />
+    </BarChartContainer>
   ) : (
     <EmptyDataContainer>
       <div>불러올 데이터가 없습니다.</div>
@@ -58,6 +69,12 @@ const BarChart = () => {
   );
 };
 
+const BarChartContainer = styled.div`
+  display: flex;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+`;
 const EmptyDataContainer = styled.div`
   display: flex;
   justify-content: center;

@@ -2,117 +2,158 @@ import styled from "styled-components";
 import ContentHeader from "../components/common/layout/ContentHeader";
 import BaseButton from "../components/common/button/BaseButton";
 import DurationDatePicker from "../components/common/datepicker/DurationDatePicker";
-import { useEffect, useState } from "react";
-import { RangePickerProps } from "antd/es/date-picker";
-import userStore from "../store/userStore";
-import { useQuery } from "@tanstack/react-query";
-import { getUserInfo } from "../utils/api/apis";
+import useDashBoard from "../hooks/useDashBoard";
+import BarChart from "../components/medi_map/chart/BarChart";
+import dayjs from "dayjs";
+import BaseLineChart from "../components/medi_map/chart/BaseLineChart";
+import BaseTable from "../components/medi_map/chart/BaseTable";
+import DashboardStats from "../components/dashboard/DashboardStats";
+import Loading from "../components/common/Loading";
+import Error from "../components/common/Error";
 
-const FILTERDATA = ["오늘", "3일", "7일", "1개월", "3개월", "1년", "직접선택"];
-
+const LOADINGCONTENT = "데이터를 불러오는 중입니다.";
 export default function DashBoardPage() {
-  const { user, setUser } = userStore();
-  const { data, refetch } = useQuery({
-    queryKey: ["userInfo"],
-    queryFn: () => getUserInfo(),
-    enabled: false
-  });
-  const [rangeDate, setRangeDate] = useState({
-    startDate: new Date(),
-    endDate: new Date()
-  });
+  const {
+    rangeDate,
+    handleDateFilterButton,
+    handleDateChange,
+    isError,
+    isLoading,
+    error,
+    dashboardInfo,
+    buttonType,
+    RANGE_DATE_MAP,
+    setDateChanged
+  } = useDashBoard();
 
-  const handleDateChange: RangePickerProps["onChange"] = (dates, _) => {
-    if (dates && dates[0] && dates[1]) {
-      setRangeDate({
-        startDate: dates[0].toDate(),
-        endDate: dates[1].toDate()
-      });
-    }
+  const barFormatData = () => {
+    if (!dashboardInfo) return [];
+    return Object.entries(dashboardInfo.patient_count_by_age_group).map(
+      ([age, value]) => ({
+        age,
+        value
+      })
+    );
   };
 
-  useEffect(() => {
-    if (!user) {
-      refetch();
-    } else if (data) {
-      setUser(data);
-    }
-  }, [user, data]);
+  const chartFormatData = () => {
+    if (!dashboardInfo) return [];
+    return Object.entries(dashboardInfo?.cost_by_date).map(([date, value]) => ({
+      date,
+      매출액: value
+    }));
+  };
 
+  if (isError)
+    return (
+      <Error
+        status={error?.status ?? "Unknown"}
+        message={error?.response?.data?.error ?? "An unexpected error occurred"}
+      />
+    );
   return (
-    <DashBoardContainer>
+    <>
       <ContentHeader title="대시보드" />
-      <FilterContainer>
-        {FILTERDATA.map((data, index) => {
-          return (
-            <div style={{ width: "85px" }} key={index}>
-              <CutomButton
-                type="button"
-                textcolor="#000000"
-                color={"직접선택" === data ? "#EDEEFC" : "#ffffff"}
-                key={index}
-              >
-                {data}
-              </CutomButton>
-            </div>
-          );
-        })}
-        <DurationDatePicker
-          rangeDate={rangeDate}
-          handleDateChange={handleDateChange}
-        />
-      </FilterContainer>
+      {(isLoading || !dashboardInfo) && <Loading content={LOADINGCONTENT} />}
+      {dashboardInfo && (
+        <DashBoardContainer>
+          <FilterContainer>
+            {Object.keys(RANGE_DATE_MAP).map(
+              (content: string, index: number) => {
+                const contentKey = content as keyof typeof RANGE_DATE_MAP;
+                return (
+                  <div style={{ width: "85px" }} key={content}>
+                    <CutomButton
+                      selected={contentKey === buttonType}
+                      onClick={() => handleDateFilterButton(contentKey)}
+                      type="button"
+                      textcolor="#000000"
+                      color={"#ffffff"}
+                      key={index}
+                    >
+                      {contentKey}
+                    </CutomButton>
+                  </div>
+                );
+              }
+            )}
+            <DateLabel>직접 선택</DateLabel>
+            <DurationDatePicker
+              rangeDate={rangeDate}
+              handleDateChange={(date) => {
+                if (date?.length === 2 && date[0] && date[1]) {
+                  setDateChanged(true);
+                  handleDateChange({ startDate: date[0], endDate: date[1] });
+                }
+              }}
+            />
+          </FilterContainer>
 
-      <CardGrid>
-        <Card>
-          <Title>누적 매출</Title>
-          <ValueWrapper>
-            <Value>5,112,201,301₩</Value>
-            <img src="/images/arrow_up.svg" alt="increase" />
-            <Percentage>3.36%</Percentage>
-          </ValueWrapper>
-          <SubText>동일 기간 작년 매출 4,946,015,190₩</SubText>
-        </Card>
+          <CardGrid>
+            <DashboardStats
+              title={"누적 매출"}
+              value={dashboardInfo.total_cost}
+              diffRate={dashboardInfo.diff_rates.total_cost}
+              buttonType={buttonType}
+              currencySymbol="₩"
+            />
+            <DashboardStats
+              title={"전체 환자 수"}
+              value={dashboardInfo.total_visit_count}
+              diffRate={dashboardInfo.diff_rates.total_visit_count}
+              buttonType={buttonType}
+              currencySymbol="명"
+            />
+            <DashboardStats
+              title={"신규 환자 수"}
+              value={dashboardInfo.sinhwan_visit_count}
+              diffRate={dashboardInfo.diff_rates.sinhwan_visit_count}
+              buttonType={buttonType}
+              currencySymbol="명"
+            />
+            <DashboardStats
+              title={"재방문 환자 수"}
+              value={dashboardInfo.chojin_rejin_visit_count}
+              diffRate={dashboardInfo.diff_rates.chojin_rejin_visit_count}
+              buttonType={buttonType}
+              currencySymbol="명"
+            />
+          </CardGrid>
 
-        <Card>
-          <Title>전체 환자 수</Title>
-          <ValueWrapper>
-            <Value>5,421명</Value>
-            <img src="/images/arrow_up.svg" alt="increase" />
-            <Percentage>3.36%</Percentage>
-          </ValueWrapper>
-          <SubText>동일 기간 작년 환자 수 5,000명</SubText>
-        </Card>
-
-        <Card>
-          <Title>신규 환자 수</Title>
-          <ValueWrapper>
-            <Value>1,210명</Value>
-            <img src="/images/arrow_up.svg" alt="increase" />
-            <Percentage>2.5%</Percentage>
-          </ValueWrapper>
-          <SubText>동일 기간 작년 신규 환자 수 1,180명</SubText>
-        </Card>
-
-        <Card>
-          <Title>재방문 환자 수</Title>
-          <ValueWrapper>
-            <Value>4,211명</Value>
-            <img src="/images/arrow_up.svg" alt="increase" />
-            <Percentage>5.1%</Percentage>
-          </ValueWrapper>
-          <SubText>동일 기간 작년 재방문 환자 수 4,000명</SubText>
-        </Card>
-      </CardGrid>
-
-      <CardGrid>
-        <Card>차트</Card>
-      </CardGrid>
-      <CardGrid>
-        <Card>표</Card>
-        <Card>차트</Card>
-      </CardGrid>
-    </DashBoardContainer>
+          <CardGrid>
+            <Card>
+              <ChartTitle>일자별 매출 통계</ChartTitle>
+              <BaseLineChart
+                data={dashboardInfo.cost_by_date}
+                xField="date"
+                yField="매출액"
+                labelFormatterY={(v: number) => `${v / 1000}K`}
+                labelFormatterX={(v: string) => dayjs(v).format("MM/DD")}
+                formatData={chartFormatData}
+                height={350}
+                number_of_points={10}
+              />
+            </Card>
+          </CardGrid>
+          <CardGrid>
+            <Card>
+              <ChartTitle>지역 별 매출 순위</ChartTitle>
+              <BaseTable data={dashboardInfo.topRegions} />
+            </Card>
+            <Card>
+              <ChartTitle>연령 별 환자 분포</ChartTitle>
+              <BarChart
+                data={dashboardInfo.patient_count_by_age_group}
+                xField="age"
+                yField="value"
+                formatData={barFormatData}
+                height={430}
+              />
+            </Card>
+          </CardGrid>
+        </DashBoardContainer>
+      )}
+    </>
   );
 }
 
@@ -120,7 +161,6 @@ const DashBoardContainer = styled.div`
   width: 100%;
   display: flex;
   flex-direction: column;
-  padding: 1rem;
 `;
 
 const FilterContainer = styled.div`
@@ -151,44 +191,37 @@ const Card = styled.div`
   border-radius: 5;
   border: 1px solid #f3f2f3;
 `;
-
-const Title = styled.span`
-  font-size: 1.2rem;
-
-  font-weight: 500;
+const ChartTitle = styled.span`
+  font-size: 1.4rem;
+  font-weight: 700;
+  padding-bottom: 1.5rem;
 `;
 
-const ValueWrapper = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin: 0.5rem 0;
-
-  img {
-    width: 15px;
-    height: 15px;
-  }
-`;
-
-const Value = styled.span`
-  font-size: 2rem;
-  font-weight: bold;
-`;
-
-const Percentage = styled.div`
-  font-size: 1rem;
-  color: #30bf78;
-`;
-
-const SubText = styled.div`
-  font-size: 1rem;
-  color: #969696;
-`;
-
-const CutomButton = styled(BaseButton)`
-  border: 1px solid #f3f2f3;
-  font-weight: 500;
+const CutomButton = styled(BaseButton)<{ selected?: boolean }>`
+  font-weight: ${(props) => (props.selected ? "bold" : 500)};
   min-width: 85px;
   max-width: 100px;
   flex-grow: 0;
+  transition: border 0.2s ease;
+  border: 1.5px solid #d9d9d9;
+  color: ${(props) => (props.selected ? "#0F52BA" : "#000000")};
+
+  &:hover {
+    border: 1.5px solid #0f52ba;
+    color: #0f52ba;
+  }
+`;
+
+const DateLabel = styled.div`
+  min-width: 85px;
+  max-width: 100px;
+  flex-grow: 0;
+  border-radius: 6px;
+  color: white;
+  font-weight: bold;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #0f52ba;
 `;
