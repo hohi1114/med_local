@@ -78,13 +78,13 @@ const LoginPage = () => {
     mutationFn: (userData: LoginParams) => postLogin(userData),
     onSuccess: async () => {
       setIsLoading(false);
-      const { data } = await loginRefetch();
-      setUser(data as User);
-      navigate("/dashboard");
-      // const hardwareNumber = getSavedFingerPrintNumber();
-      // hardwareNumber
-      //   ? postVerifyMutation(hardwareNumber)
-      //   : setIsLicenseModalOpen(true);
+      // const { data } = await loginRefetch();
+      // setUser(data as User);
+      // navigate("/dashboard");
+      const hardwareNumber = getSavedFingerPrintNumber();
+      hardwareNumber
+        ? postVerifyMutation(hardwareNumber)
+        : setIsLicenseModalOpen(true);
     },
     onError: (error: AxiosError<ErrorResponse>) => {
       setIsLoading(false);
