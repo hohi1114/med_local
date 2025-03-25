@@ -6,10 +6,12 @@
   "scripts": {
     "dev": "cross-env NODE_ENV=development concurrently \"vite\" \"wait-on http://localhost:5173 && tsc -p tsconfig.electron.json && electron .\"",
     "build": "vite build",
-    "start": "vite preview",
+    "start": "electron .",
     "lint": "eslint .",
     "preview": "vite preview",
-    "electron": "electron ."
+    "electron": "electron .",
+    "dist": "vite build && npm run build-electron && electron-builder",
+    "build-electron": "tsc -p tsconfig.electron.json"
   },
   "build": {
     "appId": "com.example.myapp",
@@ -18,8 +20,18 @@
       "output": "release"
     },
     "files": [
-      "dist/**/*"
-    ]
+      "dist/**/*",
+      "dist-electron/**/*"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "mac": {
+      "target": null
+    },
+    "linux": {
+      "target": null
+    }
   },
   "dependencies": {
     "@ant-design/charts": "^2.2.1",

@@ -25,7 +25,8 @@ const createMainWindow = () => {
     mainWindow.loadURL("http://localhost:5173"); // React 앱 로드
     mainWindow.webContents.openDevTools();
   } else {
-    mainWindow.loadFile(path.join(__dirname, "../dist/index.html"));
+    //mainWindow.loadFile(path.join(__dirname, "../dist/index.html"));
+    mainWindow.loadURL("http://localhost:5173");
   }
 
   mainWindow.on("closed", () => (mainWindow = null));
