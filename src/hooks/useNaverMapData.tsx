@@ -34,7 +34,7 @@ const useNaverMapData = () => {
   const { data: hospitalLocationData, refetch: hospitalLocationFetch } =
     useQuery({
       queryKey: ["hospitalLocation"],
-      queryFn: () => pitalLocation(),
+      queryFn: () => getHospitalLocation(),
       retry: false
     });
 
@@ -147,30 +147,26 @@ const useNaverMapData = () => {
       };
     }
   };
-
   const getPolygonColorOpacity = (totalCost: number, name: string): string => {
-    const minCost = 1; // Start from 1 to avoid log(0)
     const highestCost = maxCost[name as keyof typeof maxCost];
 
-    // Use logarithmic normalization
-    const logTotal = Math.log(Math.max(totalCost, minCost));
-    const logMax = Math.log(Math.max(highestCost, minCost));
-    const normalizedCost = highestCost === 0 ? 1 : logTotal / logMax;
+    let normalizedCost = 0;
+    if (highestCost > 0 && totalCost > 0) {
+      // (totalCost / highestCost)의 1/3승
+      normalizedCost = Math.pow(totalCost / highestCost, 1 / 3);
+      // 1을 넘지 않도록 제한
+      normalizedCost = Math.min(normalizedCost, 1);
+    }
 
-    const startColor = { r: 208, g: 232, b: 255 }; // Light blue
-    const endColor = { r: 120, g: 170, b: 255 };   // Even softer blue than before
+    // 색상 범위 설정 (더 넓은 범위)
+    const startColor = { r: 240, g: 248, b: 255 }; // 거의 흰색에 가까운 파랑
+    const endColor = { r: 0, g: 0, b: 180 };       // 매우 짙은 파랑
 
-    const r = Math.round(
-      startColor.r + (endColor.r - startColor.r) * normalizedCost
-    );
-    const g = Math.round(
-      startColor.g + (endColor.g - startColor.g) * normalizedCost
-    );
-    const b = Math.round(
-      startColor.b + (endColor.b - startColor.b) * normalizedCost
-    );
+    const r = Math.round(startColor.r + (endColor.r - startColor.r) * normalizedCost);
+    const g = Math.round(startColor.g + (endColor.g - startColor.g) * normalizedCost);
+    const b = Math.round(startColor.b + (endColor.b - startColor.b) * normalizedCost);
 
-    const opacity = totalCost === 0 ? 0.1 : 0.7;
+    const opacity = totalCost === 0 ? 0.1 : 0.5;
 
     return `rgba(${r}, ${g}, ${b}, ${opacity})`;
   };

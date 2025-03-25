@@ -78,7 +78,7 @@ const NaverMap: FC<NaverMapProps> = ({
       center: new window.naver.maps.LatLng(
         new window.naver.maps.LatLng(
           hospitalLocation.lat,
-          hospitalLocation.long
+          hospitalLocation.long,
         )
       ),
       zoom: 16,
@@ -91,7 +91,7 @@ const NaverMap: FC<NaverMapProps> = ({
       const newMarker = new window.naver.maps.Marker({
         position: new window.naver.maps.LatLng(
           hospitalLocation.lat,
-          hospitalLocation.long
+          hospitalLocation.long,
         ),
         map: newMap,
         icon: {
