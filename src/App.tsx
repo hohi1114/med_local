@@ -26,7 +26,8 @@ function App() {
       refetch();
     }
   }, []);
-  //Store user data
+
+  // 자동 로그인's fetch user data
   useEffect(() => {
     if (data) {
       setUser(data);

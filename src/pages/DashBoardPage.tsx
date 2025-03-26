@@ -14,9 +14,9 @@ import Error from "../components/common/Error";
 const LOADINGCONTENT = "데이터를 불러오는 중입니다.";
 export default function DashBoardPage() {
   const {
-    rangeDate,
+    dateRange,
     handleDateFilterButton,
-    handleDateChange,
+    handleDateRangeChange,
     isError,
     isLoading,
     error,
@@ -46,10 +46,7 @@ export default function DashBoardPage() {
 
   if (isError)
     return (
-      <Error
-        status={error?.status ?? "Unknown"}
-        message={error?.response?.data?.error ?? "An unexpected error occurred"}
-      />
+      <Error status={error?.status ?? "Unknown"} message={error?.message} />
     );
   return (
     <>
@@ -67,8 +64,8 @@ export default function DashBoardPage() {
                       selected={contentKey === buttonType}
                       onClick={() => handleDateFilterButton(contentKey)}
                       type="button"
-                      textcolor="#000000"
-                      color={"#ffffff"}
+                      textcolor={(props) => props.theme.colors.black}
+                      color={(props) => props.theme.colors.white}
                       key={index}
                     >
                       {contentKey}
@@ -79,12 +76,10 @@ export default function DashBoardPage() {
             )}
             <DateLabel>직접 선택</DateLabel>
             <DurationDatePicker
-              rangeDate={rangeDate}
-              handleDateChange={(date) => {
-                if (date?.length === 2 && date[0] && date[1]) {
-                  setDateChanged(true);
-                  handleDateChange({ startDate: date[0], endDate: date[1] });
-                }
+              value={dateRange}
+              onChange={(date) => {
+                setDateChanged(true);
+                handleDateRangeChange(date);
               }}
             />
           </FilterContainer>
@@ -164,7 +159,7 @@ const DashBoardContainer = styled.div`
 `;
 
 const FilterContainer = styled.div`
-  background-color: #ffffff;
+  background-color: ${(props) => props.theme.colors.white};
   padding: 1rem;
   border-radius: 8px;
   margin-bottom: 1rem;
@@ -182,14 +177,14 @@ const CardGrid = styled.div`
 `;
 
 const Card = styled.div`
-  background-color: #ffffff;
+  background-color: ${(props) => props.theme.colors.white};
   padding: 1.5rem 2.2rem;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   text-align: center;
   border-radius: 5;
-  border: 1px solid #f3f2f3;
+  border: 1px solid ${(props) => props.theme.colors.gray01};
 `;
 const ChartTitle = styled.span`
   font-size: 1.4rem;
@@ -203,12 +198,16 @@ const CutomButton = styled(BaseButton)<{ selected?: boolean }>`
   max-width: 100px;
   flex-grow: 0;
   transition: border 0.2s ease;
-  border: 1.5px solid ${(props) => (props.selected ? "#3897f0" : "#d9d9d9")};
-  color: ${(props) => (props.selected ? "#3897f0" : "#000000")};
+  border: 1.5px solid
+    ${(props) =>
+      props.selected ? props.theme.colors.primary : props.theme.colors.gray03};
+
+  color: ${(props) =>
+    props.selected ? props.theme.colors.primary : props.theme.colors.black};
 
   &:hover {
-    border: 1.5px solid #3897f0;
-    color: #3897f0;
+    border: 1.5px solid ${(props) => props.theme.colors.primary};
+    color: ${(props) => props.theme.colors.primary};
   }
 `;
 
@@ -217,11 +216,11 @@ const DateLabel = styled.div`
   max-width: 100px;
   flex-grow: 0;
   border-radius: 6px;
-  color: white;
+  color: ${(props) => props.theme.colors.white};
   font-weight: bold;
   text-align: center;
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #3897f0;
+  background-color: ${(props) => props.theme.colors.primary};
 `;

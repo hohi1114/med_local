@@ -34,7 +34,6 @@ export default function NaverScriptLoader({
       }
     });
 
-    // 5) Append script to <head>
     document.head.appendChild(script);
   }, []);
 
@@ -43,6 +42,5 @@ export default function NaverScriptLoader({
     return <Loading content="지도를 불러오고 있습니다." />;
   }
 
-  // Once loaded, render children (like your <NaverMap />)
   return <>{children}</>;
 }

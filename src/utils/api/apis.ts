@@ -3,7 +3,7 @@ import { LoginParams } from "../../pages/LoginPage";
 import { saveTokensToCookie } from "./token";
 import { logout, apiRequest } from "./apihelper";
 import { getCookie } from "./cookie";
-import { RangeDate } from "../../hooks/useRangeDurationDatePicker";
+import { DateRange } from "../../hooks/useRangeDurationDatePicker";
 import {
   postActiveLicenseParams,
   RegionPrivateParams,
@@ -50,11 +50,12 @@ export const getUserInfo = async () => {
 };
 
 /**대시보드 */
-export const getDashboardData = async (rangeDate: RangeDate) => {
-  const data = await apiRequest("post", "/fetch/dashboard_date_patient", {
-    startDate: rangeDate.startDate.format("YYYY-MM-DD"),
-    endDate: rangeDate.endDate.format("YYYY-MM-DD")
-  });
+export const getDashboardData = async (rangeDate: DateRange) => {
+  const data = await apiRequest(
+    "post",
+    "/fetch/dashboard_date_patient",
+    rangeDate
+  );
   return data;
 };
 
@@ -64,17 +65,19 @@ export const getAllRegions = async () => {
   return data;
 };
 
-export const getAllRegionsEtc = async (rangeDate: RangeDate) => {
-  const data = await apiRequest("post", "/fetch/all_region_patient_cost", {
-    startDate: rangeDate.startDate.format("YYYY-MM-DD"),
-    endDate: rangeDate.endDate.format("YYYY-MM-DD")
-  });
+export const getAllRegionsEtc = async (rangeDate: DateRange) => {
+  const data = await apiRequest(
+    "post",
+    "/fetch/all_region_patient_cost",
+    rangeDate
+  );
   return data;
 };
 
 export const getRegionPrivateData = async (
   regionprivateParams: RegionPrivateParams
 ) => {
+  console.log(regionprivateParams);
   const data = await apiRequest(
     "post",
     "/fetch/region_date_patient_info",
@@ -96,10 +99,7 @@ export const getRegionAnalysis = async (
   const data = await apiRequest(
     "post",
     `/fetch/dashboard_${region}_date_region`,
-    {
-      startDate: rangeDate.startDate.format("YYYY-MM-DD"),
-      endDate: rangeDate.endDate.format("YYYY-MM-DD")
-    }
+    rangeDate
   );
   return data;
 };

@@ -1,21 +1,18 @@
-import dayjs, { Dayjs } from "dayjs";
+import dayjs from "dayjs";
 import { useState } from "react";
 
-export type RangeDate = { startDate: Dayjs; endDate: Dayjs };
+export type DateRange = { startDate: string; endDate: string };
 const useRangeDurationDatePicker = () => {
-  const [rangeDate, setRangeDate] = useState({
-    startDate: dayjs().subtract(1, "month"),
-    endDate: dayjs()
+  const [dateRange, setDateRange] = useState<DateRange>({
+    startDate: dayjs().subtract(1, "month").format("YYYY-MM-DD"),
+    endDate: dayjs().format("YYYY-MM-DD")
   });
 
-  const handleDateChange = (data: { startDate: Dayjs; endDate: Dayjs }) => {
-    setRangeDate({
-      startDate: data.startDate,
-      endDate: data.endDate
-    });
+  const handleDateRangeChange = (newRange: DateRange) => {
+    setDateRange(newRange);
   };
 
-  return { rangeDate, handleDateChange };
+  return { dateRange, handleDateRangeChange };
 };
 
 export default useRangeDurationDatePicker;

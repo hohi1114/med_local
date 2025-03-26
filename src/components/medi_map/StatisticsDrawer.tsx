@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import RegionInfo from "./RegionInfo";
 import * as turf from "@turf/turf";
 import RevenuInfo from "./chart/RevenueInfo";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { getRegionPrivateData } from "../../utils/api/apis";
 import { RegionData } from "../../types/naver-maps";
 import { getDataFromRegionDB } from "../../store/indexded_db/RegionDB";
@@ -70,8 +70,8 @@ const StatisticsDrawer = () => {
     return {
       name: areaName,
       regionType: region,
-      startDate: drawerDate?.startDate.format("YYYY-MM-DD"),
-      endDate: drawerDate?.endDate.format("YYYY-MM-DD")
+      startDate: drawerDate.startDate,
+      endDate: drawerDate.endDate
     };
   }, [areaName, region, drawerDate, loading]);
 
@@ -87,7 +87,7 @@ const StatisticsDrawer = () => {
 
   useEffect(() => {
     regionPrivateMutation(params);
-  }, [areaName]);
+  }, [areaName, drawerDate]);
 
   useEffect(() => {
     if (boundArea && boundArea.length > 0) {
@@ -318,20 +318,4 @@ export const GrapWrapper = styled.div`
   background-color: #ffffff;
   border-radius: 1rem;
   padding: 2rem 1rem 0rem 1rem;
-`;
-const StyledSegmented = styled(Segmented)`
-  .ant-segmented-item-selected {
-    background-color: #0f52ba; /* 선택된 아이템 배경색 */
-    color: #fafafa; /* 선택된 아이템 글자색 */
-  }
-
-  .ant-segmented-item {
-    border-color: #ccc; /* 아이템의 기본 테두리 색 */
-    color: #333; /* 기본 글자 색 */
-  }
-
-  .ant-segmented-item:hover {
-    background-color: #f0f0f0; /* hover 시 배경색 */
-    color: #0f52ba; /* hover 시 글자색 */
-  }
 `;

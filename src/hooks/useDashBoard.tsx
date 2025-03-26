@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import useRangeDurationDatePicker, {
-  RangeDate
+  DateRange
 } from "./useRangeDurationDatePicker";
 import dayjs from "dayjs";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -12,34 +12,34 @@ import useDashboardStore from "../store/useDashboardStore.js";
 
 dayjs.extend(isBetween);
 
-const RANGE_DATE_MAP: Record<RangeDateMapKey, RangeDate> = {
+const RANGE_DATE_MAP: Record<RangeDateMapKey, DateRange> = {
   오늘: {
-    startDate: dayjs(),
-    endDate: dayjs()
+    startDate: dayjs().format("YYYY-MM-DD"),
+    endDate: dayjs().format("YYYY-MM-DD")
   },
   "3일": {
-    startDate: dayjs().subtract(3, "day"),
-    endDate: dayjs()
+    startDate: dayjs().subtract(3, "day").format("YYYY-MM-DD"),
+    endDate: dayjs().format("YYYY-MM-DD")
   },
   "7일": {
-    startDate: dayjs().subtract(7, "day"),
-    endDate: dayjs()
+    startDate: dayjs().subtract(7, "day").format("YYYY-MM-DD"),
+    endDate: dayjs().format("YYYY-MM-DD")
   },
   "1개월": {
-    startDate: dayjs().subtract(1, "month"),
-    endDate: dayjs()
+    startDate: dayjs().subtract(1, "month").format("YYYY-MM-DD"),
+    endDate: dayjs().format("YYYY-MM-DD")
   },
   "3개월": {
-    startDate: dayjs().subtract(3, "month"),
-    endDate: dayjs()
+    startDate: dayjs().subtract(3, "month").format("YYYY-MM-DD"),
+    endDate: dayjs().format("YYYY-MM-DD")
   },
   "1년": {
-    startDate: dayjs().subtract(1, "year"),
-    endDate: dayjs()
+    startDate: dayjs().subtract(1, "year").format("YYYY-MM-DD"),
+    endDate: dayjs().format("YYYY-MM-DD")
   }
 };
 const useDashBoard = () => {
-  const { rangeDate, handleDateChange } = useRangeDurationDatePicker();
+  const { dateRange, handleDateRangeChange } = useRangeDurationDatePicker();
   const [buttonType, setButtonType] = useState<RangeDateMapKey | null>("1개월");
   const [isLoading, setIsLoading] = useState(false);
   const [dashboardInfo, setDashboardInfo] = useState<DashBoard | null>(null);
@@ -136,7 +136,7 @@ const useDashBoard = () => {
     try {
       setIsLoading(true);
       //1개월 데이터 가져오기
-      const data = await dashboardInfoMutation(rangeDate);
+      const data = await dashboardInfoMutation(dateRange);
       setThreeMonthData(data);
       setIsLoading(false);
       //나머지 날짜 데이터 가져오기
@@ -164,34 +164,33 @@ const useDashBoard = () => {
     const fetchData = async () => {
       setButtonType(null);
       setIsLoading(true);
-      const data = await dashboardInfoMutation({
-        startDate: rangeDate.startDate,
-        endDate: rangeDate.endDate
-      });
+      const data = await dashboardInfoMutation(dateRange);
       setDashboardInfo(data);
       setIsLoading(false);
+
       setDateChanged(false);
     };
+    //만약 DatePicker로 골랐다면 버튼 날짜 데이터 모두 Fetch
     if (dateChanged) {
       fetchData();
     }
-  }, [dateChanged, rangeDate, dashboardInfoMutation]);
+  }, [dateChanged, dateRange, dashboardInfoMutation]);
 
   const handleDateFilterButton = useCallback(
     (content: RangeDateMapKey) => {
       setButtonType(content);
 
-      handleDateChange({
+      handleDateRangeChange({
         startDate: RANGE_DATE_MAP[content].startDate,
         endDate: RANGE_DATE_MAP[content].endDate
       });
     },
-    [handleDateChange]
+    [handleDateRangeChange]
   );
 
   return {
     setButtonType,
-    handleDateChange,
+    handleDateRangeChange,
     handleDateFilterButton,
     setDateChanged,
     isLoading,
@@ -200,7 +199,7 @@ const useDashBoard = () => {
     dashboardInfo,
     buttonType,
     RANGE_DATE_MAP,
-    rangeDate
+    dateRange
   };
 };
 

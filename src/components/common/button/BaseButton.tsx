@@ -3,12 +3,12 @@ import { memo, forwardRef } from "react";
 import styled from "styled-components";
 
 interface StyledButtonProps {
-  color?: string;
+  color?: string | ((props: any) => string);
   children: React.ReactNode;
   disabled?: boolean;
   type: "button" | "submit" | "reset";
   onClick?: () => void;
-  textcolor?: string;
+  textcolor?: string | ((props: any) => string);
   isLoading?: boolean;
 }
 
@@ -19,8 +19,8 @@ const BaseButton = memo(
         children,
         type,
         disabled,
-        color = "#3897f0",
-        textcolor = "#ffffff",
+        color = (props) => props.theme.colors.primary,
+        textcolor = (props) => props.theme.colors.white,
         isLoading,
         onClick,
         ...props

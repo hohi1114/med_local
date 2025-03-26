@@ -1,12 +1,12 @@
 import { create } from "zustand";
 import { PatientData } from "../utils/ExcelParser";
-import dayjs, { Dayjs } from "dayjs";
 import { Polygon, RegionData } from "../types/naver-maps";
+import { DateRange } from "../hooks/useRangeDurationDatePicker";
 
 interface IMapStore {
   region: string;
   selectedRegionData: RegionData | null;
-  drawerDate: { startDate: Dayjs; endDate: Dayjs } | null;
+  drawerDate: DateRange | null;
   isOpenDrawer: boolean;
   dongPolygons: Polygon[];
   smallPolygons: Polygon[];
@@ -14,7 +14,7 @@ interface IMapStore {
   loading: boolean;
 
   setRegion: (region: string) => void;
-  setDrawerDate: (drawerDate: { startDate: Dayjs; endDate: Dayjs }) => void;
+  setDrawerDate: (drawerDate: DateRange) => void;
   handleIsDrawerOpen: (isDrawerOpen: boolean) => void;
   setSelctedRegionData: (data: RegionData) => void;
   setDongPolygons: (dongPolygons: Polygon[]) => void;

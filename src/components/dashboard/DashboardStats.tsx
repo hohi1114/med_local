@@ -47,14 +47,14 @@ const DashboardStats: React.FC<CardWithChangeProps> = ({
 export default DashboardStats;
 
 const Card = styled.div`
-  background-color: #ffffff;
+  background-color: ${(props) => props.theme.colors.white};
   padding: 1.5rem 2.2rem;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   text-align: center;
   border-radius: 5;
-  border: 1px solid #f3f2f3;
+  border: 1px solid ${(props) => props.theme.colors.gray01};
 `;
 
 const Title = styled.span`
@@ -87,11 +87,12 @@ const ValueWrapper = styled.div`
 
 const SubText = styled.div`
   font-size: 1rem;
-  color: #969696;
+  color: ${(props) => props.theme.colors.gray05};
 `;
 const Percentage = styled.div.withConfig({
   shouldForwardProp: (prop) => prop !== "isDecreased"
 })<{ isDecreased: boolean }>`
   font-size: 1rem;
-  color: ${(props) => (props.isDecreased ? "#EF4261" : "#30bf78")};
+  color: ${(props) =>
+    props.isDecreased ? props.theme.colors.red : props.theme.colors.green03};
 `;

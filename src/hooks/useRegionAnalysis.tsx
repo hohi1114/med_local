@@ -10,12 +10,12 @@ export const LOCAL_SECTIONS_MAP = {
   시: "small",
   동: "dong",
   구: "gu"
-};
+} as const;
 
 export type LocalSectionKey = keyof typeof LOCAL_SECTIONS_MAP;
 
 const useRegionAnalysis = () => {
-  const { rangeDate, handleDateChange } = useRangeDurationDatePicker();
+  const { dateRange, handleDateRangeChange } = useRangeDurationDatePicker();
   const {
     setSmallSectionData,
     setGuSectionData,
@@ -23,12 +23,12 @@ const useRegionAnalysis = () => {
     setLocalSection,
     localSection
   } = useRegionAnalysisStore();
-  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const {
     mutateAsync: regionAnalysisMutation,
     isError,
-    error
+    error,
+    isPending
   } = useMutation({
     mutationFn: (params: regionAnalysisParams) => getRegionAnalysis(params)
   });
@@ -48,18 +48,16 @@ const useRegionAnalysis = () => {
 
   const fetchFirstRegion = async () => {
     try {
-      setIsLoading(true);
       const data = await regionAnalysisMutation({
         region: LOCAL_SECTIONS_MAP[localSection],
-        rangeDate: rangeDate
+        rangeDate: dateRange
       });
 
       saveData(localSection, data);
-      setIsLoading(false);
       const others = Object.keys(LOCAL_SECTIONS_MAP).filter(
         (section) => section !== localSection
       ) as LocalSectionKey[];
-      fetchOtherRegions(others);
+      await fetchOtherRegions(others);
     } catch (err) {
       console.error(err);
     }
@@ -70,7 +68,7 @@ const useRegionAnalysis = () => {
       try {
         const data = await regionAnalysisMutation({
           region: LOCAL_SECTIONS_MAP[section],
-          rangeDate: rangeDate
+          rangeDate: dateRange
         });
 
         saveData(section, data);
@@ -84,7 +82,7 @@ const useRegionAnalysis = () => {
 
   useEffect(() => {
     fetchFirstRegion();
-  }, [rangeDate]);
+  }, [dateRange]);
 
   //SeclectBox Handler
   const handleLocalSectionChange = (value: LocalSectionKey) => {
@@ -103,9 +101,9 @@ const useRegionAnalysis = () => {
   return {
     isError,
     error,
-    isLoading,
-    rangeDate,
-    handleDateChange,
+    isPending,
+    dateRange,
+    handleDateRangeChange,
     handleLocalSectionChange
   };
 };

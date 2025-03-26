@@ -6,22 +6,16 @@ import { makeMarkerClustering } from "../../utils/marker-cluster.js";
 import { PatientData } from "../../utils/ExcelParser.js";
 import { Point, RegionData } from "../../types/naver-maps.js";
 import DurationDatePicker from "../common/datepicker/DurationDatePicker.js";
-import BaseButton from "../common/button/BaseButton.js";
-import { Dayjs } from "dayjs";
 import Loading from "../common/Loading.js";
 import styled from "styled-components";
+import { DateRange } from "../../hooks/useRangeDurationDatePicker.js";
 
 interface NaverMapProps {
-  rangeDate: { startDate: Dayjs; endDate: Dayjs };
-  handleDateChange: (dates: Dayjs[]) => void;
-  handleTodayButton: () => void;
+  dateRange: DateRange;
+  handleDateChange: (dates: DateRange) => void;
 }
 
-const NaverMap: FC<NaverMapProps> = ({
-  rangeDate,
-  handleDateChange,
-  handleTodayButton
-}) => {
+const NaverMap: FC<NaverMapProps> = ({ dateRange, handleDateChange }) => {
   const {
     drawerDate,
     isOpenDrawer,
@@ -445,10 +439,7 @@ const NaverMap: FC<NaverMapProps> = ({
             marginBottom: "10px"
           }}
         >
-          <DurationDatePicker
-            rangeDate={rangeDate}
-            handleDateChange={handleDateChange}
-          />
+          <DurationDatePicker value={dateRange} onChange={handleDateChange} />
         </div>
         <SubText>
           * Zoom In을 하면, 환자들이 온 지역의 수치를 확인할 수 있습니다.

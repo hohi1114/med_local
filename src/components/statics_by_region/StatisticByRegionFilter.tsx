@@ -2,16 +2,14 @@ import { FC } from "react";
 import styled from "styled-components";
 import { Select } from "antd";
 import DurationDatePicker from "../common/datepicker/DurationDatePicker";
-import SearchInput from "../common/input/SearchInput";
-import { RangeDate } from "../../hooks/useRangeDurationDatePicker";
+import { DateRange } from "../../hooks/useRangeDurationDatePicker";
 import { LOCAL_SECTIONS_MAP } from "../../hooks/useRegionAnalysis";
-import { Dayjs } from "dayjs";
 import { useRegionAnalysisStore } from "../../store/useRegionAnalysisStore";
 import StatisticByRegionSearch from "./StatisticByRegionSearch";
 
 interface StatisticByRegionFilterProps {
-  rangeDate: RangeDate;
-  handleDateChange: (data: { startDate: Dayjs; endDate: Dayjs }) => void;
+  rangeDate: DateRange;
+  handleDateChange: (dates: DateRange) => void;
   handleLocalSectionChange: (value: keyof typeof LOCAL_SECTIONS_MAP) => void;
 }
 const StatisticByRegionFilter: FC<StatisticByRegionFilterProps> = (props) => {
@@ -25,11 +23,9 @@ const StatisticByRegionFilter: FC<StatisticByRegionFilterProps> = (props) => {
         <FilterItemContainer>
           <span className="title">분석기간</span>
           <DurationDatePicker
-            rangeDate={rangeDate}
-            handleDateChange={(date) => {
-              if (date?.length === 2 && date[0] && date[1]) {
-                handleDateChange({ startDate: date[0], endDate: date[1] });
-              }
+            value={rangeDate}
+            onChange={(date) => {
+              handleDateChange(date);
             }}
           />
         </FilterItemContainer>
@@ -63,7 +59,7 @@ const FilterWrapper = styled.div`
   justify-content: space-between;
   align-items: center;
   padding: 1rem 1.25rem;
-  background-color: #ffffff;
+  background-color: ${(props) => props.theme.colors.white01};
 `;
 
 const FilterContainer = styled.div`
