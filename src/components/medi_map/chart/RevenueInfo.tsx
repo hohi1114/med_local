@@ -10,7 +10,7 @@ import BarChart from "./BarChart";
 import BaseLineChart from "./BaseLineChart";
 
 interface RegionStatisticsProps {
-  statsData: { [key: number]: string };
+  statsData: { [key: number]: { data: string; diffRate: number | null } };
   revenueTrend: any;
   dailyRevenue: any;
   ageGroups: any;
@@ -23,6 +23,7 @@ const RevenuInfo: React.FC<RegionStatisticsProps> = ({
   revenueTrend,
   dailyRevenue,
   ageGroups,
+
   formatDataForRevenueTrend,
   formatDataForAverageRevenue,
   barFormatData
@@ -35,7 +36,8 @@ const RevenuInfo: React.FC<RegionStatisticsProps> = ({
             <StatsBox
               key={data.id}
               title={data.title}
-              data={statsData[data.id]}
+              data={statsData[data.id].data}
+              diffRateData={statsData[data.id]?.diffRate}
             />
           );
         })}

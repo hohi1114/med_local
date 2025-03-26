@@ -4,12 +4,16 @@ const colors = {
   primary: "#3897f0",
   darkPrimary: "#2a7ac2",
 
-  blue01: "#0077C0",
-  blue02: "#22577A",
+  blue01: "#e6f1fd",
+  blue02: "#92BFFF",
   blue03: "#AEC7ED",
-  blue04: "#92BFFF",
-  pink01: "#E4A9FF",
-  pink02: "#F4A7B9",
+  blue04: "#0077C0",
+  blue05: "#22577A",
+
+  pink01: "#FFEAE8",
+  pink02: "#E4A9FF",
+  pink03: "#F4A7B9",
+
   green01: "#96E2D6",
   green02: "#94E9B8",
   green03: "#30bf78",

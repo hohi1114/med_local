@@ -77,7 +77,6 @@ export const getAllRegionsEtc = async (rangeDate: DateRange) => {
 export const getRegionPrivateData = async (
   regionprivateParams: RegionPrivateParams
 ) => {
-  console.log(regionprivateParams);
   const data = await apiRequest(
     "post",
     "/fetch/region_date_patient_info",

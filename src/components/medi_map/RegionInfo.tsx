@@ -47,7 +47,7 @@ const RegionInfo = ({ data }: RegionInfoProps) => {
     { type: "여성", value: data.female_avg_age }
   ];
 
-  const ageGroupData = Object.entries(data.age_group_population).map(
+  const ageGroupData = Object.entries(data.age_group_population || {}).map(
     ([age, value]) => ({
       연령: age,
       세: value
@@ -55,7 +55,7 @@ const RegionInfo = ({ data }: RegionInfoProps) => {
   );
 
   const timePopulationData = data.population_by_time
-    ? Object.entries(data.population_by_time).map(([key, value]) => ({
+    ? Object.entries(data.population_by_time || {}).map(([key, value]) => ({
         time: `${key}시`,
         "유동 인구 수": value // 올바른 문자열 키 사용
       }))

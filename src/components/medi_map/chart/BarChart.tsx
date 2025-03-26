@@ -50,7 +50,11 @@ const BarChart = <T, U extends { [key: string]: any }>({
           "#92BFFF",
           "#AEC7ED",
           "#94E9B8",
-          "#E4A9FF"
+          "#E4A9FF",
+          "#FFB6C1",
+          "#142459",
+          "#FCEAE6",
+          "#EF7E32"
         ]
       }
     },

@@ -420,37 +420,48 @@ const NaverMap: FC<NaverMapProps> = ({ dateRange, handleDateChange }) => {
       }}
     >
       {(isFetching || loading) && <Loading />}
-      <div
-        style={{
-          position: "absolute",
-          top: "1rem",
-          left: "4rem",
-          zIndex: 1000,
-          backgroundColor: "white",
-          padding: "10px",
-          borderRadius: "8px",
-          boxShadow: "0px 4px 6px rgba(0,0,0,0.1)"
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            gap: "10px",
-            marginBottom: "10px"
-          }}
-        >
-          <DurationDatePicker value={dateRange} onChange={handleDateChange} />
-        </div>
-        <SubText>
-          * Zoom In을 하면, 환자들이 온 지역의 수치를 확인할 수 있습니다.
-        </SubText>
-      </div>
+      <Wrapper>
+        <ContentBox>
+          <DatePickerContainer>
+            <DurationDatePicker
+              style={{ width: "100%" }}
+              value={dateRange}
+              onChange={handleDateChange}
+            />
+          </DatePickerContainer>
+          <SubText>
+            * Zoom In을 하면, 환자들이 온 지역의 수치를 확인할 수 있습니다.
+          </SubText>
+        </ContentBox>
+      </Wrapper>
     </div>
   );
 };
 
 const SubText = styled.span`
   font-size: 1rem;
-  color: #52555a;
+  color: ${(props) => props.theme.colors.gray05};
 `;
 export default NaverMap;
+const Wrapper = styled.div`
+  position: absolute;
+  top: 1rem;
+  left: 4rem;
+  z-index: 1000;
+  background-color: white;
+  padding: 10px;
+  border-radius: 8px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+`;
+
+const ContentBox = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+`;
+
+const DatePickerContainer = styled.div`
+  display: flex;
+  gap: 10px;
+  width: 100%;
+`;

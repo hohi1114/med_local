@@ -8,6 +8,7 @@ const { RangePicker } = DatePicker;
 interface DurationDatePickerProps {
   value: DateRange;
   onChange?: (dateRange: DateRange) => void;
+  style?: React.CSSProperties;
 }
 
 /**
@@ -15,7 +16,8 @@ interface DurationDatePickerProps {
  */
 const DurationDatePicker: React.FC<DurationDatePickerProps> = ({
   value,
-  onChange
+  onChange,
+  ...props
 }: DurationDatePickerProps) => {
   const handleDateChange: RangePickerProps["onChange"] = (dates) => {
     if (dates && dates.length === 2) {
@@ -31,6 +33,7 @@ const DurationDatePicker: React.FC<DurationDatePickerProps> = ({
   };
   return (
     <RangePicker
+      {...props}
       format={"YYYY-MM-DD"}
       value={[dayjs(value.startDate), dayjs(value.endDate)]}
       onChange={handleDateChange}
