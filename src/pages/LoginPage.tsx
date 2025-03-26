@@ -8,17 +8,19 @@ import {
   postLogin,
   postVerifyCode
 } from "../utils/api/apis";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AxiosError } from "axios";
 import { ErrorResponse, useNavigate } from "react-router-dom";
 import userStore, { User } from "../store/userStore";
 import LicenseModal from "../components/common/modal/LicenseModal";
 import { postActiveLicenseParams } from "../types/params";
 import useFingerPrintNumber from "../hooks/useFingerPrintNumber";
+import BaseInput from "../components/common/input/BaseInput";
 
 export type LoginParams = {
   email: string;
   password: string;
+  hardwareFingerprint: string;
 };
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -28,7 +30,6 @@ const LoginPage = () => {
     formState: { errors }
   } = useForm<LoginParams>();
   const {
-    getSavedFingerPrintNumber,
     getFingerPrint,
     setFingurePrintNumber,
     saveFingerPrint
@@ -39,6 +40,19 @@ const LoginPage = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [licenseCode, setLicenseCode] = useState<string | null>(null);
   const [isLicenseModalOpen, setIsLicenseModalOpen] = useState<boolean>(false);
+  const [hardwareFingerprint, setHardwareFingerprint] = useState<string>("");
+
+
+  useEffect(() => {
+    const getHardwareId = async () => {
+      const hardware = await getFingerPrint();
+      setHardwareFingerprint(hardware);
+      setFingurePrintNumber(hardware);
+    };
+    getHardwareId();
+  }, [getFingerPrint, setFingurePrintNumber]);
+
+
 
   //**APIs
   const { refetch: loginRefetch } = useQuery({
@@ -47,7 +61,9 @@ const LoginPage = () => {
     enabled: false,
     retry: false
   });
-  //Check License (check every time)
+
+
+  //only first
   const { mutate: postActiveLicenseMutation } = useMutation({
     mutationFn: async (params: postActiveLicenseParams) =>
       await postActiveLicense(params),
@@ -60,10 +76,12 @@ const LoginPage = () => {
     onError: (err: AxiosError) =>
       alert(
         (err.response?.data as { error?: string })?.error ||
-          "License activation failed"
+        "License activation failed"
       )
   });
-  //Check VerifyCode (for first user)
+
+  /*
+  //every time 
   const { mutate: postVerifyMutation } = useMutation({
     mutationFn: async (hardwareNumber: string) =>
       await postVerifyCode(hardwareNumber),
@@ -73,14 +91,24 @@ const LoginPage = () => {
       navigate("/dashboard");
     }
   });
-  //Login
+*/
   const loginMutation = useMutation({
     mutationFn: (userData: LoginParams) => postLogin(userData),
     onSuccess: async (data) => {
-      const { activated } = data;
       setIsLoading(false);
-      const { hardware } = await window.electron.getSystemUUID();
-      activated ? postVerifyMutation(hardware) : setIsLicenseModalOpen(true);
+      const { activated, hasAvailableSlots } = data;
+
+      if (activated) {
+        // If already activated, go to dashboard
+        const { data: userData } = await loginRefetch();
+        setUser(userData as User);
+        navigate("/dashboard");
+      } else if (hasAvailableSlots) {
+        // If there are slots, show modal to activate license
+        setIsLicenseModalOpen(true);
+      } else {
+        setError("No available device slots for this license");
+      }
     },
     onError: (error: AxiosError<ErrorResponse>) => {
       setIsLoading(false);
@@ -89,26 +117,28 @@ const LoginPage = () => {
     }
   });
 
-  const handleConfirmButton = () => {
-    const verifyLicense = async () => {
-      const hardwareNumber = await getFingerPrint();
 
-      setFingurePrintNumber(hardwareNumber);
-      if (licenseCode && hardwareNumber) {
-        postActiveLicenseMutation({
-          licenseCode: licenseCode,
-          hardwareFingerprint: hardwareNumber
-        });
-      } else {
-        alert("Plsease enter license code");
-      }
-    };
-    verifyLicense();
+  const handleConfirmButton = () => {
+
+    if (licenseCode && hardwareFingerprint) {
+      postActiveLicenseMutation({
+        licenseCode: licenseCode,
+        hardwareFingerprint: hardwareFingerprint
+      });
+    } else {
+      alert("라이센스 코드를 입력해주세요.");
+    }
   };
+
+
 
   const onSubmit = (data: LoginParams) => {
     setIsLoading(true);
-    loginMutation.mutate(data);
+    const loginData = {
+      ...data,
+      hardwareFingerprint: hardwareFingerprint
+    };
+    loginMutation.mutate(loginData);
   };
 
   return (
@@ -126,18 +156,18 @@ const LoginPage = () => {
           style={{ width: "5rem", height: "auto" }}
         />
         <TitleStyle>Login</TitleStyle>
-
-        <BaseInput
-          id="email"
-          type="email"
-          placeholder="ID"
-          {...register("email", { required: "ID is required" })}
-        />
-        <BaseInput
-          type="password"
-          placeholder="Password"
-          {...register("password", { required: "Password is required" })}
-        />
+        <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+          <BaseInput
+            type="email"
+            placeholder="Email"
+            {...register("email", { required: "ID를 입력해주세요." })}
+          />
+          <BaseInput
+            type="password"
+            placeholder="Password"
+            {...register("password", { required: "비밀번호를 입력해주세요." })}
+          />
+        </div>
 
         <div style={{ minWidth: "20rem" }}>
           <StyledButton type="submit" isLoading={isLoading}>
@@ -155,28 +185,12 @@ const LoginPage = () => {
 
 export default LoginPage;
 
-const BaseInput = styled.input`
-  border: 0.5px solid rgba(0, 0, 0, 0.1);
-  padding: 13px 10px;
-  border-radius: 6px;
-  min-width: 20rem;
-  font-size: 1.2rem;
-  transition: 0.2s ease-in-out;
-  box-sizing: border-box;
-
-  &:focus {
-    border-color: #003366;
-    outline: none;
-    box-shadow: 0 0 5px rgba(106, 90, 205, 0.3);
-  }
-`;
-
 const StyledButton = styled(BaseButton)`
   width: 100%;
-  color: white;
+  color: ${(props) => props.theme.colors.white};
   transition: 0.2s ease-in-out;
   &:hover {
-    background: #003366;
+    background: ${(props) => props.theme.colors.darkPrimary};
   }
 `;
 
@@ -193,14 +207,14 @@ const LoginWrapper = styled.form`
   align-items: center;
   flex-direction: column;
   gap: 1.2rem;
-  background-color: #ffffff;
+  background-color: ${(props) => props.theme.colors.white};
   max-width: 43rem;
   width: 70%;
   max-height: 30rem;
   height: 100%;
   padding: 4rem;
   border-radius: 1rem;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+  box-shadow: ${(props) => props.theme.shadows.medium};
 `;
 
 const TitleStyle = styled.div`
@@ -208,6 +222,6 @@ const TitleStyle = styled.div`
   font-weight: bold;
 `;
 const ErrorMessage = styled.div`
-  color: #e53e3e;
+  color: ${(props) => props.theme.colors.red};
   text-align: center;
 `;

@@ -58,7 +58,7 @@ authApi.interceptors.request.use(
 );
 
 let isRefreshing = false;
-let refreshSubscribers: ((token: string) => void)[] = [];
+let refreshSubscribers: ((token: string) => void)[] = []; // 새 토큰을 받았을 때 실행할 콜백들
 let refreshTokenPromise = null;
 
 //응답 interceptor

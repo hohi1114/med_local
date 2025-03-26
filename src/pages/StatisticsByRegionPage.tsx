@@ -1,31 +1,32 @@
 import styled from "styled-components";
 import ContentHeader from "../components/common/layout/ContentHeader";
-import DashBoardTable from "../components/statics_by_region/table/DashBoardTable";
 import useRegionAnalysis from "../hooks/useRegionAnalysis";
 import StatisticByRegionFilter from "../components/statics_by_region/StatisticByRegionFilter";
+import Error from "../components/common/Error";
+import StatisticsTable from "../components/statics_by_region/table/StatisticsTable";
 
 export default function StatisticsByRegionPage() {
   const {
-    isLoading,
-    rangeDate,
+    isPending,
+    dateRange,
     isError,
     error,
-    handleDateChange,
-    handleLocalSectionChange
+    handleLocalSectionChange,
+    handleDateRangeChange
   } = useRegionAnalysis();
 
-  if (isError) return <div>{error?.message}</div>;
+  if (isError) return <Error message={error?.message} />;
   return (
     <>
       <ContentHeader title="지역 별 통계" />
       <DashBoardContainer>
         <StatisticByRegionFilter
-          rangeDate={rangeDate}
-          handleDateChange={handleDateChange}
+          rangeDate={dateRange}
+          handleDateChange={handleDateRangeChange}
           handleLocalSectionChange={handleLocalSectionChange}
         />
         <DashBoardTableContainer>
-          <DashBoardTable isLoading={isLoading} />
+          <StatisticsTable isLoading={isPending} />
         </DashBoardTableContainer>
       </DashBoardContainer>
     </>

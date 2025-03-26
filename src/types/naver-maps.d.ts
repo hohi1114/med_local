@@ -47,21 +47,20 @@ type Point = {
 };
 
 type RegionData = {
-  age_group_population: AgeGroupPopulation;
-  female_avg_age: number;
-  female_population: number;
-  id: number;
-  male_avg_age: number;
-  male_population: number;
-  medical_expense: number;
+  id?: number;
   monthly_avg_income: number;
   name: string;
-  polygon: Polygon[];
-  population_by_time: PopulationByTime;
+  polygon?: Polygon[];
   total_avg_age: number;
   population: number;
-  total_cost: number;
-  patient_locations: Point[];
+  total_cost?: number;
+  patient_locations?: Point[];
+  male_avg_age: number;
+  male_population: number;
+  female_avg_age: number;
+  female_population: number;
+  medical_expense: number;
+  age_group_population: AgeGroupPopulation;
   population_by_time: PopulationByTime;
   population_by_day: PopulationByDay;
 };

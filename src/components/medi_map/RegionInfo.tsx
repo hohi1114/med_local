@@ -1,5 +1,4 @@
 import { JSX, useState } from "react";
-import { Segmented } from "antd";
 import BarChart from "./chart/BarChart";
 import SexHorizantalBar from "./chart/SexHorizantalBar";
 import SexPieChart from "./chart/SexPieChart";
@@ -12,6 +11,7 @@ import {
   GrapWrapper
 } from "./StatisticsDrawer";
 import { RegionData } from "../../types/naver-maps";
+import BaseToggle from "../common/toggle/BaseToggle";
 
 const STATS_BOXES = [
   { id: 1, title: "월평균 소득" },
@@ -29,8 +29,7 @@ type RegionInfoProps = {
 const RegionInfo = ({ data }: RegionInfoProps) => {
   const [footTrafficToggle, setFootTrafficToggle] = useState<string>("시간대");
 
-  // Format data for charts once
-  const statsData = {
+  const statsData: { [key: number]: string } = {
     1: `${data.monthly_avg_income?.toLocaleString()} ₩`,
     2: `${Math.ceil(data.medical_expense / 3).toLocaleString()} ₩`,
     3: `${data.total_avg_age}세`,
@@ -47,7 +46,7 @@ const RegionInfo = ({ data }: RegionInfoProps) => {
     { type: "여성", value: data.female_avg_age }
   ];
 
-  const ageGroupData = Object.entries(data.age_group_population).map(
+  const ageGroupData = Object.entries(data.age_group_population || {}).map(
     ([age, value]) => ({
       연령: age,
       세: value
@@ -55,7 +54,7 @@ const RegionInfo = ({ data }: RegionInfoProps) => {
   );
 
   const timePopulationData = data.population_by_time
-    ? Object.entries(data.population_by_time).map(([key, value]) => ({
+    ? Object.entries(data.population_by_time || {}).map(([key, value]) => ({
         time: `${key}시`,
         "유동 인구 수": value // 올바른 문자열 키 사용
       }))
@@ -82,11 +81,12 @@ const RegionInfo = ({ data }: RegionInfoProps) => {
               marginTop: "1.5rem"
             }}
           >
-            <Segmented
-              shape="round"
+            <BaseToggle
               options={FOOT_TRAFFIC_OPTIONS}
-              onChange={setFootTrafficToggle}
+              selected={footTrafficToggle}
+              onChange={(val) => setFootTrafficToggle(val)}
             />
+
             {chart}
           </div>
         ) : (
