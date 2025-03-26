@@ -1,24 +1,41 @@
 import { DatePicker } from "antd";
 import { RangePickerProps } from "antd/es/date-picker";
-import { Dayjs } from "dayjs";
+import { DateRange } from "../../../hooks/useRangeDurationDatePicker";
+import dayjs from "dayjs";
 
 const { RangePicker } = DatePicker;
 
 interface DurationDatePickerProps {
-  rangeDate: { startDate: Dayjs; endDate: Dayjs };
-  handleDateChange?: RangePickerProps["onChange"];
+  value: DateRange;
+  onChange?: (dateRange: DateRange) => void;
+  style?: React.CSSProperties;
 }
+
 /**
  * Start && End Date Picker
  */
-const DurationDatePicker = ({
-  rangeDate,
-  handleDateChange
+const DurationDatePicker: React.FC<DurationDatePickerProps> = ({
+  value,
+  onChange,
+  ...props
 }: DurationDatePickerProps) => {
+  const handleDateChange: RangePickerProps["onChange"] = (dates) => {
+    if (dates && dates.length === 2) {
+      const [startDate, endDate] = dates;
+
+      const formattedRange = {
+        startDate: startDate?.format("YYYY-MM-DD") || "",
+        endDate: endDate?.format("YYYY-MM-DD") || ""
+      };
+
+      onChange?.(formattedRange);
+    }
+  };
   return (
     <RangePicker
+      {...props}
       format={"YYYY-MM-DD"}
-      value={[rangeDate.startDate, rangeDate.endDate]}
+      value={[dayjs(value.startDate), dayjs(value.endDate)]}
       onChange={handleDateChange}
     />
   );

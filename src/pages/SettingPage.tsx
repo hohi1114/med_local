@@ -3,6 +3,7 @@ import BaseButton from "../components/common/button/BaseButton";
 import ContentHeader from "../components/common/layout/ContentHeader";
 import userStore from "../store/userStore";
 import { logout } from "../utils/api/apihelper";
+import BaseInput from "../components/common/input/BaseInput";
 
 export default function SettingPage() {
   const { user } = userStore();
@@ -22,17 +23,10 @@ export default function SettingPage() {
               <ProfileImage src={"/images/defaultProfile.svg"} alt="Profile" />
             </ProfileField>
             <ProfileField>
-              <Label>이메일</Label>
-              <BaseInput id="email" type="email" disabled value={user?.email} />
+              <BaseInput label="이메일" value={user?.email} disabled />
             </ProfileField>
             <ProfileField>
-              <Label>병원 이름</Label>
-              <BaseInput
-                id="hospitalName"
-                type="text"
-                disabled
-                value={user?.name}
-              />
+              <BaseInput label="병원이름" value={user?.name} disabled />
             </ProfileField>
 
             <LogoutButton type="submit" onClick={handleLogout}>
@@ -67,12 +61,12 @@ const ProfileTitle = styled.div`
 const Divider = styled.div`
   width: 100%;
   height: 1px;
-  background-color: #ddd;
+  background-color: ${(props) => props.theme.colors.white01};
   margin: 1.5rem 0rem 3rem 0rem;
 `;
 
 const ProfileCard = styled.div`
-  background-color: #ffffff;
+  background-color: ${(props) => props.theme.colors.white};
   padding: 2rem;
   border-radius: 6px;
 `;
@@ -92,30 +86,14 @@ const ProfileImage = styled.img`
 const Label = styled.label`
   font-size: 1.1rem;
   font-weight: 500;
-  color: #555;
+  color: ${(props) => props.theme.colors.black};
   margin-bottom: 0.5rem;
   display: block;
-`;
-
-const BaseInput = styled.input`
-  border: 0.5px solid rgba(0, 0, 0, 0.1);
-  padding: 13px 10px;
-  border-radius: 6px;
-  min-width: 20rem;
-  font-size: 1.2rem;
-  transition: 0.2s ease-in-out;
-  box-sizing: border-box;
-
-  &:focus {
-    border-color: #003366;
-    outline: none;
-    box-shadow: 0 0 5px rgba(106, 90, 205, 0.3);
-  }
 `;
 
 const LogoutButton = styled(BaseButton)`
   transition: 0.2s ease-in-out;
   &:hover {
-    background: #003366;
+    background: ${(props) => props.theme.colors.darkPrimary};
   }
 `;

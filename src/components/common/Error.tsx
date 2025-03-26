@@ -1,15 +1,29 @@
 import styled from "styled-components";
 
 interface ErrorProps {
-  status: string;
-  message: string;
+  status?: string;
+  message: unknown;
 }
 const Error = ({ status, message }: ErrorProps) => {
+  const getMessage = (msg: unknown): string => {
+    if (typeof msg === "string") return msg;
+    if (msg instanceof Error) return (msg as Error).message;
+
+    if (typeof msg === "object" && msg !== null) {
+      if ("message" in msg && typeof msg.message === "string") {
+        return msg.message;
+      }
+      return JSON.stringify(msg);
+    }
+
+    return "An unexpected error occurred";
+  };
+
   return (
     <DashBoardContainer>
       <ComingSoonText>Error!</ComingSoonText>
       <span>{status}</span>
-      <span>{message}</span>
+      {getMessage(message)}
     </DashBoardContainer>
   );
 };

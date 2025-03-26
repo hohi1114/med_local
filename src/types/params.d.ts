@@ -1,16 +1,15 @@
+import { DateRange } from "../hooks/useRangeDurationDatePicker";
+
 type RegionPrivateParams = {
-  startDate: Dayjs;
-  endDate: Dayjs;
+  startDate: string;
+  endDate: string;
   regionType: string;
   name: string;
 };
 
 type regionAnalysisParams = {
   region: string;
-  rangeDate: {
-    startDate: Dayjs;
-    endDate: Dayjs;
-  };
+  rangeDate: DateRange;
 };
 
 export type postActiveLicenseParams = {

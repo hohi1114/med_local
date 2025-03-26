@@ -11,7 +11,7 @@ import styled from "styled-components";
 import BaseButton from "../components/common/button/BaseButton";
 import { loadNaverMapsScript } from "../utils/NaverGeocode";
 import { useEffect } from "react";
-import { Progress, notification, Select } from "antd";
+import { Progress, notification } from "antd";
 import UploadedCalendar from "../components/upload_data/UploadedCalendar.tsx";
 import Loading from "../components/common/Loading.tsx";
 import {
@@ -47,7 +47,7 @@ const UpdateDataPage = () => {
   // ✅ Load Naver Maps Script on Component Mount
   useEffect(() => {
     loadNaverMapsScript(import.meta.env.VITE_NAVER_MAPS_CLIENT_ID)
-      .then(() => { })
+      .then(() => {})
       .catch((error) =>
         console.error("❌ Failed to load Naver Maps script:", error)
       );

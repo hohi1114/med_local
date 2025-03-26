@@ -1,17 +1,19 @@
 import { useEffect } from "react";
-import dayjs, { Dayjs } from "dayjs";
+import dayjs from "dayjs";
 import StatisticsDrawer from "../components/medi_map/StatisticsDrawer";
 import NaverMap from "../components/medi_map/NaverMap";
 import mapStore from "../store/mapStore";
-import useRangeDurationDatePicker from "../hooks/useRangeDurationDatePicker";
+import useRangeDurationDatePicker, {
+  DateRange
+} from "../hooks/useRangeDurationDatePicker";
 
 function MediMapPage() {
   const { drawerDate, setDrawerDate, handleIsDrawerOpen } = mapStore();
-  const { rangeDate, handleDateChange } = useRangeDurationDatePicker();
+  const { dateRange, handleDateRangeChange } = useRangeDurationDatePicker();
   useEffect(() => {
     setDrawerDate({
-      startDate: dayjs().subtract(1, "year"),
-      endDate: dayjs()
+      startDate: dayjs().subtract(1, "year").format("YYYY-MM-DD"),
+      endDate: dayjs().format("YYYY-MM-DD")
     });
     return () => {
       handleIsDrawerOpen(false);
@@ -19,29 +21,19 @@ function MediMapPage() {
   }, []);
   useEffect(() => {
     if (drawerDate) {
-      handleDateChange(drawerDate);
+      handleDateRangeChange(drawerDate);
     }
   }, [drawerDate]);
 
-  const handleDateChangeFromMap = (dates: Dayjs[]) => {
-    if (dates && dates.length === 2) {
-      setDrawerDate({
-        startDate: dayjs(dates[0]),
-        endDate: dayjs(dates[1])
-      });
-    }
-  };
-
-  const handleTodayButton = () => {
-    setDrawerDate({ startDate: dayjs(), endDate: dayjs() });
+  const handleDateChangeFromMap = (dates: DateRange) => {
+    setDrawerDate(dates);
   };
 
   return (
     <>
       <NaverMap
-        rangeDate={rangeDate}
+        dateRange={dateRange}
         handleDateChange={handleDateChangeFromMap}
-        handleTodayButton={handleTodayButton}
       />
       <StatisticsDrawer />
     </>
