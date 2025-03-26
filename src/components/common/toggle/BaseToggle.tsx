@@ -1,49 +1,56 @@
-import React, { useState } from "react";
 import styled from "styled-components";
 
-// Segmented Control 컴포넌트
-const CustomSegmentedControl = ({ options, handleToggle, selectedValue }) => {
-  // 선택된 값의 상태를 관리
+interface SegmentedControlProps {
+  options: string[];
+  selected: string;
+  onChange?: (value: string) => void;
+}
 
+const BaseToggle: React.FC<SegmentedControlProps> = ({
+  options,
+  selected,
+  onChange
+}) => {
   return (
-    <SegmentedContainer>
-      {options.map((option) => (
-        <SegmentItem
-          key={option.value}
-          isSelected={selectedValue === option}
-          onClick={() => handleToggle(option)}
+    <SegmentedWrapper>
+      {options.map((option, index) => (
+        <SegmentedButton
+          key={index}
+          isSelected={selected === option}
+          onClick={() => onChange?.(option)}
         >
-          {option.label}
-        </SegmentItem>
+          {option}
+        </SegmentedButton>
       ))}
-    </SegmentedContainer>
+    </SegmentedWrapper>
   );
 };
 
-export default CustomSegmentedControl;
+export default BaseToggle;
 
-// 세그먼트 항목을 스타일링한 컴포넌트
-const SegmentedContainer = styled.div`
+const SegmentedWrapper = styled.div`
   display: flex;
-  border: 1px solid #ccc;
-  border-radius: 20px;
-  overflow: hidden;
+  background: #f1f1f1;
+  border-radius: 8px;
+  border-radius: 50px;
+  width: fit-content;
+  padding: 0.2rem;
 `;
 
-const SegmentItem = styled.div<{ isSelected: boolean }>`
-  padding: 10px 20px;
+const SegmentedButton = styled.button<{ isSelected: boolean }>`
+  padding: 0.5rem 1.2rem;
+  border-radius: 50px;
+  font-size: 1.2rem;
+  font-weight: ${({ isSelected }) => (isSelected ? "bold" : "normal")};
+  border: none;
   cursor: pointer;
-  background-color: ${(props) => (props.isSelected ? "#0f52ba" : "#fff")};
-  color: ${(props) => (props.isSelected ? "#fafafa" : "#333")};
-  border-right: ${(props) => (props.isSelected ? "none" : "1px solid #ccc")};
-  font-weight: ${(props) => (props.isSelected ? "bold" : "normal")};
-  transition: all 0.3s ease;
+  background: ${({ isSelected, theme }) =>
+    isSelected ? theme.colors.black01 : "transparent"};
+  color: ${({ isSelected, theme }) =>
+    isSelected ? theme.colors.white : theme.colors.black01};
 
   &:hover {
-    background-color: ${(props) => (props.isSelected ? "#0d4a97" : "#f0f0f0")};
-  }
-
-  &:last-child {
-    border-right: none;
+    background: ${({ isSelected, theme }) =>
+      isSelected ? theme.colors.black01 : theme.colors.gray02};
   }
 `;

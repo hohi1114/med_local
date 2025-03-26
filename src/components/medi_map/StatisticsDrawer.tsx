@@ -12,8 +12,10 @@ import Loading from "../common/Loading";
 import { RegionData } from "../../types/naver-maps";
 import { findContainingDong } from "./util/mapUtil";
 import { RegionPrivateParams } from "../../types/params";
+import BaseToggle from "../common/toggle/BaseToggle";
 dayjs.extend(isBetween);
 
+const TOGGLEOPTION = ["지역", "매출", "전체"];
 const StatisticsDrawer = () => {
   const {
     areaName,
@@ -261,11 +263,10 @@ const StatisticsDrawer = () => {
       open={isOpenDrawer}
     >
       <ToggleContainer>
-        <Segmented
-          options={["지역", "매출", "전체"]}
-          value={toggleValue}
-          onChange={setToggleValue}
-          shape="round"
+        <BaseToggle
+          options={TOGGLEOPTION}
+          selected={toggleValue}
+          onChange={(val) => setToggleValue(val)}
         />
       </ToggleContainer>
 
