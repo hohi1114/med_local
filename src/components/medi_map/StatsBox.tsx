@@ -55,7 +55,7 @@ const StatsBoxContainer = styled.div.withConfig({
   background-color: ${(props) =>
     props.isDecreased ? props.theme.colors.pink01 : props.theme.colors.blue01};
   border-radius: 16px;
-  padding: 1.5rem 0 1.5rem 1.5rem;
+  padding: 1.5rem 0.8rem 1.5rem 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 0.8rem;

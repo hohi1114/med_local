@@ -26,12 +26,14 @@ const DashboardStats: React.FC<CardWithChangeProps> = ({
           {value?.toLocaleString()}
           {currencySymbol}
         </Value>
-        {diffRate >= 0 ? (
-          <img src="/images/arrow_up.svg" alt="increase" />
-        ) : (
-          <img src="/images/arrow_down.svg" alt="decrease" />
-        )}
-        <Percentage isDecreased={isDecreased}>{diffRate} %</Percentage>
+        <div style={{ display: "flex", gap: 1.5 }}>
+          {diffRate >= 0 ? (
+            <img src="/images/arrow_up.svg" alt="increase" />
+          ) : (
+            <img src="/images/arrow_down.svg" alt="decrease" />
+          )}
+          <Percentage isDecreased={isDecreased}>{diffRate} %</Percentage>
+        </div>
       </ValueWrapper>
       <SubText>
         {buttonType || "동일기간"} 전 {title}{" "}
@@ -78,6 +80,7 @@ const ValueWrapper = styled.div`
   align-items: center;
   gap: 0.5rem;
   margin: 0.5rem 0;
+  flex-wrap: wrap;
 
   img {
     width: 15px;

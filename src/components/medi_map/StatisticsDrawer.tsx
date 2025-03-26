@@ -245,7 +245,7 @@ const StatisticsDrawer = () => {
 
   return (
     <Drawer
-      width={toggleValue === "전체" ? "70rem" : "35rem"}
+      width={toggleValue === "전체" ? "70rem" : "37rem"}
       placement="right"
       onClose={() => handleIsDrawerOpen(false)}
       styles={{
