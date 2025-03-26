@@ -8,7 +8,7 @@ import {
   postLogin,
   postVerifyCode
 } from "../utils/api/apis";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AxiosError } from "axios";
 import { ErrorResponse, useNavigate } from "react-router-dom";
 import userStore, { User } from "../store/userStore";
@@ -20,6 +20,7 @@ import BaseInput from "../components/common/input/BaseInput";
 export type LoginParams = {
   email: string;
   password: string;
+  hardwareFingerprint: string;
 };
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -29,7 +30,6 @@ const LoginPage = () => {
     formState: { errors }
   } = useForm<LoginParams>();
   const {
-    getSavedFingerPrintNumber,
     getFingerPrint,
     setFingurePrintNumber,
     saveFingerPrint
@@ -40,6 +40,19 @@ const LoginPage = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [licenseCode, setLicenseCode] = useState<string | null>(null);
   const [isLicenseModalOpen, setIsLicenseModalOpen] = useState<boolean>(false);
+  const [hardwareFingerprint, setHardwareFingerprint] = useState<string>("");
+
+
+  useEffect(() => {
+    const getHardwareId = async () => {
+      const hardware = await getFingerPrint();
+      setHardwareFingerprint(hardware);
+      setFingurePrintNumber(hardware);
+    };
+    getHardwareId();
+  }, [getFingerPrint, setFingurePrintNumber]);
+
+
 
   //**APIs
   const { refetch: loginRefetch } = useQuery({
@@ -48,7 +61,9 @@ const LoginPage = () => {
     enabled: false,
     retry: false
   });
-  //Check License (check every time)
+
+
+  //only first
   const { mutate: postActiveLicenseMutation } = useMutation({
     mutationFn: async (params: postActiveLicenseParams) =>
       await postActiveLicense(params),
@@ -61,10 +76,12 @@ const LoginPage = () => {
     onError: (err: AxiosError) =>
       alert(
         (err.response?.data as { error?: string })?.error ||
-          "License activation failed"
+        "License activation failed"
       )
   });
-  //Check VerifyCode (for first user)
+
+  /*
+  //every time 
   const { mutate: postVerifyMutation } = useMutation({
     mutationFn: async (hardwareNumber: string) =>
       await postVerifyCode(hardwareNumber),
@@ -74,17 +91,24 @@ const LoginPage = () => {
       navigate("/dashboard");
     }
   });
-  //Login
+*/
   const loginMutation = useMutation({
     mutationFn: (userData: LoginParams) => postLogin(userData),
     onSuccess: async (data) => {
-      // const { data } = await loginRefetch();
-      // setUser(data as User);
-      // navigate("/dashboard");
-      const { activated } = data;
       setIsLoading(false);
-      const { hardware } = await window.electron.getSystemUUID();
-      activated ? postVerifyMutation(hardware) : setIsLicenseModalOpen(true);
+      const { activated, hasAvailableSlots } = data;
+
+      if (activated) {
+        // If already activated, go to dashboard
+        const { data: userData } = await loginRefetch();
+        setUser(userData as User);
+        navigate("/dashboard");
+      } else if (hasAvailableSlots) {
+        // If there are slots, show modal to activate license
+        setIsLicenseModalOpen(true);
+      } else {
+        setError("No available device slots for this license");
+      }
     },
     onError: (error: AxiosError<ErrorResponse>) => {
       setIsLoading(false);
@@ -93,26 +117,28 @@ const LoginPage = () => {
     }
   });
 
-  const handleConfirmButton = () => {
-    const verifyLicense = async () => {
-      const hardwareNumber = await getFingerPrint();
 
-      setFingurePrintNumber(hardwareNumber);
-      if (licenseCode && hardwareNumber) {
-        postActiveLicenseMutation({
-          licenseCode: licenseCode,
-          hardwareFingerprint: hardwareNumber
-        });
-      } else {
-        alert("라이센스 코드를 입력해주세요.");
-      }
-    };
-    verifyLicense();
+  const handleConfirmButton = () => {
+
+    if (licenseCode && hardwareFingerprint) {
+      postActiveLicenseMutation({
+        licenseCode: licenseCode,
+        hardwareFingerprint: hardwareFingerprint
+      });
+    } else {
+      alert("라이센스 코드를 입력해주세요.");
+    }
   };
+
+
 
   const onSubmit = (data: LoginParams) => {
     setIsLoading(true);
-    loginMutation.mutate(data);
+    const loginData = {
+      ...data,
+      hardwareFingerprint: hardwareFingerprint
+    };
+    loginMutation.mutate(loginData);
   };
 
   return (
