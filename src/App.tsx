@@ -9,30 +9,45 @@ import NaverScriptLoader from "./utils/NaverScriptLoader.tsx";
 import SettingPage from "./pages/SettingPage.tsx";
 import userStore from "./store/userStore.tsx";
 import { useQuery } from "@tanstack/react-query";
-import { getUserInfo } from "./utils/api/apis.ts";
+import { getUserInfo, getUserSubscription } from "./utils/api/apis.ts";
 import LoginPage from "./pages/LoginPage.tsx";
 import ComingSoonPage from "./pages/ComingSoonPage.tsx";
 
 function App() {
   const { setUser } = userStore();
-  const { data, refetch } = useQuery({
+  const { data: userData, refetch } = useQuery({
     queryKey: ["userInfo"],
     queryFn: () => getUserInfo(),
     enabled: false
+  });
+  const { data: subscribeDate, refetch: subscribeRefetch } = useQuery({
+    queryKey: ["subscribe"],
+    queryFn: () => getUserSubscription(),
+    enabled: false,
+    retry: false
   });
 
   useEffect(() => {
     if (!window.location.pathname.startsWith("/login")) {
       refetch();
+      subscribeRefetch();
     }
   }, []);
 
   // 자동 로그인's fetch user data
   useEffect(() => {
-    if (data) {
-      setUser(data);
+    if (userData && subscribeDate) {
+      const combinedData = {
+        ...userData,
+        subscribedStatus: subscribeDate.status,
+        plan: subscribeDate.plan,
+        nextBillingDate: subscribeDate.next_billing_date,
+        isFreeTrial: subscribeDate.is_free_trial,
+        trialEndDate: subscribeDate.trial_end_date
+      };
+      setUser(combinedData);
     }
-  }, [data]);
+  }, [userData, subscribeDate, setUser]);
 
   return (
     <BrowserRouter>
@@ -58,7 +73,8 @@ function App() {
           />
           <Route path="update_data" element={<UpdateDataPage />} />
           <Route path="compare-chart" element={<ComingSoonPage />} />
-          <Route path="setting" element={<SettingPage />} />
+          <Route path="account" element={<SettingPage />} />
+          <Route path="membership" element={<SettingPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   getUserInfo,
+  getUserSubscription,
   postActiveLicense,
   postLogin,
   postVerifyCode
@@ -29,11 +30,8 @@ const LoginPage = () => {
     handleSubmit,
     formState: { errors }
   } = useForm<LoginParams>();
-  const {
-    getFingerPrint,
-    setFingurePrintNumber,
-    saveFingerPrint
-  } = useFingerPrintNumber();
+  const { getFingerPrint, setFingurePrintNumber, saveFingerPrint } =
+    useFingerPrintNumber();
   const { setUser } = userStore();
 
   const [error, setError] = useState<string | null>(null);
@@ -41,7 +39,6 @@ const LoginPage = () => {
   const [licenseCode, setLicenseCode] = useState<string | null>(null);
   const [isLicenseModalOpen, setIsLicenseModalOpen] = useState<boolean>(false);
   const [hardwareFingerprint, setHardwareFingerprint] = useState<string>("");
-
 
   useEffect(() => {
     const getHardwareId = async () => {
@@ -52,8 +49,6 @@ const LoginPage = () => {
     getHardwareId();
   }, [getFingerPrint, setFingurePrintNumber]);
 
-
-
   //**APIs
   const { refetch: loginRefetch } = useQuery({
     queryKey: ["userInfo"],
@@ -61,7 +56,12 @@ const LoginPage = () => {
     enabled: false,
     retry: false
   });
-
+  const { refetch: subscribeRefetch } = useQuery({
+    queryKey: ["subscribe"],
+    queryFn: () => getUserSubscription(),
+    enabled: false,
+    retry: false
+  });
 
   //only first
   const { mutate: postActiveLicenseMutation } = useMutation({
@@ -69,14 +69,24 @@ const LoginPage = () => {
       await postActiveLicense(params),
     onSuccess: async () => {
       saveFingerPrint();
-      const { data } = await loginRefetch();
-      setUser(data as User);
+      const { data: userData } = await loginRefetch();
+      const { data: subscribeDate } = await subscribeRefetch();
+      const combinedData = {
+        ...userData,
+        subscribedStatus: subscribeDate.status,
+        plan: subscribeDate.plan,
+        nextBillingDate: subscribeDate.next_billing_date,
+        isFreeTrial: subscribeDate.is_free_trial,
+        trialEndDate: subscribeDate.trial_end_date
+      };
+
+      setUser(combinedData as User);
       navigate("/dashboard");
     },
     onError: (err: AxiosError) =>
       alert(
         (err.response?.data as { error?: string })?.error ||
-        "License activation failed"
+          "License activation failed"
       )
   });
 
@@ -117,9 +127,7 @@ const LoginPage = () => {
     }
   });
 
-
   const handleConfirmButton = () => {
-
     if (licenseCode && hardwareFingerprint) {
       postActiveLicenseMutation({
         licenseCode: licenseCode,
@@ -130,13 +138,11 @@ const LoginPage = () => {
     }
   };
 
-
-
   const onSubmit = (data: LoginParams) => {
     setIsLoading(true);
     const loginData = {
       ...data,
-      hardwareFingerprint: hardwareFingerprint
+      hardwareFingerprint: "11"
     };
     loginMutation.mutate(loginData);
   };

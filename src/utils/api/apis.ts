@@ -194,3 +194,10 @@ export const uploadDataToBackendEgis = async (
     throw error; // Re-throw to handle in the component
   }
 };
+
+/**구독 */
+export const getUserSubscription = async () => {
+  const data = await apiRequest("get", "/payment/user");
+
+  return data;
+};

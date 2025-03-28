@@ -6,6 +6,12 @@ export interface User {
   email: string;
   created_at: string;
   role: string;
+  //구독 정보
+  plan: string;
+  subscribedStatus: string;
+  nextBillingDate: string;
+  isFreeTrial: boolean;
+  trialEndDate: string;
 }
 
 interface UserStore {
@@ -20,11 +26,29 @@ const userStore = create<UserStore>((set) => ({
     name: "",
     email: "",
     created_at: "",
-    role: ""
+    role: "",
+    plan: "",
+    subscribedStatus: "",
+    nextBillingDate: "",
+    isFreeTrial: false,
+    trialEndDate: ""
   },
   setUser: (user: User) => set({ user }),
   clearUser: () =>
-    set({ user: { id: "", name: "", email: "", created_at: "", role: "" } })
+    set({
+      user: {
+        id: "",
+        name: "",
+        email: "",
+        created_at: "",
+        role: "",
+        plan: "",
+        subscribedStatus: "",
+        nextBillingDate: "",
+        isFreeTrial: false,
+        trialEndDate: ""
+      }
+    })
 }));
 
 export default userStore;
