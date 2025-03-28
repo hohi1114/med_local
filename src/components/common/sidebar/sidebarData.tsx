@@ -71,7 +71,7 @@ export const MENUITEMS: MenuItem[] = [
       { key: "account", label: "계정" },
       {
         key: "membership",
-        label: "멤버십"
+        label: "멤버십 관리"
       }
     ]
   }

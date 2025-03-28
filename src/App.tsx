@@ -12,6 +12,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getUserInfo, getUserSubscription } from "./utils/api/apis.ts";
 import LoginPage from "./pages/LoginPage.tsx";
 import ComingSoonPage from "./pages/ComingSoonPage.tsx";
+import MembershipPage from "./pages/MembershipPage.tsx";
 
 function App() {
   const { setUser } = userStore();
@@ -74,7 +75,7 @@ function App() {
           <Route path="update_data" element={<UpdateDataPage />} />
           <Route path="compare-chart" element={<ComingSoonPage />} />
           <Route path="account" element={<SettingPage />} />
-          <Route path="membership" element={<SettingPage />} />
+          <Route path="membership" element={<MembershipPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

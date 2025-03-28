@@ -7,9 +7,9 @@ import BaseInput from "../components/common/input/BaseInput";
 import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
 export const MembershipType = [
-  { id: "monthly", name: "1개월" },
-  { id: "quarterly", name: "6개월" },
-  { id: "yearly", name: "12개월" }
+  { id: "monthly", name: "1개월", amount: 39999 },
+  { id: "quarterly", name: "6개월", amount: 199999 },
+  { id: "yearly", name: "12개월", amount: 399999 }
 ];
 
 export default function SettingPage() {
@@ -19,14 +19,17 @@ export default function SettingPage() {
     logout();
   };
   const planName = MembershipType.find((plan) => plan.id === user?.plan)?.name;
+  const planAmount = MembershipType.find(
+    (plan) => plan.id === user?.plan
+  )?.amount;
 
   return (
     <>
-      <ContentHeader title={"설정"} />
+      <ContentHeader title={"계정"} />
       <CenterWrapper>
         <ContentWrapper>
-          <ProfileCard>
-            <ProfileTitle>프로필</ProfileTitle>
+          <CardWrapper>
+            <CardTitle>프로필</CardTitle>
             <Divider />
             <ProfileField>
               <ProfileImage src={"/images/defaultProfile.svg"} alt="Profile" />
@@ -37,17 +40,27 @@ export default function SettingPage() {
             <ProfileField>
               <BaseInput label="병원이름" value={user?.name} disabled />
             </ProfileField>
-          </ProfileCard>
+          </CardWrapper>
 
-          <ProfileCard>
-            <ProfileTitle>멤버십</ProfileTitle>
+          <CardWrapper>
+            <CardTitle>멤버십</CardTitle>
             <Divider />
             <MembershipInfo>
               <MembershipDetails>
                 {user?.subscribedStatus === "active" ? (
                   <>
                     <PlanInfo>
-                      <PlanTitle>{planName} 플랜</PlanTitle>
+                      <PlanTitle>
+                        {planName} 플랜{" "}
+                        {user?.isFreeTrial &&
+                          dayjs(user?.trialEndDate).isAfter(dayjs()) && (
+                            <span
+                              style={{ color: "#2a7ac2", fontWeight: "bold" }}
+                            >
+                              (1개월 무료체험 중)
+                            </span>
+                          )}
+                      </PlanTitle>
                       <PlanStatus>
                         {user?.subscribedStatus === "active"
                           ? `다음 결제일: ${dayjs(user?.nextBillingDate).format(
@@ -56,7 +69,7 @@ export default function SettingPage() {
                           : "결제정보 없음"}
                       </PlanStatus>
                     </PlanInfo>
-                    <Price>월 39,999원</Price>
+                    <Price>월 {planAmount?.toLocaleString()}원</Price>
                   </>
                 ) : (
                   <>
@@ -75,7 +88,7 @@ export default function SettingPage() {
                 </MembershipButton>
               </ButtonWrapper>
             </MembershipInfo>
-          </ProfileCard>
+          </CardWrapper>
 
           <LogoutButton type="submit" onClick={handleLogout}>
             Logout
@@ -86,34 +99,33 @@ export default function SettingPage() {
   );
 }
 
-// 스타일 컴포넌트 정의
-const CenterWrapper = styled.div`
+export const CenterWrapper = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
   padding: 1.2rem 0rem;
 `;
 
-const ContentWrapper = styled.div`
+export const ContentWrapper = styled.div`
   display: flex;
   flex-direction: column;
   max-width: 60rem;
   width: 90%;
 `;
 
-const ProfileTitle = styled.div`
+export const CardTitle = styled.div`
   font-weight: bold;
   font-size: 1.5rem;
 `;
 
-const Divider = styled.div`
+export const Divider = styled.div`
   width: 100%;
   height: 1px;
   background-color: ${(props) => props.theme.colors.gray03};
   margin: 1.5rem 0rem 3rem 0rem;
 `;
 
-const ProfileCard = styled.div`
+export const CardWrapper = styled.div`
   background-color: ${(props) => props.theme.colors.white};
   padding: 2rem;
   border-radius: 6px;
