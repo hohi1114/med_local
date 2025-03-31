@@ -49,7 +49,7 @@ export const MembershipCard = styled.div<{ selected?: boolean }>`
   display: flex;
   padding: 1.5rem;
   border-radius: 8px;
-  border: ${(props) => (props.selected ? "2px" : "1px")} solid
+  border: ${(props) => (props.selected ? "3px" : "1px")} solid
     ${(props) =>
       props.selected ? props.theme.colors.primary : props.theme.colors.gray03};
   justify-content: space-between;

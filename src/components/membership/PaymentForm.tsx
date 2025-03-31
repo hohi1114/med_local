@@ -10,14 +10,15 @@ import { useState } from "react";
 import AgreementBox from "./AgreementBox";
 import { Dropdown } from "antd";
 import { useMutation } from "@tanstack/react-query";
-import { postDeleteCard } from "../../utils/api/apis";
+import { postDeleteCard, postStratSubscription } from "../../utils/api/apis";
 import { AxiosError } from "axios";
+import { StartSubscriptionParams } from "../../types/params";
 
 const PaymentForm = () => {
   const { prevStep, nextStep, selectedPlan, cardInfo, setCardInfo } =
     usePaymentStore();
   const [isCheckedTerm, setIsCheckedTerm] = useState(false);
-  const { mutate: deleteRegisteredCard, isPending } = useMutation({
+  const { mutate: deleteRegisteredCard } = useMutation({
     mutationFn: async () => await postDeleteCard(),
     onSuccess: () => {
       setCardInfo(null);
@@ -29,6 +30,25 @@ const PaymentForm = () => {
       );
     }
   });
+
+  const { mutate: postStartSubscriptMutation, isPending } = useMutation({
+    mutationFn: async (params: StartSubscriptionParams) =>
+      await postStratSubscription(params),
+    onSuccess: () => {
+      nextStep();
+    },
+    onError: (err: AxiosError) => {
+      alert(
+        (err.response?.data as { error?: string })?.error ||
+          "구독 시작에 실패했습니다."
+      );
+    }
+  });
+
+  const handleStartSubscription = () => {
+    if (!selectedPlan) return;
+    postStartSubscriptMutation({ membershipType: selectedPlan?.id });
+  };
 
   const cardMenu = [
     {
@@ -129,8 +149,9 @@ const PaymentForm = () => {
         />
         <StartMembershipButton
           type="submit"
+          isLoading={isPending}
           disabled={!cardInfo || !isCheckedTerm}
-          onClick={nextStep}
+          onClick={handleStartSubscription}
         >
           7일 무료 체험 시작하기
         </StartMembershipButton>

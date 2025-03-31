@@ -6,7 +6,7 @@ const CompletePayment = () => {
   const navigate = useNavigate();
 
   const handleStartButoon = () => {
-    navigate("/");
+    navigate("/update_data");
   };
   return (
     <PaymentCompleteContainer>
