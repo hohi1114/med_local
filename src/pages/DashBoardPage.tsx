@@ -28,7 +28,6 @@ export default function DashBoardPage() {
     setDateChanged
   } = useDashBoard();
   const { user } = userStore();
-  console.log(user);
 
   const barFormatData = () => {
     if (!dashboardInfo) return [];
@@ -55,7 +54,7 @@ export default function DashBoardPage() {
   return (
     <>
       <ContentHeader title="대시보드" />
-      {user?.isFreeTrial && <FreeTrialModal />}
+      {!user?.isFreeTrial && <FreeTrialModal />}
       {(isLoading || !dashboardInfo) && <Loading content={LOADINGCONTENT} />}
       {dashboardInfo && (
         <DashBoardContainer>

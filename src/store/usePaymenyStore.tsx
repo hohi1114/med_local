@@ -12,11 +12,13 @@ type PaymentPlanType = (typeof MembershipType)[number];
 interface PaymentStore {
   process: PaymentProcessType;
   selectedPlan: PaymentPlanType | null;
-  cardInfo: string | null;
+  cardInfo: { cardNum: string; cardName: string } | null;
   nextStep: () => void;
   prevStep: () => void;
   reSet: () => void;
   setSelectedPlan: (plan: PaymentPlanType) => void;
+  setCardInfo: (cardInfo: { cardNum: string; cardName: string } | null) => void;
+  setProcess: (process: PaymentProcessType) => void;
 }
 const usePaymentStore = create<PaymentStore>((set) => ({
   process: "information",
@@ -44,9 +46,11 @@ const usePaymentStore = create<PaymentStore>((set) => ({
       }
       return state;
     }),
+  setProcess: (process) => set({ process }),
   reSet: () => set({ process: "information" }),
   setSelectedPlan: (plan) => set({ selectedPlan: plan }),
-  setCardInfo: (cardInfo) => set({ cardInfo })
+  setCardInfo: (cardInfo: { cardNum: string; cardName: string } | null) =>
+    set({ cardInfo: cardInfo ? { ...cardInfo } : null })
 }));
 
 export default usePaymentStore;

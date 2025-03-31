@@ -18,8 +18,13 @@ export type postActiveLicenseParams = {
 };
 
 export type RegisterCardParams = {
-  membershipType: string;
   cardNo: string;
+  expMonth: string;
   idNo: string;
   cardPw: string;
+  expYear: string;
+};
+
+export type StartSubscriptionParams = {
+  membershipType: string;
 };

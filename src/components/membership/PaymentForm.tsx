@@ -8,10 +8,38 @@ import {
 import { PAYMENT_TERMS } from "./FreeTrialModal";
 import { useState } from "react";
 import AgreementBox from "./AgreementBox";
+import { Dropdown } from "antd";
+import { useMutation } from "@tanstack/react-query";
+import { postDeleteCard } from "../../utils/api/apis";
+import { AxiosError } from "axios";
 
 const PaymentForm = () => {
-  const { prevStep, nextStep, selectedPlan } = usePaymentStore();
+  const { prevStep, nextStep, selectedPlan, cardInfo, setCardInfo } =
+    usePaymentStore();
   const [isCheckedTerm, setIsCheckedTerm] = useState(false);
+  const { mutate: deleteRegisteredCard, isPending } = useMutation({
+    mutationFn: async () => await postDeleteCard(),
+    onSuccess: () => {
+      setCardInfo(null);
+    },
+    onError: (err: AxiosError) => {
+      alert(
+        (err.response?.data as { error?: string })?.error ||
+          "카드 삭제에 실패했습니다."
+      );
+    }
+  });
+
+  const cardMenu = [
+    {
+      key: "delete",
+      label: "삭제하기",
+      onClick: () => {
+        deleteRegisteredCard();
+      }
+    }
+  ];
+
   return (
     <>
       <BackHeaderWrapper>
@@ -44,13 +72,38 @@ const PaymentForm = () => {
             </div>
           </div>
         </SelectedMemberShipCard>
-        <PaymentContainer onClick={() => nextStep()}>
+        <PaymentContainer>
           <PaymentTitle>간편 결제 등록</PaymentTitle>
           <PaymentBoxWrapper>
-            <PaymentBox>
-              <img src="/images/plus.svg" style={{ width: 30, height: 30 }} />
-              <span>간편 결제 추가</span>
-            </PaymentBox>
+            {cardInfo ? (
+              <RegisteredCardBox>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between"
+                  }}
+                >
+                  <span className="card_info">{cardInfo.cardName}</span>
+                  <Dropdown menu={{ items: cardMenu }} trigger={["click"]}>
+                    <img
+                      src={"/images/dot_white.svg"}
+                      style={{ width: 15, height: 15 }}
+                    />
+                  </Dropdown>
+                </div>
+
+                <div>
+                  <span className="card_info">
+                    **** - **** - **** - {cardInfo.cardNum}
+                  </span>
+                </div>
+              </RegisteredCardBox>
+            ) : (
+              <PaymentBox onClick={() => nextStep()}>
+                <img src="/images/plus.svg" style={{ width: 30, height: 30 }} />
+                <span>간편 결제 추가</span>
+              </PaymentBox>
+            )}
           </PaymentBoxWrapper>
         </PaymentContainer>
         <InfoContainer>
@@ -74,8 +127,12 @@ const PaymentForm = () => {
             "가격 및 유의사항을 확인하였으며, 매월 정기결제에 동의합니다."
           }
         />
-        <StartMembershipButton type="submit" onClick={nextStep}>
-          {selectedPlan?.amount.toLocaleString()}원 결제하기
+        <StartMembershipButton
+          type="submit"
+          disabled={!cardInfo || !isCheckedTerm}
+          onClick={nextStep}
+        >
+          7일 무료 체험 시작하기
         </StartMembershipButton>
       </MemberShipWrapper>
     </>
@@ -150,6 +207,23 @@ const PaymentBoxWrapper = styled.div`
   display: flex;
   justify-content: center;
   width: 100%;
+`;
+
+const RegisteredCardBox = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 45%;
+  height: 12rem;
+  border-radius: 8px;
+  padding: 1.5rem 2rem;
+  background-color: ${(props) => props.theme.colors.blue05};
+
+  .card_info {
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: ${(props) => props.theme.colors.white};
+  }
 `;
 
 const PaymentBox = styled.div`
