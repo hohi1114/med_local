@@ -1,142 +1,41 @@
 import { Modal } from "antd";
-import styled from "styled-components";
-import BaseButton from "../common/button/BaseButton";
+import usePaymentStore from "../../store/usePaymenyStore";
+import FreeTrialInformation from "./FreeTrialInformation";
+import PaymentForm from "./PaymentForm";
 
 export const MembershipType = [
-  { id: "monthly", name: "1개월", amount: 39999 },
-  { id: "quarterly", name: "6개월", amount: 199999 },
-  { id: "yearly", name: "12개월", amount: 399999 }
+  { id: "monthly", name: "1개월", amount: 69900 },
+  { id: "quarterly", name: "6개월", amount: 499000 },
+  { id: "yearly", name: "12개월", amount: 899000 }
+];
+
+export const PAYMENT_TERMS = [
+  {
+    id: "구매안내",
+    content: [
+      "멤버십은 구매한 시점부터 바로 적용됩니다.",
+      "매월 정기 결제일에 자동으로 결제됩니다.",
+      "멤버십은 언제든 해지할 수 있으며 해지해도 결제 만료일까지 사용가능합니다.",
+      "멤버십 변경은 멤버십 변경 페이지에서 가능합니다. 변경 시 이용 중인 멤버십이 종료된 후 변경된 멤버십으로 전환됩니다."
+    ]
+  },
+  {
+    id: "환불 안내",
+    content: ["멤버십 사용 중에는 남은 기간에 대한 금액이 환불되지 않습니다."]
+  },
+  {
+    id: "기타",
+    content: ["환불 및 기타 문의 사항은 직접 문의 부탁드립니다."]
+  }
 ];
 
 export const FreeTrialModal = () => {
+  const { process } = usePaymentStore();
+
   return (
     <Modal open={true} footer={null} closeIcon={null}>
-      <FreeTrialModalContent>
-        <TitleWrapper>
-          <span className="modal-title">7일 무료 체험</span>
-          <div className="modal-subtitle">
-            <span>카드를 등록하고 7일간 무료 체험을 시작해보세요.</span>
-            <span>* 7일 체험판 : 데이터 제한 1달</span>
-          </div>
-        </TitleWrapper>
-
-        <MemberShipWrapper>
-          {MembershipType.map((plan) => (
-            <MembershipCard key={plan.id}>
-              <div className="plan-info">
-                <span className="plan-name">{plan.name}</span>
-                <div className="plan-pricing">
-                  <span className="original-price">
-                    {plan.amount.toLocaleString()} 원
-                  </span>
-                  <span className="discounted-price">
-                    {plan.amount.toLocaleString()} 원
-                  </span>
-                </div>
-              </div>
-            </MembershipCard>
-          ))}
-          <span className="disclaimer">* 언제든 해지가 가능합니다.</span>
-        </MemberShipWrapper>
-
-        <StartMembershipButton type="button">
-          무료 체험 시작하기
-        </StartMembershipButton>
-      </FreeTrialModalContent>
+      {process === "information" && <FreeTrialInformation />}
+      {process === "payment" && <PaymentForm />}
     </Modal>
   );
 };
-
-const FreeTrialModalContent = styled.div`
-  display: flex;
-  flex-direction: column;
-  padding: 2rem;
-  gap: 2rem;
-  background-color: ${(props) => props.theme.colors.white};
-  border-radius: 8px;
-  box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.1);
-`;
-
-const TitleWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-
-  .modal-title {
-    font-weight: bold;
-    font-size: 1.8rem;
-    color: ${(props) => props.theme.colors.primary};
-  }
-
-  .modal-subtitle {
-    display: flex;
-    flex-direction: column;
-    gap: 0.3rem;
-    color: ${(props) => props.theme.colors.gray06};
-  }
-`;
-
-const MemberShipWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-`;
-
-const MembershipCard = styled.div`
-  display: flex;
-  padding: 1.5rem;
-  border-radius: 8px;
-  border: 1px solid ${(props) => props.theme.colors.gray03};
-  justify-content: space-between;
-  align-items: center;
-  transition: border 0.3s ease, box-shadow 0.3s ease;
-
-  &:hover {
-    border-color: ${(props) => props.theme.colors.primary};
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  }
-
-  .plan-info {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .plan-name {
-    font-size: 1.4rem;
-    font-weight: 600;
-    color: ${(props) => props.theme.colors.black};
-  }
-
-  .plan-pricing {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .original-price {
-    font-size: 1.2rem;
-    text-decoration: line-through;
-    color: ${(props) => props.theme.colors.gray05};
-  }
-
-  .discounted-price {
-    font-size: 1.4rem;
-    font-weight: bold;
-    color: ${(props) => props.theme.colors.primary};
-  }
-`;
-
-const StartMembershipButton = styled(BaseButton)`
-  height: 4rem;
-  font-size: 1.3rem;
-  font-weight: bold;
-  background-color: ${(props) => props.theme.colors.primary};
-  color: ${(props) => props.theme.colors.white};
-  border-radius: 8px;
-  padding: 0.8rem 2rem;
-  transition: background-color 0.3s ease;
-
-  &:hover {
-    background-color: ${(props) => props.theme.colors.darkPrimary};
-  }
-`;
