@@ -13,6 +13,7 @@ import { getUserInfo, getUserSubscription } from "./utils/api/apis.ts";
 import LoginPage from "./pages/LoginPage.tsx";
 import ComingSoonPage from "./pages/ComingSoonPage.tsx";
 import MembershipPage from "./pages/MembershipPage.tsx";
+import PaymentPolicyPage from "./pages/PaymentPolicyPage.tsx";
 
 function App() {
   const { setUser } = userStore();
@@ -54,9 +55,8 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-
+        <Route path="/payment-policy" element={<PaymentPolicyPage />} />
         <Route path="/" element={<BaseLayout />}>
-          {/* 기본 경로 ("/")로 접근하면 자동으로 "/dashboard"로 이동 */}
           <Route index element={<Navigate to="dashboard" replace />} />
 
           <Route path="dashboard" element={<DashBoardPage />} />

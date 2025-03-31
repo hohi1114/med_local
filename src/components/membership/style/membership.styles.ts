@@ -26,7 +26,7 @@ export const TitleWrapper = styled.div<{ isAbsolute?: boolean }>`
   .modal-title {
     font-weight: bold;
     font-size: 1.8rem;
-    color: ${(props) => props.theme.colors.primary};
+    color: ${(props) => props.theme.colors.black};
   }
 
   .modal-subtitle {
@@ -94,68 +94,7 @@ export const MembershipCard = styled.div<{ selected?: boolean }>`
 export const StartMembershipButton = styled(BaseButton)`
   height: 4rem;
   font-size: 1.3rem;
-  font-weight: bold;
-  background-color: ${(props) => props.theme.colors.primary};
-  color: ${(props) => props.theme.colors.white};
-  border-radius: 8px;
-  padding: 0.8rem 2rem;
-  transition: background-color 0.3s ease;
-
   &:hover {
     background-color: ${(props) => props.theme.colors.darkPrimary};
-  }
-`;
-
-/**Free tial Form */
-
-export const BackHeaderWrapper = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 2rem;
-`;
-
-export const SelectedMemberShipCard = styled.div`
-  display: flex;
-  padding: 1.5rem;
-  border-radius: 8px;
-  border: 1px solid ${(props) => props.theme.colors.gray03};
-  justify-content: space-between;
-
-  .plan-info {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    gap: 0.6rem;
-  }
-
-  .plan-name {
-    font-size: 1.6rem;
-    font-weight: 600;
-    color: ${(props) => props.theme.colors.black};
-  }
-
-  .plan-pricing {
-    display: flex;
-    justify-content: space-between;
-    gap: 0.8rem;
-    text-align: right;
-  }
-
-  .monthly-price {
-    font-size: 1.4rem;
-    font-weight: bold;
-    color: ${(props) => props.theme.colors.black01};
-  }
-
-  .price-label {
-    font-size: 1.3rem;
-    color: ${(props) => props.theme.colors.gray06};
-  }
-
-  .result-price {
-    font-size: 1.7rem;
-    font-weight: bold;
-    color: ${(props) => props.theme.colors.primary};
   }
 `;

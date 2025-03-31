@@ -2,6 +2,8 @@ import { Modal } from "antd";
 import usePaymentStore from "../../store/usePaymenyStore";
 import FreeTrialInformation from "./FreeTrialInformation";
 import PaymentForm from "./PaymentForm";
+import RegisterCard from "./RegisterCard";
+import CompletePayment from "./CompletePayment";
 
 export const MembershipType = [
   { id: "monthly", name: "1개월", amount: 69900 },
@@ -13,10 +15,11 @@ export const PAYMENT_TERMS = [
   {
     id: "구매안내",
     content: [
-      "멤버십은 구매한 시점부터 바로 적용됩니다.",
+      "이용제한을 풀기위한 체험한 종료 및 멤버십 취소는 멤버십 관리탭에서 설정 가능합니다.",
+      "7일 체험판 종료 후, 멤버십은 구매한 시점부터 바로 적용됩니다.",
       "매월 정기 결제일에 자동으로 결제됩니다.",
       "멤버십은 언제든 해지할 수 있으며 해지해도 결제 만료일까지 사용가능합니다.",
-      "멤버십 변경은 멤버십 변경 페이지에서 가능합니다. 변경 시 이용 중인 멤버십이 종료된 후 변경된 멤버십으로 전환됩니다."
+      "멤버십 변경은 멤버십 관리 페이지에서 가능합니다. 변경 시 이용 중인 멤버십이 종료된 후 변경된 멤버십으로 전환됩니다."
     ]
   },
   {
@@ -33,9 +36,18 @@ export const FreeTrialModal = () => {
   const { process } = usePaymentStore();
 
   return (
-    <Modal open={true} footer={null} closeIcon={null}>
+    <Modal
+      open={true}
+      footer={null}
+      closeIcon={null}
+      styles={{
+        content: { padding: "2rem", maxHeight: "80vh", overflowY: "auto" }
+      }}
+    >
       {process === "information" && <FreeTrialInformation />}
       {process === "payment" && <PaymentForm />}
+      {process === "register_card" && <RegisterCard />}
+      {process === "complete" && <CompletePayment />}
     </Modal>
   );
 };

@@ -16,7 +16,10 @@ const FreeTrialInformation = () => {
         <span className="modal-title">7일 무료 체험</span>
         <div className="modal-subtitle">
           <span>카드를 등록하고 7일간 무료 체험을 시작해보세요.</span>
-          <span>* 7일 체험판 : 데이터 제한 1달</span>
+          <span>
+            * 7일 체험판: 1개월 데이터 등록 / 체험판 취소 및 멤버십 바로 시작
+            가능
+          </span>
         </div>
       </TitleWrapper>
       <MemberShipWrapper>

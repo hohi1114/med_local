@@ -6,8 +6,7 @@ import {
   getUserInfo,
   getUserSubscription,
   postActiveLicense,
-  postLogin,
-  postVerifyCode
+  postLogin
 } from "../utils/api/apis";
 import { useState, useEffect } from "react";
 import { AxiosError } from "axios";

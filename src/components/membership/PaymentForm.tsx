@@ -7,9 +7,10 @@ import {
 } from "./style/membership.styles";
 import { PAYMENT_TERMS } from "./FreeTrialModal";
 import { useState } from "react";
+import AgreementBox from "./AgreementBox";
 
 const PaymentForm = () => {
-  const { prevStep, selectedPlan } = usePaymentStore();
+  const { prevStep, nextStep, selectedPlan } = usePaymentStore();
   const [isCheckedTerm, setIsCheckedTerm] = useState(false);
   return (
     <>
@@ -43,7 +44,7 @@ const PaymentForm = () => {
             </div>
           </div>
         </SelectedMemberShipCard>
-        <PaymentContainer>
+        <PaymentContainer onClick={() => nextStep()}>
           <PaymentTitle>간편 결제 등록</PaymentTitle>
           <PaymentBoxWrapper>
             <PaymentBox>
@@ -66,26 +67,14 @@ const PaymentForm = () => {
             );
           })}
         </InfoContainer>
-        <CheckboxWrapper>
-          <CheckboxCircle
-            checked={isCheckedTerm}
-            onClick={() => setIsCheckedTerm(!isCheckedTerm)}
-          >
-            <img
-              src={
-                isCheckedTerm
-                  ? "/images/check_white.svg"
-                  : "/images/check_gray.svg"
-              }
-              alt="Checkbox"
-            />
-          </CheckboxCircle>
-
-          <CheckboxLabel>
-            가격 및 유의사항을 확인하였으며, 매월 정기결제에 동의합니다.
-          </CheckboxLabel>
-        </CheckboxWrapper>
-        <StartMembershipButton type="submit">
+        <AgreementBox
+          isChecked={isCheckedTerm}
+          setIsChecked={setIsCheckedTerm}
+          content={
+            "가격 및 유의사항을 확인하였으며, 매월 정기결제에 동의합니다."
+          }
+        />
+        <StartMembershipButton type="submit" onClick={nextStep}>
           {selectedPlan?.amount.toLocaleString()}원 결제하기
         </StartMembershipButton>
       </MemberShipWrapper>
@@ -97,7 +86,7 @@ export default PaymentForm;
 export const BackHeaderWrapper = styled.div`
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 2rem;
   margin-bottom: 2rem;
 `;
 
@@ -228,30 +217,4 @@ const InfoList = styled.ul`
 const InfoSection = styled.div`
   display: flex;
   flex-direction: column;
-`;
-
-const CheckboxWrapper = styled.div`
-  display: flex;
-  gap: 0.8rem;
-  align-items: center;
-`;
-
-const CheckboxCircle = styled.div<{ checked?: boolean }>`
-  cursor: pointer;
-  border-radius: 50%;
-  background-color: ${(props) =>
-    props.checked ? props.theme.colors.primary : props.theme.colors.white};
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 2rem;
-  height: 2rem;
-  border: 2px solid
-    ${(props) =>
-      props.checked ? props.theme.colors.primary : props.theme.colors.gray05};
-`;
-
-const CheckboxLabel = styled.span`
-  font-size: 1.2rem;
-  font-weight: bold;
 `;
