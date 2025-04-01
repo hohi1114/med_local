@@ -23,8 +23,6 @@ export default function SettingPage() {
     (plan) => plan.id === user?.plan
   )?.amount;
 
-  //멤버십 조작후 여기로 오면 유저 정보 안바뀜
-
   return (
     <>
       <ContentHeader title={"계정"} />
@@ -54,8 +52,8 @@ export default function SettingPage() {
                     <PlanInfo>
                       <PlanTitle>
                         {planName} 플랜{" "}
-                        {user?.isFreeTrial &&
-                          dayjs(user?.trialEndDate).isAfter(dayjs()) && (
+                        {user?.is_free_trial &&
+                          dayjs(user?.trial_end_date).isAfter(dayjs()) && (
                             <span
                               style={{ color: "#2a7ac2", fontWeight: "bold" }}
                             >
@@ -65,9 +63,9 @@ export default function SettingPage() {
                       </PlanTitle>
                       <PlanStatus>
                         {user?.subscribedStatus === "active"
-                          ? `다음 결제일: ${dayjs(user?.nextBillingDate).format(
-                              "YYYY년 MM월 DD일"
-                            )}`
+                          ? `다음 결제일: ${dayjs(
+                              user?.next_billing_date
+                            ).format("YYYY년 MM월 DD일")}`
                           : "결제정보 없음"}
                       </PlanStatus>
                     </PlanInfo>

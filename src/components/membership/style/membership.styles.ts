@@ -49,12 +49,12 @@ export const MembershipCard = styled.div<{ selected?: boolean }>`
   display: flex;
   padding: 1.5rem;
   border-radius: 8px;
-  border: ${(props) => (props.selected ? "3px" : "1px")} solid
+  border: ${(props) => (props.selected ? "2px" : "1px")} solid
     ${(props) =>
       props.selected ? props.theme.colors.primary : props.theme.colors.gray03};
   justify-content: space-between;
   align-items: center;
-  transition: border 0.3s ease, box-shadow 0.3s ease;
+  transition: border 0.1s ease, box-shadow 0.1s ease;
 
   &:hover {
     border-color: ${(props) => props.theme.colors.primary};

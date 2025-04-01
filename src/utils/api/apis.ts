@@ -93,8 +93,11 @@ export const postCancelSubscription = async () => {
   return data;
 };
 
-export const changeSubscription = async () => {
-  const data = await apiRequest("post", "/payment/update");
+export const changeSubscription = async (membershipType: string) => {
+  const data = await apiRequest("post", "/payment/update", {
+    membershipType: membershipType
+  });
+  console.log(data);
   return data;
 };
 

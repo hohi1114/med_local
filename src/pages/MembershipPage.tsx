@@ -1,4 +1,4 @@
-import { Divider, Spin } from "antd";
+import { Divider } from "antd";
 import ContentHeader from "../components/common/layout/ContentHeader";
 import {
   CardTitle,
@@ -77,6 +77,7 @@ function MembershipPage() {
   const cancelSubscriptionHandler = () => {
     cancelSubscription();
   };
+
   return (
     <>
       <BaseModal
@@ -86,16 +87,13 @@ function MembershipPage() {
         rightbuttonText="멤버십 바로 시작하기"
         onClickLeft={handleCancelFreeTrial}
         onClickRight={handleBilling}
+        title="정말 무료 체험 이용을 중지하시겠어요?"
       >
         {(cancelFreeTrialPending || startBillingPending) && <Loading />}
-        <TitleText>정말 무료 체험 이용을 중지하시겠어요?</TitleText>
-
-        <HighlightText>
-          무료 체험 이용을 중지하시면 등록되었던 멤버십 이용도 해지됩니다.
-          <br />
-          멤버십 바로 이용을 원하시면
-          <strong> 멤버십 바로 시작하기</strong> 버튼을 눌러주세요.
-        </HighlightText>
+        무료 체험 이용을 중지하시면 등록되었던 멤버십 이용도 해지됩니다.
+        <br />
+        멤버십 바로 이용을 원하시면
+        <strong> 멤버십 바로 시작하기</strong> 버튼을 눌러주세요.
       </BaseModal>
 
       <BaseModal
@@ -103,19 +101,16 @@ function MembershipPage() {
         onClose={() => setCancelSubscriptionModal(false)}
         leftbuttonText="멤버십 해지하기"
         rightbuttonText="취소하기"
+        title="정말 무료 체험 이용을 중지하시겠어요?"
         onClickLeft={cancelSubscriptionHandler}
         onClickRight={() => setCancelSubscriptionModal(false)}
       >
         {cancelSubscriptionPending && <Loading />}
         {(cancelFreeTrialPending || startBillingPending) && <Loading />}
-        <TitleText>정말 무료 체험 이용을 중지하시겠어요?</TitleText>
-
-        <HighlightText>
-          무료 체험 이용을 중지하시면 등록되었던 멤버십 이용도 해지됩니다.
-          <br />
-          멤버십 바로 이용을 원하시면
-          <strong> 멤버십 바로 시작하기</strong> 버튼을 눌러주세요.
-        </HighlightText>
+        멤버십을 해지하시면 등록되었던 서비스 이용 불가능합니다.
+        <br />
+        멤버십 재가입을 원하시면
+        <strong> 멤버십 시작</strong> 탭을 이용해주세요.
       </BaseModal>
       <ContentHeader title={"멤버십 관리"} />
       <CenterWrapper>
@@ -125,11 +120,11 @@ function MembershipPage() {
             <Divider />
             <MembershipInfo>
               {user?.status === "active" ? (
-                user?.isFreeTrial && !today.isAfter(user?.trialEndDate) ? (
+                user?.is_free_trial && !today.isAfter(user?.trial_end_date) ? (
                   <PaymentInfoWrapper>
                     <TitleStyle>7일 무료 체험 이용중</TitleStyle>
                     <div className="sub_info">
-                      이용 종료 일 : {user?.trialEndDate}
+                      이용 종료 일 : {user?.trial_end_date}
                     </div>
                     <ButtonWrapper>
                       <CancelButton
@@ -144,7 +139,7 @@ function MembershipPage() {
                   <PaymentInfoWrapper>
                     <TitleStyle>{user?.plan} 멤버십</TitleStyle>
                     <div className="sub_info">
-                      다음 결제일 : {user?.nextBillingDate}
+                      다음 결제일 : {user?.next_billing_date}
                     </div>
                     <ButtonWrapper>
                       <CancelButton
@@ -166,7 +161,9 @@ function MembershipPage() {
             </MembershipInfo>
             <Divider />
             <NavigationWrapper onClick={() => navigate("/membership-change")}>
-              <span className="title">멤버십 변경</span>
+              <span className="title">
+                {user.status === "active" ? "멤버십 변경" : "멤버십 시작"}
+              </span>
               <img
                 src="/images/simpleArrow.svg"
                 style={{ width: 28, height: 28 }}
@@ -238,21 +235,5 @@ const CancelButton = styled(BaseButton)`
   color: ${(props) => props.theme.colors.black};
   &:hover {
     background: ${(props) => props.theme.colors.gray05};
-  }
-`;
-const TitleText = styled.h2`
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin: 0;
-`;
-
-const HighlightText = styled.p`
-  font-size: 1.1rem;
-  line-height: 1.5;
-  color: ${(props) => props.theme.colors.gray05};
-  margin: 0;
-
-  strong {
-    font-weight: 600;
   }
 `;

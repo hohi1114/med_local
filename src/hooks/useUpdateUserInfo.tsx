@@ -25,12 +25,8 @@ const useUpdateUserInfo = () => {
 
     setUser({
       ...user,
-      nextBillingDate: subscribeDate.next_billing_date,
-      isFreeTrial: subscribeDate.is_free_trial,
-      trialEndDate: subscribeDate.trial_end_date,
-      cardName: subscribeDate.card_name,
-      cardLastNumber: subscribeDate.card_last_num,
-      status: subscribeDate.status
+      ...subscribeDate,
+      plan: subscribeDate.next_plan || subscribeDate.plan
     });
   };
 
@@ -40,14 +36,8 @@ const useUpdateUserInfo = () => {
 
     const combinedData = {
       ...userData,
-      subscribedStatus: subscribeDate.status,
-      plan: subscribeDate.plan,
-      nextBillingDate: subscribeDate.next_billing_date,
-      isFreeTrial: subscribeDate.is_free_trial,
-      trialEndDate: subscribeDate.trial_end_date,
-      cardName: subscribeDate.card_name,
-      cardLastNumber: subscribeDate.card_last_num,
-      status: subscribeDate.status
+      ...subscribeDate,
+      plan: subscribeDate.next_plan || subscribeDate.plan
     };
 
     setUser(combinedData as User);

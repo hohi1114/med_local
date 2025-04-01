@@ -5,6 +5,7 @@ import BaseButton from "../button/BaseButton";
 interface MembershipModalProps {
   isOpen: boolean;
   onClose: () => void;
+  title: string;
   children?: React.ReactNode;
   onClickRight?: () => void;
   onClickLeft?: () => void;
@@ -15,17 +16,19 @@ interface MembershipModalProps {
 const MembershipModal = ({
   isOpen = true,
   onClose,
-  children,
   onClickLeft,
   onClickRight,
+  title,
+  children,
   leftbuttonText = "취소",
   rightbuttonText = "확인"
 }: MembershipModalProps) => {
   return (
     <StyledModal open={isOpen} footer={null} centered onCancel={onClose}>
       <ModalContent>
-        {children}
+        <TitleText>{title}</TitleText>
 
+        <HighlightText>{children}</HighlightText>
         <ButtonContainer>
           {onClickLeft && (
             <CancelButton type="button" onClick={onClickLeft}>
@@ -79,4 +82,20 @@ const ConfirmButton = styled(BaseButton)`
   height: 3.2rem;
   background-color: ${(props) => props.theme.colors.primary};
   color: white;
+`;
+const TitleText = styled.h2`
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+`;
+
+const HighlightText = styled.span`
+  font-size: 1.1rem;
+  line-height: 1.5;
+  color: ${(props) => props.theme.colors.gray05};
+  margin: 0;
+
+  strong {
+    font-weight: 600;
+  }
 `;
