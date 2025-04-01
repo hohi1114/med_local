@@ -110,7 +110,16 @@ const LoginPage = () => {
       if (activated) {
         // If already activated, go to dashboard
         const { data: userData } = await loginRefetch();
-        setUser(userData as User);
+        const { data: subscribeDate } = await subscribeRefetch();
+        const combinedData = {
+          ...userData,
+          subscribedStatus: subscribeDate.status,
+          plan: subscribeDate.plan,
+          nextBillingDate: subscribeDate.next_billing_date,
+          isFreeTrial: subscribeDate.is_free_trial,
+          trialEndDate: subscribeDate.trial_end_date
+        };
+        setUser(combinedData as User);
         navigate("/dashboard");
       } else if (hasAvailableSlots) {
         // If there are slots, show modal to activate license
