@@ -144,7 +144,7 @@ const ProfileImage = styled.img`
   height: auto;
 `;
 
-const MembershipInfo = styled.div`
+export const MembershipInfo = styled.div`
   display: flex;
   flex-direction: column;
   gap: 1rem;

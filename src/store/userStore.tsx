@@ -14,6 +14,7 @@ export interface User {
   trialEndDate: string | null;
   cardName?: string | null;
   cardLastNumber?: string | null;
+  status?: string | null;
 }
 
 interface UserStore {
@@ -35,7 +36,8 @@ const userStore = create<UserStore>((set) => ({
     isFreeTrial: false,
     trialEndDate: null,
     cardName: null,
-    cardLastNumber: null
+    cardLastNumber: null,
+    status: null
   },
   setUser: (user: User) => set({ user }),
   clearUser: () =>
@@ -52,7 +54,8 @@ const userStore = create<UserStore>((set) => ({
         isFreeTrial: false,
         trialEndDate: null,
         cardName: null,
-        cardLastNumber: null
+        cardLastNumber: null,
+        status: null
       }
     })
 }));

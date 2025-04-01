@@ -78,6 +78,26 @@ export const getCardInfo = async () => {
   return data;
 };
 
+export const postCancelFreetrial = async () => {
+  const data = await apiRequest("post", "/payment/cancel-freetrial");
+  return data;
+};
+
+export const postBilling = async () => {
+  const data = await apiRequest("post", "/payment/billing");
+  return data;
+};
+
+export const postCancelSubscription = async () => {
+  const data = await apiRequest("post", "/payment/cancel");
+  return data;
+};
+
+export const changeSubscription = async () => {
+  const data = await apiRequest("post", "/payment/update");
+  return data;
+};
+
 /**대시보드 */
 export const getDashboardData = async (rangeDate: DateRange) => {
   const data = await apiRequest(

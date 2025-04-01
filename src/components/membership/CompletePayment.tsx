@@ -1,13 +1,44 @@
 import styled from "styled-components";
 import { StartMembershipButton } from "./style/membership.styles";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import userStore from "../../store/userStore";
+import { getUserSubscription } from "../../utils/api/apis";
 
 const CompletePayment = () => {
   const navigate = useNavigate();
+  const { setUser, user } = userStore();
+  const { refetch: subscribeRefetch } = useQuery({
+    queryKey: ["subscribe"],
+    queryFn: () => getUserSubscription(),
+    enabled: false,
+    retry: false
+  });
 
-  const handleStartButoon = () => {
-    navigate("/update_data");
+  const handleStartButton = async () => {
+    try {
+      const { data } = await subscribeRefetch();
+
+      if (!data) {
+        console.error("구독 정보를 가져올 수 없습니다.");
+        return;
+      }
+
+      setUser({
+        ...user,
+        nextBillingDate: data.next_billing_date,
+        isFreeTrial: data.is_free_trial,
+        trialEndDate: data.trial_end_date,
+        cardName: data.card_name,
+        cardLastNumber: data.card_last_num
+      });
+
+      navigate("/update_data");
+    } catch (error) {
+      console.error("구독 정보 업데이트 중 오류 발생:", error);
+    }
   };
+
   return (
     <PaymentCompleteContainer>
       <CheckIconWrapper>
@@ -22,7 +53,7 @@ const CompletePayment = () => {
         </div>
       </ContentWrapper>
 
-      <StartMembershipButton type="button" onClick={handleStartButoon}>
+      <StartMembershipButton type="button" onClick={handleStartButton}>
         데이터 업데이트하고 시작하기
       </StartMembershipButton>
     </PaymentCompleteContainer>

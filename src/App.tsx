@@ -14,46 +14,16 @@ import LoginPage from "./pages/LoginPage.tsx";
 import ComingSoonPage from "./pages/ComingSoonPage.tsx";
 import MembershipPage from "./pages/MembershipPage.tsx";
 import PaymentPolicyPage from "./pages/PaymentPolicyPage.tsx";
+import useUpdateUserInfo from "./hooks/useUpdateUserInfo.tsx";
 
 function App() {
-  const { setUser } = userStore();
-  const { data: userData, refetch } = useQuery({
-    queryKey: ["userInfo"],
-    queryFn: () => getUserInfo(),
-    enabled: false
-  });
-  const { data: subscribeDate, refetch: subscribeRefetch } = useQuery({
-    queryKey: ["subscribe"],
-    queryFn: () => getUserSubscription(),
-    enabled: false,
-    retry: false
-  });
+  const { fetchUserInfo } = useUpdateUserInfo();
 
   useEffect(() => {
     if (!window.location.pathname.startsWith("/login")) {
-      refetch();
-      subscribeRefetch();
+      fetchUserInfo();
     }
   }, []);
-
-  // 자동 로그인's fetch user data
-  useEffect(() => {
-    if (userData && subscribeDate) {
-      const combinedData = {
-        ...userData,
-        subscribedStatus: subscribeDate.status,
-        plan: subscribeDate.plan,
-        nextBillingDate: subscribeDate.next_billing_date,
-        isFreeTrial: subscribeDate.is_free_trial,
-        trialEndDate: subscribeDate.trial_end_date,
-        cardName: subscribeDate.card_name,
-        cardLastNumber: subscribeDate.card_last_num
-      };
-
-      console.log(combinedData);
-      setUser(combinedData);
-    }
-  }, [userData, subscribeDate, setUser]);
 
   return (
     <BrowserRouter>

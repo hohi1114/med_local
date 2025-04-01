@@ -16,6 +16,7 @@ import LicenseModal from "../components/common/modal/LicenseModal";
 import { postActiveLicenseParams } from "../types/params";
 import useFingerPrintNumber from "../hooks/useFingerPrintNumber";
 import BaseInput from "../components/common/input/BaseInput";
+import useUpdateUserInfo from "../hooks/useUpdateUserInfo";
 
 export type LoginParams = {
   email: string;
@@ -24,6 +25,7 @@ export type LoginParams = {
 };
 const LoginPage = () => {
   const navigate = useNavigate();
+  const { fetchUserInfo } = useUpdateUserInfo();
   const {
     register,
     handleSubmit,
@@ -48,40 +50,13 @@ const LoginPage = () => {
     getHardwareId();
   }, [getFingerPrint, setFingurePrintNumber]);
 
-  //**APIs
-  const { refetch: loginRefetch } = useQuery({
-    queryKey: ["userInfo"],
-    queryFn: () => getUserInfo(),
-    enabled: false,
-    retry: false
-  });
-  const { refetch: subscribeRefetch } = useQuery({
-    queryKey: ["subscribe"],
-    queryFn: () => getUserSubscription(),
-    enabled: false,
-    retry: false
-  });
-
   //only first
   const { mutate: postActiveLicenseMutation } = useMutation({
     mutationFn: async (params: postActiveLicenseParams) =>
       await postActiveLicense(params),
     onSuccess: async () => {
       saveFingerPrint();
-      const { data: userData } = await loginRefetch();
-      const { data: subscribeDate } = await subscribeRefetch();
-      const combinedData = {
-        ...userData,
-        subscribedStatus: subscribeDate.status,
-        plan: subscribeDate.plan,
-        nextBillingDate: subscribeDate.next_billing_date,
-        isFreeTrial: subscribeDate.is_free_trial,
-        trialEndDate: subscribeDate.trial_end_date,
-        cardName: subscribeDate.card_name,
-        cardLastNumber: subscribeDate.card_last_num
-      };
-
-      setUser(combinedData as User);
+      fetchUserInfo();
       navigate("/dashboard");
     },
     onError: (err: AxiosError) =>
@@ -111,17 +86,7 @@ const LoginPage = () => {
 
       if (activated) {
         // If already activated, go to dashboard
-        const { data: userData } = await loginRefetch();
-        const { data: subscribeDate } = await subscribeRefetch();
-        const combinedData = {
-          ...userData,
-          subscribedStatus: subscribeDate.status,
-          plan: subscribeDate.plan,
-          nextBillingDate: subscribeDate.next_billing_date,
-          isFreeTrial: subscribeDate.is_free_trial,
-          trialEndDate: subscribeDate.trial_end_date
-        };
-        setUser(combinedData as User);
+        fetchUserInfo();
         navigate("/dashboard");
       } else if (hasAvailableSlots) {
         // If there are slots, show modal to activate license
@@ -152,7 +117,7 @@ const LoginPage = () => {
     setIsLoading(true);
     const loginData = {
       ...data,
-      hardwareFingerprint: "11"
+      hardwareFingerprint: hardwareFingerprint
     };
     loginMutation.mutate(loginData);
   };
