@@ -15,6 +15,7 @@ import ComingSoonPage from "./pages/ComingSoonPage.tsx";
 import MembershipPage from "./pages/MembershipPage.tsx";
 import PaymentPolicyPage from "./pages/PaymentPolicyPage.tsx";
 import useUpdateUserInfo from "./hooks/useUpdateUserInfo.tsx";
+import MembershipChangePage from "./pages/MembershipChangePage.tsx";
 
 function App() {
   const { fetchUserInfo } = useUpdateUserInfo();
@@ -50,6 +51,7 @@ function App() {
           <Route path="compare-chart" element={<ComingSoonPage />} />
           <Route path="account" element={<SettingPage />} />
           <Route path="membership" element={<MembershipPage />} />
+          <Route path="membership-change" element={<MembershipChangePage />} />
         </Route>
       </Routes>
     </BrowserRouter>

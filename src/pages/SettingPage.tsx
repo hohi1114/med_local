@@ -23,6 +23,8 @@ export default function SettingPage() {
     (plan) => plan.id === user?.plan
   )?.amount;
 
+  //멤버십 조작후 여기로 오면 유저 정보 안바뀜
+
   return (
     <>
       <ContentHeader title={"계정"} />

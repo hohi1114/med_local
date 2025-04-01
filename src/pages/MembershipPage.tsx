@@ -22,9 +22,11 @@ import {
 import Loading from "../components/common/Loading";
 import useUpdateUserInfo from "../hooks/useUpdateUserInfo";
 import { AxiosError } from "axios";
+import { useNavigate } from "react-router-dom";
 
 function MembershipPage() {
   const { user } = userStore();
+  const navigate = useNavigate();
   const { updateUserMembershipInfo } = useUpdateUserInfo();
   const today = dayjs();
   const [cancelModal, setCancelModal] = useState(false);
@@ -75,7 +77,6 @@ function MembershipPage() {
   const cancelSubscriptionHandler = () => {
     cancelSubscription();
   };
-  console.log(cancelSubscriptionModal);
   return (
     <>
       <BaseModal
@@ -164,7 +165,7 @@ function MembershipPage() {
               )}
             </MembershipInfo>
             <Divider />
-            <NavigationWrapper>
+            <NavigationWrapper onClick={() => navigate("/membership-change")}>
               <span className="title">멤버십 변경</span>
               <img
                 src="/images/simpleArrow.svg"
@@ -221,6 +222,7 @@ const NavigationWrapper = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
+  cursor: pointer;
   .title {
     font-size: 1.3rem;
   }
