@@ -27,7 +27,7 @@ export default function DashBoardPage() {
     RANGE_DATE_MAP,
     setDateChanged
   } = useDashBoard();
-  const { user } = userStore();
+  const { user, fetchingUserLoading } = userStore();
 
   const barFormatData = () => {
     if (!dashboardInfo) return [];
@@ -54,7 +54,7 @@ export default function DashBoardPage() {
   return (
     <>
       <ContentHeader title="대시보드" />
-      {!user?.isFreeTrial && <FreeTrialModal />}
+      {!user?.isFreeTrial && !fetchingUserLoading && <FreeTrialModal />}
       {(isLoading || !dashboardInfo) && <Loading content={LOADINGCONTENT} />}
       {dashboardInfo && (
         <DashBoardContainer>

@@ -1,18 +1,19 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import userStore, { User } from "../store/userStore";
 import { getUserInfo, getUserSubscription } from "../utils/api/apis";
+import { useEffect } from "react";
 
 const useUpdateUserInfo = () => {
-  const { user, setUser } = userStore();
+  const { user, setUser, setFetchingUserLoading } = userStore();
 
   //**APIs
-  const { refetch: loginRefetch } = useQuery({
+  const { refetch: loginRefetch, isLoading: loginLoading } = useQuery({
     queryKey: ["userInfo"],
     queryFn: () => getUserInfo(),
     enabled: false,
     retry: false
   });
-  const { refetch: subscribeRefetch } = useQuery({
+  const { refetch: subscribeRefetch, isLoading: subscribeLoading } = useQuery({
     queryKey: ["subscribe"],
     queryFn: () => getUserSubscription(),
     enabled: false,
@@ -52,7 +53,18 @@ const useUpdateUserInfo = () => {
     setUser(combinedData as User);
   };
 
-  return { fetchUserInfo, updateUserMembershipInfo };
+  useEffect(() => {
+    if (loginLoading || subscribeLoading) {
+      setFetchingUserLoading(true);
+    } else {
+      setFetchingUserLoading(false);
+    }
+  }, [loginLoading, subscribeLoading]);
+
+  return {
+    fetchUserInfo,
+    updateUserMembershipInfo
+  };
 };
 
 export default useUpdateUserInfo;

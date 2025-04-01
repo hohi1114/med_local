@@ -19,8 +19,10 @@ export interface User {
 
 interface UserStore {
   user: User;
+  fetchingUserLoading: boolean;
   setUser: (user: User) => void;
   clearUser: () => void;
+  setFetchingUserLoading: (loading: boolean) => void;
 }
 
 const userStore = create<UserStore>((set) => ({
@@ -39,6 +41,9 @@ const userStore = create<UserStore>((set) => ({
     cardLastNumber: null,
     status: null
   },
+  fetchingUserLoading: true,
+  setFetchingUserLoading: (fetchingUserLoading: boolean) =>
+    set({ fetchingUserLoading }),
   setUser: (user: User) => set({ user }),
   clearUser: () =>
     set({
