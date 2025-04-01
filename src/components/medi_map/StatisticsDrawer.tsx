@@ -102,8 +102,8 @@ const StatisticsDrawer = () => {
   useEffect(() => {
     setStatsData({
       1: {
-        data: `${regionPrivate?.total_patient_count || 0}명`,
-        diffRate: regionPrivate?.diff_rates?.total_patient_count
+        data: `${regionPrivate?.total_visit_count || 0}명`,
+        diffRate: regionPrivate?.diff_rates?.total_visit_count
       },
       2: {
         data: `${Math.ceil(
@@ -133,13 +133,12 @@ const StatisticsDrawer = () => {
       },
       7: { data: `준비중`, diffRate: null },
       8: {
-        data: `${
-          population && regionPrivate?.total_patient_count
-            ? ((regionPrivate?.total_patient_count / population) * 100).toFixed(
-                3
-              )
-            : 0
-        } %`,
+        data: `${population && regionPrivate?.total_patient_count
+          ? ((regionPrivate?.total_patient_count / population) * 100).toFixed(
+            3
+          )
+          : 0
+          } %`,
         diffRate: regionPrivate?.diff_rates?.total_patient_count
       }
     });
