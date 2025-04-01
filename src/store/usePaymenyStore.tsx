@@ -12,25 +12,26 @@ type PaymentPlanType = (typeof MembershipType)[number];
 interface PaymentStore {
   process: PaymentProcessType;
   selectedPlan: PaymentPlanType | null;
-  cardInfo: { cardNum: string; cardName: string } | null;
+  hasCardInfo: boolean;
   nextStep: () => void;
   prevStep: () => void;
   reSet: () => void;
   setSelectedPlan: (plan: PaymentPlanType) => void;
-  setCardInfo: (cardInfo: { cardNum: string; cardName: string } | null) => void;
+  setHasCardInfo: (hasCardInfo: boolean) => void;
   setProcess: (process: PaymentProcessType) => void;
 }
 const usePaymentStore = create<PaymentStore>((set) => ({
   process: "information",
   selectedPlan: null,
-  cardInfo: null,
+  hasCardInfo: false,
+  setHasCardInfo: (hasCardInfo: boolean) => set({ hasCardInfo }),
   nextStep: () =>
     set((state) => {
       if (state.process === "register_card") {
         return { process: "payment" };
       }
       if (state.process === "payment") {
-        return { process: state.cardInfo ? "complete" : "register_card" };
+        return { process: state.hasCardInfo ? "complete" : "register_card" };
       }
       const currentIndex = PAYMENT_PROCESS.indexOf(state.process);
       if (currentIndex < PAYMENT_PROCESS.length - 1) {
@@ -48,9 +49,7 @@ const usePaymentStore = create<PaymentStore>((set) => ({
     }),
   setProcess: (process) => set({ process }),
   reSet: () => set({ process: "information" }),
-  setSelectedPlan: (plan) => set({ selectedPlan: plan }),
-  setCardInfo: (cardInfo: { cardNum: string; cardName: string } | null) =>
-    set({ cardInfo: cardInfo ? { ...cardInfo } : null })
+  setSelectedPlan: (plan) => set({ selectedPlan: plan })
 }));
 
 export default usePaymentStore;

@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import DashBoardPage from "./pages/DashBoardPage";
 import BaseLayout from "./components/common/layout/BaseLayout";
@@ -45,8 +45,12 @@ function App() {
         plan: subscribeDate.plan,
         nextBillingDate: subscribeDate.next_billing_date,
         isFreeTrial: subscribeDate.is_free_trial,
-        trialEndDate: subscribeDate.trial_end_date
+        trialEndDate: subscribeDate.trial_end_date,
+        cardName: subscribeDate.card_name,
+        cardLastNumber: subscribeDate.card_last_num
       };
+
+      console.log(combinedData);
       setUser(combinedData);
     }
   }, [userData, subscribeDate, setUser]);

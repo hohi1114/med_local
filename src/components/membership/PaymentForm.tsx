@@ -6,22 +6,29 @@ import {
   TitleWrapper
 } from "./style/membership.styles";
 import { PAYMENT_TERMS } from "./FreeTrialModal";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AgreementBox from "./AgreementBox";
 import { Dropdown } from "antd";
 import { useMutation } from "@tanstack/react-query";
 import { postDeleteCard, postStratSubscription } from "../../utils/api/apis";
 import { AxiosError } from "axios";
 import { StartSubscriptionParams } from "../../types/params";
+import userStore from "../../store/userStore";
 
 const PaymentForm = () => {
-  const { prevStep, nextStep, selectedPlan, cardInfo, setCardInfo } =
+  const { prevStep, nextStep, selectedPlan, hasCardInfo, setHasCardInfo } =
     usePaymentStore();
+  const { user, setUser } = userStore();
   const [isCheckedTerm, setIsCheckedTerm] = useState(false);
   const { mutate: deleteRegisteredCard } = useMutation({
     mutationFn: async () => await postDeleteCard(),
     onSuccess: () => {
-      setCardInfo(null);
+      setHasCardInfo(false);
+      setUser({
+        ...user,
+        cardName: null,
+        cardLastNumber: null
+      });
     },
     onError: (err: AxiosError) => {
       alert(
@@ -30,6 +37,12 @@ const PaymentForm = () => {
       );
     }
   });
+
+  useEffect(() => {
+    if (user?.cardName && user?.cardLastNumber) {
+      setHasCardInfo(true);
+    }
+  }, [user]);
 
   const { mutate: postStartSubscriptMutation, isPending } = useMutation({
     mutationFn: async (params: StartSubscriptionParams) =>
@@ -95,7 +108,7 @@ const PaymentForm = () => {
         <PaymentContainer>
           <PaymentTitle>간편 결제 등록</PaymentTitle>
           <PaymentBoxWrapper>
-            {cardInfo ? (
+            {hasCardInfo ? (
               <RegisteredCardBox>
                 <div
                   style={{
@@ -103,7 +116,7 @@ const PaymentForm = () => {
                     justifyContent: "space-between"
                   }}
                 >
-                  <span className="card_info">{cardInfo.cardName}</span>
+                  <span className="card_info">{user?.cardName}</span>
                   <Dropdown menu={{ items: cardMenu }} trigger={["click"]}>
                     <img
                       src={"/images/dot_white.svg"}
@@ -114,7 +127,7 @@ const PaymentForm = () => {
 
                 <div>
                   <span className="card_info">
-                    **** - **** - **** - {cardInfo.cardNum}
+                    **** - **** - **** - {user?.cardLastNumber}
                   </span>
                 </div>
               </RegisteredCardBox>
@@ -150,7 +163,7 @@ const PaymentForm = () => {
         <StartMembershipButton
           type="submit"
           isLoading={isPending}
-          disabled={!cardInfo || !isCheckedTerm}
+          disabled={!hasCardInfo || !isCheckedTerm}
           onClick={handleStartSubscription}
         >
           7일 무료 체험 시작하기

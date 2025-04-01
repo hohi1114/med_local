@@ -73,6 +73,11 @@ export const postDeleteCard = async () => {
   return data;
 };
 
+export const getCardInfo = async () => {
+  const data = await apiRequest("get", "/payment/card-info");
+  return data;
+};
+
 /**대시보드 */
 export const getDashboardData = async (rangeDate: DateRange) => {
   const data = await apiRequest(

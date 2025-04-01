@@ -14,6 +14,7 @@ import { RegisterCardParams } from "../../types/params";
 import { postRegisterCard } from "../../utils/api/apis";
 import { Radio } from "antd";
 import { AxiosError } from "axios";
+import userStore from "../../store/userStore";
 
 type RegisterCardFormValues = {
   cardNo: string[];
@@ -23,7 +24,8 @@ type RegisterCardFormValues = {
 };
 
 const RegisterCard = () => {
-  const { prevStep, setProcess, setCardInfo } = usePaymentStore();
+  const { prevStep, setProcess } = usePaymentStore();
+  const { user, setUser } = userStore();
   const {
     handleSubmit,
     register,
@@ -39,9 +41,11 @@ const RegisterCard = () => {
       await postRegisterCard(params),
     onSuccess: (data) => {
       const { cardInfo } = data;
-      setCardInfo({
-        cardNum: cardInfo.cardLastNum,
-        cardName: cardInfo.cardName
+
+      setUser({
+        ...user,
+        cardName: cardInfo.cardName,
+        cardLastNumber: cardInfo.cardLastNum
       });
       setProcess("payment");
     },
@@ -233,7 +237,7 @@ const RegisterCard = () => {
             isChecked={isCheckedAgreement}
             setIsChecked={setIsCheckedAgreement}
             content="결제사 정보 제공에 동의합니다."
-            moreInfoLink={false}
+            moreInfoLink={true}
           />
 
           <StartMembershipButton

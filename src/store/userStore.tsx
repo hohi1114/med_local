@@ -7,11 +7,13 @@ export interface User {
   created_at: string;
   role: string;
   //구독 정보
-  plan: string;
-  subscribedStatus: string;
-  nextBillingDate: string;
-  isFreeTrial: boolean;
-  trialEndDate: string;
+  plan: string | null;
+  subscribedStatus: string | null;
+  nextBillingDate: string | null;
+  isFreeTrial: boolean | null;
+  trialEndDate: string | null;
+  cardName?: string | null;
+  cardLastNumber?: string | null;
 }
 
 interface UserStore {
@@ -27,11 +29,13 @@ const userStore = create<UserStore>((set) => ({
     email: "",
     created_at: "",
     role: "",
-    plan: "",
-    subscribedStatus: "",
-    nextBillingDate: "",
+    plan: null,
+    subscribedStatus: null,
+    nextBillingDate: null,
     isFreeTrial: false,
-    trialEndDate: ""
+    trialEndDate: null,
+    cardName: null,
+    cardLastNumber: null
   },
   setUser: (user: User) => set({ user }),
   clearUser: () =>
@@ -42,11 +46,13 @@ const userStore = create<UserStore>((set) => ({
         email: "",
         created_at: "",
         role: "",
-        plan: "",
-        subscribedStatus: "",
-        nextBillingDate: "",
+        plan: null,
+        subscribedStatus: null,
+        nextBillingDate: null,
         isFreeTrial: false,
-        trialEndDate: ""
+        trialEndDate: null,
+        cardName: null,
+        cardLastNumber: null
       }
     })
 }));

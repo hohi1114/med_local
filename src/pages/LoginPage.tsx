@@ -76,7 +76,9 @@ const LoginPage = () => {
         plan: subscribeDate.plan,
         nextBillingDate: subscribeDate.next_billing_date,
         isFreeTrial: subscribeDate.is_free_trial,
-        trialEndDate: subscribeDate.trial_end_date
+        trialEndDate: subscribeDate.trial_end_date,
+        cardName: subscribeDate.card_name,
+        cardLastNumber: subscribeDate.card_last_num
       };
 
       setUser(combinedData as User);
