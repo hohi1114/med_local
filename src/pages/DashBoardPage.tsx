@@ -10,6 +10,8 @@ import BaseTable from "../components/medi_map/chart/BaseTable";
 import DashboardStats from "../components/dashboard/DashboardStats";
 import Loading from "../components/common/Loading";
 import Error from "../components/common/Error";
+import userStore from "../store/userStore";
+import { FreeTrialModal } from "../components/membership/FreeTrialModal";
 
 const LOADINGCONTENT = "데이터를 불러오는 중입니다.";
 export default function DashBoardPage() {
@@ -25,6 +27,7 @@ export default function DashBoardPage() {
     RANGE_DATE_MAP,
     setDateChanged
   } = useDashBoard();
+  const { user, fetchingUserLoading } = userStore();
 
   const barFormatData = () => {
     if (!dashboardInfo) return [];
@@ -51,6 +54,9 @@ export default function DashBoardPage() {
   return (
     <>
       <ContentHeader title="대시보드" />
+      {user?.is_free_trial && !user?.is_free_trial && !fetchingUserLoading && (
+        <FreeTrialModal />
+      )}
       {(isLoading || !dashboardInfo) && <Loading content={LOADINGCONTENT} />}
       {dashboardInfo && (
         <DashBoardContainer>

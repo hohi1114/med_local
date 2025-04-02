@@ -16,3 +16,15 @@ export type postActiveLicenseParams = {
   licenseCode: string;
   hardwareFingerprint: string;
 };
+
+export type RegisterCardParams = {
+  cardNo: string;
+  expMonth: string;
+  idNo: string;
+  cardPw: string;
+  expYear: string;
+};
+
+export type StartSubscriptionParams = {
+  membershipType: string;
+};

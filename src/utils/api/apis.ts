@@ -7,7 +7,9 @@ import { DateRange } from "../../hooks/useRangeDurationDatePicker";
 import {
   postActiveLicenseParams,
   RegionPrivateParams,
-  regionAnalysisParams
+  regionAnalysisParams,
+  RegisterCardParams,
+  StartSubscriptionParams
 } from "../../types/params";
 import {
   VisitData,
@@ -38,7 +40,7 @@ export const postActiveLicense = async (
 };
 
 export const postVerifyCode = async (hardwareNumber: string) => {
-  const data = await apiRequest("post", "auth/verify", {
+  const data = await apiRequest("post", "/auth/verify", {
     hardwareFingerprint: hardwareNumber
   });
   return data;
@@ -47,6 +49,56 @@ export const postVerifyCode = async (hardwareNumber: string) => {
 /**유저정보 */
 export const getUserInfo = async () => {
   return await apiRequest("get", "/users/info");
+};
+
+/** 멤버십 */
+export const postRegisterCard = async (cardInfo: RegisterCardParams) => {
+  const data = await apiRequest("post", "/payment/register-card", cardInfo);
+  return data;
+};
+
+export const postStratSubscription = async (
+  membershipType: StartSubscriptionParams
+) => {
+  const data = await apiRequest(
+    "post",
+    "/payment/start-subscription",
+    membershipType
+  );
+  return data;
+};
+
+export const postDeleteCard = async () => {
+  const data = await apiRequest("post", "/payment/delete-card");
+  return data;
+};
+
+export const getCardInfo = async () => {
+  const data = await apiRequest("get", "/payment/card-info");
+  return data;
+};
+
+export const postCancelFreetrial = async () => {
+  const data = await apiRequest("post", "/payment/cancel-freetrial");
+  return data;
+};
+
+export const postBilling = async () => {
+  const data = await apiRequest("post", "/payment/billing");
+  return data;
+};
+
+export const postCancelSubscription = async () => {
+  const data = await apiRequest("post", "/payment/cancel");
+  return data;
+};
+
+export const changeSubscription = async (membershipType: string) => {
+  const data = await apiRequest("post", "/payment/update", {
+    membershipType: membershipType
+  });
+  console.log(data);
+  return data;
 };
 
 /**대시보드 */
@@ -193,4 +245,11 @@ export const uploadDataToBackendEgis = async (
     console.error("❌ Error in uploadDataToBackendEgis:", error);
     throw error; // Re-throw to handle in the component
   }
+};
+
+/**구독 */
+export const getUserSubscription = async () => {
+  const data = await apiRequest("get", "/payment/user");
+
+  return data;
 };

@@ -2,12 +2,7 @@ import styled from "styled-components";
 import BaseButton from "../components/common/button/BaseButton";
 import { useForm } from "react-hook-form";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import {
-  getUserInfo,
-  postActiveLicense,
-  postLogin,
-  postVerifyCode
-} from "../utils/api/apis";
+import { getUserInfo, postActiveLicense, postLogin } from "../utils/api/apis";
 import { useState, useEffect } from "react";
 import { AxiosError } from "axios";
 import { ErrorResponse, useNavigate } from "react-router-dom";

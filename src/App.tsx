@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import DashBoardPage from "./pages/DashBoardPage";
 import BaseLayout from "./components/common/layout/BaseLayout";
@@ -7,40 +7,29 @@ import UpdateDataPage from "./pages/UpdateDataPage.tsx";
 import MediMapPage from "./pages/MediMapPage";
 import NaverScriptLoader from "./utils/NaverScriptLoader.tsx";
 import SettingPage from "./pages/SettingPage.tsx";
-import userStore from "./store/userStore.tsx";
-import { useQuery } from "@tanstack/react-query";
-import { getUserInfo } from "./utils/api/apis.ts";
 import LoginPage from "./pages/LoginPage.tsx";
 import ComingSoonPage from "./pages/ComingSoonPage.tsx";
+import MembershipPage from "./pages/MembershipPage.tsx";
+import PaymentPolicyPage from "./pages/PaymentPolicyPage.tsx";
+import useUpdateUserInfo from "./hooks/useUpdateUserInfo.tsx";
+import MembershipChangePage from "./pages/MembershipChangePage.tsx";
+import CardManagementPage from "./pages/CardManagementPage.tsx";
 
 function App() {
-  const { setUser } = userStore();
-  const { data, refetch } = useQuery({
-    queryKey: ["userInfo"],
-    queryFn: () => getUserInfo(),
-    enabled: false
-  });
+  const { fetchUserInfo } = useUpdateUserInfo();
 
   useEffect(() => {
     if (!window.location.pathname.startsWith("/login")) {
-      refetch();
+      fetchUserInfo();
     }
   }, []);
-
-  // 자동 로그인's fetch user data
-  useEffect(() => {
-    if (data) {
-      setUser(data);
-    }
-  }, [data]);
 
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-
+        <Route path="/payment-policy" element={<PaymentPolicyPage />} />
         <Route path="/" element={<BaseLayout />}>
-          {/* 기본 경로 ("/")로 접근하면 자동으로 "/dashboard"로 이동 */}
           <Route index element={<Navigate to="dashboard" replace />} />
 
           <Route path="dashboard" element={<DashBoardPage />} />
@@ -58,7 +47,10 @@ function App() {
           />
           <Route path="update_data" element={<UpdateDataPage />} />
           <Route path="compare-chart" element={<ComingSoonPage />} />
-          <Route path="setting" element={<SettingPage />} />
+          <Route path="account" element={<SettingPage />} />
+          <Route path="membership" element={<MembershipPage />} />
+          <Route path="membership-change" element={<MembershipChangePage />} />
+          <Route path="manage-card" element={<CardManagementPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
