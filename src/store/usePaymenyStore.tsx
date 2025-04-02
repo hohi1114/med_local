@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { MembershipType } from "../components/membership/FreeTrialModal";
+import { Membership } from "../types/membership";
 
 const PAYMENT_PROCESS = [
   "information",
@@ -8,15 +8,17 @@ const PAYMENT_PROCESS = [
   "complete"
 ] as const;
 type PaymentProcessType = (typeof PAYMENT_PROCESS)[number];
-type PaymentPlanType = (typeof MembershipType)[number];
+
 interface PaymentStore {
   process: PaymentProcessType;
-  selectedPlan: PaymentPlanType | null;
+  selectedPlan: Membership | null;
   hasCardInfo: boolean;
+  memberships: Membership[];
+  setMemberships: (memberships: Membership[]) => void;
   nextStep: () => void;
   prevStep: () => void;
   reSet: () => void;
-  setSelectedPlan: (plan: PaymentPlanType) => void;
+  setSelectedPlan: (plan: Membership) => void;
   setHasCardInfo: (hasCardInfo: boolean) => void;
   setProcess: (process: PaymentProcessType) => void;
 }
@@ -24,6 +26,8 @@ const usePaymentStore = create<PaymentStore>((set) => ({
   process: "information",
   selectedPlan: null,
   hasCardInfo: false,
+  memberships: [],
+  setMemberships: (memberships) => set({ memberships: memberships }),
   setHasCardInfo: (hasCardInfo: boolean) => set({ hasCardInfo }),
   nextStep: () =>
     set((state) => {

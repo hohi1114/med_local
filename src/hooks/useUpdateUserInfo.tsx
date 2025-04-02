@@ -1,10 +1,35 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import userStore, { User } from "../store/userStore";
-import { getUserInfo, getUserSubscription } from "../utils/api/apis";
+import {
+  getMemberships,
+  getUserInfo,
+  getUserSubscription
+} from "../utils/api/apis";
 import { useEffect } from "react";
+import usePaymentStore from "../store/usePaymenyStore";
 
 const useUpdateUserInfo = () => {
   const { user, setUser, setFetchingUserLoading } = userStore();
+  const { memberships, setMemberships } = usePaymentStore();
+  const { refetch: membershipFetch, data: membershipsRes } = useQuery({
+    queryKey: ["memberships"],
+    queryFn: () => getMemberships(),
+    enabled: true,
+    retry: false
+  });
+  //그냥 앱 기본 데이터
+  useEffect(() => {
+    if (memberships.length === 0) {
+      membershipFetch();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (membershipsRes) {
+      const { memberships } = membershipsRes;
+      setMemberships(memberships);
+    }
+  }, [membershipsRes]);
 
   //**APIs
   const { refetch: loginRefetch, isLoading: loginLoading } = useQuery({

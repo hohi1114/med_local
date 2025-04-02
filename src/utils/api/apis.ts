@@ -52,6 +52,11 @@ export const getUserInfo = async () => {
 };
 
 /** 멤버십 */
+export const getMemberships = async () => {
+  const data = await apiRequest("get", "/payment/memberships");
+  return data;
+};
+
 export const postRegisterCard = async (cardInfo: RegisterCardParams) => {
   const data = await apiRequest("post", "/payment/register-card", cardInfo);
   return data;
@@ -78,11 +83,6 @@ export const getCardInfo = async () => {
   return data;
 };
 
-export const postCancelFreetrial = async () => {
-  const data = await apiRequest("post", "/payment/cancel-freetrial");
-  return data;
-};
-
 export const postBilling = async () => {
   const data = await apiRequest("post", "/payment/billing");
   return data;
@@ -97,7 +97,6 @@ export const changeSubscription = async (membershipType: string) => {
   const data = await apiRequest("post", "/payment/update", {
     membershipType: membershipType
   });
-  console.log(data);
   return data;
 };
 

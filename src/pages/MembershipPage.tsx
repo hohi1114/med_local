@@ -14,26 +14,25 @@ import BaseButton from "../components/common/button/BaseButton";
 import BaseModal from "../components/common/modal/BaseModal";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import {
-  postBilling,
-  postCancelFreetrial,
-  postCancelSubscription
-} from "../utils/api/apis";
+import { postBilling, postCancelSubscription } from "../utils/api/apis";
 import Loading from "../components/common/Loading";
 import useUpdateUserInfo from "../hooks/useUpdateUserInfo";
 import { AxiosError } from "axios";
 import { useNavigate } from "react-router-dom";
+import usePaymentStore from "../store/usePaymenyStore";
 
 function MembershipPage() {
   const { user } = userStore();
+
   const navigate = useNavigate();
   const { updateUserMembershipInfo } = useUpdateUserInfo();
+  const { memberships } = usePaymentStore();
   const today = dayjs();
   const [cancelModal, setCancelModal] = useState(false);
   const [cancelSubscriptionModal, setCancelSubscriptionModal] = useState(false);
   const { mutate: cancelFreeTrialMutation, isPending: cancelFreeTrialPending } =
     useMutation({
-      mutationFn: async () => await postCancelFreetrial(),
+      mutationFn: async () => await postCancelSubscription(),
       onSuccess: () => {
         setCancelModal(false);
         updateUserMembershipInfo();
@@ -77,6 +76,8 @@ function MembershipPage() {
   const cancelSubscriptionHandler = () => {
     cancelSubscription();
   };
+
+  const userPlan = memberships.find((plan) => plan.type === user?.plan);
 
   return (
     <>
@@ -137,7 +138,7 @@ function MembershipPage() {
                   </PaymentInfoWrapper>
                 ) : (
                   <PaymentInfoWrapper>
-                    <TitleStyle>{user?.plan} 멤버십</TitleStyle>
+                    <TitleStyle>{userPlan?.name} 멤버십</TitleStyle>
                     <div className="sub_info">
                       다음 결제일 : {user?.next_billing_date}
                     </div>
@@ -159,16 +160,22 @@ function MembershipPage() {
                 </PaymentInfoWrapper>
               )}
             </MembershipInfo>
-            <Divider />
-            <NavigationWrapper onClick={() => navigate("/membership-change")}>
-              <span className="title">
-                {user.status === "active" ? "멤버십 변경" : "멤버십 시작"}
-              </span>
-              <img
-                src="/images/simpleArrow.svg"
-                style={{ width: 28, height: 28 }}
-              />
-            </NavigationWrapper>
+            {!dayjs(dayjs()).isBefore(user?.trial_end_date) && (
+              <>
+                <Divider />
+                <NavigationWrapper
+                  onClick={() => navigate("/membership-change")}
+                >
+                  <span className="title">
+                    {user.status === "active" ? "멤버십 변경" : "멤버십 시작"}
+                  </span>
+                  <img
+                    src="/images/simpleArrow.svg"
+                    style={{ width: 28, height: 28 }}
+                  />
+                </NavigationWrapper>
+              </>
+            )}
           </CardWrapper>
           <CardWrapper>
             <CardTitle>결제 정보</CardTitle>

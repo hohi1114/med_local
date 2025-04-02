@@ -4,12 +4,9 @@ import FreeTrialInformation from "./FreeTrialInformation";
 import PaymentForm from "./PaymentForm";
 import RegisterCard from "./RegisterCard";
 import CompletePayment from "./CompletePayment";
-
-export const MembershipType = [
-  { id: "monthly", name: "1개월", amount: 69900 },
-  { id: "quarterly", name: "6개월", amount: 499000 },
-  { id: "yearly", name: "12개월", amount: 899000 }
-];
+import { useQuery } from "@tanstack/react-query";
+import { getMemberships } from "../../utils/api/apis";
+import { useEffect } from "react";
 
 export const PAYMENT_TERMS = [
   {

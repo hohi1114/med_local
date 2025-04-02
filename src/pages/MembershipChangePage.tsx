@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import ContentHeader from "../components/common/layout/ContentHeader";
-import { MembershipType } from "../components/membership/FreeTrialModal";
 import { MembershipCard } from "../components/membership/style/membership.styles";
 import userStore from "../store/userStore";
 import BaseButton from "../components/common/button/BaseButton";
@@ -14,11 +13,13 @@ import useUpdateUserInfo from "../hooks/useUpdateUserInfo";
 import { AxiosError } from "axios";
 import dayjs from "dayjs";
 import BackHeader from "../components/common/layout/BackHeader";
+import usePaymentStore from "../store/usePaymenyStore";
 
 function MembershipChangePage() {
   const { user } = userStore();
   const navigate = useNavigate();
   const { updateUserMembershipInfo } = useUpdateUserInfo();
+  const { memberships } = usePaymentStore();
   const [confirmModal, setConfirmModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const { mutate: billingMutation, isPending: billingPending } = useMutation({
@@ -62,6 +63,9 @@ function MembershipChangePage() {
     }
   };
 
+  const updatedPlan = memberships.find((plan) => plan.type === selectedPlan);
+  const userPlan = memberships.find((plan) => plan.type === user.plan);
+
   return (
     <>
       <ContentHeader title={"멤버십 변경"} />
@@ -80,31 +84,56 @@ function MembershipChangePage() {
         }
       >
         {user.status === "active" ? (
-          <>
+          <div style={{ padding: "2rem 0rem" }}>
             <MembershipInfo>
               <ModalTitleText>현재 멤버십</ModalTitleText>
-              <PriceText>{}</PriceText>
+              <div
+                style={{
+                  display: "flex",
+                  gap: "0.5rem"
+                }}
+              >
+                <PriceText>{userPlan?.name}</PriceText>
+                <PriceText>{userPlan?.amount.toLocaleString()} 원</PriceText>
+              </div>
             </MembershipInfo>
             <ArrowIcon src="/images/simpleArrow.svg" />
             <MembershipInfo>
               <ModalTitleText>새로운 멤버십</ModalTitleText>
-              <PriceText>2000원</PriceText>
+              <div
+                style={{
+                  display: "flex",
+                  gap: "0.5rem"
+                }}
+              >
+                <PriceText>{updatedPlan?.name}</PriceText>
+                <PriceText>{updatedPlan?.amount.toLocaleString()} 원</PriceText>
+              </div>
             </MembershipInfo>
-          </>
+          </div>
         ) : (
           <div
-            style={{ display: "flex", flexDirection: "column", gap: "0.8rem" }}
+            style={{ display: "flex", flexDirection: "column", gap: "2rem" }}
           >
-            <span>멤버십을 다시 시작하면 즉시 결제가 진행됩니다.</span>
-            <div>
-              <span>
-                결제 금액: <strong>1000 원</strong>
-              </span>
-            </div>
-            <div>
-              <span>
-                다음 결제일: <strong>{dayjs().format("YYYY-MM-DD")}</strong>
-              </span>
+            <ModalTitleText>
+              멤버십을 다시 시작하면 즉시 결제가 진행됩니다.
+            </ModalTitleText>
+            <div
+              style={{ display: "flex", gap: "1rem", flexDirection: "column" }}
+            >
+              <ModalTitleText>
+                결제 금액:{" "}
+                <PriceText>{updatedPlan?.amount.toLocaleString()} 원</PriceText>
+              </ModalTitleText>
+
+              <ModalTitleText>
+                다음 결제일:{" "}
+                <PriceText>
+                  {dayjs()
+                    .add(updatedPlan?.day ?? 0, "days")
+                    .format("YYYY-MM-DD")}
+                </PriceText>
+              </ModalTitleText>
             </div>
           </div>
         )}
@@ -113,12 +142,12 @@ function MembershipChangePage() {
 
       <MembershipContainer>
         <MembershipWrapper>
-          {MembershipType.map((plan) => {
+          {memberships.map((plan) => {
             return (
               <MembershipCard
-                key={plan.id}
-                onClick={() => setSelectedPlan(plan.id)}
-                selected={selectedPlan ? plan.id === selectedPlan : false}
+                key={plan.type}
+                onClick={() => setSelectedPlan(plan.type)}
+                selected={selectedPlan ? plan.type === selectedPlan : false}
               >
                 <div className="plan-info">
                   <span className="plan-name">{plan.name}</span>
@@ -168,6 +197,7 @@ const MembershipWrapper = styled.div`
 const MembershipInfo = styled.div`
   display: flex;
   align-items: flex-start;
+  flex-direction: column;
   gap: 0.5rem;
   height: 3rem;
   justify-content: center;

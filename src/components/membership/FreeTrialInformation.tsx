@@ -1,5 +1,4 @@
 import usePaymentStore from "../../store/usePaymenyStore";
-import { MembershipType } from "./FreeTrialModal";
 import {
   FreeTrialModalContent,
   TitleWrapper,
@@ -9,7 +8,8 @@ import {
 } from "./style/membership.styles";
 
 const FreeTrialInformation = () => {
-  const { selectedPlan, nextStep, setSelectedPlan } = usePaymentStore();
+  const { selectedPlan, memberships, nextStep, setSelectedPlan } =
+    usePaymentStore();
   return (
     <FreeTrialModalContent>
       <TitleWrapper>
@@ -23,11 +23,11 @@ const FreeTrialInformation = () => {
         </div>
       </TitleWrapper>
       <MemberShipWrapper>
-        {MembershipType.map((plan) => (
+        {memberships.map((plan) => (
           <MembershipCard
-            key={plan.id}
+            key={plan.type}
             onClick={() => setSelectedPlan(plan)}
-            selected={plan.id === selectedPlan?.id}
+            selected={plan.type === selectedPlan?.type}
           >
             <div className="plan-info">
               <span className="plan-name">{plan.name}</span>

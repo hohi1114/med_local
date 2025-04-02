@@ -3,17 +3,18 @@ import { ConfigProvider } from "antd";
 import { ThemeProvider } from "styled-components";
 import { theme } from "./styles/theme";
 import ko_KR from "antd/lib/locale/ko_KR";
+import { GlobalStyles } from "./styles/globalStyles";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   const quertClient = new QueryClient();
   return (
     <ThemeProvider theme={theme}>
+      <GlobalStyles />
       <ConfigProvider
         locale={ko_KR}
         theme={{
           token: {
-            colorPrimary: theme.colors.primary,
-            fontFamily: `"Inter", sans-serif`
+            colorPrimary: theme.colors.primary
           },
           components: {
             Segmented: {

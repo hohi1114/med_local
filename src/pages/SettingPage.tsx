@@ -6,22 +6,17 @@ import { logout } from "../utils/api/apihelper";
 import BaseInput from "../components/common/input/BaseInput";
 import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
-export const MembershipType = [
-  { id: "monthly", name: "1개월", amount: 39999 },
-  { id: "quarterly", name: "6개월", amount: 199999 },
-  { id: "yearly", name: "12개월", amount: 399999 }
-];
+
+import usePaymentStore from "../store/usePaymenyStore";
 
 export default function SettingPage() {
   const { user } = userStore();
+  const { memberships } = usePaymentStore();
   const navigate = useNavigate();
   const handleLogout = () => {
     logout();
   };
-  const planName = MembershipType.find((plan) => plan.id === user?.plan)?.name;
-  const planAmount = MembershipType.find(
-    (plan) => plan.id === user?.plan
-  )?.amount;
+  const userMembership = memberships.find((plan) => plan.type === user?.plan);
 
   return (
     <>
@@ -51,7 +46,7 @@ export default function SettingPage() {
                   <>
                     <PlanInfo>
                       <PlanTitle>
-                        {planName} 플랜{" "}
+                        {userMembership?.name} 플랜{" "}
                         {user?.is_free_trial &&
                           dayjs(user?.trial_end_date).isAfter(dayjs()) && (
                             <span
@@ -69,7 +64,9 @@ export default function SettingPage() {
                           : "결제정보 없음"}
                       </PlanStatus>
                     </PlanInfo>
-                    <Price>월 {planAmount?.toLocaleString()}원</Price>
+                    <Price>
+                      월 {userMembership?.amount?.toLocaleString()}원
+                    </Price>
                   </>
                 ) : (
                   <>

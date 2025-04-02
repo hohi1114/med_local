@@ -45,7 +45,7 @@ const PaymentForm = () => {
 
   const handleStartSubscription = () => {
     if (!selectedPlan) return;
-    postStartSubscriptMutation({ membershipType: selectedPlan?.id });
+    postStartSubscriptMutation({ membershipType: selectedPlan?.type });
   };
 
   return (
