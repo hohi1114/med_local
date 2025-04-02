@@ -14,6 +14,7 @@ import PaymentPolicyPage from "./pages/PaymentPolicyPage.tsx";
 import useUpdateUserInfo from "./hooks/useUpdateUserInfo.tsx";
 import MembershipChangePage from "./pages/MembershipChangePage.tsx";
 import CardManagementPage from "./pages/CardManagementPage.tsx";
+import PaymentHistoryPage from "./pages/PaymentHistoryPage.tsx";
 
 function App() {
   const { fetchUserInfo } = useUpdateUserInfo();
@@ -51,6 +52,7 @@ function App() {
           <Route path="membership" element={<MembershipPage />} />
           <Route path="membership-change" element={<MembershipChangePage />} />
           <Route path="manage-card" element={<CardManagementPage />} />
+          <Route path="payment-history" element={<PaymentHistoryPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

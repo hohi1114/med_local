@@ -188,7 +188,7 @@ function MembershipPage() {
               />
             </NavigationWrapper>
             <Divider />
-            <NavigationWrapper>
+            <NavigationWrapper onClick={() => navigate("/payment-history")}>
               <span className="title">결제 내역 확인</span>
               <img
                 src="/images/simpleArrow.svg"

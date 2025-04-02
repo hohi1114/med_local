@@ -100,6 +100,11 @@ export const changeSubscription = async (membershipType: string) => {
   return data;
 };
 
+export const getPaymentHistory = async () => {
+  const data = await apiRequest("get", "/payment/history");
+  return data;
+};
+
 /**대시보드 */
 export const getDashboardData = async (rangeDate: DateRange) => {
   const data = await apiRequest(
