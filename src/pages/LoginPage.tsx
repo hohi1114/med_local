@@ -1,17 +1,11 @@
 import styled from "styled-components";
 import BaseButton from "../components/common/button/BaseButton";
 import { useForm } from "react-hook-form";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import {
-  getUserInfo,
-  getUserSubscription,
-  postActiveLicense,
-  postLogin
-} from "../utils/api/apis";
+import { useMutation } from "@tanstack/react-query";
+import { postActiveLicense, postLogin } from "../utils/api/apis";
 import { useState, useEffect } from "react";
 import { AxiosError } from "axios";
 import { ErrorResponse, useNavigate } from "react-router-dom";
-import userStore, { User } from "../store/userStore";
 import LicenseModal from "../components/common/modal/LicenseModal";
 import { postActiveLicenseParams } from "../types/params";
 import useFingerPrintNumber from "../hooks/useFingerPrintNumber";
@@ -33,8 +27,6 @@ const LoginPage = () => {
   } = useForm<LoginParams>();
   const { getFingerPrint, setFingurePrintNumber, saveFingerPrint } =
     useFingerPrintNumber();
-  const { setUser } = userStore();
-
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [licenseCode, setLicenseCode] = useState<string | null>(null);

@@ -173,7 +173,7 @@ function MembershipPage() {
           <CardWrapper>
             <CardTitle>결제 정보</CardTitle>
             <Divider />
-            <NavigationWrapper>
+            <NavigationWrapper onClick={() => navigate("/manage-card")}>
               <span className="title">결제 수단 관리</span>
               <img
                 src="/images/simpleArrow.svg"
@@ -229,7 +229,7 @@ const ButtonWrapper = styled.div`
   max-width: 10rem;
 `;
 
-const CancelButton = styled(BaseButton)`
+export const CancelButton = styled(BaseButton)`
   transition: 0.2s ease-in-out;
   background-color: ${(props) => props.theme.colors.gray02};
   color: ${(props) => props.theme.colors.black};

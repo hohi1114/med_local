@@ -2,12 +2,12 @@ import styled from "styled-components";
 import { StartMembershipButton } from "./style/membership.styles";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import userStore from "../../store/userStore";
 import { getUserSubscription } from "../../utils/api/apis";
+import useUpdateUserInfo from "../../hooks/useUpdateUserInfo";
 
 const CompletePayment = () => {
   const navigate = useNavigate();
-  const { setUser, user } = userStore();
+  const { updateUserMembershipInfo } = useUpdateUserInfo();
   const { refetch: subscribeRefetch } = useQuery({
     queryKey: ["subscribe"],
     queryFn: () => getUserSubscription(),
@@ -23,16 +23,7 @@ const CompletePayment = () => {
         console.error("구독 정보를 가져올 수 없습니다.");
         return;
       }
-
-      setUser({
-        ...user,
-        nextBillingDate: data.next_billing_date,
-        isFreeTrial: data.is_free_trial,
-        trialEndDate: data.trial_end_date,
-        cardName: data.card_name,
-        cardLastNumber: data.card_last_num
-      });
-
+      updateUserMembershipInfo();
       navigate("/update_data");
     } catch (error) {
       console.error("구독 정보 업데이트 중 오류 발생:", error);

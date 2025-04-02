@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import useUpdateUserInfo from "../hooks/useUpdateUserInfo";
 import { AxiosError } from "axios";
 import dayjs from "dayjs";
+import BackHeader from "../components/common/layout/BackHeader";
 
 function MembershipChangePage() {
   const { user } = userStore();
@@ -64,6 +65,7 @@ function MembershipChangePage() {
   return (
     <>
       <ContentHeader title={"멤버십 변경"} />
+      <BackHeader />
       <BaseModal
         isOpen={confirmModal}
         onClose={() => setConfirmModal(false)}
@@ -146,7 +148,7 @@ function MembershipChangePage() {
 }
 
 export default MembershipChangePage;
-const MembershipContainer = styled.div`
+export const MembershipContainer = styled.div`
   display: flex;
   flex-direction: column;
   background-color: white;

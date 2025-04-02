@@ -44,8 +44,8 @@ const RegisterCard = () => {
 
       setUser({
         ...user,
-        cardName: cardInfo.cardName,
-        cardLastNumber: cardInfo.cardLastNum
+        card_name: cardInfo.cardName,
+        card_last_num: cardInfo.cardLastNum
       });
       setProcess("payment");
     },

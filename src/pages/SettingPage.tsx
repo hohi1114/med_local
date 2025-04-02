@@ -47,7 +47,7 @@ export default function SettingPage() {
             <Divider />
             <MembershipInfo>
               <MembershipDetails>
-                {user?.subscribedStatus === "active" ? (
+                {user?.status === "active" ? (
                   <>
                     <PlanInfo>
                       <PlanTitle>
@@ -62,7 +62,7 @@ export default function SettingPage() {
                           )}
                       </PlanTitle>
                       <PlanStatus>
-                        {user?.subscribedStatus === "active"
+                        {user?.status === "active"
                           ? `다음 결제일: ${dayjs(
                               user?.next_billing_date
                             ).format("YYYY년 MM월 DD일")}`

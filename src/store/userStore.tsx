@@ -8,7 +8,6 @@ export interface User {
   role: string;
   plan: string | null;
   amount: number | null;
-  subscribedStatus: string | null;
   next_billing_date: string | null;
   last_payment_date: string | null;
   is_free_trial: boolean | null;
@@ -39,7 +38,6 @@ const userStore = create<UserStore>((set) => ({
     created_at: "",
     role: "",
     plan: null,
-    subscribedStatus: null,
     next_billing_date: null,
     is_free_trial: false,
     trial_end_date: null,
@@ -67,7 +65,6 @@ const userStore = create<UserStore>((set) => ({
         created_at: "",
         role: "",
         plan: null,
-        subscribedStatus: null,
         next_billing_date: null,
         is_free_trial: false,
         trial_end_date: null,

@@ -54,7 +54,7 @@ export default function DashBoardPage() {
   return (
     <>
       <ContentHeader title="대시보드" />
-      {!user?.isFreeTrial && !fetchingUserLoading && <FreeTrialModal />}
+      {!user?.is_free_trial && !fetchingUserLoading && <FreeTrialModal />}
       {(isLoading || !dashboardInfo) && <Loading content={LOADINGCONTENT} />}
       {dashboardInfo && (
         <DashBoardContainer>
