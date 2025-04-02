@@ -31,7 +31,9 @@ const RegionInfo = ({ data }: RegionInfoProps) => {
 
   const statsData: { [key: number]: string } = {
     1: `${data.monthly_avg_income?.toLocaleString()} ₩`,
-    2: `${Math.ceil(data.medical_expense / 3).toLocaleString()} ₩`,
+    2: `${Math.ceil(
+      data.medical_expense / (3 * data.population)
+    ).toLocaleString()} ₩`,
     3: `${data.total_avg_age}세`,
     4: `${Math.ceil(data.population)?.toLocaleString()}명`
   };

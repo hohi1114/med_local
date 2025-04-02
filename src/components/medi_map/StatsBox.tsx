@@ -35,7 +35,7 @@ const StatsBox = ({ title, data, diffRateData }: StatsBoxProps) => {
                 transform: diffRateData >= 0 ? "rotate(180deg)" : "none"
               }}
             />
-            <DiffRateValue>{diffRateData}</DiffRateValue>
+            <DiffRateValue>{diffRateData}%</DiffRateValue>
           </DiffRateContainer>
         )}
       </TitleContainer>
@@ -58,16 +58,16 @@ const StatsBoxContainer = styled.div.withConfig({
   padding: 1.5rem 0 1.5rem 1.5rem;
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
+  gap: 1rem;
   width: 100%;
-  max-width: 300px;
+  max-width: 25rem;
   box-sizing: border-box;
 `;
 
 const TitleContainer = styled.div`
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.5rem;
 `;
 
 const DiffRateContainer = styled.div`
