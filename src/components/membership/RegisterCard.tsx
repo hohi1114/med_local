@@ -23,8 +23,16 @@ type RegisterCardFormValues = {
   idNum: string;
 };
 
-const RegisterCard = () => {
-  const { prevStep, setProcess } = usePaymentStore();
+interface RegisterCardProps {
+  withoutHeader?: boolean;
+  handleCompleteUpdate: () => void;
+}
+
+const RegisterCard: React.FC<RegisterCardProps> = ({
+  withoutHeader = true,
+  handleCompleteUpdate
+}) => {
+  const { prevStep } = usePaymentStore();
   const { user, setUser } = userStore();
   const {
     handleSubmit,
@@ -47,7 +55,7 @@ const RegisterCard = () => {
         card_name: cardInfo.cardName,
         card_last_num: cardInfo.cardLastNum
       });
-      setProcess("payment");
+      handleCompleteUpdate();
     },
     onError: (err: AxiosError) => {
       const errorMessage =
@@ -82,18 +90,20 @@ const RegisterCard = () => {
 
   return (
     <>
-      <BackHeaderWrapper>
-        <img
-          src="/images/arrow.svg"
-          style={{ width: 30, height: 30, cursor: "pointer" }}
-          onClick={prevStep}
-        />
-        <TitleWrapper isAbsolute>
-          <span className="modal-title" style={{ textAlign: "center" }}>
-            카드 등록
-          </span>
-        </TitleWrapper>
-      </BackHeaderWrapper>
+      {withoutHeader && (
+        <BackHeaderWrapper>
+          <img
+            src="/images/arrow.svg"
+            style={{ width: 30, height: 30, cursor: "pointer" }}
+            onClick={prevStep}
+          />
+          <TitleWrapper isAbsolute>
+            <span className="modal-title" style={{ textAlign: "center" }}>
+              카드 등록
+            </span>
+          </TitleWrapper>
+        </BackHeaderWrapper>
+      )}
 
       <form onSubmit={handleSubmit(onSubmit)}>
         <MemberShipWrapper>
@@ -104,24 +114,29 @@ const RegisterCard = () => {
               <span>카드 번호</span>
               <CardNumberWrapper>
                 {[0, 1, 2, 3].map((index) => (
-                  <CardInfoInput
-                    key={index}
-                    inputMode="numeric"
-                    type={index === 1 || index === 2 ? "password" : "tel"}
-                    placeholder="0000"
-                    maxLength={4}
-                    required
-                    {...register(`cardNo.${index}`, {
-                      required: "카드 번호 16자리를 입력해주세요.",
-                      minLength: {
-                        value: 4,
-                        message: "카드 번호 16자리를 올바르게 입력해주세요."
-                      },
-                      onChange: (e) => {
-                        e.target.value = e.target.value.replace(/[^0-9]/g, "");
-                      }
-                    })}
-                  />
+                  <div key={index}>
+                    <CardInfoInput
+                      inputMode="numeric"
+                      type={index === 1 || index === 2 ? "password" : "tel"}
+                      placeholder="0000"
+                      maxLength={4}
+                      required
+                      {...register(`cardNo.${index}`, {
+                        required: "카드 번호 16자리를 입력해주세요.",
+                        minLength: {
+                          value: 4,
+                          message: "카드 번호 16자리를 올바르게 입력해주세요."
+                        },
+                        onChange: (e) => {
+                          e.target.value = e.target.value.replace(
+                            /[^0-9]/g,
+                            ""
+                          );
+                        }
+                      })}
+                    />
+                    {index !== 3 && <span>&mdash;</span>}
+                  </div>
                 ))}
               </CardNumberWrapper>
               <ErrorText>
@@ -131,7 +146,13 @@ const RegisterCard = () => {
                   errors.cardNo?.[3]?.message}
               </ErrorText>
             </InputWrapper>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "end"
+              }}
+            >
               <InputWrapper>
                 <span>유효기간</span>
                 <CardNumberWrapper>
@@ -278,6 +299,7 @@ const CardNumberWrapper = styled.div`
   align-items: center;
   width: 100%;
   justify-content: space-between;
+  color: ${(props) => props.theme.colors.gray04};
 `;
 
 const CardInfoInput = styled.input`

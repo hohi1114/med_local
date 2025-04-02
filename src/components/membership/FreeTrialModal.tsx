@@ -33,20 +33,23 @@ export const PAYMENT_TERMS = [
 ];
 
 export const FreeTrialModal = () => {
-  const { process } = usePaymentStore();
+  const { process, setProcess } = usePaymentStore();
 
   return (
     <Modal
       open={true}
       footer={null}
       closeIcon={null}
+      centered
       styles={{
         content: { padding: "2rem", maxHeight: "80vh", overflowY: "auto" }
       }}
     >
       {process === "information" && <FreeTrialInformation />}
       {process === "payment" && <PaymentForm />}
-      {process === "register_card" && <RegisterCard />}
+      {process === "register_card" && (
+        <RegisterCard handleCompleteUpdate={() => setProcess("payment")} />
+      )}
       {process === "complete" && <CompletePayment />}
     </Modal>
   );

@@ -151,7 +151,7 @@ export default MembershipChangePage;
 export const MembershipContainer = styled.div`
   display: flex;
   flex-direction: column;
-  background-color: white;
+  background-color: ${(props) => props.theme.colors.white};
   gap: 2rem;
   align-items: center;
   padding: 5rem 0;

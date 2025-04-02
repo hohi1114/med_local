@@ -40,6 +40,8 @@ export const MemberShipWrapper = styled.div`
   display: flex;
   flex-direction: column;
   gap: 2rem;
+  min-width: 33rem;
+
   .disclaimer {
     color: ${(props) => props.theme.colors.gray05};
   }

@@ -7,8 +7,9 @@ import { postDeleteCard } from "../../utils/api/apis";
 
 interface CardInfoProps {
   handleAddCard: () => void;
+  hideCancle?: boolean;
 }
-const CardInfo = ({ handleAddCard }: CardInfoProps) => {
+const CardInfo = ({ handleAddCard, hideCancle = false }: CardInfoProps) => {
   const { user, setUser } = userStore();
   const { mutate: deleteRegisteredCard } = useMutation({
     mutationFn: async () => await postDeleteCard(),
@@ -46,14 +47,15 @@ const CardInfo = ({ handleAddCard }: CardInfoProps) => {
         }}
       >
         <span className="card_info">{user?.card_name}</span>
-        <Dropdown menu={{ items: cardMenu }} trigger={["click"]}>
-          <img
-            src={"/images/dot_white.svg"}
-            style={{ width: 15, height: 15 }}
-          />
-        </Dropdown>
+        {!hideCancle && (
+          <Dropdown menu={{ items: cardMenu }} trigger={["click"]}>
+            <img
+              src={"/images/dot_white.svg"}
+              style={{ width: 15, height: 15 }}
+            />
+          </Dropdown>
+        )}
       </div>
-
       <div>
         <span className="card_info">
           **** - **** - **** - {user?.card_last_num}
