@@ -15,7 +15,7 @@ import BaseToggle from "../common/toggle/BaseToggle";
 
 const STATS_BOXES = [
   { id: 1, title: "월 평균 소득" },
-  { id: 2, title: "월 평균 1인당 의료지출액" },
+  { id: 2, title: "월 평균 1인당 의료비 지출액" },
   { id: 3, title: "전체 평균 연령" },
   { id: 4, title: "총 인구" }
 ];
