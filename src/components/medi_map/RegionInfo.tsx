@@ -14,8 +14,8 @@ import { RegionData } from "../../types/naver-maps";
 import BaseToggle from "../common/toggle/BaseToggle";
 
 const STATS_BOXES = [
-  { id: 1, title: "월평균 소득" },
-  { id: 2, title: "월 평균 의료비 지출액" },
+  { id: 1, title: "월 평균 소득" },
+  { id: 2, title: "월 평균 1인당 의료지출액" },
   { id: 3, title: "전체 평균 연령" },
   { id: 4, title: "총 인구" }
 ];
@@ -24,15 +24,18 @@ const FOOT_TRAFFIC_OPTIONS = ["시간대", "요일"];
 
 type RegionInfoProps = {
   data: RegionData;
+  region: string;
 };
 
-const RegionInfo = ({ data }: RegionInfoProps) => {
+const RegionInfo = ({ data, region }: RegionInfoProps) => {
   const [footTrafficToggle, setFootTrafficToggle] = useState<string>("시간대");
 
   const statsData: { [key: number]: string } = {
     1: `${data.monthly_avg_income?.toLocaleString()} ₩`,
     2: `${Math.ceil(
-      data.medical_expense / (3 * data.population)
+      data.medical_expense /
+        (3 *
+          (region === "small" ? data?.dong_population ?? 1 : data?.population))
     ).toLocaleString()} ₩`,
     3: `${data.total_avg_age}세`,
     4: `${Math.ceil(data.population)?.toLocaleString()}명`

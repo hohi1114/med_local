@@ -70,6 +70,10 @@ const StatisticsDrawer = () => {
   }, [boundArea]);
 
   useEffect(() => {
+    handleIsDrawerOpen(false);
+  }, [region]);
+
+  useEffect(() => {
     //Small region data  === dong region data
     const fetchRegionInfo = async () => {
       if (region === "small" && smallPolygons[0]) {
@@ -79,6 +83,7 @@ const StatisticsDrawer = () => {
           const newSmallRegion = {
             name: selectedRegionData.name,
             population: selectedRegionData.population,
+            dong_population: containingDong.population,
             male_avg_age: containingDong.male_avg_age,
             female_avg_age: containingDong.female_avg_age,
             total_avg_age: containingDong.total_avg_age,
@@ -172,7 +177,8 @@ const StatisticsDrawer = () => {
 
   const renderContent = () => {
     if (!regionInfo) return null;
-    if (toggleValue === "지역") return <RegionInfo data={regionInfo} />;
+    if (toggleValue === "지역")
+      return <RegionInfo data={regionInfo} region={region} />;
     if (toggleValue === "매출") {
       return isPending ? (
         <Loading />
@@ -209,7 +215,7 @@ const StatisticsDrawer = () => {
           >
             <ChartTitleStyle>지역 데이터</ChartTitleStyle>
           </div>
-          <RegionInfo data={regionInfo} />
+          <RegionInfo data={regionInfo} region={region} />
         </div>
         <div
           style={{

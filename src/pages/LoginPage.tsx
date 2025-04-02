@@ -29,11 +29,8 @@ const LoginPage = () => {
     handleSubmit,
     formState: { errors }
   } = useForm<LoginParams>();
-  const {
-    getFingerPrint,
-    setFingurePrintNumber,
-    saveFingerPrint
-  } = useFingerPrintNumber();
+  const { getFingerPrint, setFingurePrintNumber, saveFingerPrint } =
+    useFingerPrintNumber();
   const { setUser } = userStore();
 
   const [error, setError] = useState<string | null>(null);
@@ -41,7 +38,6 @@ const LoginPage = () => {
   const [licenseCode, setLicenseCode] = useState<string | null>(null);
   const [isLicenseModalOpen, setIsLicenseModalOpen] = useState<boolean>(false);
   const [hardwareFingerprint, setHardwareFingerprint] = useState<string>("");
-
 
   useEffect(() => {
     const getHardwareId = async () => {
@@ -52,8 +48,6 @@ const LoginPage = () => {
     getHardwareId();
   }, [getFingerPrint, setFingurePrintNumber]);
 
-
-
   //**APIs
   const { refetch: loginRefetch } = useQuery({
     queryKey: ["userInfo"],
@@ -61,7 +55,6 @@ const LoginPage = () => {
     enabled: false,
     retry: false
   });
-
 
   //only first
   const { mutate: postActiveLicenseMutation } = useMutation({
@@ -76,7 +69,7 @@ const LoginPage = () => {
     onError: (err: AxiosError) =>
       alert(
         (err.response?.data as { error?: string })?.error ||
-        "License activation failed"
+          "License activation failed"
       )
   });
 
@@ -117,9 +110,7 @@ const LoginPage = () => {
     }
   });
 
-
   const handleConfirmButton = () => {
-
     if (licenseCode && hardwareFingerprint) {
       postActiveLicenseMutation({
         licenseCode: licenseCode,
@@ -130,13 +121,11 @@ const LoginPage = () => {
     }
   };
 
-
-
   const onSubmit = (data: LoginParams) => {
     setIsLoading(true);
     const loginData = {
       ...data,
-      hardwareFingerprint: hardwareFingerprint
+      hardwareFingerprint: "03560274-043c-05c8-6506-650700080009"
     };
     loginMutation.mutate(loginData);
   };

@@ -143,7 +143,7 @@ const useNaverMapData = () => {
         name: "gu",
         fontSize: "1.2rem",
         color: "#6666E0",
-        hilightColor: "#0000b4F"
+        hilightColor: "#0000b4"
       };
     }
   };
