@@ -20,6 +20,8 @@ import {
   getUserEMR
 } from "../utils/api/apis";
 import ContentHeader from "../components/common/layout/ContentHeader.tsx";
+import RequireSubscribe from "../components/common/RequireSubscribe.tsx";
+import userStore from "../store/userStore.tsx";
 
 const UpdateDataPage = () => {
   const [dataType, setDataType] = useState<"euisarang" | "egis">("euisarang"); // Track data type
@@ -30,6 +32,7 @@ const UpdateDataPage = () => {
   const [progress, setProgress] = useState<number>(0);
   const [api, contextHolder] = notification.useNotification();
   const [localData, setLocalData] = useState<number>(0);
+  const { isInActiveUser } = userStore();
 
   const openNotification = (
     type: "success" | "error" | "warning",
@@ -177,6 +180,7 @@ const UpdateDataPage = () => {
 
   return (
     <>
+      {isInActiveUser && <RequireSubscribe />}
       {progress > 0 && progress < 100 && (
         <Loading content="데이터를 안전하게 처리중입니다." />
       )}

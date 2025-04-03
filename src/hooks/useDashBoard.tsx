@@ -40,6 +40,10 @@ const RANGE_DATE_MAP: Record<RangeDateMapKey, DateRange> = {
   }
 };
 const useDashBoard = () => {
+  const { isFreetrialUser } = userStore();
+  const AVAILABLE_DATE_RANGES = isFreetrialUser
+    ? { "1개월": RANGE_DATE_MAP["1개월"] }
+    : RANGE_DATE_MAP;
   const { dateRange, handleDateRangeChange } = useRangeDurationDatePicker();
   const [buttonType, setButtonType] = useState<RangeDateMapKey | null>("1개월");
   const [isLoading, setIsLoading] = useState(false);
@@ -84,7 +88,7 @@ const useDashBoard = () => {
 
   useEffect(() => {
     if (allregionData) {
-      saveDataToIndexDB(allregionData, 10);
+      saveDataToIndexDB(allregionData, 12);
     }
   }, [allregionData]);
 
@@ -199,7 +203,7 @@ const useDashBoard = () => {
     isError,
     dashboardInfo,
     buttonType,
-    RANGE_DATE_MAP,
+    AVAILABLE_DATE_RANGES,
     dateRange
   };
 };

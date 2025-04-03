@@ -1,4 +1,4 @@
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { getDataFromRegionDB } from "../store/indexded_db/RegionDB";
 import { Point, RegionData, RegionEtcData } from "../types/naver-maps";
 import { useQuery } from "@tanstack/react-query";
@@ -57,7 +57,6 @@ const useNaverMapData = () => {
 
   useEffect(() => {
     if (allRegionEtcData) {
-      const newMaxCost = { ...maxCost };
       Object.keys(allRegionEtcData).forEach((key) => {
         if (key === "small_regions") {
           setMaxCost((prev) => ({
@@ -81,6 +80,7 @@ const useNaverMapData = () => {
       });
     }
   }, [allRegionEtcData]);
+
   useEffect(() => {
     const fetchAndTransformRegions = async () => {
       const regionKeys = ["small_regions", "dong_regions", "gu_regions"];

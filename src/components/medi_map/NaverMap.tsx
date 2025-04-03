@@ -9,6 +9,10 @@ import DurationDatePicker from "../common/datepicker/DurationDatePicker.js";
 import Loading from "../common/Loading.js";
 import styled from "styled-components";
 import { DateRange } from "../../hooks/useRangeDurationDatePicker.js";
+import { Alert } from "antd";
+import dayjs from "dayjs";
+import { RangePickerProps } from "antd/es/date-picker/index.js";
+import userStore from "../../store/userStore.js";
 
 interface NaverMapProps {
   dateRange: DateRange;
@@ -30,6 +34,7 @@ const NaverMap: FC<NaverMapProps> = ({ dateRange, handleDateChange }) => {
     areaName,
     loading
   } = mapStore();
+  const { isFreetrialUser } = userStore();
 
   const MarkerClustering = makeMarkerClustering(window.naver) as any;
   const mapElement = useRef<HTMLDivElement>(null);
@@ -413,16 +418,41 @@ const NaverMap: FC<NaverMapProps> = ({ dateRange, handleDateChange }) => {
     }
   };
 
+  const disabledDateForFreetrial: RangePickerProps["disabledDate"] = (
+    current
+  ) => {
+    const today = dayjs().startOf("day");
+    const oneMonthAgo = today.subtract(1, "month");
+
+    return current.isBefore(oneMonthAgo, "day");
+  };
+
   return (
     <div
       ref={mapElement}
       style={{
         position: "relative",
         width: "100%",
-        height: "100%",
-        backgroundColor: "#e0e0e0"
+        height: "100%"
       }}
     >
+      {!hospitalLocation && (
+        <Alert
+          message="Warning"
+          description="병원 위치 정보를 불러올 수 없습니다."
+          type="warning"
+          showIcon
+          closable
+          style={{
+            position: "absolute",
+            top: "10px",
+            right: "10px",
+            zIndex: 1000,
+            width: "80%",
+            maxWidth: "400px"
+          }}
+        />
+      )}
       {(isFetching || loading) && <Loading />}
       <Wrapper>
         <ContentBox>
@@ -431,6 +461,7 @@ const NaverMap: FC<NaverMapProps> = ({ dateRange, handleDateChange }) => {
               style={{ width: "100%" }}
               value={dateRange}
               onChange={handleDateChange}
+              disabledDate={isFreetrialUser ? disabledDateForFreetrial : null}
             />
           </DatePickerContainer>
           <SubText>

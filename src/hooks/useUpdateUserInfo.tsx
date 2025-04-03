@@ -7,9 +7,16 @@ import {
 } from "../utils/api/apis";
 import { useEffect } from "react";
 import usePaymentStore from "../store/usePaymenyStore";
+import dayjs from "dayjs";
 
 const useUpdateUserInfo = () => {
-  const { user, setUser, setFetchingUserLoading } = userStore();
+  const {
+    user,
+    setUser,
+    setFetchingUserLoading,
+    setIsFreetrialUser,
+    setIsInActiveUser
+  } = userStore();
   const { memberships, setMemberships } = usePaymentStore();
   const { refetch: membershipFetch, data: membershipsRes } = useQuery({
     queryKey: ["memberships"],
@@ -57,7 +64,6 @@ const useUpdateUserInfo = () => {
   const fetchUserInfo = async () => {
     const { data: userData } = await loginRefetch();
     const { data: subscribeDate } = await subscribeRefetch();
-
     const combinedData = {
       ...userData,
       ...subscribeDate
@@ -65,6 +71,30 @@ const useUpdateUserInfo = () => {
 
     setUser(combinedData as User);
   };
+
+  //check if user is in free trial
+  useEffect(() => {
+    if (user) {
+      if (
+        user?.status === "active" &&
+        user?.is_free_trial &&
+        dayjs(user?.trial_end_date).isAfter(dayjs().format("YYYY-MM-DD"))
+      ) {
+        setIsFreetrialUser(true);
+      } else {
+        setIsFreetrialUser(false);
+      }
+
+      if (
+        (user?.status === "inactive" || user?.status === "expired") &&
+        user?.is_free_trial
+      ) {
+        setIsInActiveUser(true);
+      } else {
+        setIsInActiveUser(false);
+      }
+    }
+  }, [user]);
 
   useEffect(() => {
     if (loginLoading || subscribeLoading) {

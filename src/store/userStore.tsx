@@ -24,10 +24,14 @@ export interface User {
 
 interface UserStore {
   user: User;
+  isFreetrialUser: boolean;
+  isInActiveUser: boolean;
   fetchingUserLoading: boolean;
   setUser: (user: User) => void;
   clearUser: () => void;
   setFetchingUserLoading: (loading: boolean) => void;
+  setIsFreetrialUser: (isFreetrialUser: boolean) => void;
+  setIsInActiveUser: (isInActiveUser: boolean) => void;
 }
 
 const userStore = create<UserStore>((set) => ({
@@ -53,6 +57,8 @@ const userStore = create<UserStore>((set) => ({
     updated_at: null
   },
   fetchingUserLoading: true,
+  isFreetrialUser: false,
+  isInActiveUser: false,
   setFetchingUserLoading: (fetchingUserLoading: boolean) =>
     set({ fetchingUserLoading }),
   setUser: (user: User) => set({ user }),
@@ -79,7 +85,9 @@ const userStore = create<UserStore>((set) => ({
         next_plan: null,
         updated_at: null
       }
-    })
+    }),
+  setIsFreetrialUser: (isFreetrialUser: boolean) => set({ isFreetrialUser }),
+  setIsInActiveUser: (isInActiveUser: boolean) => set({ isInActiveUser })
 }));
 
 export default userStore;

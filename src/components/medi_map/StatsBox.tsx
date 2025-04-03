@@ -23,21 +23,23 @@ const StatsBox = ({ title, data, diffRateData }: StatsBoxProps) => {
     <StatsBoxContainer isDecreased={diffRateData ? diffRateData < 0 : false}>
       <TitleContainer>
         <ChipTextStyle>{title}</ChipTextStyle>
-        {diffRateData && (
-          <DiffRateContainer>
-            <img
-              src="/images/bendedArrow.svg"
-              alt={diffRateData >= 0 ? "increase" : "decrease"}
-              style={{
-                width: "1.5rem",
-                height: "1.5rem",
-                marginRight: "2px",
-                transform: diffRateData >= 0 ? "rotate(180deg)" : "none"
-              }}
-            />
-            <DiffRateValue>{diffRateData}%</DiffRateValue>
-          </DiffRateContainer>
-        )}
+        {diffRateData !== 0 &&
+          diffRateData !== null &&
+          diffRateData !== undefined && (
+            <DiffRateContainer>
+              <img
+                src="/images/bendedArrow.svg"
+                alt={diffRateData >= 0 ? "increase" : "decrease"}
+                style={{
+                  width: "1.5rem",
+                  height: "1.5rem",
+                  marginRight: "2px",
+                  transform: diffRateData >= 0 ? "rotate(180deg)" : "none"
+                }}
+              />
+              <DiffRateValue>{diffRateData}%</DiffRateValue>
+            </DiffRateContainer>
+          )}
       </TitleContainer>
 
       <DataContainer>
