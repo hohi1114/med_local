@@ -24,7 +24,7 @@ const NaverMap: FC<NaverMapProps> = ({ dateRange, handleDateChange }) => {
     setPatients,
     setRegion,
     setSelctedRegionData,
-    setSmallPolygons,
+    setDongNameForSmall,
     setBoundArea,
     setLoading,
     areaName,
@@ -281,7 +281,9 @@ const NaverMap: FC<NaverMapProps> = ({ dateRange, handleDateChange }) => {
             zIndex: 100
           });
           setSelctedRegionData(area);
-          setSmallPolygons(area.polygon);
+          if (name === "small" && area.dong) {
+            setDongNameForSmall(area?.dong);
+          }
         }
       });
     }
@@ -320,7 +322,9 @@ const NaverMap: FC<NaverMapProps> = ({ dateRange, handleDateChange }) => {
             zIndex: 100
           });
           setSelctedRegionData(area);
-          setSmallPolygons(area.polygon);
+          if (name === "small" && area.dong) {
+            setDongNameForSmall(area?.dong);
+          }
         }
       });
     }
