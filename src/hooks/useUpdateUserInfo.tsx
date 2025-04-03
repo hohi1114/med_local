@@ -74,7 +74,7 @@ const useUpdateUserInfo = () => {
 
   //check if user is in free trial
   useEffect(() => {
-    if (user) {
+    if (user && !user?.free) {
       if (
         user?.status === "active" &&
         user?.is_free_trial &&

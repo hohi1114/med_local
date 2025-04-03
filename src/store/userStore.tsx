@@ -20,6 +20,7 @@ export interface User {
   emr?: string | null;
   next_plan?: string | null;
   updated_at?: string | null;
+  free: boolean;
 }
 
 interface UserStore {
@@ -54,7 +55,8 @@ const userStore = create<UserStore>((set) => ({
     location: null,
     emr: null,
     next_plan: null,
-    updated_at: null
+    updated_at: null,
+    free: false
   },
   fetchingUserLoading: true,
   isFreetrialUser: false,
@@ -83,7 +85,8 @@ const userStore = create<UserStore>((set) => ({
         location: null,
         emr: null,
         next_plan: null,
-        updated_at: null
+        updated_at: null,
+        free: false
       }
     }),
   setIsFreetrialUser: (isFreetrialUser: boolean) => set({ isFreetrialUser }),

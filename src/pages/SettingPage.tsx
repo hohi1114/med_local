@@ -37,55 +37,57 @@ export default function SettingPage() {
             </ProfileField>
           </CardWrapper>
 
-          <CardWrapper>
-            <CardTitle>멤버십</CardTitle>
-            <Divider />
-            <MembershipInfo>
-              <MembershipDetails>
-                {user?.status === "active" ? (
-                  <>
-                    <PlanInfo>
-                      <PlanTitle>
-                        {userMembership?.name} 플랜{" "}
-                        {user?.is_free_trial &&
-                          dayjs(user?.trial_end_date).isAfter(dayjs()) && (
-                            <span
-                              style={{ color: "#2a7ac2", fontWeight: "bold" }}
-                            >
-                              (1개월 무료체험 중)
-                            </span>
-                          )}
-                      </PlanTitle>
-                      <PlanStatus>
-                        {user?.status === "active"
-                          ? `다음 결제일: ${dayjs(
-                              user?.next_billing_date
-                            ).format("YYYY년 MM월 DD일")}`
-                          : "결제정보 없음"}
-                      </PlanStatus>
-                    </PlanInfo>
-                    <Price>
-                      월 {userMembership?.amount?.toLocaleString()}원
-                    </Price>
-                  </>
-                ) : (
-                  <>
-                    <PlanInfo>
-                      <PlanTitle>멤버십 업데이트 필요</PlanTitle>
-                    </PlanInfo>
-                  </>
-                )}
-              </MembershipDetails>
-              <ButtonWrapper>
-                <MembershipButton
-                  type="button"
-                  onClick={() => navigate("/membership")}
-                >
-                  멤버십 관리
-                </MembershipButton>
-              </ButtonWrapper>
-            </MembershipInfo>
-          </CardWrapper>
+          {!user.free && (
+            <CardWrapper>
+              <CardTitle>멤버십</CardTitle>
+              <Divider />
+              <MembershipInfo>
+                <MembershipDetails>
+                  {user?.status === "active" ? (
+                    <>
+                      <PlanInfo>
+                        <PlanTitle>
+                          {userMembership?.name} 플랜{" "}
+                          {user?.is_free_trial &&
+                            dayjs(user?.trial_end_date).isAfter(dayjs()) && (
+                              <span
+                                style={{ color: "#2a7ac2", fontWeight: "bold" }}
+                              >
+                                (1개월 무료체험 중)
+                              </span>
+                            )}
+                        </PlanTitle>
+                        <PlanStatus>
+                          {user?.status === "active"
+                            ? `다음 결제일: ${dayjs(
+                                user?.next_billing_date
+                              ).format("YYYY년 MM월 DD일")}`
+                            : "결제정보 없음"}
+                        </PlanStatus>
+                      </PlanInfo>
+                      <Price>
+                        월 {userMembership?.amount?.toLocaleString()}원
+                      </Price>
+                    </>
+                  ) : (
+                    <>
+                      <PlanInfo>
+                        <PlanTitle>멤버십 업데이트 필요</PlanTitle>
+                      </PlanInfo>
+                    </>
+                  )}
+                </MembershipDetails>
+                <ButtonWrapper>
+                  <MembershipButton
+                    type="button"
+                    onClick={() => navigate("/membership")}
+                  >
+                    멤버십 관리
+                  </MembershipButton>
+                </ButtonWrapper>
+              </MembershipInfo>
+            </CardWrapper>
+          )}
 
           <LogoutButton type="submit" onClick={handleLogout}>
             Logout
