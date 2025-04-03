@@ -3,6 +3,7 @@ export interface Membership {
   name: string;
   day: number;
   amount: number;
+  original_amount: number | null;
 }
 
 export interface PaymentHistory {

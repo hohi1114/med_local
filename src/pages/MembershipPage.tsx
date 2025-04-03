@@ -31,6 +31,7 @@ function MembershipPage() {
   const navigate = useNavigate();
   const { updateUserMembershipInfo } = useUpdateUserInfo();
   const { memberships } = usePaymentStore();
+
   const today = dayjs();
   const [cancelModal, setCancelModal] = useState(false);
   const [cancelSubscriptionModal, setCancelSubscriptionModal] = useState(false);
@@ -61,7 +62,7 @@ function MembershipPage() {
     }
   });
   const {
-    mutate: startImmediatelyMustaion,
+    mutate: startImmediatelyMutation,
     isPending: startImmediatelyPending
   } = useMutation({
     mutationFn: async () => await postStartImmediately(),
@@ -79,7 +80,7 @@ function MembershipPage() {
   };
 
   const handleStartMembershipNow = () => {
-    startImmediatelyMustaion();
+    startImmediatelyMutation();
   };
 
   const handleCompletelyCancel = () => {

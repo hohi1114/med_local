@@ -156,9 +156,11 @@ function MembershipChangePage() {
                 <div className="plan-info">
                   <span className="plan-name">{plan.name}</span>
                   <div className="plan-pricing">
-                    <span className="original-price">
-                      {plan.amount.toLocaleString()} 원
-                    </span>
+                    {plan?.original_amount && (
+                      <span className="original-price">
+                        {plan?.original_amount?.toLocaleString()} 원
+                      </span>
+                    )}
                     <span className="discounted-price">
                       {plan.amount.toLocaleString()} 원
                     </span>
