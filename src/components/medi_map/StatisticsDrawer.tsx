@@ -22,7 +22,7 @@ const StatisticsDrawer = () => {
     drawerDate,
     region,
     selectedRegionData,
-    smallPolygons,
+    dongNmaeFroSmall,
     boundArea,
     loading,
     isOpenDrawer,
@@ -76,8 +76,8 @@ const StatisticsDrawer = () => {
   useEffect(() => {
     //Small region data  === dong region data
     const fetchRegionInfo = async () => {
-      if (region === "small" && smallPolygons[0]) {
-        const containingDong = await findContainingDong(smallPolygons[0]);
+      if (region === "small" && dongNmaeFroSmall) {
+        const containingDong = await findContainingDong(dongNmaeFroSmall);
 
         if (containingDong && selectedRegionData) {
           const newSmallRegion = {
@@ -102,7 +102,7 @@ const StatisticsDrawer = () => {
       }
     };
     fetchRegionInfo();
-  }, [areaName, region, smallPolygons, selectedRegionData]);
+  }, [areaName, region, dongNmaeFroSmall, selectedRegionData]);
 
   useEffect(() => {
     setStatsData({

@@ -11,6 +11,7 @@ import LicenseModal from "../components/common/modal/LicenseModal";
 import { postActiveLicenseParams } from "../types/params";
 import useFingerPrintNumber from "../hooks/useFingerPrintNumber";
 import BaseInput from "../components/common/input/BaseInput";
+import useUpdateUserInfo from "../hooks/useUpdateUserInfo";
 
 export type LoginParams = {
   email: string;
@@ -27,6 +28,7 @@ const LoginPage = () => {
   const { getFingerPrint, setFingurePrintNumber, saveFingerPrint } =
     useFingerPrintNumber();
   const { setUser } = userStore();
+  const { fetchUserInfo } = useUpdateUserInfo();
 
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -88,8 +90,7 @@ const LoginPage = () => {
 
       if (activated) {
         // If already activated, go to dashboard
-        const { data: userData } = await loginRefetch();
-        setUser(userData as User);
+        fetchUserInfo();
         navigate("/dashboard");
       } else if (hasAvailableSlots) {
         // If there are slots, show modal to activate license
@@ -120,7 +121,7 @@ const LoginPage = () => {
     setIsLoading(true);
     const loginData = {
       ...data,
-      hardwareFingerprint: hardwareFingerprint
+      hardwareFingerprint: "03560274-043c-05c8-6506-650700080009"
     };
     loginMutation.mutate(loginData);
   };

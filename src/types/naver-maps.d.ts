@@ -64,6 +64,7 @@ type RegionData = {
   population_by_time: PopulationByTime;
   population_by_day: PopulationByDay;
   dong_population?: number | null;
+  dong?: string;
 };
 
 export interface AgeGroupPopulation {

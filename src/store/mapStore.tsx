@@ -10,7 +10,7 @@ interface IMapStore {
   drawerDate: DateRange | null;
   isOpenDrawer: boolean;
   dongPolygons: Polygon[];
-  smallPolygons: Polygon[];
+  dongNmaeFroSmall: string | null;
   boundArea: RegionData[] | null;
   loading: boolean;
   patients: { areaName: string; patients: PatientData[] }[];
@@ -21,7 +21,7 @@ interface IMapStore {
   handleIsDrawerOpen: (isDrawerOpen: boolean) => void;
   setSelctedRegionData: (data: RegionData) => void;
   setDongPolygons: (dongPolygons: Polygon[]) => void;
-  setSmallPolygons: (smallPolygons: Polygon[]) => void;
+  setDongNameForSmall: (dongNmaeFroSmall: string | null) => void;
   setBoundArea: (boundArea: RegionData[]) => void;
   setLoading: (loading: boolean) => void;
   setPatients: (
@@ -36,13 +36,14 @@ const mapStore = create<IMapStore>((set) => ({
   drawerDate: null,
   isOpenDrawer: false,
   dongPolygons: [],
-  smallPolygons: [],
+  dongNmaeFroSmall: null,
   boundArea: null,
   loading: false,
   patients: [],
 
   setRegion: (region) => set({ region }),
   setAreaName: (areaName) => set({ areaName }),
+  setDongNameForSmall: (dongNmaeFroSmall) => set({ dongNmaeFroSmall }),
   setSelctedRegionData: (selectedRegionData: RegionData) =>
     set({ selectedRegionData }),
   setLoading: (loading: boolean) => set({ loading }),

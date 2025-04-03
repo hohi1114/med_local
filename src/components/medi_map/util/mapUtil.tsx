@@ -21,18 +21,11 @@ export const fixPolygonCoordinates = (
 
 // ✅ `smallPolygon`을 포함하는 `dong` 찾기
 export const findContainingDong = async (
-  smallPoint: Polygon
+  dongName: string
 ): Promise<RegionData> => {
   const dongData = await getDataFromRegionDB("dong_regions");
 
   return dongData.find((dong) => {
-    if (!dong.polygon) return false;
-    const dongPolygonArray = JSON.parse(dong.polygon);
-    const fixedPolygon = fixPolygonCoordinates(dongPolygonArray?.[0]);
-
-    return (
-      fixedPolygon.length >= 4 &&
-      turf.booleanContains(turf.polygon([fixedPolygon]), turf.point(smallPoint))
-    );
+    return dong.name === dongName;
   });
 };
