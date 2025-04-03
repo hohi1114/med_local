@@ -9,7 +9,7 @@ export const statisticsColumn: ColumnType<RegionStatistics>[] = [
     align: "center"
   },
   {
-    title: "유동 인구 수",
+    title: "총 인구",
     dataIndex: "population",
     key: "population",
     align: "center",
@@ -18,7 +18,7 @@ export const statisticsColumn: ColumnType<RegionStatistics>[] = [
       a.population - b.population
   },
   {
-    title: "방문 환자 수",
+    title: "내원 횟수",
     dataIndex: "total_visit_count",
     key: "total_visit_count",
     align: "center",
