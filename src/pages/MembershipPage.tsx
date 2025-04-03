@@ -26,7 +26,7 @@ import { useNavigate } from "react-router-dom";
 import usePaymentStore from "../store/usePaymenyStore";
 
 function MembershipPage() {
-  const { user } = userStore();
+  const { user, isFreetrialUser } = userStore();
 
   const navigate = useNavigate();
   const { updateUserMembershipInfo } = useUpdateUserInfo();
@@ -201,29 +201,26 @@ function MembershipPage() {
                 </PaymentInfoWrapper>
               )}
             </MembershipInfo>
-            {!dayjs(dayjs()).isBefore(user?.trial_end_date) &&
-              user.status !== "canceled" && (
-                <>
-                  <Divider />
-                  <NavigationWrapper
-                    onClick={() => {
-                      !user?.card_name || !user?.card_last_num
-                        ? alert("카드 정보를 먼저 입력해주세요!")
-                        : navigate("/membership-change");
-                    }}
-                  >
-                    <span className="title">
-                      {user.status === "active"
-                        ? "멤버십 변경"
-                        : "멤버십 재가입"}
-                    </span>
-                    <img
-                      src="/images/simpleArrow.svg"
-                      style={{ width: 28, height: 28 }}
-                    />
-                  </NavigationWrapper>
-                </>
-              )}
+            {user.status !== "canceled" && !isFreetrialUser && (
+              <>
+                <Divider />
+                <NavigationWrapper
+                  onClick={() => {
+                    !user?.card_name || !user?.card_last_num
+                      ? alert("카드 정보를 먼저 입력해주세요!")
+                      : navigate("/membership-change");
+                  }}
+                >
+                  <span className="title">
+                    {user.status === "active" ? "멤버십 변경" : "멤버십 재가입"}
+                  </span>
+                  <img
+                    src="/images/simpleArrow.svg"
+                    style={{ width: 28, height: 28 }}
+                  />
+                </NavigationWrapper>
+              </>
+            )}
           </CardWrapper>
           <CardWrapper>
             <CardTitle>결제 정보</CardTitle>
