@@ -56,6 +56,25 @@ const useUpdateUserInfo = () => {
   const updateUserMembershipInfo = async () => {
     const { data: subscribeDate } = await subscribeRefetch();
 
+    if (
+      subscribeDate?.status === "active" &&
+      subscribeDate?.is_free_trial &&
+      !user?.free &&
+      dayjs(subscribeDate?.trial_end_date).isAfter(dayjs().format("YYYY-MM-DD"))
+    ) {
+      setIsFreetrialUser(true);
+    } else {
+      setIsFreetrialUser(false);
+    }
+    if (
+      subscribeDate.card_last_num &&
+      subscribeDate.card_name &&
+      subscribeDate.nice_bid
+    ) {
+      setHasUserCard(true);
+    } else {
+      setHasUserCard(false);
+    }
     setUser({
       ...user,
       ...subscribeDate
@@ -69,7 +88,26 @@ const useUpdateUserInfo = () => {
       ...userData,
       ...subscribeDate
     };
+    if (
+      subscribeDate?.status === "active" &&
+      subscribeDate?.is_free_trial &&
+      !userData?.free &&
+      dayjs(subscribeDate?.trial_end_date).isAfter(dayjs().format("YYYY-MM-DD"))
+    ) {
+      setIsFreetrialUser(true);
+    } else {
+      setIsFreetrialUser(false);
+    }
 
+    if (
+      subscribeDate.card_last_num &&
+      subscribeDate.card_name &&
+      subscribeDate.nice_bid
+    ) {
+      setHasUserCard(true);
+    } else {
+      setHasUserCard(false);
+    }
     setUser(combinedData as User);
   };
 
@@ -77,28 +115,12 @@ const useUpdateUserInfo = () => {
   useEffect(() => {
     if (user && !user?.free) {
       if (
-        user?.status === "active" &&
-        user?.is_free_trial &&
-        dayjs(user?.trial_end_date).isAfter(dayjs().format("YYYY-MM-DD"))
-      ) {
-        setIsFreetrialUser(true);
-      } else {
-        setIsFreetrialUser(false);
-      }
-
-      if (
         (user?.status === "inactive" || user?.status === "expired") &&
         user?.is_free_trial
       ) {
         setIsInActiveUser(true);
       } else {
         setIsInActiveUser(false);
-      }
-
-      if (user.card_last_num && user.card_name && user.nice_bid) {
-        setHasUserCard(true);
-      } else {
-        setHasUserCard(false);
       }
     }
   }, [user]);
