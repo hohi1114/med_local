@@ -23,7 +23,7 @@ function MembershipChangePage() {
   const [confirmModal, setConfirmModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const { mutate: billingMutation, isPending: billingPending } = useMutation({
-    mutationFn: async () => await postBilling(),
+    mutationFn: async (params: string) => await postBilling(params),
     onSuccess: async () => {
       await updateUserMembershipInfo();
       navigate("/membership");
@@ -39,12 +39,8 @@ function MembershipChangePage() {
   } = useMutation({
     mutationFn: async (params: string) => await changeSubscription(params),
     onSuccess: async () => {
-      if (user.status === "inactive") {
-        billingMutation();
-      } else {
-        navigate("/membership");
-        await updateUserMembershipInfo();
-      }
+      navigate("/membership");
+      await updateUserMembershipInfo();
     },
     onError: (err: AxiosError) => {
       alert((err.response?.data as { error?: string })?.error);
@@ -52,14 +48,20 @@ function MembershipChangePage() {
   });
 
   useEffect(() => {
-    if (user && user.status === "active") {
-      setSelectedPlan(user?.plan);
+    if (user && (user.status === "active" || user.status === "canceled")) {
+      setSelectedPlan(user?.next_plan || user?.plan);
     }
   }, [user]);
 
   const handleChangeMembership = () => {
     if (selectedPlan) {
       membershipChangeMutation(selectedPlan);
+    }
+  };
+
+  const handleStartBilling = () => {
+    if (selectedPlan) {
+      billingMutation(selectedPlan);
     }
   };
 
@@ -77,7 +79,9 @@ function MembershipChangePage() {
         rightbuttonText={
           user.status === "active" ? "멤버십 변경하기" : "멤버십 재시작"
         }
-        onClickRight={handleChangeMembership}
+        onClickRight={
+          user.status === "active" ? handleChangeMembership : handleStartBilling
+        }
         onClickLeft={() => setConfirmModal(false)}
         title={
           user.status === "active" ? "새로운 멤버십 확정" : "멤버십 재시작 안내"

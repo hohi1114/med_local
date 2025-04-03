@@ -83,13 +83,15 @@ export const getCardInfo = async () => {
   return data;
 };
 
-export const postBilling = async () => {
-  const data = await apiRequest("post", "/payment/billing");
+export const postBilling = async (membershipType: string) => {
+  const data = await apiRequest("post", "/payment/billing", {
+    membershipType: membershipType
+  });
   return data;
 };
 
-export const postCancelSubscription = async () => {
-  const data = await apiRequest("post", "/payment/cancel");
+export const postManageCancelSubscription = async () => {
+  const data = await apiRequest("post", "/payment/manage-cancel");
   return data;
 };
 
@@ -97,6 +99,16 @@ export const changeSubscription = async (membershipType: string) => {
   const data = await apiRequest("post", "/payment/update", {
     membershipType: membershipType
   });
+  return data;
+};
+
+export const postCancelSubscription = async () => {
+  const data = await apiRequest("post", "/payment/cancel-subscription");
+  return data;
+};
+
+export const postStartImmediately = async () => {
+  const data = await apiRequest("post", "/payment/start-immediately");
   return data;
 };
 

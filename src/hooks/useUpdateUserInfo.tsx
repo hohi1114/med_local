@@ -50,8 +50,7 @@ const useUpdateUserInfo = () => {
 
     setUser({
       ...user,
-      ...subscribeDate,
-      plan: subscribeDate.next_plan || subscribeDate.plan
+      ...subscribeDate
     });
   };
 
@@ -61,8 +60,7 @@ const useUpdateUserInfo = () => {
 
     const combinedData = {
       ...userData,
-      ...subscribeDate,
-      plan: subscribeDate.next_plan || subscribeDate.plan
+      ...subscribeDate
     };
 
     setUser(combinedData as User);

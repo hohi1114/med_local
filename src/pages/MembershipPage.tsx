@@ -14,7 +14,11 @@ import BaseButton from "../components/common/button/BaseButton";
 import BaseModal from "../components/common/modal/BaseModal";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { postBilling, postCancelSubscription } from "../utils/api/apis";
+import {
+  postCancelSubscription,
+  postManageCancelSubscription,
+  postStartImmediately
+} from "../utils/api/apis";
 import Loading from "../components/common/Loading";
 import useUpdateUserInfo from "../hooks/useUpdateUserInfo";
 import { AxiosError } from "axios";
@@ -30,51 +34,56 @@ function MembershipPage() {
   const today = dayjs();
   const [cancelModal, setCancelModal] = useState(false);
   const [cancelSubscriptionModal, setCancelSubscriptionModal] = useState(false);
-  const { mutate: cancelFreeTrialMutation, isPending: cancelFreeTrialPending } =
-    useMutation({
-      mutationFn: async () => await postCancelSubscription(),
-      onSuccess: () => {
-        setCancelModal(false);
-        updateUserMembershipInfo();
-      },
-      onError: (err: AxiosError) => {
-        alert((err.response?.data as { error?: string })?.error);
-      }
-    });
-  const { mutate: startBillingMutation, isPending: startBillingPending } =
-    useMutation({
-      mutationFn: async () => await postBilling(),
-      onSuccess: () => {
-        setCancelModal(false);
-        updateUserMembershipInfo();
-      },
-      onError: (err: AxiosError) => {
-        alert((err.response?.data as { error?: string })?.error);
-      }
-    });
+  const {
+    mutate: manageCancelSubscirptionMutation,
+    isPending: manageCancelPending
+  } = useMutation({
+    mutationFn: async () => await postManageCancelSubscription(),
+    onSuccess: () => {
+      setCancelSubscriptionModal(false);
+      updateUserMembershipInfo();
+    },
+    onError: (err: AxiosError) => {
+      alert((err.response?.data as { error?: string })?.error);
+    }
+  });
+  const {
+    mutate: cancelSubscriptionMutation,
+    isPending: cancelSubscirptionPending
+  } = useMutation({
+    mutationFn: async () => await postCancelSubscription(),
+    onSuccess: () => {
+      setCancelModal(false);
+      updateUserMembershipInfo();
+    },
+    onError: (err: AxiosError) => {
+      alert((err.response?.data as { error?: string })?.error);
+    }
+  });
+  const {
+    mutate: startImmediatelyMustaion,
+    isPending: startImmediatelyPending
+  } = useMutation({
+    mutationFn: async () => await postStartImmediately(),
+    onSuccess: () => {
+      setCancelModal(false);
+      updateUserMembershipInfo();
+    },
+    onError: (err: AxiosError) => {
+      alert((err.response?.data as { error?: string })?.error);
+    }
+  });
 
-  const { mutate: cancelSubscription, isPending: cancelSubscriptionPending } =
-    useMutation({
-      mutationFn: async () => await postCancelSubscription(),
-      onSuccess: () => {
-        setCancelSubscriptionModal(false);
-        updateUserMembershipInfo();
-      },
-      onError: (err: AxiosError) => {
-        alert((err.response?.data as { error?: string })?.error);
-      }
-    });
-
-  const handleCancelFreeTrial = () => {
-    cancelFreeTrialMutation();
+  const handleManageCancelSubscription = () => {
+    manageCancelSubscirptionMutation();
   };
 
-  const handleBilling = () => {
-    startBillingMutation();
+  const handleStartMembershipNow = () => {
+    startImmediatelyMustaion();
   };
 
-  const cancelSubscriptionHandler = () => {
-    cancelSubscription();
+  const handleCompletelyCancel = () => {
+    cancelSubscriptionMutation();
   };
 
   const userPlan = memberships.find((plan) => plan.type === user?.plan);
@@ -86,11 +95,11 @@ function MembershipPage() {
         onClose={() => setCancelModal(false)}
         leftbuttonText="중지하기"
         rightbuttonText="멤버십 바로 시작하기"
-        onClickLeft={handleCancelFreeTrial}
-        onClickRight={handleBilling}
+        onClickLeft={handleCompletelyCancel}
+        onClickRight={handleStartMembershipNow}
         title="정말 무료 체험 이용을 중지하시겠어요?"
       >
-        {(cancelFreeTrialPending || startBillingPending) && <Loading />}
+        {(cancelSubscirptionPending || startImmediatelyPending) && <Loading />}
         무료 체험 이용을 중지하시면 등록되었던 멤버십 이용도 해지됩니다.
         <br />
         멤버십 바로 이용을 원하시면
@@ -103,11 +112,10 @@ function MembershipPage() {
         leftbuttonText="멤버십 해지하기"
         rightbuttonText="취소하기"
         title="정말 무료 체험 이용을 중지하시겠어요?"
-        onClickLeft={cancelSubscriptionHandler}
+        onClickLeft={handleManageCancelSubscription}
         onClickRight={() => setCancelSubscriptionModal(false)}
       >
-        {cancelSubscriptionPending && <Loading />}
-        {(cancelFreeTrialPending || startBillingPending) && <Loading />}
+        {manageCancelPending && <Loading />}
         멤버십을 해지하시면 등록되었던 서비스 이용 불가능합니다.
         <br />
         멤버십 재가입을 원하시면
@@ -117,7 +125,7 @@ function MembershipPage() {
       <CenterWrapper>
         <ContentWrapper>
           <CardWrapper>
-            <CardTitle>맴버십 상세 정보</CardTitle>
+            <CardTitle>멤버십 상세 정보</CardTitle>
             <Divider />
             <MembershipInfo>
               {user?.status === "active" ? (
@@ -138,7 +146,15 @@ function MembershipPage() {
                   </PaymentInfoWrapper>
                 ) : (
                   <PaymentInfoWrapper>
-                    <TitleStyle>{userPlan?.name} 멤버십</TitleStyle>
+                    <TitleStyle>
+                      {
+                        memberships.find(
+                          (plan) =>
+                            plan?.type === (user?.next_plan || user?.plan)
+                        )?.name
+                      }{" "}
+                      멤버십
+                    </TitleStyle>
                     <div className="sub_info">
                       다음 결제일 : {user?.next_billing_date}
                     </div>
@@ -155,27 +171,55 @@ function MembershipPage() {
               ) : (
                 <PaymentInfoWrapper>
                   <TitleStyle>
-                    멤버십을 가입한 후 Orbis를 이용해 보세요!
+                    멤버십을{" "}
+                    {user.status === "canceled" ? "갱신하여" : "가입하여"} Orbis
+                    서비스를 이용해보세요!
                   </TitleStyle>
+                  {user.status === "canceled" && (
+                    <div
+                      style={{
+                        marginTop: "0.8rem",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "0.5rem"
+                      }}
+                    >
+                      <div className="sub_info">{userPlan?.name} 멤버십</div>
+                      <div className="sub_info">
+                        만료일 : {user?.next_billing_date}
+                      </div>
+                      <ButtonWrapper>
+                        <CancelButton
+                          type="button"
+                          onClick={handleManageCancelSubscription}
+                        >
+                          멤버시 다시 시작하기
+                        </CancelButton>
+                      </ButtonWrapper>
+                    </div>
+                  )}
                 </PaymentInfoWrapper>
               )}
             </MembershipInfo>
-            {!dayjs(dayjs()).isBefore(user?.trial_end_date) && (
-              <>
-                <Divider />
-                <NavigationWrapper
-                  onClick={() => navigate("/membership-change")}
-                >
-                  <span className="title">
-                    {user.status === "active" ? "멤버십 변경" : "멤버십 시작"}
-                  </span>
-                  <img
-                    src="/images/simpleArrow.svg"
-                    style={{ width: 28, height: 28 }}
-                  />
-                </NavigationWrapper>
-              </>
-            )}
+            {!dayjs(dayjs()).isBefore(user?.trial_end_date) &&
+              user.status !== "canceled" && (
+                <>
+                  <Divider />
+                  <NavigationWrapper
+                    onClick={() => navigate("/membership-change")}
+                  >
+                    <span className="title">
+                      {user.status === "active"
+                        ? "멤버십 변경"
+                        : "멤버십 재가입"}
+                    </span>
+                    <img
+                      src="/images/simpleArrow.svg"
+                      style={{ width: 28, height: 28 }}
+                    />
+                  </NavigationWrapper>
+                </>
+              )}
           </CardWrapper>
           <CardWrapper>
             <CardTitle>결제 정보</CardTitle>
@@ -233,7 +277,7 @@ const NavigationWrapper = styled.div`
 `;
 
 const ButtonWrapper = styled.div`
-  max-width: 10rem;
+  max-width: 13rem;
 `;
 
 export const CancelButton = styled(BaseButton)`
