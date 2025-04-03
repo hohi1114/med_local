@@ -58,7 +58,7 @@ function PaymentHistoryPage() {
             columns={columns}
             dataSource={paymentHistoryData}
             pagination={false}
-            rowKey={(record) => record.paid_date}
+            rowKey={(record, index) => record.paid_date + "_" + index}
             locale={{
               emptyText: <Empty description="결제 내역이 없습니다" />
             }}

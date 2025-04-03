@@ -206,7 +206,11 @@ function MembershipPage() {
                 <>
                   <Divider />
                   <NavigationWrapper
-                    onClick={() => navigate("/membership-change")}
+                    onClick={() => {
+                      !user?.card_name || !user?.card_last_num
+                        ? alert("카드 정보를 먼저 입력해주세요!")
+                        : navigate("/membership-change");
+                    }}
                   >
                     <span className="title">
                       {user.status === "active"
