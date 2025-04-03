@@ -26,7 +26,7 @@ import { useNavigate } from "react-router-dom";
 import usePaymentStore from "../store/usePaymenyStore";
 
 function MembershipPage() {
-  const { user, isFreetrialUser } = userStore();
+  const { user, isFreetrialUser, hasUserCard } = userStore();
 
   const navigate = useNavigate();
   const { updateUserMembershipInfo } = useUpdateUserInfo();
@@ -48,6 +48,7 @@ function MembershipPage() {
       alert((err.response?.data as { error?: string })?.error);
     }
   });
+
   const {
     mutate: cancelSubscriptionMutation,
     isPending: cancelSubscirptionPending
@@ -112,15 +113,15 @@ function MembershipPage() {
         onClose={() => setCancelSubscriptionModal(false)}
         leftbuttonText="멤버십 해지하기"
         rightbuttonText="취소하기"
-        title="정말 무료 체험 이용을 중지하시겠어요?"
+        title="정말 멤버십 이용을 중지하시겠어요?"
         onClickLeft={handleManageCancelSubscription}
         onClickRight={() => setCancelSubscriptionModal(false)}
       >
         {manageCancelPending && <Loading />}
         멤버십을 해지하시면 등록되었던 서비스 이용 불가능합니다.
         <br />
-        멤버십 재가입을 원하시면
-        <strong> 멤버십 시작</strong> 탭을 이용해주세요.
+        해지 이후 멤버십 재가입을 원하시면
+        <strong> 맴버십 재가입</strong> 탭을 이용해주세요.
       </BaseModal>
       <ContentHeader title={"멤버십 관리"} />
       <CenterWrapper>
@@ -207,9 +208,9 @@ function MembershipPage() {
                 <Divider />
                 <NavigationWrapper
                   onClick={() => {
-                    !user?.card_name || !user?.card_last_num
-                      ? alert("카드 정보를 먼저 입력해주세요!")
-                      : navigate("/membership-change");
+                    user.card_name && user.card_last_num && user.nice_bid
+                      ? navigate("/membership-change")
+                      : alert("카드 정보를 먼저 입력해주세요!");
                   }}
                 >
                   <span className="title">

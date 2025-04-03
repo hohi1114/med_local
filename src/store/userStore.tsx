@@ -27,12 +27,15 @@ interface UserStore {
   user: User;
   isFreetrialUser: boolean;
   isInActiveUser: boolean;
+  hasUserCard: boolean;
   fetchingUserLoading: boolean;
+
   setUser: (user: User) => void;
   clearUser: () => void;
   setFetchingUserLoading: (loading: boolean) => void;
   setIsFreetrialUser: (isFreetrialUser: boolean) => void;
   setIsInActiveUser: (isInActiveUser: boolean) => void;
+  setHasUserCard: (hasUserCard: boolean) => void;
 }
 
 const userStore = create<UserStore>((set) => ({
@@ -61,6 +64,8 @@ const userStore = create<UserStore>((set) => ({
   fetchingUserLoading: true,
   isFreetrialUser: false,
   isInActiveUser: false,
+  hasUserCard: false,
+  setHasUserCard: (hasUserCard: boolean) => set({ hasUserCard }),
   setFetchingUserLoading: (fetchingUserLoading: boolean) =>
     set({ fetchingUserLoading }),
   setUser: (user: User) => set({ user }),

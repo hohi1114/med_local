@@ -15,7 +15,8 @@ const useUpdateUserInfo = () => {
     setUser,
     setFetchingUserLoading,
     setIsFreetrialUser,
-    setIsInActiveUser
+    setIsInActiveUser,
+    setHasUserCard
   } = userStore();
   const { memberships, setMemberships } = usePaymentStore();
   const { refetch: membershipFetch, data: membershipsRes } = useQuery({
@@ -92,6 +93,12 @@ const useUpdateUserInfo = () => {
         setIsInActiveUser(true);
       } else {
         setIsInActiveUser(false);
+      }
+
+      if (user.card_last_num && user.card_name && user.nice_bid) {
+        setHasUserCard(true);
+      } else {
+        setHasUserCard(false);
       }
     }
   }, [user]);

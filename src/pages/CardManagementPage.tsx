@@ -61,7 +61,7 @@ function CardManagementPage() {
             </TitleWrapper>
 
             <CardInfoWrapper>
-              <CardInfo handleAddCard={handleAddCard} hideCancle />
+              <CardInfo handleAddCard={handleAddCard} hideCancel />
             </CardInfoWrapper>
 
             <ButtonContainer>

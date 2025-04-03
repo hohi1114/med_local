@@ -14,7 +14,7 @@ import { RegisterCardParams } from "../../types/params";
 import { postRegisterCard } from "../../utils/api/apis";
 import { Radio } from "antd";
 import { AxiosError } from "axios";
-import userStore from "../../store/userStore";
+import useUpdateUserInfo from "../../hooks/useUpdateUserInfo";
 
 type RegisterCardFormValues = {
   cardNo: string[];
@@ -33,7 +33,7 @@ const RegisterCard: React.FC<RegisterCardProps> = ({
   handleCompleteUpdate
 }) => {
   const { prevStep } = usePaymentStore();
-  const { user, setUser } = userStore();
+  const { updateUserMembershipInfo } = useUpdateUserInfo();
   const {
     handleSubmit,
     register,
@@ -48,13 +48,9 @@ const RegisterCard: React.FC<RegisterCardProps> = ({
     mutationFn: async (params: RegisterCardParams) =>
       await postRegisterCard(params),
     onSuccess: (data) => {
-      const { cardInfo } = data;
+      // const { cardInfo } = data;
 
-      setUser({
-        ...user,
-        card_name: cardInfo.cardName,
-        card_last_num: cardInfo.cardLastNum
-      });
+      updateUserMembershipInfo();
       handleCompleteUpdate();
     },
     onError: (err: AxiosError) => {

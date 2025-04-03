@@ -53,7 +53,7 @@ export default function SettingPage() {
                               <span
                                 style={{ color: "#2a7ac2", fontWeight: "bold" }}
                               >
-                                (1개월 무료체험 중)
+                                (7일 무료체험 중)
                               </span>
                             )}
                         </PlanTitle>
@@ -63,6 +63,19 @@ export default function SettingPage() {
                                 user?.next_billing_date
                               ).format("YYYY년 MM월 DD일")}`
                             : "결제정보 없음"}
+                        </PlanStatus>
+                      </PlanInfo>
+                      <Price>
+                        월 {userMembership?.amount?.toLocaleString()}원
+                      </Price>
+                    </>
+                  ) : user?.status === "canceled" ? (
+                    <>
+                      <PlanInfo>
+                        <PlanTitle>{userMembership?.name} 플랜 </PlanTitle>
+                        <PlanStatus>
+                          {" "}
+                          만료일 : {user?.next_billing_date}{" "}
                         </PlanStatus>
                       </PlanInfo>
                       <Price>

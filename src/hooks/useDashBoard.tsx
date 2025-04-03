@@ -40,7 +40,7 @@ const RANGE_DATE_MAP: Record<RangeDateMapKey, DateRange> = {
   }
 };
 const useDashBoard = () => {
-  const { isFreetrialUser } = userStore();
+  const { isFreetrialUser, user } = userStore();
   const AVAILABLE_DATE_RANGES = isFreetrialUser
     ? { "1개월": RANGE_DATE_MAP["1개월"] }
     : RANGE_DATE_MAP;
@@ -94,8 +94,10 @@ const useDashBoard = () => {
 
   //첫 랜더링시 각 날짜별 데이터 가져오기
   useEffect(() => {
-    fetchFirstDate();
-  }, []);
+    if (user?.user_id) {
+      fetchFirstDate();
+    }
+  }, [user]);
 
   const saveDataMap = {
     오늘: setTodayData,
