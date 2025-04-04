@@ -1,13 +1,12 @@
 import styled from "styled-components";
 import BaseButton from "../components/common/button/BaseButton";
 import { useForm } from "react-hook-form";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { getUserInfo, postActiveLicense, postLogin } from "../utils/api/apis";
+import { useMutation } from "@tanstack/react-query";
+import { postActiveLicense, postLogin } from "../utils/api/apis";
 import { useState, useEffect } from "react";
 import { AxiosError } from "axios";
 import { ErrorResponse, useNavigate } from "react-router-dom";
-import userStore from "../store/userStore";
-import { User } from "../types/auth";
+
 import LicenseModal from "../components/common/modal/LicenseModal";
 import { postActiveLicenseParams } from "../types/params";
 import useFingerPrintNumber from "../hooks/useFingerPrintNumber";
@@ -28,7 +27,6 @@ const LoginPage = () => {
   } = useForm<LoginParams>();
   const { getFingerPrint, setFingurePrintNumber, saveFingerPrint } =
     useFingerPrintNumber();
-  const { setUser } = userStore();
   const { fetchUserInfo } = useUpdateUserInfo();
 
   const [error, setError] = useState<string | null>(null);
@@ -46,22 +44,13 @@ const LoginPage = () => {
     getHardwareId();
   }, [getFingerPrint, setFingurePrintNumber]);
 
-  //**APIs
-  const { refetch: loginRefetch } = useQuery({
-    queryKey: ["userInfo"],
-    queryFn: () => getUserInfo(),
-    enabled: false,
-    retry: false
-  });
-
   //only first
   const { mutate: postActiveLicenseMutation } = useMutation({
     mutationFn: async (params: postActiveLicenseParams) =>
       await postActiveLicense(params),
     onSuccess: async () => {
       saveFingerPrint();
-      const { data } = await loginRefetch();
-      setUser(data as User);
+      fetchUserInfo();
       navigate("/dashboard");
     },
     onError: (err: AxiosError) =>
