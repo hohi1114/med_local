@@ -10,24 +10,66 @@ import { useNavigate } from "react-router-dom";
 import usePaymentStore from "../store/usePaymenyStore";
 
 export default function SettingPage() {
-  const { user } = userStore();
+  const { user, isFreetrialUser } = userStore();
   const { memberships } = usePaymentStore();
   const navigate = useNavigate();
-  const handleLogout = () => {
-    logout();
-  };
-  const userMembership = memberships.find((plan) => plan.type === user?.plan);
 
+  const userMembership = memberships.find((plan) => plan.type === user?.plan);
+  const isActive = user?.status === "active";
+  const isCanceled = user?.status === "canceled";
+
+  const handleLogout = () => logout();
+  const navigateToMembership = () => navigate("/membership");
+
+  const renderMembershipContent = () => {
+    if (isActive) {
+      return (
+        <>
+          <PlanInfo>
+            <PlanTitle>
+              {userMembership?.name} 플랜{" "}
+              {isFreetrialUser && (
+                <span style={{ color: "#2a7ac2", fontWeight: "bold" }}>
+                  (7일 무료체험 중)
+                </span>
+              )}
+            </PlanTitle>
+            <PlanStatus>
+              다음 결제일:{" "}
+              {dayjs(user?.next_billing_date).format("YYYY년 MM월 DD일")}
+            </PlanStatus>
+          </PlanInfo>
+          <Price>월 {userMembership?.amount?.toLocaleString()}원</Price>
+        </>
+      );
+    } else if (isCanceled) {
+      return (
+        <>
+          <PlanInfo>
+            <PlanTitle>{userMembership?.name} 플랜</PlanTitle>
+            <PlanStatus>만료일: {user?.next_billing_date}</PlanStatus>
+          </PlanInfo>
+          <Price>월 {userMembership?.amount?.toLocaleString()}원</Price>
+        </>
+      );
+    } else {
+      return (
+        <PlanInfo>
+          <PlanTitle>멤버십 업데이트 필요</PlanTitle>
+        </PlanInfo>
+      );
+    }
+  };
   return (
     <>
-      <ContentHeader title={"계정"} />
+      <ContentHeader title="계정" />
       <CenterWrapper>
         <ContentWrapper>
           <CardWrapper>
             <CardTitle>프로필</CardTitle>
             <Divider />
             <ProfileField>
-              <ProfileImage src={"/images/defaultProfile.svg"} alt="Profile" />
+              <ProfileImage src="/images/defaultProfile.svg" alt="Profile" />
             </ProfileField>
             <ProfileField>
               <BaseInput label="이메일" value={user?.email} disabled />
@@ -37,63 +79,18 @@ export default function SettingPage() {
             </ProfileField>
           </CardWrapper>
 
-          {!user.free && (
+          {!user?.free && (
             <CardWrapper>
               <CardTitle>멤버십</CardTitle>
               <Divider />
               <MembershipInfo>
                 <MembershipDetails>
-                  {user?.status === "active" ? (
-                    <>
-                      <PlanInfo>
-                        <PlanTitle>
-                          {userMembership?.name} 플랜{" "}
-                          {user?.is_free_trial &&
-                            dayjs(user?.trial_end_date).isAfter(dayjs()) && (
-                              <span
-                                style={{ color: "#2a7ac2", fontWeight: "bold" }}
-                              >
-                                (7일 무료체험 중)
-                              </span>
-                            )}
-                        </PlanTitle>
-                        <PlanStatus>
-                          {user?.status === "active"
-                            ? `다음 결제일: ${dayjs(
-                                user?.next_billing_date
-                              ).format("YYYY년 MM월 DD일")}`
-                            : "결제정보 없음"}
-                        </PlanStatus>
-                      </PlanInfo>
-                      <Price>
-                        월 {userMembership?.amount?.toLocaleString()}원
-                      </Price>
-                    </>
-                  ) : user?.status === "canceled" ? (
-                    <>
-                      <PlanInfo>
-                        <PlanTitle>{userMembership?.name} 플랜 </PlanTitle>
-                        <PlanStatus>
-                          {" "}
-                          만료일 : {user?.next_billing_date}{" "}
-                        </PlanStatus>
-                      </PlanInfo>
-                      <Price>
-                        월 {userMembership?.amount?.toLocaleString()}원
-                      </Price>
-                    </>
-                  ) : (
-                    <>
-                      <PlanInfo>
-                        <PlanTitle>멤버십 업데이트 필요</PlanTitle>
-                      </PlanInfo>
-                    </>
-                  )}
+                  {renderMembershipContent()}
                 </MembershipDetails>
                 <ButtonWrapper>
                   <MembershipButton
                     type="button"
-                    onClick={() => navigate("/membership")}
+                    onClick={navigateToMembership}
                   >
                     멤버십 관리
                   </MembershipButton>

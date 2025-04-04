@@ -274,17 +274,29 @@ const CardInfoWrapper = styled.div`
   display: flex;
   flex-direction: column;
   gap: 1rem;
+
+  @media (max-width: 768px) {
+    gap: 0.8rem;
+  }
 `;
 
 const CardTitle = styled.span`
   font-size: 1.2rem;
   font-weight: bold;
+
+  @media (max-width: 768px) {
+    font-size: 1rem;
+  }
 `;
 
 const InputWrapper = styled.div`
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
+
+  @media (max-width: 768px) {
+    gap: 0.6rem;
+  }
 `;
 
 const CardNumberWrapper = styled.div`
@@ -293,7 +305,13 @@ const CardNumberWrapper = styled.div`
   align-items: center;
   width: 100%;
   justify-content: space-between;
+  flex-wrap: wrap;
   color: ${(props) => props.theme.colors.gray04};
+
+  @media (max-width: 768px) {
+    gap: 0.5rem;
+    justify-content: flex-start;
+  }
 `;
 
 const CardInfoInput = styled.input`
@@ -309,12 +327,27 @@ const CardInfoInput = styled.input`
     outline: none;
     border-bottom: 2px solid ${(props) => props.theme.colors.primary};
   }
+
   &.wide-input {
     max-width: 20rem;
+
+    @media (max-width: 768px) {
+      max-width: 100%;
+    }
+  }
+
+  @media (max-width: 768px) {
+    font-size: 1.1rem;
+    max-width: 5rem;
+    height: 2.2rem;
   }
 `;
 
 const ErrorText = styled.span`
   font-size: 1rem;
   color: ${(props) => props.theme.colors.red};
+
+  @media (max-width: 768px) {
+    font-size: 0.9rem;
+  }
 `;

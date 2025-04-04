@@ -125,7 +125,7 @@ function MembershipPage() {
         멤버십을 해지하시면 등록되었던 서비스 이용 불가능합니다.
         <br />
         해지 이후 멤버십 재가입을 원하시면
-        <strong> 맴버십 재가입</strong> 탭을 이용해주세요.
+        <strong> 멤버십 재가입</strong> 탭을 이용해주세요.
       </BaseModal>
       <ContentHeader title={"멤버십 관리"} />
       <CenterWrapper>
@@ -194,6 +194,7 @@ function MembershipPage() {
                       <div className="sub_info">
                         만료일 : {user?.next_billing_date}
                       </div>
+
                       <ButtonWrapper>
                         <CancelButton
                           type="button"
@@ -262,7 +263,7 @@ const PaymentInfoWrapper = styled.div`
   padding: 0.2rem 0.8rem;
 
   .sub_info {
-    font-size: 1.3rem;
+    font-size: 1.2rem;
     color: ${(props) => props.theme.colors.gray05};
   }
 `;
