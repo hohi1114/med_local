@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import userStore, { User } from "../store/userStore";
 import {
   getMemberships,
   getUserInfo,
@@ -8,6 +7,8 @@ import {
 import { useEffect } from "react";
 import usePaymentStore from "../store/usePaymenyStore";
 import dayjs from "dayjs";
+import userStore from "../store/userStore";
+import { User } from "../types/auth";
 
 const useUpdateUserInfo = () => {
   const {
@@ -139,9 +140,6 @@ const useUpdateUserInfo = () => {
     };
     setUser(combinedData as User);
   };
-
-  //check if user is in free trial
-  useEffect(() => {}, [user]);
 
   useEffect(() => {
     if (loginLoading || subscribeLoading) {

@@ -74,7 +74,7 @@ export const RegisteredCardBox = styled.div`
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  min-width: 17rem;
+  min-width: 20rem;
   height: 12rem;
   border-radius: 8px;
   padding: 1.5rem 2rem;

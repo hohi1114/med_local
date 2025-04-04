@@ -39,7 +39,9 @@ function MembershipChangePage() {
   // Find plan details
   const updatedPlan = memberships.find((plan) => plan.type === selectedPlan);
   const userPlan = memberships.find(
-    (plan) => plan.type === user?.next_plan || user?.plan
+    (plan) =>
+      plan.type === user?.next_plan ||
+      (user?.next_plan == null && plan.type === user?.plan)
   );
 
   const handleError = (err: AxiosError) => {

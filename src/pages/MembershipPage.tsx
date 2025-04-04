@@ -194,6 +194,7 @@ function MembershipPage() {
                       <div className="sub_info">
                         만료일 : {user?.next_billing_date}
                       </div>
+
                       <ButtonWrapper>
                         <CancelButton
                           type="button"
@@ -262,7 +263,7 @@ const PaymentInfoWrapper = styled.div`
   padding: 0.2rem 0.8rem;
 
   .sub_info {
-    font-size: 1.3rem;
+    font-size: 1.2rem;
     color: ${(props) => props.theme.colors.gray05};
   }
 `;

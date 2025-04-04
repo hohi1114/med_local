@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Table, Empty } from "antd";
+import { Table } from "antd";
 import { getPaymentHistory } from "../utils/api/apis";
 import BackHeader from "../components/common/layout/BackHeader";
 import ContentHeader from "../components/common/layout/ContentHeader";
@@ -59,9 +59,9 @@ function PaymentHistoryPage() {
             dataSource={paymentHistoryData}
             pagination={false}
             rowKey={(record, index) => record.paid_date + "_" + index}
-            locale={{
-              emptyText: <Empty description="결제 내역이 없습니다" />
-            }}
+            // locale={{
+            //   emptyText: <Empty description="결제 내역이 없습니다" />
+            // }}
           />
         </ContentCard>
       </div>
