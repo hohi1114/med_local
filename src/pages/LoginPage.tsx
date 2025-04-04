@@ -6,7 +6,8 @@ import { getUserInfo, postActiveLicense, postLogin } from "../utils/api/apis";
 import { useState, useEffect } from "react";
 import { AxiosError } from "axios";
 import { ErrorResponse, useNavigate } from "react-router-dom";
-import userStore, { User } from "../store/userStore";
+import userStore from "../store/userStore";
+import { User } from "../types/auth";
 import LicenseModal from "../components/common/modal/LicenseModal";
 import { postActiveLicenseParams } from "../types/params";
 import useFingerPrintNumber from "../hooks/useFingerPrintNumber";
@@ -121,7 +122,7 @@ const LoginPage = () => {
     setIsLoading(true);
     const loginData = {
       ...data,
-      hardwareFingerprint: hardwareFingerprint
+      hardwareFingerprint: "03560274-043c-05c8-6506-650700080009"
     };
     loginMutation.mutate(loginData);
   };
