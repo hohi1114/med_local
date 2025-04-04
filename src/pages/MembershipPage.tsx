@@ -26,7 +26,7 @@ import { useNavigate } from "react-router-dom";
 import usePaymentStore from "../store/usePaymenyStore";
 
 function MembershipPage() {
-  const { user, isFreetrialUser, hasUserCard } = userStore();
+  const { user, isFreetrialUser } = userStore();
 
   const navigate = useNavigate();
   const { updateUserMembershipInfo } = useUpdateUserInfo();
@@ -77,7 +77,11 @@ function MembershipPage() {
   });
 
   const handleManageCancelSubscription = () => {
-    manageCancelSubscirptionMutation();
+    if (user?.status === "canceled") {
+      navigate("/membership-change");
+    } else {
+      manageCancelSubscirptionMutation();
+    }
   };
 
   const handleStartMembershipNow = () => {
@@ -195,7 +199,7 @@ function MembershipPage() {
                           type="button"
                           onClick={handleManageCancelSubscription}
                         >
-                          멤버시 다시 시작하기
+                          멤버십 다시 시작하기
                         </CancelButton>
                       </ButtonWrapper>
                     </div>
