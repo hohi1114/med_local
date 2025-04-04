@@ -122,7 +122,7 @@ const LoginPage = () => {
     setIsLoading(true);
     const loginData = {
       ...data,
-      hardwareFingerprint: "03560274-043c-05c8-6506-650700080009"
+      hardwareFingerprint: hardwareFingerprint
     };
     loginMutation.mutate(loginData);
   };
