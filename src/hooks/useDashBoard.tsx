@@ -4,14 +4,15 @@ import useRangeDurationDatePicker, {
 } from "./useRangeDurationDatePicker";
 import dayjs from "dayjs";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { getAllRegions, getDashboardData } from "../utils/api/apis.js";
-import { DashBoard, RangeDateMapKey } from "../types/dashboard.js";
+import { getAllRegions, getDashboardData } from "../utils/api/apis";
+import { DashBoard, RangeDateMapKey } from "../types/dashboard";
 import isBetween from "dayjs/plugin/isBetween";
-import { saveDataToIndexDB } from "../store/indexded_db/RegionDB.js";
-import useDashboardStore from "../store/useDashboardStore.js";
-
+import { saveDataToIndexDB } from "../store/indexded_db/RegionDB";
+import useDashboardStore from "../store/useDashboardStore";
+import userStore from "../store/userStore";
 dayjs.extend(isBetween);
 
+// Type-safe date range map
 const RANGE_DATE_MAP: Record<RangeDateMapKey, DateRange> = {
   오늘: {
     startDate: dayjs().format("YYYY-MM-DD"),
@@ -37,28 +38,25 @@ const RANGE_DATE_MAP: Record<RangeDateMapKey, DateRange> = {
     startDate: dayjs().subtract(1, "year").format("YYYY-MM-DD"),
     endDate: dayjs().format("YYYY-MM-DD")
   }
-};
+} as const;
+
+// Constants for free trial users
+const FREE_TRIAL_RANGES: Pick<typeof RANGE_DATE_MAP, "1개월"> = {
+  "1개월": RANGE_DATE_MAP["1개월"]
+} as const;
+
 const useDashBoard = () => {
+  const { isFreetrialUser, user, isInActiveUser } = userStore();
+  const AVAILABLE_DATE_RANGES: Partial<Record<RangeDateMapKey, DateRange>> =
+    isFreetrialUser ? FREE_TRIAL_RANGES : RANGE_DATE_MAP;
+
   const { dateRange, handleDateRangeChange } = useRangeDurationDatePicker();
   const [buttonType, setButtonType] = useState<RangeDateMapKey | null>("1개월");
   const [isLoading, setIsLoading] = useState(false);
   const [dashboardInfo, setDashboardInfo] = useState<DashBoard | null>(null);
   const [dateChanged, setDateChanged] = useState(false);
 
-  const {
-    todayData,
-    monthData,
-    threeDaysData,
-    threeMonthData,
-    oneYearData,
-    weekData,
-    setMonthData,
-    setThreeDaysData,
-    setThreeMonthData,
-    setOneYearData,
-    setTodayData,
-    setWeekData
-  } = useDashboardStore();
+  const dashboardStore = useDashboardStore();
 
   const {
     mutateAsync: dashboardInfoMutation,
@@ -69,17 +67,31 @@ const useDashBoard = () => {
     retry: false
   });
 
-  const { data: allregionData, refetch: allRegionsRefecth } = useQuery({
+  const { data: allregionData, refetch: allRegionsRefetch } = useQuery({
     queryKey: ["allRegions"],
-    queryFn: () => getAllRegions(),
+    queryFn: getAllRegions,
     enabled: false,
     retry: false
   });
 
-  //지역 데이터 IndexedDB에 저장
+  // Type-safe data saving map
+  const saveDataMap: Record<RangeDateMapKey, (data: DashBoard) => void> = {
+    오늘: dashboardStore.setTodayData,
+    "3일": dashboardStore.setThreeDaysData,
+    "7일": dashboardStore.setWeekData,
+    "1개월": dashboardStore.setMonthData,
+    "3개월": dashboardStore.setThreeMonthData,
+    "1년": dashboardStore.setOneYearData
+  };
+
+  const saveData = useCallback((section: RangeDateMapKey, data: DashBoard) => {
+    const setter = saveDataMap[section];
+    if (setter) setter(data);
+  }, []);
+
   useEffect(() => {
-    allRegionsRefecth();
-  }, [allRegionsRefecth]);
+    allRegionsRefetch();
+  }, [allRegionsRefetch]);
 
   useEffect(() => {
     if (allregionData) {
@@ -87,105 +99,118 @@ const useDashBoard = () => {
     }
   }, [allregionData]);
 
-  //첫 랜더링시 각 날짜별 데이터 가져오기
-  useEffect(() => {
-    fetchFirstDate();
-  }, []);
+  // Fetch dashboard data for all available date ranges
+  const fetchOtherDate = useCallback(
+    async (dates: RangeDateMapKey[]) => {
+      const fetchPromises = dates.map(async (date) => {
+        try {
+          if (AVAILABLE_DATE_RANGES[date]) {
+            const data = await dashboardInfoMutation(
+              AVAILABLE_DATE_RANGES[date]!
+            );
+            saveData(date, data);
+          }
+        } catch (err) {
+          console.error(err);
+        }
+      });
 
-  const saveDataMap = {
-    오늘: setTodayData,
-    "3일": setThreeDaysData,
-    "7일": setWeekData,
-    "1개월": setMonthData,
-    "3개월": setThreeMonthData,
-    "1년": setOneYearData
-  };
-
-  const saveData = useCallback(
-    (section: string, data: DashBoard) => {
-      const setter = saveDataMap[section as keyof typeof saveDataMap];
-      if (setter) setter(data);
+      await Promise.all(fetchPromises);
     },
-    [saveDataMap]
+    [dashboardInfoMutation, AVAILABLE_DATE_RANGES, saveData]
   );
+
+  // Initial data fetch
+  const fetchFirstDate = useCallback(async () => {
+    try {
+      setIsLoading(true);
+
+      const data = await dashboardInfoMutation(dateRange);
+      saveData("1개월", data);
+
+      if (!isFreetrialUser) {
+        await fetchOtherDate(
+          Object.keys(AVAILABLE_DATE_RANGES) as RangeDateMapKey[]
+        );
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [
+    dashboardInfoMutation,
+    dateRange,
+    fetchOtherDate,
+    isFreetrialUser,
+    AVAILABLE_DATE_RANGES,
+    saveData
+  ]);
+
+  useEffect(() => {
+    if (user?.user_id && !isInActiveUser) {
+      fetchFirstDate();
+    } else {
+      setDashboardInfo(null);
+    }
+  }, [user]);
 
   useEffect(() => {
     if (!buttonType) return;
 
-    const dataMap = {
-      오늘: todayData,
-      "3일": threeDaysData,
-      "7일": weekData,
-      "1개월": monthData,
-      "3개월": threeMonthData,
-      "1년": oneYearData
+    const dataMap: Record<RangeDateMapKey, DashBoard | null> = {
+      오늘: dashboardStore.todayData,
+      "3일": dashboardStore.threeDaysData,
+      "7일": dashboardStore.weekData,
+      "1개월": dashboardStore.monthData,
+      "3개월": dashboardStore.threeMonthData,
+      "1년": dashboardStore.oneYearData
     };
 
-    setDashboardInfo(dataMap[buttonType]);
+    if (dataMap[buttonType]) setDashboardInfo(dataMap[buttonType]);
   }, [
     buttonType,
-    todayData,
-    threeDaysData,
-    weekData,
-    monthData,
-    threeMonthData,
-    oneYearData
+    dashboardStore.todayData,
+    dashboardStore.threeDaysData,
+    dashboardStore.weekData,
+    dashboardStore.monthData,
+    dashboardStore.threeMonthData,
+    dashboardStore.oneYearData
   ]);
 
-  const fetchFirstDate = async () => {
-    try {
-      setIsLoading(true);
-      //1개월 데이터 가져오기
-      const data = await dashboardInfoMutation(dateRange);
-      setThreeMonthData(data);
-      setIsLoading(false);
-      //나머지 날짜 데이터 가져오기
-      fetchOtherDate(Object.keys(RANGE_DATE_MAP) as RangeDateMapKey[]);
-    } catch (error) {
-      throw error;
-    }
-  };
-
-  const fetchOtherDate = async (dates: RangeDateMapKey[]) => {
-    const fetchPromises = dates.map(async (date) => {
-      try {
-        const data = await dashboardInfoMutation(RANGE_DATE_MAP[date]);
-        saveData(date, data);
-      } catch (err) {
-        console.error(err);
-      }
-
-      await Promise.all(fetchPromises);
-    });
-  };
-
+  // Fetch data when date range changes
   useEffect(() => {
     if (!dateChanged) return;
-    const fetchData = async () => {
-      setButtonType(null);
-      setIsLoading(true);
-      const data = await dashboardInfoMutation(dateRange);
-      setDashboardInfo(data);
-      setIsLoading(false);
 
-      setDateChanged(false);
+    const fetchData = async () => {
+      try {
+        setButtonType(null);
+        setIsLoading(true);
+        const data = await dashboardInfoMutation(dateRange);
+        setDashboardInfo(data);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setIsLoading(false);
+        setDateChanged(false);
+      }
     };
-    //만약 DatePicker로 골랐다면 버튼 날짜 데이터 모두 Fetch
-    if (dateChanged) {
-      fetchData();
-    }
+
+    fetchData();
   }, [dateChanged, dateRange, dashboardInfoMutation]);
 
+  // Handle date filter button click
   const handleDateFilterButton = useCallback(
     (content: RangeDateMapKey) => {
-      setButtonType(content);
+      if (!AVAILABLE_DATE_RANGES[content]) return;
 
+      setButtonType(content);
       handleDateRangeChange({
-        startDate: RANGE_DATE_MAP[content].startDate,
-        endDate: RANGE_DATE_MAP[content].endDate
+        startDate: AVAILABLE_DATE_RANGES[content].startDate,
+        endDate: AVAILABLE_DATE_RANGES[content].endDate
       });
     },
-    [handleDateRangeChange]
+    [AVAILABLE_DATE_RANGES, handleDateRangeChange]
   );
 
   return {
@@ -198,7 +223,7 @@ const useDashBoard = () => {
     isError,
     dashboardInfo,
     buttonType,
-    RANGE_DATE_MAP,
+    AVAILABLE_DATE_RANGES,
     dateRange
   };
 };

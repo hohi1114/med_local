@@ -23,21 +23,23 @@ const StatsBox = ({ title, data, diffRateData }: StatsBoxProps) => {
     <StatsBoxContainer isDecreased={diffRateData ? diffRateData < 0 : false}>
       <TitleContainer>
         <ChipTextStyle>{title}</ChipTextStyle>
-        {diffRateData && (
-          <DiffRateContainer>
-            <img
-              src="/images/bendedArrow.svg"
-              alt={diffRateData >= 0 ? "increase" : "decrease"}
-              style={{
-                width: "1.5rem",
-                height: "1.5rem",
-                marginRight: "2px",
-                transform: diffRateData >= 0 ? "rotate(180deg)" : "none"
-              }}
-            />
-            <DiffRateValue>{diffRateData}%</DiffRateValue>
-          </DiffRateContainer>
-        )}
+        {diffRateData !== 0 &&
+          diffRateData !== null &&
+          diffRateData !== undefined && (
+            <DiffRateContainer>
+              <img
+                src="/images/bendedArrow.svg"
+                alt={diffRateData >= 0 ? "increase" : "decrease"}
+                style={{
+                  width: "1.5rem",
+                  height: "1.5rem",
+                  marginRight: "2px",
+                  transform: diffRateData >= 0 ? "rotate(180deg)" : "none"
+                }}
+              />
+              <DiffRateValue>{diffRateData}%</DiffRateValue>
+            </DiffRateContainer>
+          )}
       </TitleContainer>
 
       <DataContainer>
@@ -55,7 +57,7 @@ const StatsBoxContainer = styled.div.withConfig({
   background-color: ${(props) =>
     props.isDecreased ? props.theme.colors.pink01 : props.theme.colors.blue01};
   border-radius: 16px;
-  padding: 1.5rem 0 1.5rem 1.5rem;
+  padding: 1.5rem 0.8rem 1.5rem 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;

@@ -35,7 +35,7 @@ const colors = {
 };
 
 const shadows = {
-  small: "0 0 5px rgba(106, 90, 205, 0.3)",
+  small: "0 0 5px rgba(0, 0, 0, 0.1)",
   medium: "0 4px 10px rgba(0, 0, 0, 0.1)",
   large: "0 10px 20px rgba(0, 0, 0, 0.2)"
 };

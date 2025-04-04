@@ -1,55 +1,59 @@
 import { Menu, MenuProps } from "antd";
-import { MENUITEMS } from "./sidebarData";
+import { MenuItem, MENUITEMS } from "./sidebarData";
 import styled from "styled-components";
-import { useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useState, useEffect, useMemo } from "react";
+import userStore from "../../../store/userStore";
 
 const SideNavBar = () => {
   const navigate = useNavigate();
-  const [collapsed, setCollapsed] = useState(false);
+  const location = useLocation();
+  const { user } = userStore();
+
+  const [collapsed, setCollapsed] = useState<boolean>(window.innerWidth <= 768);
   const [selectedKeys, setSelectedKeys] = useState<string[]>([
-    location.pathname
+    location.pathname.replace("/", "")
   ]);
 
   useEffect(() => {
-    const handleResize = () => {
-      setCollapsed(window.innerWidth <= 768);
-    };
+    const handleResize = () => setCollapsed(window.innerWidth <= 768);
 
     window.addEventListener("resize", handleResize);
-    handleResize();
-
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-
-  const onClick: MenuProps["onClick"] = (e) => {
-    navigate(`/${e.key}`);
-  };
-
-  const toggleCollapsed = () => {
-    setCollapsed(!collapsed);
-  };
 
   useEffect(() => {
     setSelectedKeys([location.pathname.replace("/", "")]);
   }, [location.pathname]);
+
+  // 메뉴 필터링 (useMemo로 성능 최적화)
+  const filteredMenuItems = useMemo<MenuItem[]>(() => {
+    if (!user.free) return MENUITEMS;
+
+    return MENUITEMS.map((menu) => {
+      if (menu.key === "setting" && menu.children) {
+        return { ...menu, children: [{ key: "account", label: "계정" }] };
+      }
+      return menu;
+    });
+  }, [user.free]);
 
   return (
     <SidebarContainer collapsed={collapsed}>
       <LogoContainer collapsed={collapsed}>
         <MenuIcon
           src="/images/menu.svg"
-          onClick={toggleCollapsed}
+          onClick={() => setCollapsed((prev) => !prev)}
           alt="menu icon"
         />
         {!collapsed && <LogoText>ORBIS</LogoText>}
       </LogoContainer>
 
       <Menu
-        onClick={onClick}
+        onClick={(e) => navigate(`/${e.key}`)}
         selectedKeys={selectedKeys}
         mode="inline"
-        items={MENUITEMS}
+        items={filteredMenuItems}
         inlineCollapsed={collapsed}
         style={{ flex: 1, overflowY: "auto" }}
       />
@@ -57,29 +61,23 @@ const SideNavBar = () => {
   );
 };
 
-// Styled components
-
-const SidebarContainer = styled.div.withConfig({
-  shouldForwardProp: (prop) => !["collapsed"].includes(prop)
-})<{ collapsed: boolean }>`
-  width: ${(props) => (props.collapsed ? "7rem" : "20rem")};
+const SidebarContainer = styled.div<{ collapsed: boolean }>`
+  width: ${({ collapsed }) => (collapsed ? "7rem" : "20rem")};
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   position: relative;
   box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-  background-color: #ffffff;
+  background-color: ${(props) => props.theme.colors.white};
   transition: width 0.3s ease;
 `;
 
-const LogoContainer = styled.div.withConfig({
-  shouldForwardProp: (prop) => !["collapsed"].includes(prop)
-})<{ collapsed: boolean }>`
-  padding: ${(props) => (props.collapsed ? "1rem 2.3rem" : "1rem 2rem")};
+const LogoContainer = styled.div<{ collapsed: boolean }>`
+  padding: ${({ collapsed }) => (collapsed ? "1rem 2.3rem" : "1rem 2rem")};
   display: flex;
   align-items: center;
   gap: 6px;
-  border-right: 1px solid #f3f2f3;
+  border-right: 1px solid ${(props) => props.theme.colors.gray01};
 `;
 
 const MenuIcon = styled.img`

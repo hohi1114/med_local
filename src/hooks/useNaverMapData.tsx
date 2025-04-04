@@ -1,24 +1,46 @@
-import { use, useEffect, useState } from "react";
-import { getDataFromRegionDB } from "../store/indexded_db/RegionDB";
-import { Point, RegionData, RegionEtcData } from "../types/naver-maps";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getAllRegionsEtc, getHospitalLocation } from "../utils/api/apis";
+import { getDataFromRegionDB } from "../store/indexded_db/RegionDB";
 import mapStore from "../store/mapStore";
+import userStore from "../store/userStore";
+
+import { Point, RegionData, RegionEtcData } from "../types/naver-maps";
+
+type RegionLevel = "small" | "dong" | "gu";
+
+const REGION_KEYS: Record<RegionLevel, string> = {
+  small: "small_regions",
+  dong: "dong_regions",
+  gu: "gu_regions"
+};
 
 const useNaverMapData = () => {
   const { drawerDate } = mapStore();
+  const { isInActiveUser, user } = userStore();
 
-  const [maxCost, setMaxCost] = useState({ small: 0, dong: 0, gu: 0 });
-  const [smallRegions, setSmallRegions] = useState<RegionData[]>([]);
-  const [dongRegions, setDongRegions] = useState<RegionData[]>([]);
-  const [guRegions, setGuRegions] = useState<RegionData[]>([]);
-  const [smallRegionEtc, setSmallRegionEtc] = useState<RegionEtcData[] | null>(
-    null
-  );
-  const [dongRegionEtc, setDongRegionEtc] = useState<RegionEtcData[] | null>(
-    null
-  );
-  const [guRegionEtc, setGuRegionEtc] = useState<RegionEtcData[] | null>(null);
+  const [maxCost, setMaxCost] = useState<Record<RegionLevel, number>>({
+    small: 0,
+    dong: 0,
+    gu: 0
+  });
+
+  const [regionData, setRegionData] = useState<
+    Record<RegionLevel, RegionData[]>
+  >({
+    small: [],
+    dong: [],
+    gu: []
+  });
+
+  const [regionEtc, setRegionEtc] = useState<
+    Record<RegionLevel, RegionEtcData[] | null>
+  >({
+    small: null,
+    dong: null,
+    gu: null
+  });
+
   const [hospitalLocation, setHospitalLocation] = useState<Point | null>(null);
 
   const {
@@ -29,78 +51,70 @@ const useNaverMapData = () => {
     queryKey: ["allRegionsEtc"],
     queryFn: () => getAllRegionsEtc(drawerDate),
     retry: false,
-    enabled: !!drawerDate
+    enabled: false
   });
-  const { data: hospitalLocationData, refetch: hospitalLocationFetch } =
-    useQuery({
-      queryKey: ["hospitalLocation"],
-      queryFn: () => getHospitalLocation(),
-      retry: false
-    });
 
+  const {
+    data: hospitalLocationData,
+    refetch: hospitalLocationFetch,
+    isLoading: hospitalLocationLoading
+  } = useQuery({
+    queryKey: ["hospitalLocation"],
+    queryFn: getHospitalLocation,
+    retry: false
+  });
+
+  // 병원 위치 데이터 요청
   useEffect(() => {
     hospitalLocationFetch();
   }, []);
 
   useEffect(() => {
-    if (drawerDate) {
+    if (drawerDate && user.user_id && !isInActiveUser) {
       allRegionEtcFetch();
     }
-  }, [drawerDate]);
+  }, [drawerDate, isInActiveUser, user]);
 
   useEffect(() => {
-    if (hospitalLocationData) {
-      const { location } = hospitalLocationData;
-      setHospitalLocation(location);
+    if (hospitalLocationData?.location) {
+      setHospitalLocation(hospitalLocationData.location);
     }
   }, [hospitalLocationData]);
 
+  // RegionEtc 데이터로 maxCost, regionEtc 상태 업데이트
   useEffect(() => {
-    if (allRegionEtcData) {
-      const newMaxCost = { ...maxCost };
-      Object.keys(allRegionEtcData).forEach((key) => {
-        if (key === "small_regions") {
-          setMaxCost((prev) => ({
-            ...prev,
-            small: allRegionEtcData[key]?.max_cost
-          }));
-          setSmallRegionEtc(allRegionEtcData[key]?.small_region_costs ?? []);
-        } else if (key === "dong_regions") {
-          setMaxCost((prev) => ({
-            ...prev,
-            dong: allRegionEtcData[key]?.max_cost
-          }));
-          setDongRegionEtc(allRegionEtcData[key]?.dong_region_costs ?? []);
-        } else {
-          setMaxCost((prev) => ({
-            ...prev,
-            gu: allRegionEtcData[key]?.max_cost
-          }));
-          setGuRegionEtc(allRegionEtcData[key]?.gu_region_costs ?? []);
-        }
-      });
-    }
-  }, [allRegionEtcData]);
-  useEffect(() => {
-    const fetchAndTransformRegions = async () => {
-      const regionKeys = ["small_regions", "dong_regions", "gu_regions"];
-      const etcKeys = ["small", "dong", "gu"];
-      const regionData = await Promise.all(
-        regionKeys.map(async (key, index) => {
-          const regions = await getDataFromRegionDB(key);
+    if (!allRegionEtcData) return;
 
-          return regions.map((region) => {
-            let etc_data: RegionEtcData[] = [];
-            if (key === "small_regions") {
-              etc_data = smallRegionEtc;
-            } else if (key === "dong_regions") {
-              etc_data = dongRegionEtc;
-            } else {
-              etc_data = guRegionEtc;
-            }
-            const matchedEtc = etc_data.find(
-              (item) => item[etcKeys[index] + "_region_name"] === region.name
+    (Object.keys(REGION_KEYS) as RegionLevel[]).forEach((level) => {
+      const key = REGION_KEYS[level];
+      const etc = allRegionEtcData[key];
+      if (etc) {
+        setMaxCost((prev) => ({ ...prev, [level]: etc.max_cost ?? 0 }));
+        setRegionEtc((prev) => ({
+          ...prev,
+          [level]: etc[`${level}_region_costs`] ?? []
+        }));
+      }
+    });
+  }, [allRegionEtcData]);
+
+  // polygon + etc 데이터 결합
+  useEffect(() => {
+    const fetchAndSetRegions = async () => {
+      const updated: Partial<Record<RegionLevel, RegionData[]>> = {};
+
+      await Promise.all(
+        (Object.keys(REGION_KEYS) as RegionLevel[]).map(async (level) => {
+          const key = REGION_KEYS[level];
+          const etcData = regionEtc[level];
+          if (!etcData) return;
+
+          const rawRegions = await getDataFromRegionDB(key);
+          updated[level] = rawRegions.map((region) => {
+            const matchedEtc = etcData.find(
+              (item) => item[`${level}_region_name`] === region.name
             );
+
             return {
               ...region,
               polygon: JSON.parse(region.polygon)[0],
@@ -111,27 +125,26 @@ const useNaverMapData = () => {
         })
       );
 
-      setSmallRegions(regionData[0]);
-      setDongRegions(regionData[1]);
-      setGuRegions(regionData[2]);
+      setRegionData((prev) => ({ ...prev, ...updated }));
     };
-    if (smallRegionEtc && dongRegionEtc && guRegionEtc) {
-      fetchAndTransformRegions();
-    }
-  }, [smallRegionEtc, dongRegionEtc, guRegionEtc]);
 
-  const getRegionName = (currentZoom: number) => {
-    if (currentZoom >= 15) {
+    if (regionEtc.small && regionEtc.dong && regionEtc.gu) {
+      fetchAndSetRegions();
+    }
+  }, [regionEtc]);
+
+  const getRegionName = (zoom: number) => {
+    if (zoom >= 15) {
       return {
-        data: smallRegions,
+        data: regionData.small,
         name: "small",
         fontSize: "1rem",
         color: "#6666E0",
         hilightColor: "#0000b4"
       };
-    } else if (currentZoom < 15 && currentZoom >= 14) {
+    } else if (zoom >= 14) {
       return {
-        data: dongRegions,
+        data: regionData.dong,
         name: "dong",
         fontSize: "1rem",
         color: "#6666E0",
@@ -139,7 +152,7 @@ const useNaverMapData = () => {
       };
     } else {
       return {
-        data: guRegions,
+        data: regionData.gu,
         name: "gu",
         fontSize: "1.2rem",
         color: "#6666E0",
@@ -147,31 +160,24 @@ const useNaverMapData = () => {
       };
     }
   };
-  const getPolygonColorOpacity = (totalCost: number, name: string): string => {
-    const highestCost = maxCost[name as keyof typeof maxCost];
 
-    let normalizedCost = 0;
+  const getPolygonColorOpacity = (
+    totalCost: number,
+    name: RegionLevel
+  ): string => {
+    const highestCost = maxCost[name];
+    let normalized = 0;
+
     if (highestCost > 0 && totalCost > 0) {
-      // (totalCost / highestCost)의 1/3승
-      normalizedCost = Math.pow(totalCost / highestCost, 1 / 3);
-      // 1을 넘지 않도록 제한
-      normalizedCost = Math.min(normalizedCost, 1);
+      normalized = Math.pow(totalCost / highestCost, 1 / 3);
+      normalized = Math.min(normalized, 1);
     }
 
-    // 색상 범위 설정 (더 넓은 범위)
-    const startColor = { r: 240, g: 248, b: 255 }; // 거의 흰색에 가까운 파랑
-    const endColor = { r: 0, g: 0, b: 180 }; // 매우 짙은 파랑
-
-    const r = Math.round(
-      startColor.r + (endColor.r - startColor.r) * normalizedCost
-    );
-    const g = Math.round(
-      startColor.g + (endColor.g - startColor.g) * normalizedCost
-    );
-    const b = Math.round(
-      startColor.b + (endColor.b - startColor.b) * normalizedCost
-    );
-
+    const start = { r: 240, g: 248, b: 255 };
+    const end = { r: 0, g: 0, b: 180 };
+    const r = Math.round(start.r + (end.r - start.r) * normalized);
+    const g = Math.round(start.g + (end.g - start.g) * normalized);
+    const b = Math.round(start.b + (end.b - start.b) * normalized);
     const opacity = totalCost === 0 ? 0.1 : 0.5;
 
     return `rgba(${r}, ${g}, ${b}, ${opacity})`;
@@ -179,11 +185,10 @@ const useNaverMapData = () => {
 
   const expandBounds = (
     bounds: naver.maps.LatLngBounds,
-    expansionFactor: number = 0.2
+    expansionFactor = 0.2
   ): naver.maps.LatLngBounds => {
     const sw = bounds.getSW();
     const ne = bounds.getNE();
-
     const latDiff = (ne.lat() - sw.lat()) * expansionFactor;
     const lngDiff = (ne.lng() - sw.lng()) * expansionFactor;
 
@@ -193,85 +198,66 @@ const useNaverMapData = () => {
     );
   };
 
-  /**Get Areas Based on Bounds */
   const getBoundAreas = (
     areas: RegionData[],
-    mapBounds: naver.maps.LatLngBounds
-  ): { boundAreas: RegionData[] } => {
-    let boundAreas = [] as RegionData[];
-
-    areas.forEach((area) => {
-      const polygonLatLngs = area.polygon.map(
-        ([lng, lat]) => new naver.maps.LatLng(lat, lng)
-      );
-
-      let isAreaAlreadyAdded = boundAreas.some(
-        (existingArea) => existingArea.name === area.name
-      );
-
-      polygonLatLngs.forEach((latlng) => {
-        if (mapBounds.hasLatLng(latlng) && !isAreaAlreadyAdded) {
-          boundAreas.push(area);
-          isAreaAlreadyAdded = true;
-        }
-      });
-    });
-
-    return { boundAreas };
+    bounds: naver.maps.LatLngBounds
+  ) => {
+    return {
+      boundAreas: areas.filter((area) => {
+        const polygonLatLngs = area.polygon.map(
+          ([lng, lat]) => new naver.maps.LatLng(lat, lng)
+        );
+        return polygonLatLngs.some((latlng) => bounds.hasLatLng(latlng));
+      })
+    };
   };
 
-  // Haversine 공식을 사용하여 두 점 사이의 거리 계산 함수
-  const calculateDistance = (lat1, lon1, lat2, lon2) => {
-    const R = 6371; // 지구 반경 (km)
+  const calculateDistance = (
+    lat1: number,
+    lon1: number,
+    lat2: number,
+    lon2: number
+  ): number => {
+    const R = 6371;
     const dLat = ((lat2 - lat1) * Math.PI) / 180;
     const dLon = ((lon2 - lon1) * Math.PI) / 180;
 
     const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.sin(dLat / 2) ** 2 +
       Math.cos((lat1 * Math.PI) / 180) *
         Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
+        Math.sin(dLon / 2) ** 2;
 
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    const distance = R * c * 1000;
-
-    return distance;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * 1000;
   };
 
-  // 500미터 내 환자들만 필터링하는 함수
   const groupPatientsByProximity = (
-    patientsLocations: Point[],
+    locations: Point[],
     range = 500
   ): Point[][] => {
     const clusters: Point[][] = [];
-    const visited: boolean[] = new Array(patientsLocations.length).fill(false);
+    const visited = new Array(locations.length).fill(false);
 
-    for (let i = 0; i < patientsLocations.length; i++) {
+    for (let i = 0; i < locations.length; i++) {
       if (visited[i]) continue;
-
-      const cluster: Point[] = [];
-      cluster.push(patientsLocations[i]);
+      const cluster: Point[] = [locations[i]];
       visited[i] = true;
 
-      // 현재 점을 기준으로 다른 점들과 비교
-      for (let j = i + 1; j < patientsLocations.length; j++) {
-        if (visited[j]) continue;
-
-        const distance = calculateDistance(
-          patientsLocations[i].lat,
-          patientsLocations[i].lng,
-          patientsLocations[j].lat,
-          patientsLocations[j].lng
-        );
-
-        if (distance <= range) {
-          cluster.push(patientsLocations[j]);
-          visited[j] = true;
+      for (let j = i + 1; j < locations.length; j++) {
+        if (!visited[j]) {
+          const distance = calculateDistance(
+            locations[i].lat,
+            locations[i].lng,
+            locations[j].lat,
+            locations[j].lng
+          );
+          if (distance <= range) {
+            cluster.push(locations[j]);
+            visited[j] = true;
+          }
         }
       }
 
-      // 클러스터에 추가
       clusters.push(cluster);
     }
 
@@ -279,12 +265,13 @@ const useNaverMapData = () => {
   };
 
   return {
-    smallRegions,
-    dongRegions,
-    guRegions,
-    smallRegionEtc,
-    dongRegionEtc,
-    guRegionEtc,
+    smallRegions: regionData.small,
+    dongRegions: regionData.dong,
+    guRegions: regionData.gu,
+    smallRegionEtc: regionEtc.small,
+    dongRegionEtc: regionEtc.dong,
+    guRegionEtc: regionEtc.gu,
+    hospitalLocationLoading,
     getRegionName,
     expandBounds,
     getBoundAreas,

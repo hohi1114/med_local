@@ -1,6 +1,6 @@
 import { MenuProps } from "antd";
 
-type MenuItem = Required<MenuProps>["items"][number];
+export type MenuItem = Required<MenuProps>["items"][number];
 export const MENUITEMS: MenuItem[] = [
   {
     key: "dashboard",
@@ -66,6 +66,13 @@ export const MENUITEMS: MenuItem[] = [
         src="/images/settings.svg"
         style={{ width: "1.5rem", height: "1.5rem" }}
       />
-    )
+    ),
+    children: [
+      { key: "account", label: "계정" },
+      {
+        key: "membership",
+        label: "멤버십 관리"
+      }
+    ]
   }
 ];

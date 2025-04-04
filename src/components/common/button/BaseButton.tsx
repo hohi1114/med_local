@@ -63,6 +63,7 @@ const ButtonContainer = styled.button.withConfig({
   cursor: pointer;
   font-weight: bold;
   background-color: ${({ color }) => color};
+  transition: background-color 0.3s ease, opacity 0.3s ease;
 
   &:disabled {
     opacity: 0.3;

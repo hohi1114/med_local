@@ -6,13 +6,16 @@ import mapStore from "../store/mapStore";
 import useRangeDurationDatePicker, {
   DateRange
 } from "../hooks/useRangeDurationDatePicker";
+import RequireSubscribe from "../components/common/RequireSubscribe";
+import userStore from "../store/userStore";
 
 function MediMapPage() {
+  const { isInActiveUser } = userStore();
   const { drawerDate, setDrawerDate, handleIsDrawerOpen } = mapStore();
   const { dateRange, handleDateRangeChange } = useRangeDurationDatePicker();
   useEffect(() => {
     setDrawerDate({
-      startDate: dayjs().subtract(1, "year").format("YYYY-MM-DD"),
+      startDate: dayjs().subtract(1, "month").format("YYYY-MM-DD"),
       endDate: dayjs().format("YYYY-MM-DD")
     });
     return () => {
@@ -31,6 +34,7 @@ function MediMapPage() {
 
   return (
     <>
+      {isInActiveUser && <RequireSubscribe />}
       <NaverMap
         dateRange={dateRange}
         handleDateChange={handleDateChangeFromMap}

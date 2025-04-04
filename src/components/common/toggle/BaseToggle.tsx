@@ -37,7 +37,9 @@ const SegmentedWrapper = styled.div`
   padding: 0.2rem;
 `;
 
-const SegmentedButton = styled.button<{ isSelected: boolean }>`
+const SegmentedButton = styled.button.withConfig({
+  shouldForwardProp: (prop) => prop !== "isSelected"
+})<{ isSelected: boolean }>`
   padding: 0.5rem 1.2rem;
   border-radius: 50px;
   font-size: 1.2rem;

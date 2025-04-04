@@ -10,6 +10,9 @@ import BaseTable from "../components/medi_map/chart/BaseTable";
 import DashboardStats from "../components/dashboard/DashboardStats";
 import Loading from "../components/common/Loading";
 import Error from "../components/common/Error";
+import userStore from "../store/userStore";
+import { FreeTrialModal } from "../components/membership/FreeTrialModal";
+import RequireSubscribe from "../components/common/RequireSubscribe";
 
 const LOADINGCONTENT = "데이터를 불러오는 중입니다.";
 export default function DashBoardPage() {
@@ -22,9 +25,11 @@ export default function DashBoardPage() {
     error,
     dashboardInfo,
     buttonType,
-    RANGE_DATE_MAP,
+    AVAILABLE_DATE_RANGES,
     setDateChanged
   } = useDashBoard();
+  const { user, isInActiveUser, fetchingUserLoading, isFreetrialUser } =
+    userStore();
 
   const barFormatData = () => {
     if (!dashboardInfo) return [];
@@ -48,16 +53,22 @@ export default function DashBoardPage() {
     return (
       <Error status={error?.status ?? "Unknown"} message={error?.message} />
     );
+
   return (
     <>
+      {isInActiveUser && <RequireSubscribe />}
       <ContentHeader title="대시보드" />
-      {(isLoading || !dashboardInfo) && <Loading content={LOADINGCONTENT} />}
+      {!fetchingUserLoading && !user?.free && user?.is_free_trial === false && (
+        <FreeTrialModal />
+      )}
+      {isLoading && <Loading content={LOADINGCONTENT} />}
       {dashboardInfo && (
         <DashBoardContainer>
           <FilterContainer>
-            {Object.keys(RANGE_DATE_MAP).map(
+            {Object.keys(AVAILABLE_DATE_RANGES).map(
               (content: string, index: number) => {
-                const contentKey = content as keyof typeof RANGE_DATE_MAP;
+                const contentKey =
+                  content as keyof typeof AVAILABLE_DATE_RANGES;
                 return (
                   <div style={{ width: "85px" }} key={content}>
                     <CutomButton
@@ -74,14 +85,18 @@ export default function DashBoardPage() {
                 );
               }
             )}
-            <DateLabel>직접 선택</DateLabel>
-            <DurationDatePicker
-              value={dateRange}
-              onChange={(date) => {
-                setDateChanged(true);
-                handleDateRangeChange(date);
-              }}
-            />
+            {!isFreetrialUser && (
+              <>
+                <DateLabel>직접 선택</DateLabel>
+                <DurationDatePicker
+                  value={dateRange}
+                  onChange={(date) => {
+                    setDateChanged(true);
+                    handleDateRangeChange(date);
+                  }}
+                />
+              </>
+            )}
           </FilterContainer>
 
           <CardGrid>

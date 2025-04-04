@@ -2,12 +2,7 @@ import styled from "styled-components";
 import BaseButton from "../components/common/button/BaseButton";
 import { useForm } from "react-hook-form";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import {
-  getUserInfo,
-  postActiveLicense,
-  postLogin,
-  postVerifyCode
-} from "../utils/api/apis";
+import { getUserInfo, postActiveLicense, postLogin } from "../utils/api/apis";
 import { useState, useEffect } from "react";
 import { AxiosError } from "axios";
 import { ErrorResponse, useNavigate } from "react-router-dom";
@@ -16,6 +11,7 @@ import LicenseModal from "../components/common/modal/LicenseModal";
 import { postActiveLicenseParams } from "../types/params";
 import useFingerPrintNumber from "../hooks/useFingerPrintNumber";
 import BaseInput from "../components/common/input/BaseInput";
+import useUpdateUserInfo from "../hooks/useUpdateUserInfo";
 
 export type LoginParams = {
   email: string;
@@ -32,6 +28,7 @@ const LoginPage = () => {
   const { getFingerPrint, setFingurePrintNumber, saveFingerPrint } =
     useFingerPrintNumber();
   const { setUser } = userStore();
+  const { fetchUserInfo } = useUpdateUserInfo();
 
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -93,8 +90,7 @@ const LoginPage = () => {
 
       if (activated) {
         // If already activated, go to dashboard
-        const { data: userData } = await loginRefetch();
-        setUser(userData as User);
+        fetchUserInfo();
         navigate("/dashboard");
       } else if (hasAvailableSlots) {
         // If there are slots, show modal to activate license
