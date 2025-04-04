@@ -54,8 +54,6 @@ export default function DashBoardPage() {
       <Error status={error?.status ?? "Unknown"} message={error?.message} />
     );
 
-  console.log(user);
-
   return (
     <>
       {isInActiveUser && <RequireSubscribe />}
@@ -209,7 +207,7 @@ const ChartTitle = styled.span`
   padding-bottom: 1.5rem;
 `;
 
-const CutomButton = styled(BaseButton)<{ selected?: boolean }>`
+const CutomButton = styled(BaseButton) <{ selected?: boolean }>`
   font-weight: ${(props) => (props.selected ? "bold" : 500)};
   min-width: 85px;
   max-width: 100px;
@@ -217,7 +215,7 @@ const CutomButton = styled(BaseButton)<{ selected?: boolean }>`
   transition: border 0.2s ease;
   border: 1.5px solid
     ${(props) =>
-      props.selected ? props.theme.colors.primary : props.theme.colors.gray03};
+    props.selected ? props.theme.colors.primary : props.theme.colors.gray03};
 
   color: ${(props) =>
     props.selected ? props.theme.colors.primary : props.theme.colors.black};

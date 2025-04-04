@@ -85,6 +85,8 @@ function excelSerialToDate(serial: number): string {
   const month = String(targetDate.getUTCMonth() + 1).padStart(2, "0");
   const day = String(targetDate.getUTCDate()).padStart(2, "0");
 
+  console.log(`${year}-${month}-${day}`);
+
   return `${year}-${month}-${day}`;
 }
 
@@ -332,7 +334,6 @@ export const parsePlaceFilesDentWeb = async (
     const buffer = await file.arrayBuffer();
     const workbook = XLSX.read(buffer, {
       type: "array",
-      cellDates: true, // This tells XLSX to parse dates properly
     });
 
     if (workbook.SheetNames.length === 0) {
@@ -340,11 +341,13 @@ export const parsePlaceFilesDentWeb = async (
       continue; // Skip this file
     }
 
-    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+    const worksheet = workbook.Sheets[workbook.SheetNames[1]];
 
     const jsonData = XLSX.utils.sheet_to_json<any>(worksheet, {
       header: 1,
       range: 1,
+      raw: false,
+      dateNF: "YYYY-MM-DD",
     });
 
     jsonData.forEach((row: any) => {
@@ -352,16 +355,12 @@ export const parsePlaceFilesDentWeb = async (
       let age = 0;
       const birthDateValue = row[3];
 
+      console.log(birthDateValue);
+
       if (birthDateValue) {
-        if (typeof birthDateValue === "number") {
-          // It's an Excel serial number, so convert it
-          const birthDateStr = excelSerialToDate(birthDateValue);
-          age = calculateAge(birthDateStr);
-        } else if (birthDateValue instanceof Date) {
-          // It's already a Date object (when cellDates:true is used)
-          const birthDateStr = formatDate(birthDateValue);
-          age = calculateAge(birthDateStr);
-        }
+        // Since we're using raw:false, birthDateValue should be a string in YYYY-MM-DD format
+        // We can just use it directly for age calculation
+        age = calculateAge(birthDateValue);
       }
 
       data.push({
