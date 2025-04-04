@@ -58,7 +58,8 @@ const NaverMap: FC<NaverMapProps> = ({ dateRange, handleDateChange }) => {
     dongRegions,
     guRegions,
     isFetching,
-    hospitalLocation
+    hospitalLocation,
+    hospitalLocationLoading
   } = useNaverMapData();
 
   const clickedAreaRef = useRef<string>(null);
@@ -423,7 +424,7 @@ const NaverMap: FC<NaverMapProps> = ({ dateRange, handleDateChange }) => {
         height: "100%"
       }}
     >
-      {!hospitalLocation && (
+      {!hospitalLocation && !hospitalLocationLoading && (
         <Alert
           message="Warning"
           description="병원 위치 정보를 불러올 수 없습니다."

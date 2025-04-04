@@ -33,12 +33,15 @@ const useNaverMapData = () => {
     retry: false,
     enabled: false
   });
-  const { data: hospitalLocationData, refetch: hospitalLocationFetch } =
-    useQuery({
-      queryKey: ["hospitalLocation"],
-      queryFn: () => getHospitalLocation(),
-      retry: false
-    });
+  const {
+    data: hospitalLocationData,
+    refetch: hospitalLocationFetch,
+    isLoading: hospitalLocationLoading
+  } = useQuery({
+    queryKey: ["hospitalLocation"],
+    queryFn: () => getHospitalLocation(),
+    retry: false
+  });
 
   useEffect(() => {
     hospitalLocationFetch();
@@ -287,6 +290,7 @@ const useNaverMapData = () => {
     smallRegionEtc,
     dongRegionEtc,
     guRegionEtc,
+    hospitalLocationLoading,
     getRegionName,
     expandBounds,
     getBoundAreas,

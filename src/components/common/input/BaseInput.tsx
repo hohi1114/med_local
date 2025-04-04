@@ -42,7 +42,9 @@ const inputSizes = {
   `
 };
 
-const InputContainer = styled.div<{ fullWidth?: boolean }>`
+const InputContainer = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== "fullWidth"
+})<{ fullWidth: boolean }>`
   display: flex;
   flex-direction: column;
   width: ${(props) => (props.fullWidth ? "100%" : "auto")};

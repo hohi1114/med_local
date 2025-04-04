@@ -74,7 +74,7 @@ export const RegisteredCardBox = styled.div`
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  width: 45%;
+  min-width: 17rem;
   height: 12rem;
   border-radius: 8px;
   padding: 1.5rem 2rem;
@@ -92,7 +92,7 @@ export const PaymentBox = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 50%;
+  min-width: 20rem;
   height: 12rem;
   border: 1.5px solid ${(props) => props.theme.colors.gray04};
   border-radius: 8px;
