@@ -125,7 +125,7 @@ function MembershipPage() {
         멤버십을 해지하시면 등록되었던 서비스 이용 불가능합니다.
         <br />
         해지 이후 멤버십 재가입을 원하시면
-        <strong> 맴버십 재가입</strong> 탭을 이용해주세요.
+        <strong> 멤버십 재가입</strong> 탭을 이용해주세요.
       </BaseModal>
       <ContentHeader title={"멤버십 관리"} />
       <CenterWrapper>

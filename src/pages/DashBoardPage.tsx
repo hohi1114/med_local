@@ -54,8 +54,6 @@ export default function DashBoardPage() {
       <Error status={error?.status ?? "Unknown"} message={error?.message} />
     );
 
-  console.log(user);
-
   return (
     <>
       {isInActiveUser && <RequireSubscribe />}
