@@ -54,11 +54,13 @@ export default function DashBoardPage() {
       <Error status={error?.status ?? "Unknown"} message={error?.message} />
     );
 
+  console.log(user);
+
   return (
     <>
       {isInActiveUser && <RequireSubscribe />}
       <ContentHeader title="대시보드" />
-      {!user?.is_free_trial && !fetchingUserLoading && !user.free && (
+      {!fetchingUserLoading && !user?.free && user?.is_free_trial === false && (
         <FreeTrialModal />
       )}
       {isLoading && <Loading content={LOADINGCONTENT} />}
