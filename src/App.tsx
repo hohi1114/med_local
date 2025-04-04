@@ -10,7 +10,6 @@ import SettingPage from "./pages/SettingPage.tsx";
 import LoginPage from "./pages/LoginPage.tsx";
 import ComingSoonPage from "./pages/ComingSoonPage.tsx";
 import MembershipPage from "./pages/MembershipPage.tsx";
-import PaymentPolicyPage from "./pages/PaymentPolicyPage.tsx";
 import useUpdateUserInfo from "./hooks/useUpdateUserInfo.tsx";
 import MembershipChangePage from "./pages/MembershipChangePage.tsx";
 import CardManagementPage from "./pages/CardManagementPage.tsx";
@@ -29,7 +28,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/payment-policy" element={<PaymentPolicyPage />} />
+
         <Route path="/" element={<BaseLayout />}>
           <Route index element={<Navigate to="dashboard" replace />} />
 

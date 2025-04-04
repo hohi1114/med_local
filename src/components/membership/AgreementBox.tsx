@@ -1,5 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
+import PaymentPolicyModal from "../common/modal/PaymentPolicyModal";
+import { useState } from "react";
 
 interface AgreementBoxProps {
   isChecked: boolean;
@@ -14,16 +16,19 @@ const AgreementBox = ({
   moreInfoLink
 }: AgreementBoxProps) => {
   const navigate = useNavigate();
+  const [policyModalOpen, setPolicyModalOpen] = useState(false);
 
-  const handleClickPolicyInfo = () => {
-    navigate("/payment-policy");
+  const handlePolicyModalOpen = () => {
+    setPolicyModalOpen((prev) => !prev);
   };
+
   return (
-    <CheckboxWrapper>
-      <CheckboxCircle
-        checked={isChecked}
-        onClick={() => setIsChecked(!isChecked)}
-      >
+    <CheckboxWrapper onClick={() => setIsChecked(!isChecked)}>
+      <PaymentPolicyModal
+        policyModal={policyModalOpen}
+        handlePolicyModal={handlePolicyModalOpen}
+      />
+      <CheckboxCircle checked={isChecked}>
         <img
           src={isChecked ? "/images/check_white.svg" : "/images/check_gray.svg"}
           alt="Checkbox"
@@ -38,7 +43,7 @@ const AgreementBox = ({
       >
         <CheckboxLabel>{content}</CheckboxLabel>
         {moreInfoLink && (
-          <InfoLink onClick={handleClickPolicyInfo}>정보보기</InfoLink>
+          <InfoLink onClick={handlePolicyModalOpen}>정보보기</InfoLink>
         )}
       </div>
     </CheckboxWrapper>

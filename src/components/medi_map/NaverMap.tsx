@@ -10,10 +10,6 @@ import Loading from "../common/Loading.js";
 import styled from "styled-components";
 import { DateRange } from "../../hooks/useRangeDurationDatePicker.js";
 import { Alert } from "antd";
-import dayjs from "dayjs";
-import { RangePickerProps } from "antd/es/date-picker/index.js";
-import userStore from "../../store/userStore.js";
-import { disabledDateForFreetrial } from "../../utils/freeTrial.js";
 
 interface NaverMapProps {
   dateRange: DateRange;
@@ -35,7 +31,6 @@ const NaverMap: FC<NaverMapProps> = ({ dateRange, handleDateChange }) => {
     areaName,
     loading
   } = mapStore();
-  const { isFreetrialUser } = userStore();
 
   const MarkerClustering = makeMarkerClustering(window.naver) as any;
   const mapElement = useRef<HTMLDivElement>(null);

@@ -48,8 +48,6 @@ const RegisterCard: React.FC<RegisterCardProps> = ({
     mutationFn: async (params: RegisterCardParams) =>
       await postRegisterCard(params),
     onSuccess: (data) => {
-      // const { cardInfo } = data;
-
       updateUserMembershipInfo();
       handleCompleteUpdate();
     },

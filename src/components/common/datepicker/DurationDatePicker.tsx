@@ -2,7 +2,6 @@ import { DatePicker } from "antd";
 import { RangePickerProps } from "antd/es/date-picker";
 import { DateRange } from "../../../hooks/useRangeDurationDatePicker";
 import dayjs from "dayjs";
-import { DatePickerProps } from "antd/lib";
 import userStore from "../../../store/userStore";
 
 const { RangePicker } = DatePicker;
