@@ -473,7 +473,7 @@ const Wrapper = styled.div`
   position: absolute;
   top: 1rem;
   left: 4rem;
-  z-index: 1000;
+  z-index: 90;
   background-color: white;
   padding: 10px;
   border-radius: 8px;

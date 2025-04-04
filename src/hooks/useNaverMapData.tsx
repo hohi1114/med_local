@@ -4,9 +4,11 @@ import { Point, RegionData, RegionEtcData } from "../types/naver-maps";
 import { useQuery } from "@tanstack/react-query";
 import { getAllRegionsEtc, getHospitalLocation } from "../utils/api/apis";
 import mapStore from "../store/mapStore";
+import userStore from "../store/userStore";
 
 const useNaverMapData = () => {
   const { drawerDate } = mapStore();
+  const { isInActiveUser, user } = userStore();
 
   const [maxCost, setMaxCost] = useState({ small: 0, dong: 0, gu: 0 });
   const [smallRegions, setSmallRegions] = useState<RegionData[]>([]);
@@ -29,7 +31,7 @@ const useNaverMapData = () => {
     queryKey: ["allRegionsEtc"],
     queryFn: () => getAllRegionsEtc(drawerDate),
     retry: false,
-    enabled: !!drawerDate
+    enabled: false
   });
   const { data: hospitalLocationData, refetch: hospitalLocationFetch } =
     useQuery({
@@ -43,10 +45,10 @@ const useNaverMapData = () => {
   }, []);
 
   useEffect(() => {
-    if (drawerDate) {
+    if (drawerDate && user.user_id && !isInActiveUser) {
       allRegionEtcFetch();
     }
-  }, [drawerDate]);
+  }, [drawerDate, isInActiveUser, user]);
 
   useEffect(() => {
     if (hospitalLocationData) {
