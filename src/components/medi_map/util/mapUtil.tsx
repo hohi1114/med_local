@@ -1,6 +1,5 @@
-import * as turf from "@turf/turf";
 import { getDataFromRegionDB } from "../../../store/indexded_db/RegionDB";
-import { Polygon, RegionData } from "../../../types/naver-maps";
+import { RegionData } from "../../../types/naver-maps";
 
 export const fixPolygonCoordinates = (
   polygon: [number, number][]
