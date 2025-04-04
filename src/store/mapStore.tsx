@@ -51,8 +51,7 @@ const mapStore = create<IMapStore>((set) => ({
   setPatients: (patients) => set({ patients }),
   setDrawerDate: (drawerDate) => set({ drawerDate }),
   handleIsDrawerOpen: (isOpenDrawer) => set({ isOpenDrawer }),
-  setDongPolygons: (dongPolygons: Polygon[]) => set({ dongPolygons }),
-  setSmallPolygons: (smallPolygons: Polygon[]) => set({ smallPolygons })
+  setDongPolygons: (dongPolygons: Polygon[]) => set({ dongPolygons })
 }));
 
 export default mapStore;

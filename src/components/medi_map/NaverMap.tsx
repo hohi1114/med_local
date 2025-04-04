@@ -13,6 +13,7 @@ import { Alert } from "antd";
 import dayjs from "dayjs";
 import { RangePickerProps } from "antd/es/date-picker/index.js";
 import userStore from "../../store/userStore.js";
+import { disabledDateForFreetrial } from "../../utils/freeTrial.js";
 
 interface NaverMapProps {
   dateRange: DateRange;
@@ -418,15 +419,6 @@ const NaverMap: FC<NaverMapProps> = ({ dateRange, handleDateChange }) => {
     }
   };
 
-  const disabledDateForFreetrial: RangePickerProps["disabledDate"] = (
-    current
-  ) => {
-    const today = dayjs().startOf("day");
-    const oneMonthAgo = today.subtract(1, "month");
-
-    return current.isBefore(oneMonthAgo, "day");
-  };
-
   return (
     <div
       ref={mapElement}
@@ -461,7 +453,6 @@ const NaverMap: FC<NaverMapProps> = ({ dateRange, handleDateChange }) => {
               style={{ width: "100%" }}
               value={dateRange}
               onChange={handleDateChange}
-              disabledDate={isFreetrialUser ? disabledDateForFreetrial : null}
             />
           </DatePickerContainer>
           <SubText>

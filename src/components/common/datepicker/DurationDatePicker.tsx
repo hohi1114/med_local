@@ -3,13 +3,14 @@ import { RangePickerProps } from "antd/es/date-picker";
 import { DateRange } from "../../../hooks/useRangeDurationDatePicker";
 import dayjs from "dayjs";
 import { DatePickerProps } from "antd/lib";
+import userStore from "../../../store/userStore";
 
 const { RangePicker } = DatePicker;
 
 interface DurationDatePickerProps {
   value: DateRange;
   onChange?: (dateRange: DateRange) => void;
-  disabledDate?: DatePickerProps["disabledDate"];
+
   style?: React.CSSProperties;
 }
 
@@ -19,9 +20,10 @@ interface DurationDatePickerProps {
 const DurationDatePicker: React.FC<DurationDatePickerProps> = ({
   value,
   onChange,
-  disabledDate,
+
   ...props
 }: DurationDatePickerProps) => {
+  const { isFreetrialUser } = userStore();
   const handleDateChange: RangePickerProps["onChange"] = (dates) => {
     if (dates && dates.length === 2) {
       const [startDate, endDate] = dates;
@@ -35,10 +37,19 @@ const DurationDatePicker: React.FC<DurationDatePickerProps> = ({
     }
   };
 
+  const disabledDateForFreetrial: RangePickerProps["disabledDate"] = (
+    current
+  ) => {
+    const today = dayjs().startOf("day");
+    const oneMonthAgo = today.subtract(1, "month");
+
+    return current.isBefore(oneMonthAgo, "day");
+  };
+
   return (
     <RangePicker
       {...props}
-      disabledDate={disabledDate}
+      disabledDate={isFreetrialUser ? disabledDateForFreetrial : undefined}
       format={"YYYY-MM-DD"}
       value={[dayjs(value.startDate), dayjs(value.endDate)]}
       onChange={handleDateChange}
