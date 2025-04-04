@@ -79,7 +79,8 @@ const useUpdateUserInfo = () => {
     if (user && !user?.free) {
       if (
         (subscribeDate?.status === "inactive" ||
-          subscribeDate?.status === "expired") &&
+          subscribeDate?.status === "expired" ||
+          subscribeDate?.status === "failed") &&
         subscribeDate?.is_free_trial
       ) {
         setIsInActiveUser(true);
@@ -122,7 +123,8 @@ const useUpdateUserInfo = () => {
     if (userData && !userData?.free) {
       if (
         (subscribeDate?.status === "inactive" ||
-          subscribeDate?.status === "expired") &&
+          subscribeDate?.status === "expired" ||
+          subscribeDate?.status === "failed") &&
         subscribeDate?.is_free_trial
       ) {
         setIsInActiveUser(true);
