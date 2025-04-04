@@ -61,7 +61,7 @@ export default function DashBoardPage() {
       {!user?.is_free_trial && !fetchingUserLoading && !user.free && (
         <FreeTrialModal />
       )}
-      {(isLoading || !dashboardInfo) && <Loading content={LOADINGCONTENT} />}
+      {isLoading && <Loading content={LOADINGCONTENT} />}
       {dashboardInfo && (
         <DashBoardContainer>
           <FilterContainer>
