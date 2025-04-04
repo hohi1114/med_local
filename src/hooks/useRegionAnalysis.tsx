@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { RegionStatistics } from "../types/region-analysis";
 import { useRegionAnalysisStore } from "../store/useRegionAnalysisStore";
 import { regionAnalysisParams } from "../types/params";
+import userStore from "../store/userStore";
 
 export const LOCAL_SECTIONS_MAP = {
   시: "small",
@@ -16,6 +17,7 @@ export type LocalSectionKey = keyof typeof LOCAL_SECTIONS_MAP;
 
 const useRegionAnalysis = () => {
   const { dateRange, handleDateRangeChange } = useRangeDurationDatePicker();
+  const { isInActiveUser, user } = userStore();
   const {
     setSmallSectionData,
     setGuSectionData,
@@ -81,8 +83,10 @@ const useRegionAnalysis = () => {
   };
 
   useEffect(() => {
-    fetchFirstRegion();
-  }, [dateRange]);
+    if (user?.user_id && !isInActiveUser) {
+      fetchFirstRegion();
+    }
+  }, [dateRange, user, isInActiveUser]);
 
   //SeclectBox Handler
   const handleLocalSectionChange = (value: LocalSectionKey) => {

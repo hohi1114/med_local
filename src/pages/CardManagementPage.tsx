@@ -1,4 +1,3 @@
-import { useState } from "react";
 import styled from "styled-components";
 import { useMutation } from "@tanstack/react-query";
 import { AxiosError } from "axios";
@@ -12,19 +11,18 @@ import { CancelButton } from "./MembershipPage";
 import { postDeleteCard } from "../utils/api/apis";
 import userStore from "../store/userStore";
 import Loading from "../components/common/Loading";
+import { useState } from "react";
+import useUpdateUserInfo from "../hooks/useUpdateUserInfo";
 
 function CardManagementPage() {
-  const { user, setUser } = userStore();
+  const { user } = userStore();
   const [updateCard, setUpdateCard] = useState(false);
+  const { updateUserMembershipInfo } = useUpdateUserInfo();
 
   const { mutate: deleteRegisteredCard, isPending } = useMutation({
     mutationFn: postDeleteCard,
     onSuccess: () => {
-      setUser({
-        ...user,
-        card_last_num: null,
-        card_name: null
-      });
+      updateUserMembershipInfo();
     },
     onError: (err: AxiosError) => {
       const errorMessage =

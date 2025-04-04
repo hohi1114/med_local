@@ -75,6 +75,20 @@ const useUpdateUserInfo = () => {
     } else {
       setHasUserCard(false);
     }
+
+    if (user && !user?.free) {
+      if (
+        (subscribeDate?.status === "inactive" ||
+          subscribeDate?.status === "expired" ||
+          subscribeDate?.status === "failed") &&
+        subscribeDate?.is_free_trial
+      ) {
+        setIsInActiveUser(true);
+      } else {
+        setIsInActiveUser(false);
+      }
+    }
+
     setUser({
       ...user,
       ...subscribeDate
@@ -84,10 +98,7 @@ const useUpdateUserInfo = () => {
   const fetchUserInfo = async () => {
     const { data: userData } = await loginRefetch();
     const { data: subscribeDate } = await subscribeRefetch();
-    const combinedData = {
-      ...userData,
-      ...subscribeDate
-    };
+
     if (
       subscribeDate?.status === "active" &&
       subscribeDate?.is_free_trial &&
@@ -108,22 +119,29 @@ const useUpdateUserInfo = () => {
     } else {
       setHasUserCard(false);
     }
-    setUser(combinedData as User);
-  };
 
-  //check if user is in free trial
-  useEffect(() => {
-    if (user && !user?.free) {
+    if (userData && !userData?.free) {
       if (
-        (user?.status === "inactive" || user?.status === "expired") &&
-        user?.is_free_trial
+        (subscribeDate?.status === "inactive" ||
+          subscribeDate?.status === "expired" ||
+          subscribeDate?.status === "failed") &&
+        subscribeDate?.is_free_trial
       ) {
         setIsInActiveUser(true);
       } else {
         setIsInActiveUser(false);
       }
     }
-  }, [user]);
+
+    const combinedData = {
+      ...userData,
+      ...subscribeDate
+    };
+    setUser(combinedData as User);
+  };
+
+  //check if user is in free trial
+  useEffect(() => {}, [user]);
 
   useEffect(() => {
     if (loginLoading || subscribeLoading) {

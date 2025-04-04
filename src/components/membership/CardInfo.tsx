@@ -4,21 +4,19 @@ import styled from "styled-components";
 import { AxiosError } from "axios";
 import { useMutation } from "@tanstack/react-query";
 import { postDeleteCard } from "../../utils/api/apis";
+import useUpdateUserInfo from "../../hooks/useUpdateUserInfo";
 
 interface CardInfoProps {
   handleAddCard: () => void;
   hideCancel?: boolean;
 }
 const CardInfo = ({ handleAddCard, hideCancel = false }: CardInfoProps) => {
-  const { user, setUser, hasUserCard } = userStore();
+  const { user, hasUserCard } = userStore();
+  const { updateUserMembershipInfo } = useUpdateUserInfo();
   const { mutate: deleteRegisteredCard } = useMutation({
     mutationFn: async () => await postDeleteCard(),
     onSuccess: () => {
-      setUser({
-        ...user,
-        card_last_num: null,
-        card_name: null
-      });
+      updateUserMembershipInfo();
     },
     onError: (err: AxiosError) => {
       alert(

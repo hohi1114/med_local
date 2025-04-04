@@ -10,9 +10,6 @@ import Loading from "../common/Loading.js";
 import styled from "styled-components";
 import { DateRange } from "../../hooks/useRangeDurationDatePicker.js";
 import { Alert } from "antd";
-import dayjs from "dayjs";
-import { RangePickerProps } from "antd/es/date-picker/index.js";
-import userStore from "../../store/userStore.js";
 
 interface NaverMapProps {
   dateRange: DateRange;
@@ -34,7 +31,6 @@ const NaverMap: FC<NaverMapProps> = ({ dateRange, handleDateChange }) => {
     areaName,
     loading
   } = mapStore();
-  const { isFreetrialUser } = userStore();
 
   const MarkerClustering = makeMarkerClustering(window.naver) as any;
   const mapElement = useRef<HTMLDivElement>(null);
@@ -418,15 +414,6 @@ const NaverMap: FC<NaverMapProps> = ({ dateRange, handleDateChange }) => {
     }
   };
 
-  const disabledDateForFreetrial: RangePickerProps["disabledDate"] = (
-    current
-  ) => {
-    const today = dayjs().startOf("day");
-    const oneMonthAgo = today.subtract(1, "month");
-
-    return current.isBefore(oneMonthAgo, "day");
-  };
-
   return (
     <div
       ref={mapElement}
@@ -461,7 +448,6 @@ const NaverMap: FC<NaverMapProps> = ({ dateRange, handleDateChange }) => {
               style={{ width: "100%" }}
               value={dateRange}
               onChange={handleDateChange}
-              disabledDate={isFreetrialUser ? disabledDateForFreetrial : null}
             />
           </DatePickerContainer>
           <SubText>
@@ -482,7 +468,7 @@ const Wrapper = styled.div`
   position: absolute;
   top: 1rem;
   left: 4rem;
-  z-index: 1000;
+  z-index: 90;
   background-color: white;
   padding: 10px;
   border-radius: 8px;

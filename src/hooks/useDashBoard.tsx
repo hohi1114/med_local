@@ -10,7 +10,6 @@ import isBetween from "dayjs/plugin/isBetween";
 import { saveDataToIndexDB } from "../store/indexded_db/RegionDB";
 import useDashboardStore from "../store/useDashboardStore";
 import userStore from "../store/userStore";
-
 dayjs.extend(isBetween);
 
 // Type-safe date range map
@@ -39,33 +38,17 @@ const RANGE_DATE_MAP: Record<RangeDateMapKey, DateRange> = {
     startDate: dayjs().subtract(1, "year").format("YYYY-MM-DD"),
     endDate: dayjs().format("YYYY-MM-DD")
   }
-};
+} as const;
 
 // Constants for free trial users
 const FREE_TRIAL_RANGES: Pick<typeof RANGE_DATE_MAP, "1개월"> = {
   "1개월": RANGE_DATE_MAP["1개월"]
-};
+} as const;
 
-// Return type for the hook
-type UseDashboardReturn = {
-  setButtonType: (type: RangeDateMapKey | null) => void;
-  handleDateRangeChange: (range: DateRange) => void;
-  handleDateFilterButton: (content: RangeDateMapKey) => void;
-  setDateChanged: (changed: boolean) => void;
-  isLoading: boolean;
-  error: unknown;
-  isError: boolean;
-  dashboardInfo: DashBoard | null;
-  buttonType: RangeDateMapKey | null;
-  AVAILABLE_DATE_RANGES: typeof RANGE_DATE_MAP | typeof FREE_TRIAL_RANGES;
-  dateRange: DateRange;
-};
-
-const useDashBoard = (): UseDashboardReturn => {
-  const { isFreetrialUser, user } = userStore();
-  const AVAILABLE_DATE_RANGES = isFreetrialUser
-    ? FREE_TRIAL_RANGES
-    : RANGE_DATE_MAP;
+const useDashBoard = () => {
+  const { isFreetrialUser, user, isInActiveUser } = userStore();
+  const AVAILABLE_DATE_RANGES: Partial<Record<RangeDateMapKey, DateRange>> =
+    isFreetrialUser ? FREE_TRIAL_RANGES : RANGE_DATE_MAP;
 
   const { dateRange, handleDateRangeChange } = useRangeDurationDatePicker();
   const [buttonType, setButtonType] = useState<RangeDateMapKey | null>("1개월");
@@ -121,8 +104,12 @@ const useDashBoard = (): UseDashboardReturn => {
     async (dates: RangeDateMapKey[]) => {
       const fetchPromises = dates.map(async (date) => {
         try {
-          const data = await dashboardInfoMutation(AVAILABLE_DATE_RANGES[date]);
-          saveData(date, data);
+          if (AVAILABLE_DATE_RANGES[date]) {
+            const data = await dashboardInfoMutation(
+              AVAILABLE_DATE_RANGES[date]!
+            );
+            saveData(date, data);
+          }
         } catch (err) {
           console.error(err);
         }
@@ -137,6 +124,7 @@ const useDashBoard = (): UseDashboardReturn => {
   const fetchFirstDate = useCallback(async () => {
     try {
       setIsLoading(true);
+
       const data = await dashboardInfoMutation(dateRange);
       saveData("1개월", data);
 
@@ -160,10 +148,12 @@ const useDashBoard = (): UseDashboardReturn => {
   ]);
 
   useEffect(() => {
-    if (user?.user_id) {
+    if (user?.user_id && !isInActiveUser) {
       fetchFirstDate();
+    } else {
+      setDashboardInfo(null);
     }
-  }, [user, fetchFirstDate]);
+  }, [user]);
 
   useEffect(() => {
     if (!buttonType) return;
