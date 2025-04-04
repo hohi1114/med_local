@@ -21,6 +21,14 @@ export interface PatientData {
   longitude: number | null;
 }
 
+export interface PatientDataDentWeb {
+  chartNumber: number;
+  age: number;
+  address: string;
+  latitude: number | null;
+  longitude: number | null;
+}
+
 // 일자별 수입 현황
 export interface DailyIncomeEgis {
   chartNumber: number; // 1st column
@@ -76,6 +84,8 @@ function excelSerialToDate(serial: number): string {
   const year = targetDate.getUTCFullYear();
   const month = String(targetDate.getUTCMonth() + 1).padStart(2, "0");
   const day = String(targetDate.getUTCDate()).padStart(2, "0");
+
+  console.log(`${year}-${month}-${day}`);
 
   return `${year}-${month}-${day}`;
 }
@@ -273,4 +283,121 @@ export async function parsePatientIncomeEgis(
   }
 
   return data.filter((item) => !isNaN(item.chartNumber) && !isNaN(item.age));
+}
+
+export const parseDaysFilesDentweb = async (
+  files: FileList
+): Promise<VisitData[]> => {
+  let data: VisitData[] = [];
+
+  for (const file of Array.from(files)) {
+    const buffer = await file.arrayBuffer();
+    const workbook = XLSX.read(buffer, { type: "array" });
+
+    if (workbook.SheetNames.length === 0) {
+      console.error("❌ No worksheets found in the file:", file.name);
+      continue; // Skip this file
+    }
+
+    const worksheet = workbook.Sheets[workbook.SheetNames[1]]; // First sheet
+
+    const jsonData = XLSX.utils.sheet_to_json<any>(worksheet, {
+      header: 1,
+      range: 1,
+    }); // Skip first 3 rows
+
+    jsonData.forEach((row: any) => {
+      let visitDate = row[1];
+
+      // ✅ Convert Excel serial date to string format
+      if (typeof visitDate === "number") {
+        visitDate = excelSerialToDate(visitDate);
+      }
+
+      data.push({
+        chartNumber: Number(row[2]),
+        visitDate: visitDate,
+        totalCost: Number(row[10]),
+      });
+    });
+  }
+
+  return data.filter((item) => !isNaN(item.chartNumber));
+};
+
+export const parsePlaceFilesDentWeb = async (
+  files: FileList
+): Promise<PatientDataDentWeb[]> => {
+  let data: PatientDataDentWeb[] = [];
+
+  for (const file of Array.from(files)) {
+    const buffer = await file.arrayBuffer();
+    const workbook = XLSX.read(buffer, {
+      type: "array",
+    });
+
+    if (workbook.SheetNames.length === 0) {
+      console.error("❌ No worksheets found in the file:", file.name);
+      continue; // Skip this file
+    }
+
+    const worksheet = workbook.Sheets[workbook.SheetNames[1]];
+
+    const jsonData = XLSX.utils.sheet_to_json<any>(worksheet, {
+      header: 1,
+      range: 1,
+      raw: false,
+      dateNF: "YYYY-MM-DD",
+    });
+
+    jsonData.forEach((row: any) => {
+      // Check if birth date is an Excel serial number (number) or already a Date
+      let age = 0;
+      const birthDateValue = row[3];
+
+      console.log(birthDateValue);
+
+      if (birthDateValue) {
+        // Since we're using raw:false, birthDateValue should be a string in YYYY-MM-DD format
+        // We can just use it directly for age calculation
+        age = calculateAge(birthDateValue);
+      }
+
+      data.push({
+        chartNumber: Number(row[2]),
+        age: age,
+        address: row[10] || "N/D",
+        latitude: null,
+        longitude: null,
+      });
+    });
+  }
+  return data.filter((item) => !isNaN(item.chartNumber));
+};
+
+function calculateAge(birthDateStr: string): number {
+  const today = new Date();
+  const birthDate = new Date(birthDateStr);
+
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+
+  // If birth month is later in the year, or same month but birth day is later, subtract one year
+  if (
+    monthDiff < 0 ||
+    (monthDiff === 0 && today.getDate() < birthDate.getDate())
+  ) {
+    age--;
+  }
+
+  return age;
+}
+
+// Helper function to format Date objects to string
+function formatDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }

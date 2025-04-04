@@ -5,7 +5,9 @@ import {
   parsePlaceFilesEuisarang,
   parseDailyIncomeEgis,
   parsePatientIncomeEgis,
-  parsePatientListEgis
+  parsePatientListEgis,
+  parseDaysFilesDentweb,
+  parsePlaceFilesDentWeb
 } from "../utils/ExcelParser.ts";
 import styled from "styled-components";
 import BaseButton from "../components/common/button/BaseButton";
@@ -17,21 +19,21 @@ import Loading from "../components/common/Loading.tsx";
 import {
   uploadDataToBackendEgis,
   uploadDataToBackendEuisarang,
-  getUserEMR
+  getUserEMR,
+  uploadDataToBackendDentWeb
 } from "../utils/api/apis";
 import ContentHeader from "../components/common/layout/ContentHeader.tsx";
 import RequireSubscribe from "../components/common/RequireSubscribe.tsx";
 import userStore from "../store/userStore.tsx";
 
 const UpdateDataPage = () => {
-  const [dataType, setDataType] = useState<"euisarang" | "egis">("euisarang"); // Track data type
+  const [dataType, setDataType] = useState<"euisarang" | "egis" | "dentweb">("euisarang"); // Track data type
   const [daysFiles, setDaysFiles] = useState<FileList | null>(null); // Euisarang
   const [placeFiles, setPlaceFiles] = useState<FileList | null>(null); // Euisarang & Egis
   const [dailyIncome, setDailyIncome] = useState<FileList | null>(null); // Egis
   const [patient, setPatient] = useState<FileList | null>(null); // Egis
   const [progress, setProgress] = useState<number>(0);
   const [api, contextHolder] = notification.useNotification();
-  const [localData, setLocalData] = useState<number>(0);
   const { isInActiveUser } = userStore();
 
   const openNotification = (
@@ -50,7 +52,7 @@ const UpdateDataPage = () => {
   // ✅ Load Naver Maps Script on Component Mount
   useEffect(() => {
     loadNaverMapsScript(import.meta.env.VITE_NAVER_MAPS_CLIENT_ID)
-      .then(() => {})
+      .then(() => { })
       .catch((error) =>
         console.error("❌ Failed to load Naver Maps script:", error)
       );
@@ -60,7 +62,7 @@ const UpdateDataPage = () => {
     const fetchEMRType = async () => {
       try {
         const emrType = await getUserEMR();
-        if (emrType === "euisarang" || emrType === "egis") {
+        if (emrType === "euisarang" || emrType === "egis" || emrType === "dentweb") {
           setDataType(emrType);
         }
       } catch (error) {
@@ -71,18 +73,10 @@ const UpdateDataPage = () => {
     fetchEMRType();
   }, []);
 
-  useEffect(() => {
-    if (progress === 100) {
-      openNotification(
-        "success",
-        "데이터 처리 완료",
-        "데이터 처리가 완료되었습니다."
-      );
-    }
-  }, [progress]);
 
-  // Process and upload data
-  const handleProcessDataEuisarang = async () => {
+
+
+  const handleProcessDataDentweb = async (): Promise<void> => {
     if (!placeFiles || !daysFiles) {
       openNotification("warning", "파일 누락", "모든 파일을 업로드해주세요.");
       return;
@@ -91,24 +85,55 @@ const UpdateDataPage = () => {
     setProgress(1); // Start progress
 
     try {
-      // Parse files
-      const visits = await parseDaysFilesEuisarang(daysFiles);
-      const patients = await parsePlaceFilesEuisarang(placeFiles);
-      setProgress(20);
-
-      // Simulate progress for parsing
+      const visits = await parseDaysFilesDentweb(daysFiles);
+      const patients = await parsePlaceFilesDentWeb(placeFiles);
       setProgress(40);
 
-      // Upload to backend (token is handled by authApi interceptor)
-      const backendResponse = await uploadDataToBackendEuisarang(
-        visits,
-        patients
+      console.log(visits);
+      console.log(patients);
+
+      // Start the upload but don't await it
+      // This way we can continue execution without waiting
+      const uploadPromise = uploadDataToBackendDentWeb(visits, patients);
+
+      // Inform the user that data is being processed in the background
+      openNotification(
+        "success",
+        "데이터 업로드 중",
+        "데이터 처리중입니다. 처리가 완료되면 알려드립니다. 프로그램을 종료하지 마세요"
       );
+
+      // Set progress to 100% since from the user's perspective, the task is complete
       setProgress(100);
 
-      // Update local data count
-      setLocalData(visits.length); // Adjust as needed
+
+
+      uploadPromise
+        .then((backendResponse) => {
+          // Handle successful upload (when it eventually completes)
+          openNotification(
+            "success",
+            "데이터 업로드 완료",
+            "모든 데이터가 성공적으로 처리되었습니다."
+          );
+
+          // Update any UI components that should reflect the successful upload
+          // updateDataCount(backendResponse);
+        })
+        .catch((error) => {
+          // Handle error in the background
+          console.error("❌ Background upload error:", error);
+          openNotification(
+            "error",
+            "업로드 실패",
+            error instanceof Error
+              ? error.message
+              : "알 수 없는 오류가 발생했습니다."
+          );
+        });
+
     } catch (error) {
+      // This catch block handles errors in the initial parsing phase
       console.error("❌ Error processing data:", error);
       openNotification(
         "error",
@@ -121,7 +146,79 @@ const UpdateDataPage = () => {
     }
   };
 
-  const handleProcessDataEgis = async () => {
+
+
+  // Process and upload data
+  const handleProcessDataEuisarang = async (): Promise<void> => {
+    if (!placeFiles || !daysFiles) {
+      openNotification("warning", "파일 누락", "모든 파일을 업로드해주세요.");
+      return;
+    }
+
+    setProgress(1); // Start progress
+
+    try {
+      // Parse files
+      const visits = await parseDaysFilesEuisarang(daysFiles);
+      const patients = await parsePlaceFilesEuisarang(placeFiles);
+      setProgress(40);
+
+
+
+      // Upload to backend (token is handled by authApi interceptor)
+      const uploadPromise = uploadDataToBackendEuisarang(visits, patients);
+
+      // Inform the user that data is being processed in the background
+      openNotification(
+        "success",
+        "데이터 업로드 중",
+        "데이터 처리중입니다. 처리가 완료되면 알려드립니다,프로그램을 종료하지 마세요."
+      );
+
+      setProgress(100);
+
+      uploadPromise
+        .then((backendResponse) => {
+          // Handle successful upload (when it eventually completes)
+          openNotification(
+            "success",
+            "데이터 업로드 완료",
+            "모든 데이터가 성공적으로 처리되었습니다."
+          );
+
+          // Update any UI components that should reflect the successful upload
+          // updateDataCount(backendResponse);
+        })
+        .catch((error) => {
+          // Handle error in the background
+          console.error("❌ Background upload error:", error);
+          openNotification(
+            "error",
+            "업로드 실패",
+            error instanceof Error
+              ? error.message
+              : "알 수 없는 오류가 발생했습니다."
+          );
+        });
+
+    } catch (error) {
+      // This catch block handles errors in the initial parsing phase
+      console.error("❌ Error processing data:", error);
+      openNotification(
+        "error",
+        "데이터 처리 실패",
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다."
+      );
+      setProgress(0); // Reset progress on error
+    }
+  };
+
+
+
+
+  const handleProcessDataEgis = async (): Promise<void> => {
     if (!placeFiles || !dailyIncome || !patient) {
       openNotification("warning", "파일 누락", "모든 파일을 업로드해주세요.");
       return;
@@ -135,23 +232,48 @@ const UpdateDataPage = () => {
       const patientListData = await parsePatientListEgis(placeFiles);
       const patientIncomeData = await parsePatientIncomeEgis(patient);
 
-      setProgress(20);
 
-      // Simulate progress for parsing
       setProgress(40);
 
-      // Upload to backend (V2 API with multiple datasets)
-      await uploadDataToBackendEgis(
-        dailyIncomeData,
-        patientListData,
-        patientIncomeData
+      const uploadPromise = uploadDataToBackendEgis(dailyIncomeData, patientListData, patientIncomeData);
+
+      openNotification(
+        "success",
+        "데이터 업로드 중",
+        "데이터 처리중입니다. 처리가 완료되면 알려드립니다,프로그램을 종료하지 마세요."
       );
+
       setProgress(100);
 
-      // Update local data count
-      setLocalData(dailyIncomeData.length);
+
+
+      uploadPromise
+        .then((backendResponse) => {
+          // Handle successful upload (when it eventually completes)
+          openNotification(
+            "success",
+            "데이터 업로드 완료",
+            "모든 데이터가 성공적으로 처리되었습니다."
+          );
+
+          // Update any UI components that should reflect the successful upload
+          // updateDataCount(backendResponse);
+        })
+        .catch((error) => {
+          // Handle error in the background
+          console.error("❌ Background upload error:", error);
+          openNotification(
+            "error",
+            "업로드 실패",
+            error instanceof Error
+              ? error.message
+              : "알 수 없는 오류가 발생했습니다."
+          );
+        });
+
     } catch (error) {
-      console.error("❌ Error processing V2 data:", error);
+      // This catch block handles errors in the initial parsing phase
+      console.error("❌ Error processing data:", error);
       openNotification(
         "error",
         "데이터 처리 실패",
@@ -159,20 +281,24 @@ const UpdateDataPage = () => {
           ? error.message
           : "알 수 없는 오류가 발생했습니다."
       );
-      setProgress(0);
+      setProgress(0); // Reset progress on error
     }
   };
 
   const handleProcessData = () => {
     if (dataType === "euisarang") {
       handleProcessDataEuisarang();
-    } else {
+    } else if (dataType === "egis") {
       handleProcessDataEgis();
+    } else {
+      handleProcessDataDentweb();
     }
-  };
+  }
+
 
   const isButtonDisabled = () => {
-    if (dataType === "euisarang") {
+    if (dataType === "euisarang" || dataType === "dentweb"
+    ) {
       return !daysFiles || !placeFiles || progress > 0;
     }
     return !dailyIncome || !placeFiles || !patient || progress > 0;
@@ -196,7 +322,7 @@ const UpdateDataPage = () => {
 
         {/* Conditional File Uploads */}
         <ContentContainer>
-          {dataType === "euisarang" ? (
+          {((dataType === "euisarang") || (dataType === "dentweb")) ? (
             <>
               <FileUpload
                 title="일일 수입 데이터 업로드"
