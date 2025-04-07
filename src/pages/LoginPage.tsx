@@ -56,7 +56,7 @@ const LoginPage = () => {
     onError: (err: AxiosError) =>
       alert(
         (err.response?.data as { error?: string })?.error ||
-          "License activation failed"
+        "License activation failed"
       )
   });
 
@@ -135,7 +135,7 @@ const LoginPage = () => {
           <BaseInput
             type="email"
             placeholder="Email"
-            {...register("email", { required: "ID를 입력해주세요." })}
+            {...register("email", { required: "ID를 입력해주세요" })}
           />
           <BaseInput
             type="password"
