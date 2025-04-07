@@ -172,12 +172,13 @@ const useNaverMapData = (twoType: boolean) => {
           ...prev,
           second: {
             ...prev.second,
-            [level]: etc[`${level}_region_costs`] ?? []
+            [level]: etc2[`${level}_region_costs`] ?? []
           }
         }));
       }
     });
   };
+
   useEffect(() => {
     const fetchAndSetRegions = async () => {
       const updated: Partial<Record<RegionLevel, RegionData[]>> = {};

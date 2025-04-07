@@ -23,7 +23,7 @@ interface IMapStore {
   setDrawerDate1: (drawerDate: DateRange) => void;
   setDrawerDate2: (drawerDate: DateRange) => void;
   handleIsDrawerOpen: (isDrawerOpen: boolean) => void;
-  setSelctedRegionData: (data: RegionData) => void;
+  setSelectedRegionData: (data: RegionData) => void;
   setDongPolygons: (dongPolygons: Polygon[]) => void;
   setDongNameForSmall: (dongNmaeFroSmall: string | null) => void;
   setBoundArea: (boundArea: RegionData[]) => void;
@@ -51,7 +51,7 @@ const mapStore = create<IMapStore>((set) => ({
   setRegion: (region) => set({ region }),
   setAreaName: (areaName) => set({ areaName }),
   setDongNameForSmall: (dongNmaeFroSmall) => set({ dongNmaeFroSmall }),
-  setSelctedRegionData: (selectedRegionData: RegionData) =>
+  setSelectedRegionData: (selectedRegionData: RegionData) =>
     set({ selectedRegionData }),
   setLoading: (loading: boolean) => set({ loading }),
   setBoundArea: (boundArea) => set({ boundArea }),

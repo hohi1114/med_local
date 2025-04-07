@@ -13,6 +13,9 @@ interface NaverMap2Props {
   children: React.ReactNode;
 }
 
+const redHightLight = "rgb(245, 100, 130)";
+const blueHgihtLight = "rgb(90, 140, 210)";
+
 const NaverMap2: FC<NaverMap2Props> = ({ children }) => {
   const {
     drawerDate1,
@@ -97,19 +100,19 @@ const NaverMap2: FC<NaverMap2Props> = ({ children }) => {
     };
   }, []);
 
-  useEffect(() => {
-    if (!isOpenDrawer) {
-      const polygon = polygonsRef.current.get(areaName);
-      if (polygon) {
-        const paths = polygon.getPaths();
-        polygon.setOptions({
-          paths: paths,
-          strokeColor: basicColor,
-          strokeWeight: 2
-        });
-      }
-    }
-  }, [isOpenDrawer, areaName]);
+  // useEffect(() => {
+  //   if (!isOpenDrawer) {
+  //     const polygon = polygonsRef.current.get(areaName);
+  //     if (polygon) {
+  //       const paths = polygon.getPaths();
+  //       polygon.setOptions({
+  //         paths: paths,
+  //         strokeColor: basicColor,
+  //         strokeWeight: 2
+  //       });
+  //     }
+  //   }
+  // }, [isOpenDrawer, areaName]);
 
   const handleZoomChange = debounce(async (dateChanged) => {
     //📌Init Map
@@ -158,7 +161,6 @@ const NaverMap2: FC<NaverMap2Props> = ({ children }) => {
     crearClusters(patientGroupsMarkerClusterRef);
 
     const areaPromises = boundAreas.map(async (area) => {
-      console.log(area);
       const latLngs = area.polygon.map(
         ([lng, lat]) => new window.naver.maps.LatLng(lat, lng)
       );
@@ -169,11 +171,10 @@ const NaverMap2: FC<NaverMap2Props> = ({ children }) => {
           strokeColor: basicColor,
           strokeWeight: 2,
           clickable: true,
-
           fillColor:
             area?.total_costA <= area?.total_costB
-              ? "rgba(255, 234, 232, 0.4)"
-              : "rgba(200, 225, 250, 0.6)"
+              ? "rgba(200, 225, 250, 0.6)"
+              : "rgba(255, 234, 232, 0.4)"
         });
       }
 
@@ -271,7 +272,10 @@ const NaverMap2: FC<NaverMap2Props> = ({ children }) => {
           setAreaName(area.name);
           polygon.setOptions({
             paths: polygon.getPaths(),
-            strokeColor: basicHgihlightColor,
+            strokeColor:
+              area?.total_costA <= area?.total_costB
+                ? blueHgihtLight
+                : redHightLight,
             strokeWeight: 3,
             zIndex: 100
           });
@@ -312,7 +316,10 @@ const NaverMap2: FC<NaverMap2Props> = ({ children }) => {
           setAreaName(area.name);
           polygon.setOptions({
             paths: polygon.getPaths(),
-            strokeColor: basicHgihlightColor,
+            strokeColor:
+              area?.total_costA <= area?.total_costB
+                ? blueHgihtLight
+                : redHightLight,
             strokeWeight: 3,
             zIndex: 100
           });

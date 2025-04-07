@@ -24,7 +24,6 @@ const DurationDatePicker: React.FC<DurationDatePickerProps> = ({
 }: DurationDatePickerProps) => {
   const { isFreetrialUser } = userStore();
   const handleDateChange: RangePickerProps["onChange"] = (dates) => {
-    console.log(dates);
     if (dates && dates.length === 2) {
       const [startDate, endDate] = dates;
 
