@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import { getAllRegionsEtc, getHospitalLocation } from "../utils/api/apis";
 import { getDataFromRegionDB } from "../store/indexded_db/RegionDB";
 import mapStore from "../store/mapStore";
@@ -8,6 +8,11 @@ import userStore from "../store/userStore";
 import { Point, RegionData, RegionEtcData } from "../types/naver-maps";
 
 type RegionLevel = "small" | "dong" | "gu";
+type RegionEtcMap = {
+  small: RegionEtcData[] | null;
+  dong: RegionEtcData[] | null;
+  gu: RegionEtcData[] | null;
+};
 
 const REGION_KEYS: Record<RegionLevel, string> = {
   small: "small_regions",
@@ -15,8 +20,8 @@ const REGION_KEYS: Record<RegionLevel, string> = {
   gu: "gu_regions"
 };
 
-const useNaverMapData = () => {
-  const { drawerDate } = mapStore();
+const useNaverMapData = (twoType: boolean) => {
+  const { drawerDate, drawerDate1, drawerDate2 } = mapStore();
   const { isInActiveUser, user } = userStore();
 
   const [maxCost, setMaxCost] = useState<Record<RegionLevel, number>>({
@@ -41,17 +46,39 @@ const useNaverMapData = () => {
     gu: null
   });
 
-  const [hospitalLocation, setHospitalLocation] = useState<Point | null>(null);
+  const [regionComparisionEtc, setRegionComparisonEtc] = useState<{
+    first: RegionEtcMap;
+    second: RegionEtcMap;
+  }>({
+    first: { small: null, dong: null, gu: null },
+    second: { small: null, dong: null, gu: null }
+  });
 
-  const {
-    data: allRegionEtcData,
-    refetch: allRegionEtcFetch,
-    isFetching
-  } = useQuery({
-    queryKey: ["allRegionsEtc"],
-    queryFn: () => getAllRegionsEtc(drawerDate),
-    retry: false,
-    enabled: false
+  const [regionComparison, setRegionComparison] = useState({
+    first: null,
+    second: null
+  });
+
+  const [hospitalLocation, setHospitalLocation] = useState<Point | null>(null);
+  const regionQueries = useQueries({
+    queries: twoType
+      ? [
+          { type: "A", date: drawerDate1 },
+          { type: "B", date: drawerDate2 }
+        ].map((data) => ({
+          queryKey: [`allRegionsEtc${data.type}`, data.date],
+          queryFn: () => getAllRegionsEtc(data.date!),
+          enabled: !!user.user_id && !isInActiveUser && !!data.date
+        }))
+      : drawerDate
+      ? [
+          {
+            queryKey: ["allRegionsEtc", drawerDate],
+            queryFn: () => getAllRegionsEtc(drawerDate),
+            enabled: !!user.user_id && !isInActiveUser
+          }
+        ]
+      : []
   });
 
   const {
@@ -70,10 +97,30 @@ const useNaverMapData = () => {
   }, []);
 
   useEffect(() => {
-    if (drawerDate && user.user_id && !isInActiveUser) {
-      allRegionEtcFetch();
+    if (twoType && !!user.user_id && !isInActiveUser) {
+      if (drawerDate1 && regionQueries[0]) {
+        regionQueries[0].refetch();
+      }
+      if (drawerDate2 && regionQueries[1]) {
+        regionQueries[1].refetch();
+      }
     }
-  }, [drawerDate, isInActiveUser, user]);
+  }, [drawerDate1, drawerDate2, twoType, user.user_id, isInActiveUser]);
+
+  // 단일 날짜 모드일 때 drawerDate 변경 시 리패치
+  useEffect(() => {
+    if (
+      !twoType &&
+      drawerDate &&
+      !!user.user_id &&
+      !isInActiveUser &&
+      regionQueries[0]
+    ) {
+      regionQueries[0].refetch();
+    }
+  }, [drawerDate, twoType, user.user_id, isInActiveUser]);
+
+  const isFetchingRegionData = regionQueries.some((q) => q.isFetching);
 
   useEffect(() => {
     if (hospitalLocationData?.location) {
@@ -81,13 +128,17 @@ const useNaverMapData = () => {
     }
   }, [hospitalLocationData]);
 
-  // RegionEtc 데이터로 maxCost, regionEtc 상태 업데이트
   useEffect(() => {
-    if (!allRegionEtcData) return;
+    if (!twoType && regionQueries[0]?.data) {
+      processRegionEtcData(regionQueries[0].data);
+    }
+  }, [twoType, regionQueries[0]?.data]);
 
+  // RegionEtc 데이터로 maxCost, regionEtc 상태 업데이트
+  const processRegionEtcData = (data: RegionEtcData[]) => {
     (Object.keys(REGION_KEYS) as RegionLevel[]).forEach((level) => {
       const key = REGION_KEYS[level];
-      const etc = allRegionEtcData[key];
+      const etc = data[key];
       if (etc) {
         setMaxCost((prev) => ({ ...prev, [level]: etc.max_cost ?? 0 }));
         setRegionEtc((prev) => ({
@@ -96,7 +147,98 @@ const useNaverMapData = () => {
         }));
       }
     });
-  }, [allRegionEtcData]);
+  };
+
+  const processRegionComparisonEtcData = (
+    data1: RegionEtcData[],
+    data2: RegionEtcData[]
+  ) => {
+    (Object.keys(REGION_KEYS) as RegionLevel[]).forEach((level) => {
+      const key = REGION_KEYS[level];
+      const etc = data1[key];
+      const etc2 = data2[key];
+
+      if (etc) {
+        setRegionComparisonEtc((prev) => ({
+          ...prev,
+          first: {
+            ...prev.first,
+            [level]: etc[`${level}_region_costs`] ?? []
+          }
+        }));
+      }
+      if (etc2) {
+        setRegionComparisonEtc((prev) => ({
+          ...prev,
+          second: {
+            ...prev.second,
+            [level]: etc[`${level}_region_costs`] ?? []
+          }
+        }));
+      }
+    });
+  };
+  useEffect(() => {
+    const fetchAndSetRegions = async () => {
+      const updated: Partial<Record<RegionLevel, RegionData[]>> = {};
+
+      await Promise.all(
+        (Object.keys(REGION_KEYS) as RegionLevel[]).map(async (level) => {
+          const key = REGION_KEYS[level];
+          const etcDataA = regionComparisionEtc.first[level];
+          const etcDataB = regionComparisionEtc.second[level];
+
+          if (!etcDataA || !etcDataB) return;
+
+          const rawRegions = await getDataFromRegionDB(key);
+          updated[level] = rawRegions.map((region) => {
+            const matchedEtcA = etcDataA.find(
+              (item) => item[`${level}_region_name`] === region.name
+            );
+            const matchedEtcB = etcDataB.find(
+              (item) => item[`${level}_region_name`] === region.name
+            );
+
+            return {
+              ...region,
+              polygon: JSON.parse(region.polygon)[0],
+              total_costA: matchedEtcA?.total_cost ?? 0,
+              total_costB: matchedEtcB?.total_cost ?? 0,
+              patient_locationsA: matchedEtcA?.patient_locations ?? [],
+              patient_locationsB: matchedEtcB?.patient_locations ?? []
+            };
+          });
+        })
+      );
+
+      setRegionData((prev) => ({ ...prev, ...updated }));
+    };
+
+    if (
+      regionComparisionEtc.first.dong &&
+      regionComparisionEtc.first.gu &&
+      regionComparisionEtc.first.small &&
+      regionComparisionEtc.second.dong &&
+      regionComparisionEtc.second.gu &&
+      regionComparisionEtc.second.small
+    ) {
+      fetchAndSetRegions();
+    }
+  }, [regionComparisionEtc]);
+
+  useEffect(() => {
+    if (
+      twoType &&
+      regionQueries.length === 2 &&
+      regionQueries[0]?.data &&
+      regionQueries[1]?.data
+    ) {
+      processRegionComparisonEtcData(
+        regionQueries[0]?.data,
+        regionQueries[1]?.data
+      );
+    }
+  }, [twoType, regionQueries[0]?.data, regionQueries[1]?.data]);
 
   // polygon + etc 데이터 결합
   useEffect(() => {
@@ -107,6 +249,7 @@ const useNaverMapData = () => {
         (Object.keys(REGION_KEYS) as RegionLevel[]).map(async (level) => {
           const key = REGION_KEYS[level];
           const etcData = regionEtc[level];
+
           if (!etcData) return;
 
           const rawRegions = await getDataFromRegionDB(key);
@@ -140,7 +283,9 @@ const useNaverMapData = () => {
         name: "small",
         fontSize: "1rem",
         color: "#6666E0",
-        hilightColor: "#0000b4"
+        hilightColor: "#0000b4",
+        basicColor: "#ABADAF",
+        basicHgihlightColor: "#52555A"
       };
     } else if (zoom >= 14) {
       return {
@@ -148,7 +293,9 @@ const useNaverMapData = () => {
         name: "dong",
         fontSize: "1rem",
         color: "#6666E0",
-        hilightColor: "#0000b4"
+        hilightColor: "#0000b4",
+        basicColor: "#ABADAF",
+        basicHgihlightColor: "#52555A"
       };
     } else {
       return {
@@ -156,7 +303,9 @@ const useNaverMapData = () => {
         name: "gu",
         fontSize: "1.2rem",
         color: "#6666E0",
-        hilightColor: "#0000b4"
+        hilightColor: "#0000b4",
+        basicColor: "#ABADAF",
+        basicHgihlightColor: "#52555A"
       };
     }
   };
@@ -263,7 +412,6 @@ const useNaverMapData = () => {
 
     return clusters;
   };
-
   return {
     smallRegions: regionData.small,
     dongRegions: regionData.dong,
@@ -278,7 +426,8 @@ const useNaverMapData = () => {
     getPolygonColorOpacity,
     groupPatientsByProximity,
     hospitalLocation,
-    isFetching
+    isFetching: isFetchingRegionData,
+    regionComparison
   };
 };
 

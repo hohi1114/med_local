@@ -17,16 +17,17 @@ interface RegionStatisticsProps {
   formatDataForRevenueTrend: (data: any) => any;
   formatDataForAverageRevenue: (data: any) => any;
   barFormatData: () => any;
+  disabledCompare?: boolean;
 }
 const RevenuInfo: React.FC<RegionStatisticsProps> = ({
   statsData,
   revenueTrend,
   dailyRevenue,
   ageGroups,
-
   formatDataForRevenueTrend,
   formatDataForAverageRevenue,
-  barFormatData
+  barFormatData,
+  disabledCompare = false
 }) => {
   return (
     <>
@@ -34,10 +35,11 @@ const RevenuInfo: React.FC<RegionStatisticsProps> = ({
         {STATSTYPE.map((data) => {
           return (
             <StatsBox
-              key={data.id}
-              title={data.title}
-              data={statsData[data.id].data}
+              key={data?.id}
+              title={data?.title}
+              data={statsData[data.id]?.data}
               diffRateData={statsData[data.id]?.diffRate}
+              disabledCompare={disabledCompare}
             />
           );
         })}

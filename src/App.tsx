@@ -14,6 +14,7 @@ import useUpdateUserInfo from "./hooks/useUpdateUserInfo.tsx";
 import MembershipChangePage from "./pages/MembershipChangePage.tsx";
 import CardManagementPage from "./pages/CardManagementPage.tsx";
 import PaymentHistoryPage from "./pages/PaymentHistoryPage.tsx";
+import CompareAvenuePage from "./pages/CompareAvenuePage.tsx";
 
 function App() {
   const { fetchUserInfo } = useUpdateUserInfo();
@@ -52,6 +53,14 @@ function App() {
           <Route path="membership-change" element={<MembershipChangePage />} />
           <Route path="manage-card" element={<CardManagementPage />} />
           <Route path="payment-history" element={<PaymentHistoryPage />} />
+          <Route
+            path="compare-avenue"
+            element={
+              <NaverScriptLoader>
+                <CompareAvenuePage />
+              </NaverScriptLoader>
+            }
+          />
         </Route>
       </Routes>
     </BrowserRouter>

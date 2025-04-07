@@ -60,18 +60,6 @@ const LoginPage = () => {
       )
   });
 
-  /*
-  //every time 
-  const { mutate: postVerifyMutation } = useMutation({
-    mutationFn: async (hardwareNumber: string) =>
-      await postVerifyCode(hardwareNumber),
-    onSuccess: async () => {
-      const { data } = await loginRefetch();
-      setUser(data as User);
-      navigate("/dashboard");
-    }
-  });
-*/
   const loginMutation = useMutation({
     mutationFn: (userData: LoginParams) => postLogin(userData),
     onSuccess: async (data) => {
@@ -111,7 +99,7 @@ const LoginPage = () => {
     setIsLoading(true);
     const loginData = {
       ...data,
-      hardwareFingerprint: hardwareFingerprint
+      hardwareFingerprint: "03560274-043c-05c8-6506-650700080009"
     };
     loginMutation.mutate(loginData);
   };

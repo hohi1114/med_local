@@ -1,3 +1,5 @@
+import { DashBoard } from "./dashboard";
+
 declare global {
   interface Window {
     naver: any;
@@ -85,4 +87,9 @@ export interface RegionEtcData {
   dong_region_name: string;
   total_cost: number;
   patient_location: Point[];
+}
+
+export interface RegionPrivateData extends DashBoard {
+  average_cost_per_patient: number;
+  total_patient_count: number;
 }

@@ -1,25 +1,23 @@
+import styled from "styled-components";
+
 import { FC, useEffect, useRef, useState } from "react";
-import mapStore from "../../store/mapStore";
 import useNaverMapData from "../../hooks/useNaverMapData";
 import { debounce } from "lodash";
-import { makeMarkerClustering } from "../../utils/marker-cluster.js";
-import { PatientData } from "../../utils/ExcelParser.js";
-import { Point, RegionData } from "../../types/naver-maps.js";
-import DurationDatePicker from "../common/datepicker/DurationDatePicker.js";
-import Loading from "../common/Loading.js";
-import styled from "styled-components";
-import { DateRange } from "../../hooks/useRangeDurationDatePicker.js";
-import { Alert } from "antd";
+import mapStore from "../../store/mapStore";
+import { RegionData } from "../../types/naver-maps";
+import { makeMarkerClustering } from "../../utils/marker-cluster";
+import { PatientData } from "../../utils/ExcelParser";
+import Loading from "./Loading";
 
-interface NaverMapProps {
-  dateRange: DateRange;
-  handleDateChange: (dates: DateRange) => void;
+interface NaverMap2Props {
+  children: React.ReactNode;
 }
 
-const NaverMap: FC<NaverMapProps> = ({ dateRange, handleDateChange }) => {
+const NaverMap2: FC<NaverMap2Props> = ({ children }) => {
   const {
-    drawerDate,
+    drawerDate1,
     isOpenDrawer,
+    loading,
     handleIsDrawerOpen,
     setAreaName,
     setPatients,
@@ -29,7 +27,6 @@ const NaverMap: FC<NaverMapProps> = ({ dateRange, handleDateChange }) => {
     setBoundArea,
     setLoading,
     areaName,
-    loading,
     clearMap
   } = mapStore();
 
@@ -50,8 +47,7 @@ const NaverMap: FC<NaverMapProps> = ({ dateRange, handleDateChange }) => {
     getRegionName,
     expandBounds,
     getBoundAreas,
-    getPolygonColorOpacity,
-    groupPatientsByProximity,
+
     smallRegionEtc,
     dongRegionEtc,
     guRegionEtc,
@@ -59,12 +55,11 @@ const NaverMap: FC<NaverMapProps> = ({ dateRange, handleDateChange }) => {
     dongRegions,
     guRegions,
     isFetching,
-    hospitalLocation,
-    hospitalLocationLoading
-  } = useNaverMapData(false);
+    hospitalLocation
+  } = useNaverMapData(true);
 
   const clickedAreaRef = useRef<string>(null);
-  const { data, name, fontSize, color, hilightColor } =
+  const { data, name, fontSize, basicColor, basicHgihlightColor } =
     getRegionName(currentZoom);
 
   // ✅ Initialize map only once
@@ -102,7 +97,6 @@ const NaverMap: FC<NaverMapProps> = ({ dateRange, handleDateChange }) => {
     };
   }, []);
 
-  // ✅ Change PolyStyle and patinetMarkers when drawer is open
   useEffect(() => {
     if (!isOpenDrawer) {
       const polygon = polygonsRef.current.get(areaName);
@@ -110,8 +104,8 @@ const NaverMap: FC<NaverMapProps> = ({ dateRange, handleDateChange }) => {
         const paths = polygon.getPaths();
         polygon.setOptions({
           paths: paths,
-          strokeColor: color,
-          strokeWeight: 1.5
+          strokeColor: basicColor,
+          strokeWeight: 2
         });
       }
     }
@@ -128,7 +122,6 @@ const NaverMap: FC<NaverMapProps> = ({ dateRange, handleDateChange }) => {
 
     //1. Get Regioin Info
     //the area of the map currently displayed is changed by zooming or moving the map.
-
     setRegion(name);
     const mapBounds = expandBounds(
       map.getBounds() as naver.maps.LatLngBounds,
@@ -165,6 +158,7 @@ const NaverMap: FC<NaverMapProps> = ({ dateRange, handleDateChange }) => {
     crearClusters(patientGroupsMarkerClusterRef);
 
     const areaPromises = boundAreas.map(async (area) => {
+      console.log(area);
       const latLngs = area.polygon.map(
         ([lng, lat]) => new window.naver.maps.LatLng(lat, lng)
       );
@@ -172,10 +166,14 @@ const NaverMap: FC<NaverMapProps> = ({ dateRange, handleDateChange }) => {
       if (!polygon) {
         polygon = new window.naver.maps.Polygon({
           paths: latLngs,
-          strokeColor: color,
-          strokeWeight: 1.5,
+          strokeColor: basicColor,
+          strokeWeight: 2,
           clickable: true,
-          fillColor: `${getPolygonColorOpacity(area.total_cost, name)}`
+
+          fillColor:
+            area?.total_costA <= area?.total_costB
+              ? "rgba(255, 234, 232, 0.4)"
+              : "rgba(200, 225, 250, 0.6)"
         });
       }
 
@@ -192,14 +190,6 @@ const NaverMap: FC<NaverMapProps> = ({ dateRange, handleDateChange }) => {
           const marker = createRegionMarker(center, fontSize, area.name, name);
           setMarkerClickListener(marker, area, polygon);
           regionMarkers.push(marker);
-        }
-
-        if (currentZoom >= 17) {
-          const groupPatients = groupPatientsByProximity(
-            area.patient_locations,
-            300
-          );
-          createPatientGroupMarkers(groupPatients, patientGroupsMarkers);
         }
       }
     });
@@ -220,7 +210,7 @@ const NaverMap: FC<NaverMapProps> = ({ dateRange, handleDateChange }) => {
       window.naver.maps.Event.clearListeners(map, "idle");
     }
     handleZoomChange(true);
-  }, [drawerDate, map, currentZoom]);
+  }, [drawerDate1, map, currentZoom]);
 
   useEffect(() => {
     if (!map) return;
@@ -269,8 +259,8 @@ const NaverMap: FC<NaverMapProps> = ({ dateRange, handleDateChange }) => {
           if (clickedPolygon) {
             clickedPolygon.setOptions({
               paths: clickedPolygon.getPaths(),
-              strokeColor: color,
-              strokeWeight: 1.5
+              strokeColor: basicColor,
+              strokeWeight: 2
             });
           }
         }
@@ -281,7 +271,7 @@ const NaverMap: FC<NaverMapProps> = ({ dateRange, handleDateChange }) => {
           setAreaName(area.name);
           polygon.setOptions({
             paths: polygon.getPaths(),
-            strokeColor: hilightColor,
+            strokeColor: basicHgihlightColor,
             strokeWeight: 3,
             zIndex: 100
           });
@@ -310,8 +300,8 @@ const NaverMap: FC<NaverMapProps> = ({ dateRange, handleDateChange }) => {
           if (clickedPolygon) {
             clickedPolygon.setOptions({
               paths: clickedPolygon.getPaths(),
-              strokeColor: color,
-              strokeWeight: 1.5
+              strokeColor: basicColor,
+              strokeWeight: 2
             });
           }
         }
@@ -322,7 +312,7 @@ const NaverMap: FC<NaverMapProps> = ({ dateRange, handleDateChange }) => {
           setAreaName(area.name);
           polygon.setOptions({
             paths: polygon.getPaths(),
-            strokeColor: hilightColor,
+            strokeColor: basicHgihlightColor,
             strokeWeight: 3,
             zIndex: 100
           });
@@ -333,28 +323,6 @@ const NaverMap: FC<NaverMapProps> = ({ dateRange, handleDateChange }) => {
         }
       });
     }
-  };
-
-  const createPatientGroupMarkers = (
-    groupedPatients: Point[][],
-    markers: naver.maps.Marker[]
-  ) => {
-    groupedPatients.forEach((patients) => {
-      if (patients.length > 0) {
-        const patientMarker = new naver.maps.Marker({
-          position: new naver.maps.LatLng(patients[0].lat, patients[0].lng),
-          icon: {
-            content: `<div style="display: flex; align-items: center; justify-content: center;">
-                      <span style="font-size:11px; color:#fff; text-align: center;
-                      background-color: rgba(44, 44, 44, 1); padding: 3px 10px; border-radius: 50px;">
-                        ${patients.length}
-                      </span>
-                    </div>`
-          }
-        });
-        markers.push(patientMarker);
-      }
-    });
   };
 
   const createMarkerCluster = (
@@ -390,19 +358,19 @@ const NaverMap: FC<NaverMapProps> = ({ dateRange, handleDateChange }) => {
       position: center,
       icon: {
         content: `
-        <div style="display: flex; align-items: center; justify-content: center;">
-        <span style="font-size: ${fontSize}; 
-                     color: #4A4A4A;
-                     white-space: nowrap;
-                     background-color: rgba(255, 255, 255, 0.8);
-                     border-radius: 16px;
-                     padding: 4px 10px;
-                     box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
-                     text-align: center; z-index:10;">
-          ${region === "dong" ? reNamedDong : areaName}
-        </span>
-      </div>
-          `,
+            <div style="display: flex; align-items: center; justify-content: center;">
+            <span style="font-size: ${fontSize}; 
+                         color: #4A4A4A;
+                         white-space: nowrap;
+                         background-color: rgba(255, 255, 255, 0.8);
+                         border-radius: 16px;
+                         padding: 4px 10px;
+                         box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+                         text-align: center; z-index:10;">
+              ${region === "dong" ? reNamedDong : areaName}
+            </span>
+          </div>
+              `,
         origin: new naver.maps.Point(0, 67),
         anchor: new naver.maps.Point(20, 67)
       }
@@ -419,76 +387,17 @@ const NaverMap: FC<NaverMapProps> = ({ dateRange, handleDateChange }) => {
   };
 
   return (
-    <div
-      ref={mapElement}
-      style={{
-        position: "relative",
-        width: "100%",
-        height: "100%"
-      }}
-    >
-      {!hospitalLocation && !hospitalLocationLoading && (
-        <Alert
-          message="Warning"
-          description="병원 위치 정보를 불러올 수 없습니다."
-          type="warning"
-          showIcon
-          closable
-          style={{
-            position: "absolute",
-            top: "10px",
-            right: "10px",
-            zIndex: 1000,
-            width: "80%",
-            maxWidth: "400px"
-          }}
-        />
-      )}
-      {(isFetching || loading) && <Loading />}
-      <Wrapper>
-        <ContentBox>
-          <DatePickerContainer>
-            <DurationDatePicker
-              style={{ width: "100%" }}
-              value={dateRange}
-              onChange={handleDateChange}
-            />
-          </DatePickerContainer>
-          <SubText>
-            * Zoom In을 하면, 환자들이 온 지역의 수치를 확인할 수 있습니다.
-          </SubText>
-        </ContentBox>
-      </Wrapper>
-    </div>
+    <>
+      {(loading || isFetching) && <Loading />}
+      <MapContainer ref={mapElement}>{children}</MapContainer>
+    </>
   );
 };
 
-export default NaverMap;
+export default NaverMap2;
 
-const Wrapper = styled.div`
-  position: absolute;
-  top: 1rem;
-  left: 4rem;
-  z-index: 90;
-  background-color: white;
-  padding: 10px;
-  border-radius: 8px;
-  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-`;
-
-const ContentBox = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-`;
-
-const DatePickerContainer = styled.div`
-  display: flex;
-  gap: 10px;
+const MapContainer = styled.div`
   width: 100%;
-`;
-
-const SubText = styled.span`
-  font-size: 1rem;
-  color: ${(props) => props.theme.colors.gray05};
+  height: 100%;
+  position: relative;
 `;
