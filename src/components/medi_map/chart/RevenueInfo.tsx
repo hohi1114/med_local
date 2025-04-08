@@ -48,13 +48,13 @@ const RevenuInfo: React.FC<RegionStatisticsProps> = ({
         <GrapWrapper>
           <ChartTitleStyle>매출액 변화 추이</ChartTitleStyle>
           <BaseLineChart
-            height={280}
+            height={330}
             width={350}
             data={revenueTrend}
             xField="date"
             yField="매출액"
             labelFormatterY={(v: number) => `${v / 1000}K`}
-            labelFormatterX={(v: string) => dayjs(v).format("MM/DD")}
+            // labelFormatterX={(v: string) => dayjs(v).format("MM/DD")}
             formatData={formatDataForRevenueTrend}
           />
         </GrapWrapper>
@@ -77,9 +77,9 @@ const RevenuInfo: React.FC<RegionStatisticsProps> = ({
             xField="date"
             yField="매출액"
             labelFormatterY={(v: number) => `${v / 1000}K`}
-            labelFormatterX={(v: string) => dayjs(v).format("MM/DD")}
+            // labelFormatterX={(v: string) => dayjs(v).format("MM/DD")}
             formatData={formatDataForAverageRevenue}
-            height={280}
+            height={350}
           />
         </GrapWrapper>
       </GraphContainer>

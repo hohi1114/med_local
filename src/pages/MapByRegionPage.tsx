@@ -1,11 +1,8 @@
 import { useEffect } from "react";
 import dayjs from "dayjs";
 import StatisticsDrawer from "../components/medi_map/StatisticsDrawer";
-import NaverMap from "../components/medi_map/NaverMap";
 import mapStore from "../store/mapStore";
-import useRangeDurationDatePicker, {
-  DateRange
-} from "../hooks/useRangeDurationDatePicker";
+import useRangeDurationDatePicker from "../hooks/useRangeDurationDatePicker";
 import RequireSubscribe from "../components/common/RequireSubscribe";
 import userStore from "../store/userStore";
 import { useNaverMapCore } from "../hooks/useNaverMapCore";
@@ -16,31 +13,28 @@ import DurationDatePicker from "../components/common/datepicker/DurationDatePick
 function MapByRegionPage() {
   const { mapElement, isFetching } = useNaverMapCore();
   const { isInActiveUser } = userStore();
-  const { loading, drawerDate, setDrawerDate, handleIsDrawerOpen } = mapStore();
+  const { loading, setDrawerDate, handleIsDrawerOpen } = mapStore();
   const { dateRange, handleDateRangeChange } = useRangeDurationDatePicker();
+
   useEffect(() => {
-    setDrawerDate({
-      startDate: dayjs().subtract(1, "month").format("YYYY-MM-DD"),
-      endDate: dayjs().format("YYYY-MM-DD")
-    });
+    const start = dayjs().subtract(1, "month").format("YYYY-MM-DD");
+    const end = dayjs().format("YYYY-MM-DD");
+
+    handleDateRangeChange({ startDate: start, endDate: end });
     return () => {
       handleIsDrawerOpen(false);
     };
   }, []);
   useEffect(() => {
-    if (drawerDate) {
-      handleDateRangeChange(drawerDate);
+    if (dateRange) {
+      setDrawerDate(dateRange);
     }
-  }, [drawerDate]);
-
-  const handleDateChangeFromMap = (dates: DateRange) => {
-    setDrawerDate(dates);
-  };
+  }, [dateRange]);
 
   return (
     <>
       {isInActiveUser && <RequireSubscribe />}
-      {/* {(isFetching || loading) && <Loading />} */}
+      {(isFetching || loading) && <Loading />}
       <MapContainer ref={mapElement}>
         <Wrapper>
           <ContentBox>
@@ -48,7 +42,7 @@ function MapByRegionPage() {
               <DurationDatePicker
                 style={{ width: "100%" }}
                 value={dateRange}
-                onChange={handleDateChangeFromMap}
+                onChange={handleDateRangeChange}
               />
             </DatePickerContainer>
             <SubText>
@@ -57,7 +51,6 @@ function MapByRegionPage() {
           </ContentBox>
         </Wrapper>
       </MapContainer>
-
       <StatisticsDrawer />
     </>
   );

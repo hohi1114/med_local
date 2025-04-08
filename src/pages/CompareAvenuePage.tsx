@@ -29,10 +29,10 @@ function CompareAvenuePage() {
   } = useRangeDurationDatePicker();
 
   useEffect(() => {
-    const start1 = dayjs().subtract(2, "month").format("YYYY-MM-DD");
-    const end1 = dayjs().subtract(1, "month").format("YYYY-MM-DD");
+    const start1 = dayjs().subtract(30, "day").format("YYYY-MM-DD");
+    const end1 = dayjs().subtract(15, "day").format("YYYY-MM-DD");
 
-    const start2 = dayjs().subtract(1, "month").format("YYYY-MM-DD");
+    const start2 = dayjs().subtract(14, "day").format("YYYY-MM-DD");
     const end2 = dayjs().format("YYYY-MM-DD");
 
     handleDateRangeChange1({ startDate: start1, endDate: end1 });
@@ -51,6 +51,12 @@ function CompareAvenuePage() {
     if (dateRange2) setDrawerDate2(dateRange2);
   }, [dateRange2]);
 
+  const getDisabledDateAfter = () => {
+    return (current: dayjs.Dayjs) => {
+      return !!dateRange1 && current.isBefore(dayjs(dateRange1.endDate), "day");
+    };
+  };
+
   return (
     <>
       {isInActiveUser && <RequireSubscribe />}
@@ -60,15 +66,15 @@ function CompareAvenuePage() {
           <DatePickerContainer>
             <DateTitle>기간 1</DateTitle>
             <DurationDatePicker
-              style={{ width: "100%" }}
               value={dateRange1}
               onChange={handleDateRangeChange1}
             />
+
             <DateTitle>기간 2</DateTitle>
             <DurationDatePicker
-              style={{ width: "100%" }}
               value={dateRange2}
               onChange={handleDateRangeChange2}
+              disabled={getDisabledDateAfter()}
             />
 
             <SubText>* 두 기간의 대한 매출 데이터를 비교합니다.</SubText>
@@ -102,7 +108,7 @@ const Wrapper = styled.div`
 const DatePickerContainer = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 1rem;
   width: 100%;
 `;
 

@@ -138,10 +138,9 @@ export default function DashBoardPage() {
                 xField="date"
                 yField="매출액"
                 labelFormatterY={(v: number) => `${v / 1000}K`}
-                labelFormatterX={(v: string) => dayjs(v).format("MM/DD")}
                 formatData={chartFormatData}
                 height={350}
-                number_of_points={10}
+                limitDateXLength={30}
               />
             </Card>
           </CardGrid>
@@ -207,7 +206,7 @@ const ChartTitle = styled.span`
   padding-bottom: 1.5rem;
 `;
 
-const CutomButton = styled(BaseButton) <{ selected?: boolean }>`
+const CutomButton = styled(BaseButton)<{ selected?: boolean }>`
   font-weight: ${(props) => (props.selected ? "bold" : 500)};
   min-width: 85px;
   max-width: 100px;
@@ -215,7 +214,7 @@ const CutomButton = styled(BaseButton) <{ selected?: boolean }>`
   transition: border 0.2s ease;
   border: 1.5px solid
     ${(props) =>
-    props.selected ? props.theme.colors.primary : props.theme.colors.gray03};
+      props.selected ? props.theme.colors.primary : props.theme.colors.gray03};
 
   color: ${(props) =>
     props.selected ? props.theme.colors.primary : props.theme.colors.black};

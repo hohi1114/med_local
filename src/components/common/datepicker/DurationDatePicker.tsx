@@ -9,8 +9,8 @@ const { RangePicker } = DatePicker;
 interface DurationDatePickerProps {
   value: DateRange;
   onChange?: (dateRange: DateRange) => void;
-
   style?: React.CSSProperties;
+  disabled?: (currentDate: dayjs.Dayjs) => boolean;
 }
 
 /**
@@ -19,7 +19,7 @@ interface DurationDatePickerProps {
 const DurationDatePicker: React.FC<DurationDatePickerProps> = ({
   value,
   onChange,
-
+  disabled,
   ...props
 }: DurationDatePickerProps) => {
   const { isFreetrialUser } = userStore();
@@ -48,7 +48,13 @@ const DurationDatePicker: React.FC<DurationDatePickerProps> = ({
   return (
     <RangePicker
       {...props}
-      disabledDate={isFreetrialUser ? disabledDateForFreetrial : undefined}
+      disabledDate={
+        isFreetrialUser
+          ? disabledDateForFreetrial
+          : disabled
+          ? disabled
+          : undefined
+      }
       format={"YYYY-MM-DD"}
       value={[dayjs(value.startDate), dayjs(value.endDate)]}
       onChange={handleDateChange}

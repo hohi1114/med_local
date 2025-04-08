@@ -125,6 +125,7 @@ export const getDashboardData = async (rangeDate: DateRange) => {
     "/fetch/dashboard_date_patient",
     rangeDate
   );
+
   return data;
 };
 
@@ -152,6 +153,7 @@ export const getRegionPrivateData = async (
     "/fetch/region_date_patient_info",
     regionprivateParams
   );
+
   return data;
 };
 

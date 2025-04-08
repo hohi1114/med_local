@@ -122,8 +122,6 @@ const RevenueCompareDrawer = () => {
       }}
       open={isOpenDrawer}
     >
-      <ToggleContainer></ToggleContainer>
-
       <div style={{ padding: "0.8rem 0rem" }}>
         <AddressTitleStyle>{areaName}</AddressTitleStyle>
       </div>
@@ -133,12 +131,6 @@ const RevenueCompareDrawer = () => {
 };
 
 export default RevenueCompareDrawer;
-
-const ToggleContainer = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-`;
 
 const AddressTitleStyle = styled.span`
   font-size: 1.5rem;

@@ -67,7 +67,7 @@ const StatsBoxContainer = styled.div.withConfig({
 })<{ isDecreased: boolean; disabledCompare?: boolean }>`
   background-color: ${(props) =>
     props.disabledCompare
-      ? props.theme.colors.gray00
+      ? props.theme.colors.gray0001
       : props.isDecreased
       ? props.theme.colors.pink01
       : props.theme.colors.blue01};

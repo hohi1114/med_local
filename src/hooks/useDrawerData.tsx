@@ -97,22 +97,21 @@ export const useDrawerData = (twoType: boolean) => {
     mutationFn: (params: RegionPrivateParams) => getRegionPrivateData(params)
   });
 
-  // 지역 데이터 요청 (twoType에 따라 다른 API 호출)
-
+  // 첫번째 날짜 요청
   useEffect(() => {
     if (twoType && firstDateParams) {
       firstDateMutation(firstDateParams);
     }
   }, [twoType, firstDateParams]);
 
-  // // 두 번째 날짜 요청을 위한 useEffect
+  // 두 번째 날짜 요청
   useEffect(() => {
     if (twoType && secondDateParams) {
       secondDateMutation(secondDateParams);
     }
   }, [twoType, secondDateParams]);
 
-  // 단일 날짜 요청을 위한 useEffect
+  // 단일 날짜 요청
   useEffect(() => {
     if (!twoType && singleDateParams) {
       regionPrivateMutation(singleDateParams);
@@ -212,34 +211,28 @@ export const useDrawerData = (twoType: boolean) => {
       // 첫 번째 날짜 데이터
       const firstStats = {
         1: {
-          data: `${firstRegionPrivate?.total_visit_count || 0}명`,
-          diffRate: firstRegionPrivate?.diff_rates?.total_visit_count
+          data: `${firstRegionPrivate?.total_visit_count || 0}명`
         },
         2: {
           data: `${Math.ceil(
             firstRegionPrivate?.total_cost || 0
-          )?.toLocaleString()} ₩`,
-          diffRate: firstRegionPrivate?.diff_rates?.total_cost
+          )?.toLocaleString()} ₩`
         },
         3: {
           data: `${Math.ceil(
             firstRegionPrivate?.average_cost_per_visit || 0
-          )?.toLocaleString()} ₩`,
-          diffRate: firstRegionPrivate?.diff_rates?.average_cost_per_visit
+          )?.toLocaleString()} ₩`
         },
         4: {
           data: `${Math.ceil(
             firstRegionPrivate?.average_cost_per_patient || 0
-          )?.toLocaleString()} ₩`,
-          diffRate: firstRegionPrivate?.diff_rates?.average_cost_per_patient
+          )?.toLocaleString()} ₩`
         },
         5: {
-          data: `${firstRegionPrivate?.chojin_rejin_visit_count || 0}명`,
-          diffRate: firstRegionPrivate?.diff_rates?.chojin_rejin_visit_count
+          data: `${firstRegionPrivate?.chojin_rejin_visit_count || 0}명`
         },
         6: {
-          data: `${firstRegionPrivate?.sinhwan_visit_count || 0}명`,
-          diffRate: firstRegionPrivate?.diff_rates?.sinhwan_visit_count
+          data: `${firstRegionPrivate?.sinhwan_visit_count || 0}명`
         },
         7: { data: `준비중` },
         8: {
@@ -250,8 +243,7 @@ export const useDrawerData = (twoType: boolean) => {
                   100
                 ).toFixed(3)
               : 0
-          } %`,
-          diffRate: firstRegionPrivate?.diff_rates?.total_patient_count
+          } %`
         }
       };
 
@@ -259,33 +251,51 @@ export const useDrawerData = (twoType: boolean) => {
       const secondStats = {
         1: {
           data: `${secondRegionPrivate?.total_visit_count || 0}명`,
-          diffRate: secondRegionPrivate?.diff_rates?.total_visit_count
+          diffRate: calculateDiff(
+            secondRegionPrivate?.total_visit_count,
+            firstRegionPrivate?.total_visit_count
+          )
         },
         2: {
           data: `${Math.ceil(
             secondRegionPrivate?.total_cost || 0
           )?.toLocaleString()} ₩`,
-          diffRate: secondRegionPrivate?.diff_rates?.total_cost
+          diffRate: calculateDiff(
+            secondRegionPrivate?.total_cost,
+            firstRegionPrivate?.total_cost
+          )
         },
         3: {
           data: `${Math.ceil(
             secondRegionPrivate?.average_cost_per_visit || 0
           )?.toLocaleString()} ₩`,
-          diffRate: secondRegionPrivate?.diff_rates?.average_cost_per_visit
+          diffRate: calculateDiff(
+            secondRegionPrivate?.average_cost_per_visit,
+            firstRegionPrivate?.average_cost_per_visit
+          )
         },
         4: {
           data: `${Math.ceil(
             secondRegionPrivate?.average_cost_per_patient || 0
           )?.toLocaleString()} ₩`,
-          diffRate: secondRegionPrivate?.diff_rates?.average_cost_per_patient
+          diffRate: calculateDiff(
+            secondRegionPrivate?.average_cost_per_patient,
+            firstRegionPrivate?.average_cost_per_patient
+          )
         },
         5: {
           data: `${secondRegionPrivate?.chojin_rejin_visit_count || 0}명`,
-          diffRate: secondRegionPrivate?.diff_rates?.chojin_rejin_visit_count
+          diffRate: calculateDiff(
+            secondRegionPrivate?.chojin_rejin_visit_count,
+            firstRegionPrivate?.chojin_rejin_visit_count
+          )
         },
         6: {
           data: `${secondRegionPrivate?.sinhwan_visit_count || 0}명`,
-          diffRate: secondRegionPrivate?.diff_rates?.sinhwan_visit_count
+          diffRate: calculateDiff(
+            secondRegionPrivate?.sinhwan_visit_count,
+            firstRegionPrivate?.sinhwan_visit_count
+          )
         },
         7: { data: `준비중` },
         8: {
@@ -297,7 +307,10 @@ export const useDrawerData = (twoType: boolean) => {
                 ).toFixed(3)
               : 0
           } %`,
-          diffRate: secondRegionPrivate?.diff_rates?.total_patient_count
+          diffRate: calculateDiff(
+            secondRegionPrivate?.total_patient_count,
+            firstRegionPrivate?.total_patient_count
+          )
         }
       };
 
@@ -307,6 +320,13 @@ export const useDrawerData = (twoType: boolean) => {
       });
     }
   }, [population, firstRegionPrivate, secondRegionPrivate, twoType]);
+
+  const calculateDiff = (current: number, previous: number): number | null => {
+    if (previous === 0) {
+      return current === 0 ? 0 : null;
+    }
+    return parseFloat((((current - previous) / previous) * 100).toFixed(2));
+  };
 
   // Format data for charts
   const formatDataForAverageRevenue = (data: RegionPrivateData) => {
