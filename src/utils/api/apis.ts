@@ -140,6 +140,7 @@ export const getAllRegionsEtc = async (rangeDate: DateRange) => {
     "/fetch/all_region_patient_cost",
     rangeDate
   );
+
   return data;
 };
 

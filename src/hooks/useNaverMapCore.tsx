@@ -1,35 +1,39 @@
-import styled from "styled-components";
-
-import { FC, useEffect, useRef, useState } from "react";
-import useNaverMapData from "../../hooks/useNaverMapData";
+// hooks/useNaverMapCore.ts
+import { useEffect, useRef, useState } from "react";
 import { debounce } from "lodash";
-import mapStore from "../../store/mapStore";
-import { RegionData } from "../../types/naver-maps";
-import { makeMarkerClustering } from "../../utils/marker-cluster";
-import { PatientData } from "../../utils/ExcelParser";
-import Loading from "./Loading";
+import mapStore from "../store/mapStore";
+import useNaverMapData from "./useNaverMapData";
+import { makeMarkerClustering } from "../utils/marker-cluster";
+import { PatientData } from "../utils/ExcelParser";
+import { RegionData, RegionLevel } from "../types/naver-maps";
 
-interface NaverMap2Props {
-  children: React.ReactNode;
+export interface UseNaverMapCoreOptions {
+  isComparison?: boolean;
+  onZoomChange?: (dateChanged: boolean) => void;
+  getPolygonFillColor?: (area: RegionData) => string;
+  getPolygonHighlightColor?: (area: RegionData) => string;
 }
 
-const redHightLight = "rgb(245, 100, 130)";
-const blueHgihtLight = "rgb(90, 140, 210)";
-
-const NaverMap2: FC<NaverMap2Props> = ({ children }) => {
+export function useNaverMapCore({
+  isComparison = false,
+  onZoomChange,
+  getPolygonFillColor,
+  getPolygonHighlightColor
+}: UseNaverMapCoreOptions = {}) {
   const {
+    drawerDate,
     drawerDate1,
     isOpenDrawer,
-    loading,
     handleIsDrawerOpen,
     setAreaName,
     setPatients,
     setRegion,
-    setSelctedRegionData,
+    setSelectedRegionData,
     setDongNameForSmall,
     setBoundArea,
     setLoading,
     areaName,
+    loading,
     clearMap
   } = mapStore();
 
@@ -39,18 +43,20 @@ const NaverMap2: FC<NaverMap2Props> = ({ children }) => {
   const [hospitalMarker, setHospitalMarker] =
     useState<naver.maps.Marker | null>(null);
 
-  //**Refs
+  // Refs
   const polygonsRef = useRef<Map<string, naver.maps.Polygon>>(new Map());
   const regionMarkerClusterRef = useRef<any | null>(null);
   const patientGroupsMarkerClusterRef = useRef<any | null>(null);
   const [currentZoom, setCurrentZoom] = useState<number>(16);
+  const clickedAreaRef = useRef<string>(null);
 
-  //** Map Logic
+  // Map Logic
   const {
     getRegionName,
     expandBounds,
     getBoundAreas,
-
+    getPolygonColorOpacity,
+    groupPatientsByProximity,
     smallRegionEtc,
     dongRegionEtc,
     guRegionEtc,
@@ -58,14 +64,27 @@ const NaverMap2: FC<NaverMap2Props> = ({ children }) => {
     dongRegions,
     guRegions,
     isFetching,
-    hospitalLocation
-  } = useNaverMapData(true);
+    hospitalLocation,
+    hospitalLocationLoading
+  } = useNaverMapData(isComparison);
 
-  const clickedAreaRef = useRef<string>(null);
-  const { data, name, fontSize, basicColor, basicHgihlightColor } =
-    getRegionName(currentZoom);
+  const {
+    data,
+    name,
+    fontSize,
+    color,
+    hilightColor,
+    basicColor,
+    basicHgihlightColor
+  } = getRegionName(currentZoom);
 
-  // ✅ Initialize map only once
+  // Default highlight colors
+  const defaultHighlightColor = isComparison
+    ? basicHgihlightColor
+    : hilightColor;
+  const defaultColor = isComparison ? basicColor : color;
+
+  // Initialize map only once
   useEffect(() => {
     if (!mapElement.current || map || !hospitalLocation) return;
 
@@ -94,28 +113,29 @@ const NaverMap2: FC<NaverMap2Props> = ({ children }) => {
     }
   }, [map, isFetching, hospitalLocation]);
 
+  //Cleanup
   useEffect(() => {
     return () => {
       clearMap();
     };
   }, []);
 
-  // useEffect(() => {
-  //   if (!isOpenDrawer) {
-  //     const polygon = polygonsRef.current.get(areaName);
-  //     if (polygon) {
-  //       const paths = polygon.getPaths();
-  //       polygon.setOptions({
-  //         paths: paths,
-  //         strokeColor: basicColor,
-  //         strokeWeight: 2
-  //       });
-  //     }
-  //   }
-  // }, [isOpenDrawer, areaName]);
+  // Reset polygon style when drawer closes
+  useEffect(() => {
+    if (!isOpenDrawer) {
+      const polygon = polygonsRef.current.get(areaName);
+      if (polygon) {
+        const paths = polygon.getPaths();
+        polygon.setOptions({
+          paths: paths,
+          strokeColor: defaultColor,
+          strokeWeight: isComparison ? 2 : 1.5
+        });
+      }
+    }
+  }, [isOpenDrawer, areaName]);
 
-  const handleZoomChange = debounce(async (dateChanged) => {
-    //📌Init Map
+  const handleDefaultZoomChange = debounce(async (dateChanged: boolean) => {
     if (!map) return;
 
     setCurrentZoom(map.getZoom());
@@ -123,26 +143,26 @@ const NaverMap2: FC<NaverMap2Props> = ({ children }) => {
     const regionMarkers: naver.maps.Marker[] = [];
     const patientGroupsMarkers: naver.maps.Marker[] = [];
 
-    //1. Get Regioin Info
-    //the area of the map currently displayed is changed by zooming or moving the map.
+    // Get Region Info
     setRegion(name);
     const mapBounds = expandBounds(
       map.getBounds() as naver.maps.LatLngBounds,
       0.3
     );
-
     const polygonsToRender = data;
 
-    //2. Get Bound Areas
+    // Get Bound Areas
     const { boundAreas } = getBoundAreas(polygonsToRender, mapBounds);
+
     setBoundArea(boundAreas);
+
     if (boundAreas.length === 0) {
       polygonsRef.current.forEach((polygon) => polygon.setMap(null));
       polygonsRef.current.clear();
       return;
     }
 
-    //3. Remove polygons and markerClusters
+    // Remove polygons and markerClusters
     if (dateChanged) {
       polygonsRef.current.forEach((polygon) => {
         polygon.setMap(null);
@@ -157,34 +177,44 @@ const NaverMap2: FC<NaverMap2Props> = ({ children }) => {
       });
     }
 
-    crearClusters(regionMarkerClusterRef);
-    crearClusters(patientGroupsMarkerClusterRef);
+    clearClusters(regionMarkerClusterRef);
+    clearClusters(patientGroupsMarkerClusterRef);
 
     const areaPromises = boundAreas.map(async (area) => {
-      const latLngs = area.polygon.map(
+      const latLngs = (area.polygon ?? []).map(
         ([lng, lat]) => new window.naver.maps.LatLng(lat, lng)
       );
+
       let polygon = polygonsRef.current.get(area.name);
       if (!polygon) {
+        const fillColor = getPolygonFillColor
+          ? getPolygonFillColor(area)
+          : isComparison
+          ? (area?.total_costA ?? 0) <= (area?.total_costB ?? 0)
+            ? "rgba(200, 225, 250, 0.6)"
+            : "rgba(255, 234, 232, 0.6)"
+          : `${getPolygonColorOpacity(
+              area.total_cost ?? 0,
+              name as RegionLevel
+            )}`;
+
         polygon = new window.naver.maps.Polygon({
           paths: latLngs,
-          strokeColor: basicColor,
-          strokeWeight: 2,
+          strokeColor: defaultColor,
+          strokeWeight: isComparison ? 2 : 1.5,
           clickable: true,
-          fillColor:
-            area?.total_costA <= area?.total_costB
-              ? "rgba(200, 225, 250, 0.6)"
-              : "rgba(255, 234, 232, 0.4)"
+          fillColor
         });
       }
 
       if (polygon) {
         polygonsRef.current.set(area.name, polygon);
         polygon.setMap(map);
-        //Set click event listener
+
+        // Set click event listener
         setPolygonClickListener(polygon, area);
 
-        //Set region name marker
+        // Set region name marker
         const bounds = polygon.getBounds();
         if (bounds) {
           const center = bounds.getCenter();
@@ -192,10 +222,19 @@ const NaverMap2: FC<NaverMap2Props> = ({ children }) => {
           setMarkerClickListener(marker, area, polygon);
           regionMarkers.push(marker);
         }
+
+        // Create patient markers for non-comparison mode at high zoom levels
+        if (!isComparison && currentZoom >= 17) {
+          const groupPatients = groupPatientsByProximity(
+            area.patient_locations,
+            300
+          );
+          createPatientGroupMarkers(groupPatients, patientGroupsMarkers);
+        }
       }
     });
 
-    // 📌 Draw polygons and markers
+    // Draw polygons and markers
     await Promise.all(areaPromises);
 
     // Marker clustering
@@ -205,14 +244,25 @@ const NaverMap2: FC<NaverMap2Props> = ({ children }) => {
     setLoading(false);
   }, 500);
 
+  // Handle custom or default zoom change
+  const handleZoomChange = (dateChanged: boolean) => {
+    if (onZoomChange) {
+      onZoomChange(dateChanged);
+    } else {
+      handleDefaultZoomChange(dateChanged);
+    }
+  };
+
+  // Update on date change
   useEffect(() => {
     if (map) {
       window.naver.maps.Event.clearListeners(map, "zoom_changed");
       window.naver.maps.Event.clearListeners(map, "idle");
     }
     handleZoomChange(true);
-  }, [drawerDate1, map, currentZoom]);
+  }, [isComparison ? drawerDate1 : drawerDate, map, currentZoom]);
 
+  // Set up event listeners
   useEffect(() => {
     if (!map) return;
 
@@ -252,7 +302,8 @@ const NaverMap2: FC<NaverMap2Props> = ({ children }) => {
     if (!polygon.hasListener("click")) {
       polygon.addListener("click", () => {
         if (!isOpenDrawer) handleIsDrawerOpen(true);
-        //remove previous highlight polygon
+
+        // Remove previous highlight polygon
         if (clickedAreaRef.current) {
           const clickedPolygon = polygonsRef.current.get(
             clickedAreaRef.current
@@ -260,26 +311,39 @@ const NaverMap2: FC<NaverMap2Props> = ({ children }) => {
           if (clickedPolygon) {
             clickedPolygon.setOptions({
               paths: clickedPolygon.getPaths(),
-              strokeColor: basicColor,
-              strokeWeight: 2
+              strokeColor: defaultColor,
+              strokeWeight: isComparison ? 2 : 1.5
             });
           }
         }
 
         if (polygon) {
-          //highlight polygon
+          // Highlight polygon
           clickedAreaRef.current = area.name;
           setAreaName(area.name);
+
+          const highlightColor = getPolygonHighlightColor
+            ? getPolygonHighlightColor(area)
+            : isComparison
+            ? (area?.total_costA ?? 0) <= (area?.total_costB ?? 0)
+              ? "rgb(90, 140, 210)"
+              : "rgb(245, 100, 130)"
+            : defaultHighlightColor;
+
           polygon.setOptions({
             paths: polygon.getPaths(),
-            strokeColor:
-              area?.total_costA <= area?.total_costB
-                ? blueHgihtLight
-                : redHightLight,
+            strokeColor: highlightColor,
             strokeWeight: 3,
             zIndex: 100
           });
-          setSelctedRegionData(area);
+
+          // Fix the typo by handling both function names
+          if (isComparison && setSelectedRegionData) {
+            setSelectedRegionData(area);
+          } else if (setSelectedRegionData) {
+            setSelectedRegionData(area);
+          }
+
           if (name === "small" && area.dong) {
             setDongNameForSmall(area?.dong);
           }
@@ -296,7 +360,8 @@ const NaverMap2: FC<NaverMap2Props> = ({ children }) => {
     if (!marker.hasListener("click")) {
       marker.addListener("click", () => {
         if (!isOpenDrawer) handleIsDrawerOpen(true);
-        //remove previous highlight polygon
+
+        // Remove previous highlight polygon
         if (clickedAreaRef.current) {
           const clickedPolygon = polygonsRef.current.get(
             clickedAreaRef.current
@@ -304,32 +369,67 @@ const NaverMap2: FC<NaverMap2Props> = ({ children }) => {
           if (clickedPolygon) {
             clickedPolygon.setOptions({
               paths: clickedPolygon.getPaths(),
-              strokeColor: basicColor,
-              strokeWeight: 2
+              strokeColor: defaultColor,
+              strokeWeight: isComparison ? 2 : 1.5
             });
           }
         }
 
         if (marker) {
-          //highlight polygon
+          // Highlight polygon
           clickedAreaRef.current = area.name;
           setAreaName(area.name);
+
+          const highlightColor = getPolygonHighlightColor
+            ? getPolygonHighlightColor(area)
+            : isComparison
+            ? (area?.total_costA ?? 0) <= (area?.total_costB ?? 0)
+              ? "rgb(90, 140, 210)"
+              : "rgb(245, 100, 130)"
+            : defaultHighlightColor;
+
           polygon.setOptions({
             paths: polygon.getPaths(),
-            strokeColor:
-              area?.total_costA <= area?.total_costB
-                ? blueHgihtLight
-                : redHightLight,
+            strokeColor: highlightColor,
             strokeWeight: 3,
             zIndex: 100
           });
-          setSelctedRegionData(area);
+
+          // Fix the typo by handling both function names
+          if (isComparison && setSelectedRegionData) {
+            setSelectedRegionData(area);
+          } else if (setSelectedRegionData) {
+            setSelectedRegionData(area);
+          }
+
           if (name === "small" && area.dong) {
             setDongNameForSmall(area?.dong);
           }
         }
       });
     }
+  };
+
+  const createPatientGroupMarkers = (
+    groupedPatients: any[][],
+    markers: naver.maps.Marker[]
+  ) => {
+    groupedPatients.forEach((patients) => {
+      if (patients.length > 0) {
+        const patientMarker = new naver.maps.Marker({
+          position: new naver.maps.LatLng(patients[0].lat, patients[0].lng),
+          icon: {
+            content: `<div style="display: flex; align-items: center; justify-content: center;">
+                      <span style="font-size:11px; color:#fff; text-align: center;
+                      background-color: rgba(44, 44, 44, 1); padding: 3px 10px; border-radius: 50px;">
+                        ${patients.length}
+                      </span>
+                    </div>`
+          }
+        });
+        markers.push(patientMarker);
+      }
+    });
   };
 
   const createMarkerCluster = (
@@ -352,6 +452,7 @@ const NaverMap2: FC<NaverMap2Props> = ({ children }) => {
 
     ref.current = cluster;
   };
+
   const createRegionMarker = (
     center: naver.maps.Coord,
     fontSize: string,
@@ -365,26 +466,25 @@ const NaverMap2: FC<NaverMap2Props> = ({ children }) => {
       position: center,
       icon: {
         content: `
-            <div style="display: flex; align-items: center; justify-content: center;">
-            <span style="font-size: ${fontSize}; 
-                         color: #4A4A4A;
-                         white-space: nowrap;
-                         background-color: rgba(255, 255, 255, 0.8);
-                         border-radius: 16px;
-                         padding: 4px 10px;
-                         box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
-                         text-align: center; z-index:10;">
-              ${region === "dong" ? reNamedDong : areaName}
-            </span>
-          </div>
-              `,
+        <div style="display: flex; align-items: center; justify-content: center;">
+          <span style="font-size: ${fontSize}; 
+                    color: #4A4A4A;
+                    white-space: nowrap;
+                    background-color: rgba(255, 255, 255, 0.8);
+                    border-radius: 16px;
+                    padding: 4px 10px;
+                    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+                    text-align: center; z-index:10;">
+            ${region === "dong" ? reNamedDong : areaName}
+          </span>
+        </div>`,
         origin: new naver.maps.Point(0, 67),
         anchor: new naver.maps.Point(20, 67)
       }
     });
   };
 
-  const crearClusters = (ref: React.RefObject<any>) => {
+  const clearClusters = (ref: React.RefObject<any>) => {
     if (ref.current) {
       ref.current.getMarkers().forEach((marker: naver.maps.Marker) => {
         marker.setMap(null);
@@ -393,18 +493,21 @@ const NaverMap2: FC<NaverMap2Props> = ({ children }) => {
     }
   };
 
-  return (
-    <>
-      {(loading || isFetching) && <Loading />}
-      <MapContainer ref={mapElement}>{children}</MapContainer>
-    </>
-  );
-};
-
-export default NaverMap2;
-
-const MapContainer = styled.div`
-  width: 100%;
-  height: 100%;
-  position: relative;
-`;
+  return {
+    map,
+    mapElement,
+    loading,
+    isFetching,
+    hospitalLocation,
+    hospitalLocationLoading,
+    currentZoom,
+    name,
+    handleZoomChange,
+    clearClusters,
+    createMarkerCluster,
+    createRegionMarker,
+    createPatientGroupMarkers,
+    setPolygonClickListener,
+    setMarkerClickListener
+  };
+}

@@ -1,15 +1,20 @@
 import styled from "styled-components";
-
+import { useEffect } from "react";
+import dayjs from "dayjs";
 import useRangeDurationDatePicker from "../hooks/useRangeDurationDatePicker";
 import DurationDatePicker from "../components/common/datepicker/DurationDatePicker";
-import NaverMap2 from "../components/common/NaverMap2";
 import RevenueCompareDrawer from "../components/compare_revenue/RevenueCompareDrawer";
-import { useEffect } from "react";
 import mapStore from "../store/mapStore";
-import dayjs from "dayjs";
+import { useNaverMapCore } from "../hooks/useNaverMapCore";
+import Loading from "../components/common/Loading";
+import userStore from "../store/userStore";
+import RequireSubscribe from "../components/common/RequireSubscribe";
 
 function CompareAvenuePage() {
-  const { setDrawerDate1, setDrawerDate2, handleIsDrawerOpen } = mapStore();
+  const { isInActiveUser } = userStore();
+  const { loading, setDrawerDate1, setDrawerDate2, handleIsDrawerOpen } =
+    mapStore();
+  const { mapElement, isFetching } = useNaverMapCore({ isComparison: true });
 
   //날짜선택 1
   const {
@@ -48,7 +53,9 @@ function CompareAvenuePage() {
 
   return (
     <>
-      <NaverMap2>
+      {isInActiveUser && <RequireSubscribe />}
+      {isFetching || (loading && <Loading />)}
+      <MapContainer ref={mapElement}>
         <Wrapper>
           <DatePickerContainer>
             <DateTitle>기간 1</DateTitle>
@@ -67,13 +74,19 @@ function CompareAvenuePage() {
             <SubText>* 두 기간의 대한 매출 데이터를 비교합니다.</SubText>
           </DatePickerContainer>
         </Wrapper>
-      </NaverMap2>
+      </MapContainer>
       <RevenueCompareDrawer />
     </>
   );
 }
 
 export default CompareAvenuePage;
+
+const MapContainer = styled.div`
+  width: 100%;
+  height: 100%;
+  position: relative;
+`;
 
 const Wrapper = styled.div`
   position: absolute;
