@@ -60,7 +60,7 @@ function CompareAvenuePage() {
   return (
     <>
       {isInActiveUser && <RequireSubscribe />}
-      {isFetching || (loading && <Loading />)}
+      {(isFetching || loading) && <Loading />}
       <MapContainer ref={mapElement}>
         <Wrapper>
           <DatePickerContainer>
