@@ -291,8 +291,8 @@ export function useNaverMapCore({
     smallRegionEtc,
     dongRegionEtc,
     guRegionEtc,
-    currentZoom,
-    isOpenDrawer
+    currentZoom
+    // isOpenDrawer
   ]);
 
   const setPolygonClickListener = (
@@ -301,7 +301,7 @@ export function useNaverMapCore({
   ) => {
     if (!polygon.hasListener("click")) {
       polygon.addListener("click", () => {
-        if (!isOpenDrawer) handleIsDrawerOpen(true);
+        handleIsDrawerOpen(true);
 
         // Remove previous highlight polygon
         if (clickedAreaRef.current) {
@@ -337,12 +337,7 @@ export function useNaverMapCore({
             zIndex: 100
           });
 
-          // Fix the typo by handling both function names
-          if (isComparison && setSelectedRegionData) {
-            setSelectedRegionData(area);
-          } else if (setSelectedRegionData) {
-            setSelectedRegionData(area);
-          }
+          setSelectedRegionData(area);
 
           if (name === "small" && area.dong) {
             setDongNameForSmall(area?.dong);
@@ -359,7 +354,7 @@ export function useNaverMapCore({
   ) => {
     if (!marker.hasListener("click")) {
       marker.addListener("click", () => {
-        if (!isOpenDrawer) handleIsDrawerOpen(true);
+        handleIsDrawerOpen(true);
 
         // Remove previous highlight polygon
         if (clickedAreaRef.current) {
