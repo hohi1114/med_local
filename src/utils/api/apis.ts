@@ -50,7 +50,6 @@ export const postVerifyCode = async (hardwareNumber: string) => {
 /**유저정보 */
 export const getUserInfo = async () => {
   const data = await apiRequest("get", "/users/info");
-  console.log(data);
   return data;
 };
 
