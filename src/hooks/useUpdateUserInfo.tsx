@@ -1,9 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import {
-  getMemberships,
-  getUserInfo,
-  getUserSubscription
-} from "../utils/api/apis";
+import { getMemberships, getUserInfo } from "../utils/api/apis";
 import { useEffect } from "react";
 import usePaymentStore from "../store/usePaymenyStore";
 import dayjs from "dayjs";
@@ -47,30 +43,26 @@ const useUpdateUserInfo = () => {
     enabled: false,
     retry: false
   });
-  const { refetch: subscribeRefetch, isLoading: subscribeLoading } = useQuery({
-    queryKey: ["subscribe"],
-    queryFn: () => getUserSubscription(),
-    enabled: false,
-    retry: false
-  });
 
-  const updateUserMembershipInfo = async () => {
-    const { data: subscribeDate } = await subscribeRefetch();
+  const fetchUserInfo = async () => {
+    const { data: userData } = await loginRefetch();
+    const { user, subscription } = userData;
 
     if (
-      subscribeDate?.status === "active" &&
-      subscribeDate?.is_free_trial &&
+      subscription?.status === "active" &&
+      subscription?.is_free_trial &&
       !user?.free &&
-      dayjs(subscribeDate?.trial_end_date).isAfter(dayjs().format("YYYY-MM-DD"))
+      dayjs(subscription?.trial_end_date).isAfter(dayjs().format("YYYY-MM-DD"))
     ) {
       setIsFreetrialUser(true);
     } else {
       setIsFreetrialUser(false);
     }
+
     if (
-      subscribeDate.card_last_num &&
-      subscribeDate.card_name &&
-      subscribeDate.nice_bid
+      subscription.card_last_num &&
+      subscription.card_name &&
+      subscription.nice_bid
     ) {
       setHasUserCard(true);
     } else {
@@ -79,54 +71,10 @@ const useUpdateUserInfo = () => {
 
     if (user && !user?.free) {
       if (
-        (subscribeDate?.status === "inactive" ||
-          subscribeDate?.status === "expired" ||
-          subscribeDate?.status === "failed") &&
-        subscribeDate?.is_free_trial
-      ) {
-        setIsInActiveUser(true);
-      } else {
-        setIsInActiveUser(false);
-      }
-    }
-
-    setUser({
-      ...user,
-      ...subscribeDate
-    });
-  };
-
-  const fetchUserInfo = async () => {
-    const { data: userData } = await loginRefetch();
-    const { data: subscribeDate } = await subscribeRefetch();
-
-    if (
-      subscribeDate?.status === "active" &&
-      subscribeDate?.is_free_trial &&
-      !userData?.free &&
-      dayjs(subscribeDate?.trial_end_date).isAfter(dayjs().format("YYYY-MM-DD"))
-    ) {
-      setIsFreetrialUser(true);
-    } else {
-      setIsFreetrialUser(false);
-    }
-
-    if (
-      subscribeDate.card_last_num &&
-      subscribeDate.card_name &&
-      subscribeDate.nice_bid
-    ) {
-      setHasUserCard(true);
-    } else {
-      setHasUserCard(false);
-    }
-
-    if (userData && !userData?.free) {
-      if (
-        (subscribeDate?.status === "inactive" ||
-          subscribeDate?.status === "expired" ||
-          subscribeDate?.status === "failed") &&
-        subscribeDate?.is_free_trial
+        (subscription?.status === "inactive" ||
+          subscription?.status === "expired" ||
+          subscription?.status === "failed") &&
+        subscription?.is_free_trial
       ) {
         setIsInActiveUser(true);
       } else {
@@ -135,23 +83,22 @@ const useUpdateUserInfo = () => {
     }
 
     const combinedData = {
-      ...userData,
-      ...subscribeDate
+      ...user,
+      ...subscription
     };
     setUser(combinedData as User);
   };
 
   useEffect(() => {
-    if (loginLoading || subscribeLoading) {
+    if (loginLoading) {
       setFetchingUserLoading(true);
     } else {
       setFetchingUserLoading(false);
     }
-  }, [loginLoading, subscribeLoading]);
+  }, [loginLoading]);
 
   return {
-    fetchUserInfo,
-    updateUserMembershipInfo
+    fetchUserInfo
   };
 };
 

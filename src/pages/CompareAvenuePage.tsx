@@ -51,12 +51,6 @@ function CompareAvenuePage() {
     if (dateRange2) setDrawerDate2(dateRange2);
   }, [dateRange2]);
 
-  const getDisabledDateAfter = () => {
-    return (current: dayjs.Dayjs) => {
-      return !!dateRange1 && current.isBefore(dayjs(dateRange1.endDate), "day");
-    };
-  };
-
   return (
     <>
       {isInActiveUser && <RequireSubscribe />}
@@ -64,17 +58,16 @@ function CompareAvenuePage() {
       <MapContainer ref={mapElement}>
         <Wrapper>
           <DatePickerContainer>
-            <DateTitle>기간 1</DateTitle>
+            <DateTitle>기준 기간</DateTitle>
             <DurationDatePicker
               value={dateRange1}
               onChange={handleDateRangeChange1}
             />
 
-            <DateTitle>기간 2</DateTitle>
+            <DateTitle>비교 기간</DateTitle>
             <DurationDatePicker
               value={dateRange2}
               onChange={handleDateRangeChange2}
-              disabled={getDisabledDateAfter()}
             />
 
             <SubText>* 두 기간의 대한 매출 데이터를 비교합니다.</SubText>

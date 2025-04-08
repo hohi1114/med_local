@@ -14,25 +14,29 @@ export interface DecodedToken {
   exp: number; // 만료 시간
 }
 
+export interface Location {
+  lat: number;
+  long: number;
+}
+
 export interface User {
-  user_id: string;
-  name: string;
-  email: string;
+  card_last_num: string | null;
+  card_name: string | null;
   created_at: string;
-  role: string;
-  plan: string | null;
-  amount: number | null;
-  next_billing_date: string | null;
-  last_payment_date: string | null;
-  is_free_trial: boolean | null;
-  trial_end_date: string | null;
-  card_name?: string | null;
-  card_last_num?: string | null;
-  status?: string | null;
-  nice_bid?: string | null;
-  location?: string | null;
-  emr?: string | null;
-  next_plan?: string | null;
-  updated_at?: string | null;
+  email: string;
+  emr: string | null;
   free: boolean;
+  is_free_trial: boolean;
+  last_payment_date: string | null;
+  location: Location | null;
+  name: string;
+  next_billing_date: string | null;
+  next_plan: string | null;
+  nice_bid: string | null;
+  plan: string | null;
+  role: string | null;
+  status: string | null;
+  trial_end_date: string | null;
+  updated_at: string | null;
+  user_id: string;
 }

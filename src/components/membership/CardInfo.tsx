@@ -12,11 +12,11 @@ interface CardInfoProps {
 }
 const CardInfo = ({ handleAddCard, hideCancel = false }: CardInfoProps) => {
   const { user, hasUserCard } = userStore();
-  const { updateUserMembershipInfo } = useUpdateUserInfo();
+  const { fetchUserInfo } = useUpdateUserInfo();
   const { mutate: deleteRegisteredCard } = useMutation({
     mutationFn: async () => await postDeleteCard(),
     onSuccess: () => {
-      updateUserMembershipInfo();
+      fetchUserInfo();
     },
     onError: (err: AxiosError) => {
       alert(

@@ -33,7 +33,7 @@ const RegisterCard: React.FC<RegisterCardProps> = ({
   handleCompleteUpdate
 }) => {
   const { prevStep } = usePaymentStore();
-  const { updateUserMembershipInfo } = useUpdateUserInfo();
+  const { fetchUserInfo } = useUpdateUserInfo();
   const {
     handleSubmit,
     register,
@@ -48,7 +48,7 @@ const RegisterCard: React.FC<RegisterCardProps> = ({
     mutationFn: async (params: RegisterCardParams) =>
       await postRegisterCard(params),
     onSuccess: (data) => {
-      updateUserMembershipInfo();
+      fetchUserInfo();
       handleCompleteUpdate();
     },
     onError: (err: AxiosError) => {

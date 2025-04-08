@@ -42,11 +42,14 @@ const RevenueCompareDrawer = () => {
               backgroundColor: "#f0f2f5"
             }}
           >
-            <ChartTitleStyle>
-              {dayjs(drawerDate1?.startDate).format("YYYY-MM-DD") +
-                " ~ " +
-                dayjs(drawerDate1?.endDate).format("YYYY-MM-DD")}
-            </ChartTitleStyle>
+            <TitleContainer>
+              <span>기준기간</span>
+              <span>
+                {dayjs(drawerDate1?.startDate).format("YYYY-MM-DD") +
+                  " ~ " +
+                  dayjs(drawerDate1?.endDate).format("YYYY-MM-DD")}
+              </span>
+            </TitleContainer>
           </div>
           <RevenuInfo
             disabledCompare={true}
@@ -78,11 +81,14 @@ const RevenueCompareDrawer = () => {
               backgroundColor: "#f0f2f5"
             }}
           >
-            <ChartTitleStyle>
-              {dayjs(drawerDate2?.startDate).format("YYYY-MM-DD") +
-                " ~ " +
-                dayjs(drawerDate2?.endDate).format("YYYY-MM-DD")}
-            </ChartTitleStyle>
+            <TitleContainer>
+              <span>비교 기간</span>
+              <span>
+                {dayjs(drawerDate2?.startDate).format("YYYY-MM-DD") +
+                  " ~ " +
+                  dayjs(drawerDate2?.endDate).format("YYYY-MM-DD")}
+              </span>
+            </TitleContainer>
           </div>
 
           <RevenuInfo
@@ -137,10 +143,13 @@ const AddressTitleStyle = styled.span`
   font-weight: bold;
 `;
 
-export const ChartTitleStyle = styled.span`
+export const TitleContainer = styled.div`
   font-size: 1.2rem;
   margin-left: 1rem;
   font-weight: bold;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 `;
 
 export const GridWrapper = styled.section`

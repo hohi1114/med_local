@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { useQueries, useQuery } from "@tanstack/react-query";
-import { getAllRegionsEtc, getHospitalLocation } from "../utils/api/apis";
+import { useQueries } from "@tanstack/react-query";
+import { getAllRegionsEtc } from "../utils/api/apis";
 import { getDataFromRegionDB } from "../store/indexded_db/RegionDB";
 import mapStore from "../store/mapStore";
 import userStore from "../store/userStore";
@@ -58,7 +58,6 @@ const useNaverMapData = (twoType: boolean) => {
     second: { small: null, dong: null, gu: null }
   });
 
-  const [hospitalLocation, setHospitalLocation] = useState<Point | null>(null);
   const regionQueries = useQueries({
     queries: twoType
       ? [
@@ -79,29 +78,8 @@ const useNaverMapData = (twoType: boolean) => {
       : []
   });
 
-  const {
-    data: hospitalLocationData,
-    refetch: hospitalLocationFetch,
-    isLoading: hospitalLocationLoading
-  } = useQuery({
-    queryKey: ["hospitalLocation"],
-    queryFn: getHospitalLocation,
-    retry: false
-  });
-
   //Loading 상태
   const isFetchingRegionData = regionQueries.some((q) => q.isFetching);
-
-  // 병원 위치 데이터 요청
-  useEffect(() => {
-    hospitalLocationFetch();
-  }, [drawerDate1]);
-
-  useEffect(() => {
-    if (hospitalLocationData?.location) {
-      setHospitalLocation(hospitalLocationData.location);
-    }
-  }, [hospitalLocationData]);
 
   // 기간 1개 일떄
   useEffect(() => {
@@ -399,13 +377,11 @@ const useNaverMapData = (twoType: boolean) => {
     smallRegionEtc: regionEtc.small,
     dongRegionEtc: regionEtc.dong,
     guRegionEtc: regionEtc.gu,
-    hospitalLocationLoading,
     getRegionName,
     expandBounds,
     getBoundAreas,
     getPolygonColorOpacity,
     groupPatientsByProximity,
-    hospitalLocation,
     isFetching: isFetchingRegionData
   };
 };

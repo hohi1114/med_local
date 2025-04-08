@@ -6,6 +6,7 @@ import useNaverMapData from "./useNaverMapData";
 import { makeMarkerClustering } from "../utils/marker-cluster";
 import { PatientData } from "../utils/ExcelParser";
 import { RegionData, RegionLevel } from "../types/naver-maps";
+import userStore from "../store/userStore";
 
 export interface UseNaverMapCoreOptions {
   isComparison?: boolean;
@@ -20,6 +21,7 @@ export function useNaverMapCore({
   getPolygonFillColor,
   getPolygonHighlightColor
 }: UseNaverMapCoreOptions = {}) {
+  const { user } = userStore();
   const {
     drawerDate,
     drawerDate1,
@@ -63,9 +65,7 @@ export function useNaverMapCore({
     smallRegions,
     dongRegions,
     guRegions,
-    isFetching,
-    hospitalLocation,
-    hospitalLocationLoading
+    isFetching
   } = useNaverMapData(isComparison);
 
   const {
@@ -86,14 +86,11 @@ export function useNaverMapCore({
 
   // Initialize map only once
   useEffect(() => {
-    if (!mapElement.current || map || !hospitalLocation) return;
+    if (!mapElement.current || map || !user.location) return;
 
     const newMap = new window.naver.maps.Map(mapElement.current, {
       center: new window.naver.maps.LatLng(
-        new window.naver.maps.LatLng(
-          hospitalLocation.lat,
-          hospitalLocation.long
-        )
+        new window.naver.maps.LatLng(user?.location.lat, user?.location.long)
       ),
       zoom: 16,
       zoomControl: true
@@ -104,14 +101,14 @@ export function useNaverMapCore({
     if (!hospitalMarker) {
       const newMarker = new window.naver.maps.Marker({
         position: new window.naver.maps.LatLng(
-          hospitalLocation.lat,
-          hospitalLocation.long
+          user?.location.lat,
+          user?.location.long
         ),
         map: newMap
       });
       setHospitalMarker(newMarker);
     }
-  }, [map, isFetching, hospitalLocation]);
+  }, [map, isFetching, user]);
 
   //Cleanup
   useEffect(() => {
@@ -191,8 +188,8 @@ export function useNaverMapCore({
           ? getPolygonFillColor(area)
           : isComparison
           ? (area?.total_costA ?? 0) <= (area?.total_costB ?? 0)
-            ? "rgba(200, 225, 250, 0.6)"
-            : "rgba(255, 234, 232, 0.6)"
+            ? "rgba(120, 180, 230, 0.3)"
+            : "rgba(240, 180, 180, 0.3)"
           : `${getPolygonColorOpacity(
               area.total_cost ?? 0,
               name as RegionLevel
@@ -493,8 +490,6 @@ export function useNaverMapCore({
     mapElement,
     loading,
     isFetching,
-    hospitalLocation,
-    hospitalLocationLoading,
     currentZoom,
     name,
     handleZoomChange,

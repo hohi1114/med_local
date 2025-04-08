@@ -28,7 +28,7 @@ function MembershipChangePage() {
   const navigate = useNavigate();
   const { user } = userStore();
   const { memberships } = usePaymentStore();
-  const { updateUserMembershipInfo } = useUpdateUserInfo();
+  const { fetchUserInfo } = useUpdateUserInfo();
 
   const [confirmModal, setConfirmModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
@@ -53,7 +53,7 @@ function MembershipChangePage() {
   const { mutate: billingMutation, isPending: billingPending } = useMutation({
     mutationFn: postBilling,
     onSuccess: async () => {
-      await updateUserMembershipInfo();
+      await fetchUserInfo();
       navigate("/membership");
     },
     onError: handleError
@@ -74,7 +74,7 @@ function MembershipChangePage() {
   } = useMutation({
     mutationFn: changeSubscription,
     onSuccess: async () => {
-      await updateUserMembershipInfo();
+      await fetchUserInfo();
       navigate("/membership");
     },
     onError: handleError

@@ -17,12 +17,12 @@ import useUpdateUserInfo from "../hooks/useUpdateUserInfo";
 function CardManagementPage() {
   const { user } = userStore();
   const [updateCard, setUpdateCard] = useState(false);
-  const { updateUserMembershipInfo } = useUpdateUserInfo();
+  const { fetchUserInfo } = useUpdateUserInfo();
 
   const { mutate: deleteRegisteredCard, isPending } = useMutation({
     mutationFn: postDeleteCard,
     onSuccess: () => {
-      updateUserMembershipInfo();
+      fetchUserInfo();
     },
     onError: (err: AxiosError) => {
       const errorMessage =

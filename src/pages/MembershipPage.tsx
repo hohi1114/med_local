@@ -29,7 +29,7 @@ function MembershipPage() {
   const { user, isFreetrialUser } = userStore();
 
   const navigate = useNavigate();
-  const { updateUserMembershipInfo } = useUpdateUserInfo();
+  const { fetchUserInfo } = useUpdateUserInfo();
   const { memberships } = usePaymentStore();
 
   const today = dayjs();
@@ -42,7 +42,7 @@ function MembershipPage() {
     mutationFn: async () => await postManageCancelSubscription(),
     onSuccess: () => {
       setCancelSubscriptionModal(false);
-      updateUserMembershipInfo();
+      fetchUserInfo();
     },
     onError: (err: AxiosError) => {
       alert((err.response?.data as { error?: string })?.error);
@@ -56,7 +56,7 @@ function MembershipPage() {
     mutationFn: async () => await postCancelSubscription(),
     onSuccess: () => {
       setCancelModal(false);
-      updateUserMembershipInfo();
+      fetchUserInfo();
     },
     onError: (err: AxiosError) => {
       alert((err.response?.data as { error?: string })?.error);
@@ -69,7 +69,7 @@ function MembershipPage() {
     mutationFn: async () => await postStartImmediately(),
     onSuccess: () => {
       setCancelModal(false);
-      updateUserMembershipInfo();
+      fetchUserInfo();
     },
     onError: (err: AxiosError) => {
       alert((err.response?.data as { error?: string })?.error);

@@ -49,7 +49,9 @@ export const postVerifyCode = async (hardwareNumber: string) => {
 
 /**유저정보 */
 export const getUserInfo = async () => {
-  return await apiRequest("get", "/users/info");
+  const data = await apiRequest("get", "/users/info");
+  console.log(data);
+  return data;
 };
 
 /** 멤버십 */
@@ -154,11 +156,6 @@ export const getRegionPrivateData = async (
     regionprivateParams
   );
 
-  return data;
-};
-
-export const getHospitalLocation = async () => {
-  const data = await apiRequest("get", "/users/location");
   return data;
 };
 
@@ -285,11 +282,4 @@ export const uploadDataToBackendDentWeb = async (
     console.error("Error in uploadDataToBackend:", error);
     throw error; // Re-throw to handle in the component
   }
-};
-
-/**구독 */
-export const getUserSubscription = async () => {
-  const data = await apiRequest("get", "/payment/user");
-
-  return data;
 };

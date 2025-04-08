@@ -48,13 +48,7 @@ const DurationDatePicker: React.FC<DurationDatePickerProps> = ({
   return (
     <RangePicker
       {...props}
-      disabledDate={
-        isFreetrialUser
-          ? disabledDateForFreetrial
-          : disabled
-          ? disabled
-          : undefined
-      }
+      disabledDate={isFreetrialUser ? disabledDateForFreetrial : undefined}
       format={"YYYY-MM-DD"}
       value={[dayjs(value.startDate), dayjs(value.endDate)]}
       onChange={handleDateChange}
