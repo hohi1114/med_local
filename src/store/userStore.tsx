@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { User } from "../types/auth";
+import dayjs from "dayjs";
 
 interface UserStore {
   user: User;
@@ -7,6 +8,8 @@ interface UserStore {
   isInActiveUser: boolean;
   hasUserCard: boolean;
   fetchingUserLoading: boolean;
+  updatedDates: string[] | null;
+  lastedUpdatedDate: string | null;
 
   setUser: (user: User) => void;
   clearUser: () => void;
@@ -14,6 +17,8 @@ interface UserStore {
   setIsFreetrialUser: (isFreetrialUser: boolean) => void;
   setIsInActiveUser: (isInActiveUser: boolean) => void;
   setHasUserCard: (hasUserCard: boolean) => void;
+  setUpdatedDates: (updatedDates: string[]) => void;
+  setLastedUpdatedDate: (lastedUpdatedDate: string) => void;
 }
 
 const userStore = create<UserStore>((set) => ({
@@ -38,6 +43,8 @@ const userStore = create<UserStore>((set) => ({
     updated_at: null,
     free: false
   },
+  updatedDates: null,
+  lastedUpdatedDate: null,
   fetchingUserLoading: true,
   isFreetrialUser: false,
   isInActiveUser: false,
@@ -71,7 +78,23 @@ const userStore = create<UserStore>((set) => ({
       }
     }),
   setIsFreetrialUser: (isFreetrialUser: boolean) => set({ isFreetrialUser }),
-  setIsInActiveUser: (isInActiveUser: boolean) => set({ isInActiveUser })
+  setIsInActiveUser: (isInActiveUser: boolean) => set({ isInActiveUser }),
+  setUpdatedDates: (updatedDates: string[]) =>
+    set(() => {
+      if (updatedDates.length === 0) {
+        return { updatedDates, lastedUpdatedDate: [] };
+      }
+      const lastedDate = updatedDates.reduce((latest, current) => {
+        return dayjs(current).isAfter(dayjs(latest)) ? current : latest;
+      });
+      return {
+        updatedDates,
+        lastedUpdatedDate: lastedDate
+      };
+    }),
+
+  setLastedUpdatedDate: (lastedUpdatedDate: string) =>
+    set({ lastedUpdatedDate })
 }));
 
 export default userStore;

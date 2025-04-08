@@ -2,38 +2,34 @@ import { useEffect, useMemo } from "react";
 import { Calendar } from "antd";
 import dayjs, { Dayjs } from "dayjs";
 import styled from "styled-components";
-import { useQuery } from "@tanstack/react-query";
-import { getUploadedDates } from "../../utils/api/apis";
+
+import useUpdateUserInfo from "../../hooks/useUpdateUserInfo";
+import userStore from "../../store/userStore";
 
 interface UploadedCalendarProps {
   progress: number;
 }
 
 const UploadedCalendar = ({ progress }: UploadedCalendarProps) => {
-  const { data: updateDates, refetch: uploadedDataRefetch } = useQuery<Dayjs[]>(
-    {
-      queryKey: ["getUpdatedDates"],
-      queryFn: () => getUploadedDates(),
-      retry: false,
-      enabled: false
-    }
-  );
+  const { fetchUploadedDates } = useUpdateUserInfo();
+  const { updatedDates } = userStore();
 
   useEffect(() => {
     if (progress === 0) {
-      uploadedDataRefetch();
+      fetchUploadedDates();
     }
   }, [progress]);
 
   /** Find updated dates for disabled */
   const isDisabledDate = useMemo(() => {
-    if (!updateDates) return;
-    return (currentDate: Dayjs) => {
-      return updateDates.some((date) =>
+    if (updatedDates.length === 0) return () => false;
+
+    return (currentDate: string | Date) => {
+      return updatedDates.some((date) =>
         dayjs(date).isSame(dayjs(currentDate), "day")
       );
     };
-  }, [updateDates]);
+  }, [updatedDates]);
 
   return (
     <UploadedCalendarContainer>

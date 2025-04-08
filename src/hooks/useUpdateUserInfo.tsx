@@ -1,5 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
-import { getMemberships, getUserInfo } from "../utils/api/apis";
+import {
+  getMemberships,
+  getUploadedDates,
+  getUserInfo
+} from "../utils/api/apis";
 import { useEffect } from "react";
 import usePaymentStore from "../store/usePaymenyStore";
 import dayjs from "dayjs";
@@ -9,12 +13,15 @@ import { User } from "../types/auth";
 const useUpdateUserInfo = () => {
   const {
     user,
+    lastedUpdatedDate,
     setUser,
     setFetchingUserLoading,
     setIsFreetrialUser,
     setIsInActiveUser,
-    setHasUserCard
+    setHasUserCard,
+    setUpdatedDates
   } = userStore();
+
   const { memberships, setMemberships } = usePaymentStore();
   const { refetch: membershipFetch, data: membershipsRes } = useQuery({
     queryKey: ["memberships"],
@@ -22,12 +29,33 @@ const useUpdateUserInfo = () => {
     enabled: true,
     retry: false
   });
+
+  const { refetch: uploadedDataRefetch } = useQuery<string[]>({
+    queryKey: ["getUpdatedDates"],
+    queryFn: () => getUploadedDates(),
+    retry: false,
+    enabled: false
+  });
+
+  const fetchUploadedDates = async () => {
+    const { data: updateDates } = await uploadedDataRefetch();
+
+    if (updateDates) {
+      setUpdatedDates(updateDates);
+    }
+  };
+
   //그냥 앱 기본 데이터
   useEffect(() => {
-    if (memberships.length === 0) {
-      membershipFetch();
+    if (user?.user_id) {
+      if (memberships.length === 0) {
+        membershipFetch();
+      }
+      if (!lastedUpdatedDate) {
+        fetchUploadedDates();
+      }
     }
-  }, []);
+  }, [user.user_id]);
 
   useEffect(() => {
     if (membershipsRes) {
@@ -98,7 +126,8 @@ const useUpdateUserInfo = () => {
   }, [loginLoading]);
 
   return {
-    fetchUserInfo
+    fetchUserInfo,
+    fetchUploadedDates
   };
 };
 
