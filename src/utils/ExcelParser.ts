@@ -1,3 +1,4 @@
+import { json } from "body-parser";
 import * as XLSX from "xlsx";
 
 // Interfaces for your data structures
@@ -40,12 +41,7 @@ export interface DailyIncomeEgis {
 export interface PatientListEgis {
   chartNumber: number; // 1st column
   address: string; // 8th column
-}
-
-// 환자별 수입 현황
-export interface PatientIncomeEgis {
-  chartNumber: number; // 1st column
-  age: number; // 4th column (나이)
+  age: number; //2nd column
 }
 
 /**
@@ -84,8 +80,6 @@ function excelSerialToDate(serial: number): string {
   const year = targetDate.getUTCFullYear();
   const month = String(targetDate.getUTCMonth() + 1).padStart(2, "0");
   const day = String(targetDate.getUTCDate()).padStart(2, "0");
-
-  console.log(`${year}-${month}-${day}`);
 
   return `${year}-${month}-${day}`;
 }
@@ -299,14 +293,17 @@ export const parseDaysFilesDentweb = async (
       continue; // Skip this file
     }
 
-    const worksheet = workbook.Sheets[workbook.SheetNames[1]]; // First sheet
+    const worksheet = workbook.Sheets[workbook.SheetNames[1]]; // second sheet\
 
     const jsonData = XLSX.utils.sheet_to_json<any>(worksheet, {
       header: 1,
       range: 1,
-    }); // Skip first 3 rows
+    });
 
-    jsonData.forEach((row: any) => {
+    for (const row of jsonData) {
+      if (!row[10]) {
+        continue;
+      }
       let visitDate = row[1];
 
       // ✅ Convert Excel serial date to string format
@@ -319,7 +316,7 @@ export const parseDaysFilesDentweb = async (
         visitDate: visitDate,
         totalCost: Number(row[10]),
       });
-    });
+    }
   }
 
   return data.filter((item) => !isNaN(item.chartNumber));
@@ -350,12 +347,12 @@ export const parsePlaceFilesDentWeb = async (
       dateNF: "YYYY-MM-DD",
     });
 
-    jsonData.forEach((row: any) => {
-      // Check if birth date is an Excel serial number (number) or already a Date
+    for (const row of jsonData) {
+      if (!row[3]) {
+        continue;
+      }
       let age = 0;
       const birthDateValue = row[3];
-
-      console.log(birthDateValue);
 
       if (birthDateValue) {
         // Since we're using raw:false, birthDateValue should be a string in YYYY-MM-DD format
@@ -370,7 +367,7 @@ export const parsePlaceFilesDentWeb = async (
         latitude: null,
         longitude: null,
       });
-    });
+    }
   }
   return data.filter((item) => !isNaN(item.chartNumber));
 };
@@ -391,13 +388,4 @@ function calculateAge(birthDateStr: string): number {
   }
 
   return age;
-}
-
-// Helper function to format Date objects to string
-function formatDate(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
 }

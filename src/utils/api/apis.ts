@@ -9,7 +9,7 @@ import {
   RegionPrivateParams,
   regionAnalysisParams,
   RegisterCardParams,
-  StartSubscriptionParams
+  StartSubscriptionParams,
 } from "../../types/params";
 import {
   VisitData,
@@ -18,7 +18,7 @@ import {
   PatientListEgis,
   PatientIncomeEgis,
   BackendResponse,
-  PatientDataDentWeb
+  PatientDataDentWeb,
 } from "../ExcelParser";
 
 /**로그인 */
@@ -27,7 +27,7 @@ export const postLogin = async (loginData: LoginParams) => {
   await saveTokensToCookie({
     access_token: data.access_token,
     refresh_token: data.refresh_token,
-    expires_in: data.expires_in
+    expires_in: data.expires_in,
   });
 
   return data;
@@ -42,7 +42,7 @@ export const postActiveLicense = async (
 
 export const postVerifyCode = async (hardwareNumber: string) => {
   const data = await apiRequest("post", "/auth/verify", {
-    hardwareFingerprint: hardwareNumber
+    hardwareFingerprint: hardwareNumber,
   });
   return data;
 };
@@ -88,7 +88,7 @@ export const getCardInfo = async () => {
 
 export const postBilling = async (membershipType: string) => {
   const data = await apiRequest("post", "/payment/billing", {
-    membershipType: membershipType
+    membershipType: membershipType,
   });
   return data;
 };
@@ -100,7 +100,7 @@ export const postManageCancelSubscription = async () => {
 
 export const changeSubscription = async (membershipType: string) => {
   const data = await apiRequest("post", "/payment/update", {
-    membershipType: membershipType
+    membershipType: membershipType,
   });
   return data;
 };
@@ -178,11 +178,11 @@ export const postRefreshToken = async () => {
     logout();
   }
   const data = await apiRequest("post", "/auth/refresh", {
-    refresh_token: refreshToken
+    refresh_token: refreshToken,
   });
   await saveTokensToCookie({
     access_token: data.access_token,
-    refresh_token: data.refresh_token
+    refresh_token: data.refresh_token,
   });
 
   return data.access_token;
@@ -241,13 +241,11 @@ export const uploadDataToBackendEuisarang = async (
 // Function to upload parsed data to the backend
 export const uploadDataToBackendEgis = async (
   dailyIncomeData: DailyIncomeEgis[],
-  patientListData: PatientListEgis[],
-  patientIncomeData: PatientIncomeEgis[]
+  patientListData: PatientListEgis[]
 ): Promise<BackendResponse> => {
   const dataToUpload = {
     dailyIncome: dailyIncomeData,
     patientList: patientListData,
-    patientIncome: patientIncomeData
   };
 
   try {

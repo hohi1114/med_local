@@ -322,7 +322,7 @@ const UpdateDataPage = () => {
 
         {/* Conditional File Uploads */}
         <ContentContainer>
-          {((dataType === "euisarang") || (dataType === "dentweb")) ? (
+          {dataType === "euisarang" && (
             <>
               <FileUpload
                 title="일일 수입 데이터 업로드"
@@ -333,7 +333,22 @@ const UpdateDataPage = () => {
                 onFilesUploaded={(files) => setPlaceFiles(files)}
               />
             </>
-          ) : (
+          )}
+
+          {dataType === "dentweb" && (
+            <>
+              <FileUpload
+                title="일일 진료비 통계 업로드"
+                onFilesUploaded={(files) => setDaysFiles(files)}
+              />
+              <FileUpload
+                title="내원 환자 지역별 분포 업로드"
+                onFilesUploaded={(files) => setPlaceFiles(files)}
+              />
+            </>
+          )}
+
+          {dataType === "egis" && (
             <>
               <FileUpload
                 title="일자별 수입 현황 업로드"
