@@ -12,19 +12,29 @@ import DurationDatePicker from "../components/common/datepicker/DurationDatePick
 
 function MapByRegionPage() {
   const { mapElement, isFetching } = useNaverMapCore();
-  const { isInActiveUser } = userStore();
+  const { isInActiveUser, lastedUpdatedDate } = userStore();
   const { loading, setDrawerDate, handleIsDrawerOpen } = mapStore();
   const { dateRange, handleDateRangeChange } = useRangeDurationDatePicker();
 
   useEffect(() => {
-    const start = dayjs().subtract(1, "month").format("YYYY-MM-DD");
-    const end = dayjs().format("YYYY-MM-DD");
-
-    handleDateRangeChange({ startDate: start, endDate: end });
     return () => {
       handleIsDrawerOpen(false);
     };
   }, []);
+
+  useEffect(() => {
+    if (lastedUpdatedDate && lastedUpdatedDate.length > 0) {
+      const start = lastedUpdatedDate
+        ? dayjs(lastedUpdatedDate).subtract(1, "month").format("YYYY-MM-DD")
+        : dayjs().subtract(1, "month").format("YYYY-MM-DD");
+      const end = lastedUpdatedDate
+        ? dayjs(lastedUpdatedDate).format("YYYY-MM-DD")
+        : dayjs().format("YYYY-MM-DD");
+
+      handleDateRangeChange({ startDate: start, endDate: end });
+    }
+  }, [lastedUpdatedDate]);
+
   useEffect(() => {
     if (dateRange) {
       setDrawerDate(dateRange);

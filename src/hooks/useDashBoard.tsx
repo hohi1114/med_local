@@ -12,41 +12,42 @@ import useDashboardStore from "../store/useDashboardStore";
 import userStore from "../store/userStore";
 dayjs.extend(isBetween);
 
-// Type-safe date range map
-const RANGE_DATE_MAP: Record<RangeDateMapKey, DateRange> = {
-  오늘: {
-    startDate: dayjs().format("YYYY-MM-DD"),
-    endDate: dayjs().format("YYYY-MM-DD")
-  },
-  "3일": {
-    startDate: dayjs().subtract(3, "day").format("YYYY-MM-DD"),
-    endDate: dayjs().format("YYYY-MM-DD")
-  },
-  "7일": {
-    startDate: dayjs().subtract(7, "day").format("YYYY-MM-DD"),
-    endDate: dayjs().format("YYYY-MM-DD")
-  },
-  "1개월": {
-    startDate: dayjs().subtract(1, "month").format("YYYY-MM-DD"),
-    endDate: dayjs().format("YYYY-MM-DD")
-  },
-  "3개월": {
-    startDate: dayjs().subtract(3, "month").format("YYYY-MM-DD"),
-    endDate: dayjs().format("YYYY-MM-DD")
-  },
-  "1년": {
-    startDate: dayjs().subtract(1, "year").format("YYYY-MM-DD"),
-    endDate: dayjs().format("YYYY-MM-DD")
-  }
-} as const;
-
-// Constants for free trial users
-const FREE_TRIAL_RANGES: Pick<typeof RANGE_DATE_MAP, "1개월"> = {
-  "1개월": RANGE_DATE_MAP["1개월"]
-} as const;
-
 const useDashBoard = () => {
-  const { isFreetrialUser, user, isInActiveUser } = userStore();
+  const { isFreetrialUser, user, isInActiveUser, lastedUpdatedDate } =
+    userStore();
+
+  const getBaseDate = () =>
+    lastedUpdatedDate && lastedUpdatedDate.length > 0
+      ? dayjs(lastedUpdatedDate)
+      : dayjs();
+
+  const makeRange = (
+    startOffset: number,
+    unit: dayjs.ManipulateType
+  ): DateRange => {
+    const base = getBaseDate();
+    return {
+      startDate: base.subtract(startOffset, unit).format("YYYY-MM-DD"),
+      endDate: base.format("YYYY-MM-DD")
+    };
+  };
+  const RANGE_DATE_MAP: Record<RangeDateMapKey, DateRange> = {
+    오늘: {
+      startDate: getBaseDate().format("YYYY-MM-DD"),
+      endDate: getBaseDate().format("YYYY-MM-DD")
+    },
+    "3일": makeRange(3, "day"),
+    "7일": makeRange(7, "day"),
+    "1개월": makeRange(1, "month"),
+    "3개월": makeRange(3, "month"),
+    "1년": makeRange(1, "year")
+  } as const;
+
+  // Constants for free trial users
+  const FREE_TRIAL_RANGES: Pick<typeof RANGE_DATE_MAP, "1개월"> = {
+    "1개월": RANGE_DATE_MAP["1개월"]
+  } as const;
+
   const AVAILABLE_DATE_RANGES: Partial<Record<RangeDateMapKey, DateRange>> =
     isFreetrialUser ? FREE_TRIAL_RANGES : RANGE_DATE_MAP;
 
@@ -124,8 +125,17 @@ const useDashBoard = () => {
   const fetchFirstDate = useCallback(async () => {
     try {
       setIsLoading(true);
+      const date =
+        lastedUpdatedDate && lastedUpdatedDate.length > 0
+          ? {
+              startDate: dayjs(lastedUpdatedDate)
+                .subtract(1, "month")
+                .format("YYYY-MM-DD"),
+              endDate: dayjs(lastedUpdatedDate).format("YYYY-MM-DD")
+            }
+          : dateRange;
+      const data = await dashboardInfoMutation(date);
 
-      const data = await dashboardInfoMutation(dateRange);
       saveData("1개월", data);
 
       if (!isFreetrialUser) {
@@ -144,16 +154,17 @@ const useDashBoard = () => {
     fetchOtherDate,
     isFreetrialUser,
     AVAILABLE_DATE_RANGES,
-    saveData
+    saveData,
+    lastedUpdatedDate
   ]);
 
   useEffect(() => {
-    if (user?.user_id && !isInActiveUser) {
+    if (user?.user_id && lastedUpdatedDate && !isInActiveUser) {
       fetchFirstDate();
     } else {
       setDashboardInfo(null);
     }
-  }, [user]);
+  }, [user, lastedUpdatedDate]);
 
   useEffect(() => {
     if (!buttonType) return;

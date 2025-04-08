@@ -13,6 +13,7 @@ import Error from "../components/common/Error";
 import userStore from "../store/userStore";
 import { FreeTrialModal } from "../components/membership/FreeTrialModal";
 import RequireSubscribe from "../components/common/RequireSubscribe";
+import { useEffect } from "react";
 
 const LOADINGCONTENT = "데이터를 불러오는 중입니다.";
 export default function DashBoardPage() {
@@ -28,7 +29,8 @@ export default function DashBoardPage() {
     AVAILABLE_DATE_RANGES,
     setDateChanged
   } = useDashBoard();
-  const { user, isInActiveUser, fetchingUserLoading, isFreetrialUser } =
+
+  const { user, isInActiveUser, fetchingUserLoading, lastedUpdatedDate } =
     userStore();
 
   const barFormatData = () => {
@@ -53,6 +55,16 @@ export default function DashBoardPage() {
     return (
       <Error status={error?.status ?? "Unknown"} message={error?.message} />
     );
+
+  useEffect(() => {
+    if (lastedUpdatedDate && lastedUpdatedDate.length > 0) {
+      const start = dayjs(lastedUpdatedDate)
+        .subtract(1, "month")
+        .format("YYYY-MM-DD");
+      const end = dayjs(lastedUpdatedDate).format("YYYY-MM-DD");
+      handleDateRangeChange({ startDate: start, endDate: end });
+    }
+  }, [lastedUpdatedDate]);
 
   return (
     <>

@@ -289,7 +289,6 @@ export function useNaverMapCore({
     dongRegionEtc,
     guRegionEtc,
     currentZoom
-    // isOpenDrawer
   ]);
 
   const setPolygonClickListener = (

@@ -1,34 +1,20 @@
 import styled from "styled-components";
 import { StartMembershipButton } from "./style/membership.styles";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-
 import useUpdateUserInfo from "../../hooks/useUpdateUserInfo";
 
 const CompletePayment = () => {
   const navigate = useNavigate();
   const { fetchUserInfo } = useUpdateUserInfo();
-  // const { refetch: subscribeRefetch } = useQuery({
-  //   queryKey: ["subscribe"],
-  //   queryFn: () => getUserSubscription(),
-  //   enabled: false,
-  //   retry: false
-  // });
 
-  // const handleStartButton = async () => {
-  //   try {
-  //     const { data } = await subscribeRefetch();
-
-  //     if (!data) {
-  //       console.error("구독 정보를 가져올 수 없습니다.");
-  //       return;
-  //     }
-  //     fetchUserInfo();
-  //     navigate("/update_data");
-  //   } catch (error) {
-  //     console.error("구독 정보 업데이트 중 오류 발생:", error);
-  //   }
-  // };
+  const handleStartButton = async () => {
+    try {
+      fetchUserInfo();
+      navigate("/update_data");
+    } catch (error) {
+      console.error("구독 정보 업데이트 중 오류 발생:", error);
+    }
+  };
 
   return (
     <PaymentCompleteContainer>

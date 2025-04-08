@@ -11,7 +11,7 @@ import userStore from "../store/userStore";
 import RequireSubscribe from "../components/common/RequireSubscribe";
 
 function CompareAvenuePage() {
-  const { isInActiveUser } = userStore();
+  const { isInActiveUser, lastedUpdatedDate } = userStore();
   const { loading, setDrawerDate1, setDrawerDate2, handleIsDrawerOpen } =
     mapStore();
   const { mapElement, isFetching } = useNaverMapCore({ isComparison: true });
@@ -29,19 +29,31 @@ function CompareAvenuePage() {
   } = useRangeDurationDatePicker();
 
   useEffect(() => {
-    const start1 = dayjs().subtract(30, "day").format("YYYY-MM-DD");
-    const end1 = dayjs().subtract(15, "day").format("YYYY-MM-DD");
-
-    const start2 = dayjs().subtract(14, "day").format("YYYY-MM-DD");
-    const end2 = dayjs().format("YYYY-MM-DD");
-
-    handleDateRangeChange1({ startDate: start1, endDate: end1 });
-    handleDateRangeChange2({ startDate: start2, endDate: end2 });
-
     return () => {
       handleIsDrawerOpen(false);
     };
   }, []);
+
+  useEffect(() => {
+    if (lastedUpdatedDate && lastedUpdatedDate.length > 0) {
+      const start1 = lastedUpdatedDate
+        ? dayjs(lastedUpdatedDate).subtract(30, "day").format("YYYY-MM-DD")
+        : dayjs().subtract(30, "day").format("YYYY-MM-DD");
+      const end1 = lastedUpdatedDate
+        ? dayjs(lastedUpdatedDate).subtract(15, "day").format("YYYY-MM-DD")
+        : dayjs().subtract(15, "day").format("YYYY-MM-DD");
+
+      const start2 = lastedUpdatedDate
+        ? dayjs(lastedUpdatedDate).subtract(14, "day").format("YYYY-MM-DD")
+        : dayjs().subtract(14, "day").format("YYYY-MM-DD");
+      const end2 = lastedUpdatedDate
+        ? dayjs(lastedUpdatedDate).format("YYYY-MM-DD")
+        : dayjs().format("YYYY-MM-DD");
+
+      handleDateRangeChange1({ startDate: start1, endDate: end1 });
+      handleDateRangeChange2({ startDate: start2, endDate: end2 });
+    }
+  }, [lastedUpdatedDate]);
 
   useEffect(() => {
     if (dateRange1) setDrawerDate1(dateRange1);
