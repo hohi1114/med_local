@@ -85,18 +85,17 @@ export default function DashBoardPage() {
                 );
               }
             )}
-            {!isFreetrialUser && (
-              <>
-                <DateLabel>직접 선택</DateLabel>
-                <DurationDatePicker
-                  value={dateRange}
-                  onChange={(date) => {
-                    setDateChanged(true);
-                    handleDateRangeChange(date);
-                  }}
-                />
-              </>
-            )}
+
+            <>
+              <DateLabel>직접 선택</DateLabel>
+              <DurationDatePicker
+                value={dateRange}
+                onChange={(date) => {
+                  setDateChanged(true);
+                  handleDateRangeChange(date);
+                }}
+              />
+            </>
           </FilterContainer>
 
           <CardGrid>
