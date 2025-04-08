@@ -224,7 +224,7 @@ export function useNaverMapCore({
         if (!isComparison && currentZoom >= 17) {
           const groupPatients = groupPatientsByProximity(
             area.patient_locations,
-            300
+            200
           );
           createPatientGroupMarkers(groupPatients, patientGroupsMarkers);
         }

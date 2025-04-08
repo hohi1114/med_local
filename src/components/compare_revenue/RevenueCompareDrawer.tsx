@@ -43,7 +43,7 @@ const RevenueCompareDrawer = () => {
             }}
           >
             <TitleContainer>
-              <span>기준기간</span>
+              <span>기준 기간</span>
               <span>
                 {dayjs(drawerDate1?.startDate).format("YYYY-MM-DD") +
                   " ~ " +
