@@ -265,7 +265,7 @@ const useNaverMapData = (twoType: boolean) => {
         color: "#6666E0",
         hilightColor: "#0000b4",
         basicColor: "#ABADAF",
-        basicHgihlightColor: "#52555A"
+        basicHighlightColor: "#52555A"
       };
     } else if (zoom >= 14) {
       return {
@@ -275,7 +275,7 @@ const useNaverMapData = (twoType: boolean) => {
         color: "#6666E0",
         hilightColor: "#0000b4",
         basicColor: "#ABADAF",
-        basicHgihlightColor: "#52555A"
+        basicHighlightColor: "#52555A"
       };
     } else {
       return {
@@ -285,7 +285,7 @@ const useNaverMapData = (twoType: boolean) => {
         color: "#6666E0",
         hilightColor: "#0000b4",
         basicColor: "#ABADAF",
-        basicHgihlightColor: "#52555A"
+        basicHighlightColor: "#52555A"
       };
     }
   };

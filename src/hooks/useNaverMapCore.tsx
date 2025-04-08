@@ -75,12 +75,12 @@ export function useNaverMapCore({
     color,
     hilightColor,
     basicColor,
-    basicHgihlightColor
+    basicHighlightColor
   } = getRegionName(currentZoom);
 
   // Default highlight colors
   const defaultHighlightColor = isComparison
-    ? basicHgihlightColor
+    ? basicHighlightColor
     : hilightColor;
   const defaultColor = isComparison ? basicColor : color;
 
