@@ -8,7 +8,7 @@ import { regionAnalysisParams } from "../types/params";
 import userStore from "../store/userStore";
 
 export const LOCAL_SECTIONS_MAP = {
-  시: "small",
+  소구역: "small",
   동: "dong",
   구: "gu"
 } as const;
@@ -37,7 +37,7 @@ const useRegionAnalysis = () => {
 
   const saveData = (section: string, data: RegionStatistics[]) => {
     switch (section) {
-      case "시":
+      case "소구역":
         setSmallSectionData(data);
         break;
       case "동":
