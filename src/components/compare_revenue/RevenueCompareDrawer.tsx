@@ -3,53 +3,26 @@ import styled from "styled-components";
 import mapStore from "../../store/mapStore";
 import isBetween from "dayjs/plugin/isBetween";
 import dayjs from "dayjs";
-import { useState } from "react";
-import RegionInfo from "./RegionInfo";
-import RevenuInfo from "./chart/RevenueInfo";
 import Loading from "../common/Loading";
-import BaseToggle from "../common/toggle/BaseToggle";
+import RevenuInfo from "../medi_map/chart/RevenueInfo";
 import { useDrawerData } from "../../hooks/useDrawerData";
 dayjs.extend(isBetween);
 
-const TOGGLEOPTION = ["지역", "매출", "전체"];
-const StatisticsDrawer = () => {
-  const { region, isOpenDrawer, handleIsDrawerOpen } = mapStore();
+const RevenueCompareDrawer = () => {
+  const { isOpenDrawer, drawerDate1, drawerDate2, handleIsDrawerOpen } =
+    mapStore();
   const {
-    regionInfo,
-    statsData,
-    regionPrivate,
+    firstRegionPrivate,
+    secondRegionPrivate,
     isPending,
     areaName,
     formatDataForAverageRevenue,
     formatDataForRevenueTrend,
-    barFormatData
-  } = useDrawerData(false);
+    barFormatData,
+    comparisonStatsData
+  } = useDrawerData(true);
 
-  const [toggleValue, setToggleValue] = useState<string>("지역");
   const renderContent = () => {
-    if (!regionInfo) return null;
-    if (toggleValue === "지역")
-      return <RegionInfo data={regionInfo} region={region} />;
-    if (toggleValue === "매출") {
-      return isPending ? (
-        <Loading />
-      ) : (
-        <RevenuInfo
-          statsData={statsData}
-          revenueTrend={regionPrivate?.cost_by_date}
-          dailyRevenue={regionPrivate?.average_cost_per_visit_by_date}
-          ageGroups={regionPrivate?.patient_count_by_age_group}
-          formatDataForRevenueTrend={() =>
-            formatDataForRevenueTrend(regionPrivate)
-          }
-          formatDataForAverageRevenue={() =>
-            formatDataForAverageRevenue(regionPrivate)
-          }
-          barFormatData={() => barFormatData(regionPrivate)}
-        />
-      );
-    }
-
     return isPending ? (
       <Loading />
     ) : (
@@ -69,9 +42,26 @@ const StatisticsDrawer = () => {
               backgroundColor: "#f0f2f5"
             }}
           >
-            <ChartTitleStyle>지역 데이터</ChartTitleStyle>
+            <ChartTitleStyle>
+              {dayjs(drawerDate1?.startDate).format("YYYY-MM-DD") +
+                " ~ " +
+                dayjs(drawerDate1?.endDate).format("YYYY-MM-DD")}
+            </ChartTitleStyle>
           </div>
-          <RegionInfo data={regionInfo} region={region} />
+          <RevenuInfo
+            disabledCompare={true}
+            statsData={comparisonStatsData?.first}
+            revenueTrend={firstRegionPrivate?.cost_by_date}
+            dailyRevenue={firstRegionPrivate?.average_cost_per_visit_by_date}
+            ageGroups={firstRegionPrivate?.patient_count_by_age_group}
+            formatDataForRevenueTrend={() =>
+              formatDataForRevenueTrend(firstRegionPrivate)
+            }
+            formatDataForAverageRevenue={() =>
+              formatDataForAverageRevenue(firstRegionPrivate)
+            }
+            barFormatData={() => barFormatData(firstRegionPrivate)}
+          />
         </div>
         <div
           style={{
@@ -88,21 +78,25 @@ const StatisticsDrawer = () => {
               backgroundColor: "#f0f2f5"
             }}
           >
-            <ChartTitleStyle>매출 데이터</ChartTitleStyle>
+            <ChartTitleStyle>
+              {dayjs(drawerDate2?.startDate).format("YYYY-MM-DD") +
+                " ~ " +
+                dayjs(drawerDate2?.endDate).format("YYYY-MM-DD")}
+            </ChartTitleStyle>
           </div>
 
           <RevenuInfo
-            statsData={statsData}
-            revenueTrend={regionPrivate?.cost_by_date}
-            dailyRevenue={regionPrivate?.average_cost_per_visit_by_date}
-            ageGroups={regionPrivate?.patient_count_by_age_group}
+            statsData={comparisonStatsData?.second}
+            revenueTrend={secondRegionPrivate?.cost_by_date}
+            dailyRevenue={secondRegionPrivate?.average_cost_per_visit_by_date}
+            ageGroups={secondRegionPrivate?.patient_count_by_age_group}
             formatDataForRevenueTrend={() =>
-              formatDataForRevenueTrend(regionPrivate)
+              formatDataForRevenueTrend(secondRegionPrivate)
             }
             formatDataForAverageRevenue={() =>
-              formatDataForAverageRevenue(regionPrivate)
+              formatDataForAverageRevenue(secondRegionPrivate)
             }
-            barFormatData={() => barFormatData(regionPrivate)}
+            barFormatData={() => barFormatData(secondRegionPrivate)}
           />
         </div>
       </div>
@@ -111,7 +105,7 @@ const StatisticsDrawer = () => {
 
   return (
     <Drawer
-      width={toggleValue === "전체" ? "70rem" : "39rem"}
+      width={"70rem"}
       placement="right"
       onClose={() => handleIsDrawerOpen(false)}
       styles={{
@@ -128,14 +122,6 @@ const StatisticsDrawer = () => {
       }}
       open={isOpenDrawer}
     >
-      <ToggleContainer>
-        <BaseToggle
-          options={TOGGLEOPTION}
-          selected={toggleValue}
-          onChange={(val) => setToggleValue(val)}
-        />
-      </ToggleContainer>
-
       <div style={{ padding: "0.8rem 0rem" }}>
         <AddressTitleStyle>{areaName}</AddressTitleStyle>
       </div>
@@ -144,13 +130,7 @@ const StatisticsDrawer = () => {
   );
 };
 
-export default StatisticsDrawer;
-
-const ToggleContainer = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-`;
+export default RevenueCompareDrawer;
 
 const AddressTitleStyle = styled.span`
   font-size: 1.5rem;

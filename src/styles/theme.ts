@@ -21,6 +21,7 @@ const colors = {
   white: "#ffffff",
   white01: "#FAFAFB",
   gray00: "#F9FAFA",
+  gray0001: "#F5F6F6",
   gray01: "#F1F1F2",
   gray02: "#E7E7E8",
   gray03: "#D3D4D5",

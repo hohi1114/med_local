@@ -15,15 +15,25 @@ interface StatsBoxProps {
   title: string;
   data: string;
   diffRateData?: number | null;
+  disabledCompare?: boolean;
 }
 
-const StatsBox = ({ title, data, diffRateData }: StatsBoxProps) => {
-  const fontSize = data.length >= 15 ? 1.3 : 1.5;
+const StatsBox = ({
+  title,
+  data,
+  diffRateData,
+  disabledCompare
+}: StatsBoxProps) => {
+  const fontSize = data?.length >= 15 ? 1.3 : 1.5;
   return (
-    <StatsBoxContainer isDecreased={diffRateData ? diffRateData < 0 : false}>
+    <StatsBoxContainer
+      isDecreased={diffRateData ? diffRateData < 0 : false}
+      disabledCompare={disabledCompare}
+    >
       <TitleContainer>
         <ChipTextStyle>{title}</ChipTextStyle>
-        {diffRateData !== 0 &&
+        {!disabledCompare &&
+          diffRateData !== 0 &&
           diffRateData !== null &&
           diffRateData !== undefined && (
             <DiffRateContainer>
@@ -52,10 +62,16 @@ const StatsBox = ({ title, data, diffRateData }: StatsBoxProps) => {
 export default StatsBox;
 
 const StatsBoxContainer = styled.div.withConfig({
-  shouldForwardProp: (prop) => prop !== "isDecreased"
-})<{ isDecreased: boolean }>`
+  shouldForwardProp: (prop) =>
+    prop !== "isDecreased" && prop !== "disabledCompare"
+})<{ isDecreased: boolean; disabledCompare?: boolean }>`
   background-color: ${(props) =>
-    props.isDecreased ? props.theme.colors.pink01 : props.theme.colors.blue01};
+    props.disabledCompare
+      ? props.theme.colors.gray0001
+      : props.isDecreased
+      ? props.theme.colors.pink01
+      : props.theme.colors.blue01};
+
   border-radius: 16px;
   padding: 1.5rem 0.8rem 1.5rem 1.5rem;
   display: flex;

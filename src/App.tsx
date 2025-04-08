@@ -4,7 +4,6 @@ import DashBoardPage from "./pages/DashBoardPage";
 import BaseLayout from "./components/common/layout/BaseLayout";
 import StatisticsByRegionPage from "./pages/StatisticsByRegionPage";
 import UpdateDataPage from "./pages/UpdateDataPage.tsx";
-import MediMapPage from "./pages/MediMapPage";
 import NaverScriptLoader from "./utils/NaverScriptLoader.tsx";
 import SettingPage from "./pages/SettingPage.tsx";
 import LoginPage from "./pages/LoginPage.tsx";
@@ -14,6 +13,8 @@ import useUpdateUserInfo from "./hooks/useUpdateUserInfo.tsx";
 import MembershipChangePage from "./pages/MembershipChangePage.tsx";
 import CardManagementPage from "./pages/CardManagementPage.tsx";
 import PaymentHistoryPage from "./pages/PaymentHistoryPage.tsx";
+import CompareAvenuePage from "./pages/CompareAvenuePage.tsx";
+import MapByRegionPage from "./pages/MapByRegionPage.tsx";
 
 function App() {
   const { fetchUserInfo } = useUpdateUserInfo();
@@ -37,7 +38,7 @@ function App() {
             path="map"
             element={
               <NaverScriptLoader>
-                <MediMapPage />
+                <MapByRegionPage />
               </NaverScriptLoader>
             }
           />
@@ -52,6 +53,14 @@ function App() {
           <Route path="membership-change" element={<MembershipChangePage />} />
           <Route path="manage-card" element={<CardManagementPage />} />
           <Route path="payment-history" element={<PaymentHistoryPage />} />
+          <Route
+            path="compare-avenue"
+            element={
+              <NaverScriptLoader>
+                <CompareAvenuePage />
+              </NaverScriptLoader>
+            }
+          />
         </Route>
       </Routes>
     </BrowserRouter>

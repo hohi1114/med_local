@@ -7,7 +7,7 @@ import { postRefreshToken } from "./apis";
 
 //axios instance
 export const authApi = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: import.meta.env.VITE_API_URL
 });
 
 authApi.defaults.headers.common["Content-Type"] = "application/json";
@@ -69,10 +69,13 @@ authApi.interceptors.response.use(
   async (error) => {
     const {
       config,
-      response: { status },
+      response: { status }
     } = error;
     const accessToken = getCookie("accessToken");
-    if (!accessToken) return logout();
+    if (window.location.pathname !== "/login" && !accessToken) {
+      logout();
+    }
+
     if (status === 401) {
       const originalRequest = config;
       if (isTokenExpired(accessToken)) {

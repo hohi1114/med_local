@@ -1,3 +1,5 @@
+import { DashBoard } from "./dashboard";
+
 declare global {
   interface Window {
     naver: any;
@@ -54,7 +56,7 @@ type RegionData = {
   total_avg_age: number;
   population: number;
   total_cost?: number;
-  patient_locations?: Point[];
+  patient_locations?: Point;
   male_avg_age: number;
   male_population: number;
   female_avg_age: number;
@@ -65,6 +67,8 @@ type RegionData = {
   population_by_day: PopulationByDay;
   dong_population?: number | null;
   dong?: string;
+  total_costA?: number;
+  total_costB?: number;
 };
 
 export interface AgeGroupPopulation {
@@ -86,3 +90,10 @@ export interface RegionEtcData {
   total_cost: number;
   patient_location: Point[];
 }
+
+export interface RegionPrivateData extends DashBoard {
+  average_cost_per_patient: number;
+  total_patient_count: number;
+}
+
+export type RegionLevel = "small" | "dong" | "gu";

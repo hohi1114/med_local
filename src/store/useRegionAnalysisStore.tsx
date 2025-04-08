@@ -20,7 +20,7 @@ type RegionAnalysisStore = {
 };
 
 export const useRegionAnalysisStore = create<RegionAnalysisStore>((set) => ({
-  localSection: "시",
+  localSection: "소구역",
   smallSectionData: [],
   dongSectionData: [],
   guSectionData: [],

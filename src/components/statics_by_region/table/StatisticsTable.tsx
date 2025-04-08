@@ -24,7 +24,7 @@ const StatisticsTable: FC<DashBoardTableProps> = ({ isLoading }) => {
 
   useEffect(() => {
     const dataMap = {
-      시: smallSectionData,
+      소구역: smallSectionData,
       동: dongSectionData,
       구: guSectionData
     };

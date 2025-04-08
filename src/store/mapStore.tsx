@@ -8,6 +8,8 @@ interface IMapStore {
   areaName: string;
   selectedRegionData: RegionData | null;
   drawerDate: DateRange | null;
+  drawerDate1: DateRange | null;
+  drawerDate2: DateRange | null;
   isOpenDrawer: boolean;
   dongPolygons: Polygon[];
   dongNmaeFroSmall: string | null;
@@ -18,8 +20,10 @@ interface IMapStore {
   setRegion: (region: string) => void;
   setAreaName: (areaName: string) => void;
   setDrawerDate: (drawerDate: DateRange) => void;
+  setDrawerDate1: (drawerDate: DateRange) => void;
+  setDrawerDate2: (drawerDate: DateRange) => void;
   handleIsDrawerOpen: (isDrawerOpen: boolean) => void;
-  setSelctedRegionData: (data: RegionData) => void;
+  setSelectedRegionData: (data: RegionData) => void;
   setDongPolygons: (dongPolygons: Polygon[]) => void;
   setDongNameForSmall: (dongNmaeFroSmall: string | null) => void;
   setBoundArea: (boundArea: RegionData[]) => void;
@@ -27,6 +31,7 @@ interface IMapStore {
   setPatients: (
     patients: { areaName: string; patients: PatientData[] }[]
   ) => void;
+  clearMap: () => void;
 }
 
 const mapStore = create<IMapStore>((set) => ({
@@ -34,6 +39,8 @@ const mapStore = create<IMapStore>((set) => ({
   areaName: "",
   selectedRegionData: null,
   drawerDate: null,
+  drawerDate1: null,
+  drawerDate2: null,
   isOpenDrawer: false,
   dongPolygons: [],
   dongNmaeFroSmall: null,
@@ -44,14 +51,29 @@ const mapStore = create<IMapStore>((set) => ({
   setRegion: (region) => set({ region }),
   setAreaName: (areaName) => set({ areaName }),
   setDongNameForSmall: (dongNmaeFroSmall) => set({ dongNmaeFroSmall }),
-  setSelctedRegionData: (selectedRegionData: RegionData) =>
+  setSelectedRegionData: (selectedRegionData: RegionData) =>
     set({ selectedRegionData }),
   setLoading: (loading: boolean) => set({ loading }),
   setBoundArea: (boundArea) => set({ boundArea }),
   setPatients: (patients) => set({ patients }),
   setDrawerDate: (drawerDate) => set({ drawerDate }),
+  setDrawerDate1: (drawerDate1) => set({ drawerDate1 }),
+  setDrawerDate2: (drawerDate2) => set({ drawerDate2 }),
   handleIsDrawerOpen: (isOpenDrawer) => set({ isOpenDrawer }),
-  setDongPolygons: (dongPolygons: Polygon[]) => set({ dongPolygons })
+  setDongPolygons: (dongPolygons: Polygon[]) => set({ dongPolygons }),
+  clearMap: () =>
+    set({
+      region: "small",
+      areaName: "",
+      selectedRegionData: null,
+      drawerDate: null,
+      isOpenDrawer: false,
+      dongPolygons: [],
+      dongNmaeFroSmall: null,
+      boundArea: null,
+      loading: false,
+      patients: []
+    })
 }));
 
 export default mapStore;

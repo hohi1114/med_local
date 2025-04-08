@@ -137,10 +137,9 @@ export default function DashBoardPage() {
                 xField="date"
                 yField="매출액"
                 labelFormatterY={(v: number) => `${v / 1000}K`}
-                labelFormatterX={(v: string) => dayjs(v).format("MM/DD")}
                 formatData={chartFormatData}
                 height={350}
-                number_of_points={10}
+                limitDateXLength={30}
               />
             </Card>
           </CardGrid>

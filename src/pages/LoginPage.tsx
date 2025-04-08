@@ -56,22 +56,10 @@ const LoginPage = () => {
     onError: (err: AxiosError) =>
       alert(
         (err.response?.data as { error?: string })?.error ||
-        "License activation failed"
+          "License activation failed"
       )
   });
 
-  /*
-  //every time 
-  const { mutate: postVerifyMutation } = useMutation({
-    mutationFn: async (hardwareNumber: string) =>
-      await postVerifyCode(hardwareNumber),
-    onSuccess: async () => {
-      const { data } = await loginRefetch();
-      setUser(data as User);
-      navigate("/dashboard");
-    }
-  });
-*/
   const loginMutation = useMutation({
     mutationFn: (userData: LoginParams) => postLogin(userData),
     onSuccess: async (data) => {

@@ -13,8 +13,8 @@ export const MENUITEMS: MenuItem[] = [
     )
   },
   {
-    key: "compare-chart",
-    label: "기간 비교 분석",
+    key: "compare-avenue",
+    label: "기간별 매출 리포트",
     icon: (
       <img
         src="/images/calendar.svg"
@@ -41,7 +41,6 @@ export const MENUITEMS: MenuItem[] = [
   },
   {
     key: "update_data",
-    // 2) Provide a custom label with a button
     label: (
       <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
         <span>데이터 업데이트</span>
