@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import styled from "styled-components";
 import BaseButton from "../common/button/BaseButton";
+import { dimBackgroundStyle } from "../../styles/highlight";
 
 interface TutorialProps {
   steps: any;
@@ -94,14 +95,7 @@ const Tutorial = ({
 export default Tutorial;
 
 const DimBackground = styled.div`
-  display: flex;
-  height: 100%;
-  width: 100%;
-  background-color: rgba(0, 0, 0, 0.2);
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 80;
+  ${dimBackgroundStyle}
 `;
 
 const TutorialBox = styled.div<{ left: string }>`

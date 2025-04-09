@@ -1,4 +1,5 @@
 import styled from "styled-components";
+import { tutorialHighlight } from "../../styles/highlight";
 
 type CardWithChangeProps = {
   title: string;
@@ -57,6 +58,7 @@ const Card = styled.div`
   text-align: center;
   border-radius: 5;
   border: 1px solid ${(props) => props.theme.colors.gray01};
+  ${tutorialHighlight}
 `;
 
 const Title = styled.span`

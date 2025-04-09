@@ -14,6 +14,7 @@ import { compareAvenueTutorialSteps } from "../components/tutorial/TutorialData"
 import { useNavigate } from "react-router-dom";
 import Tutorial from "../components/tutorial/Tutorial";
 import useTutorial from "../hooks/useTutorial";
+import { tutorialHighlightWithBlink } from "../styles/highlight";
 
 function CompareAvenuePage() {
   const tutorialRefs = {
@@ -173,20 +174,7 @@ const DatePickerContainer = styled.div`
   width: 100%;
 
   &.tutorial-highlight {
-    position: relative;
-    z-index: 100;
-    box-shadow: 0 0 0 5px rgba(24, 144, 255, 0.5);
-    border-radius: 3px;
-    animation: highlight-blink 1.2s ease-in-out infinite;
-  }
-  @keyframes highlight-blink {
-    0%,
-    100% {
-      box-shadow: 0 0 0 5px rgba(24, 144, 255, 0.5);
-    }
-    50% {
-      box-shadow: 0 0 0 5px rgba(24, 144, 255, 0.2);
-    }
+    ${tutorialHighlightWithBlink}
   }
 `;
 
