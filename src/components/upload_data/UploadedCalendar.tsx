@@ -23,9 +23,7 @@ const UploadedCalendar = ({ progress }: UploadedCalendarProps) => {
   /** Find updated dates for disabled */
   const isDisabledDate = useMemo(() => {
     if (!updatedDates) return;
-    const updatedDateStrings = updatedDates
-      .filter((date) => !dayjs(date).isSame(dayjs(), "day")) // 오늘 제외
-      .map((date) => dayjs(date).format("YYYY-MM-DD"));
+    const updatedDateStrings = updatedDates.slice(1);
 
     return (currentDate: Dayjs) => {
       return updatedDateStrings.some((date) =>
