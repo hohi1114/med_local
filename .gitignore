@@ -29,7 +29,6 @@ release/
 dist-electron/
 node_modules/
 *.env.*
-dist/
 
 out/
 package-lock.json
