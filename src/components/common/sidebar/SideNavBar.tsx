@@ -70,6 +70,7 @@ const SidebarContainer = styled.div<{ collapsed: boolean }>`
   box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
   background-color: ${(props) => props.theme.colors.white};
   transition: width 0.3s ease;
+  z-index: 10000000;
 `;
 
 const LogoContainer = styled.div<{ collapsed: boolean }>`

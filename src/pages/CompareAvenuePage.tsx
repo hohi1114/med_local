@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import dayjs from "dayjs";
 import useRangeDurationDatePicker from "../hooks/useRangeDurationDatePicker";
 import DurationDatePicker from "../components/common/datepicker/DurationDatePicker";
@@ -9,8 +9,24 @@ import { useNaverMapCore } from "../hooks/useNaverMapCore";
 import Loading from "../components/common/Loading";
 import userStore from "../store/userStore";
 import RequireSubscribe from "../components/common/RequireSubscribe";
+import { Space } from "antd";
+import { compareAvenueTutorialSteps } from "../components/tutorial/TutorialData";
+import { useNavigate } from "react-router-dom";
+import Tutorial from "../components/tutorial/Tutorial";
+import useTutorial from "../hooks/useTutorial";
 
 function CompareAvenuePage() {
+  const tutorialRefs = {
+    tutorialRef1: useRef(null),
+    tutorialRef2: useRef(null)
+  };
+  const navigate = useNavigate();
+  const [showTutorial, setShowTutorial] = useState(true);
+  const { tutorialStep, setTutorialStep, nextStep } = useTutorial({
+    steps: tutorialRefs
+  });
+
+  const tutorialSteps = compareAvenueTutorialSteps(tutorialRefs);
   const { isInActiveUser, lastedUpdatedDate } = userStore();
   const { loading, setDrawerDate1, setDrawerDate2, handleIsDrawerOpen } =
     mapStore();
@@ -69,24 +85,64 @@ function CompareAvenuePage() {
       {(isFetching || loading) && <Loading />}
       <MapContainer ref={mapElement}>
         <Wrapper>
-          <DatePickerContainer>
-            <DateTitle>기준 기간</DateTitle>
-            <DurationDatePicker
-              value={dateRange1}
-              onChange={handleDateRangeChange1}
-            />
+          <Space>
+            <DatePickerContainer>
+              <DatePickerContainer ref={tutorialRefs.tutorialRef1}>
+                <DateTitle>기준 기간</DateTitle>
+                <DurationDatePicker
+                  value={dateRange1}
+                  onChange={handleDateRangeChange1}
+                />
+              </DatePickerContainer>
 
-            <DateTitle>비교 기간</DateTitle>
-            <DurationDatePicker
-              value={dateRange2}
-              onChange={handleDateRangeChange2}
-            />
+              <DatePickerContainer ref={tutorialRefs.tutorialRef2}>
+                <DateTitle>비교 기간</DateTitle>
+                <DurationDatePicker
+                  value={dateRange2}
+                  onChange={handleDateRangeChange2}
+                />
+              </DatePickerContainer>
 
-            <SubText>* 두 기간의 대한 매출 데이터를 비교합니다.</SubText>
-          </DatePickerContainer>
+              <SubText>* 두 기간의 대한 매출 데이터를 비교합니다.</SubText>
+            </DatePickerContainer>
+          </Space>
         </Wrapper>
       </MapContainer>
-      <RevenueCompareDrawer />
+      <RevenueCompareDrawer showTutorial={showTutorial} />
+      {/**튜토리얼 */}
+      {tutorialSteps[tutorialStep].specialBackground && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            zIndex: 80,
+            cursor: "pointer",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center"
+          }}
+        >
+          <img
+            onClick={() => {
+              handleIsDrawerOpen(true);
+              nextStep();
+            }}
+            src={"/images/compareAvenueTutorialMap.png"}
+            alt="매출 증감 지도 튜토리얼"
+          />
+        </div>
+      )}
+
+      <Tutorial
+        steps={tutorialSteps}
+        tutorialStep={tutorialStep}
+        setTutorialStep={setTutorialStep}
+        onComplete={() => navigate("/map")}
+        showTutorial={showTutorial}
+      />
     </>
   );
 }
@@ -113,8 +169,25 @@ const Wrapper = styled.div`
 const DatePickerContainer = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.8rem;
   width: 100%;
+
+  &.tutorial-highlight {
+    position: relative;
+    z-index: 100;
+    box-shadow: 0 0 0 5px rgba(24, 144, 255, 0.5);
+    border-radius: 3px;
+    animation: highlight-blink 1.2s ease-in-out infinite;
+  }
+  @keyframes highlight-blink {
+    0%,
+    100% {
+      box-shadow: 0 0 0 5px rgba(24, 144, 255, 0.5);
+    }
+    50% {
+      box-shadow: 0 0 0 5px rgba(24, 144, 255, 0.2);
+    }
+  }
 `;
 
 const DateTitle = styled.span`

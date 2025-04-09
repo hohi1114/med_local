@@ -47,6 +47,7 @@ const DurationDatePicker: React.FC<DurationDatePickerProps> = ({
 
   return (
     <RangePicker
+      style={{ zIndex: 100 }}
       {...props}
       disabledDate={isFreetrialUser ? disabledDateForFreetrial : undefined}
       format={"YYYY-MM-DD"}
