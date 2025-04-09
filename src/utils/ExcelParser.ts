@@ -214,6 +214,7 @@ export async function parsePatientListEgis(
   files: FileList
 ): Promise<PatientListEgis[]> {
   const data: PatientListEgis[] = [];
+  const currentYear = new Date().getFullYear();
 
   for (const file of Array.from(files)) {
     const buffer = await file.arrayBuffer();
@@ -232,9 +233,42 @@ export async function parsePatientListEgis(
     for (const row of rows) {
       if (row.length < 8) continue;
 
+      // Calculate age from resident registration number
+      let age = 0;
+      const idNumber = row[2] ? String(row[2]).trim() : "";
+      console.log(idNumber);
+
+      if (idNumber && idNumber.length >= 8) {
+        // Extract birth year (first two digits)
+        const yearPrefix = idNumber.substring(0, 2);
+        // Extract gender/century code (first digit after hyphen or 7th character)
+        const genderCode = idNumber.includes("-")
+          ? idNumber.split("-")[1]?.charAt(0)
+          : idNumber.charAt(6);
+
+        if (yearPrefix && genderCode) {
+          let birthYear: number;
+
+          // Determine century based on gender code
+          if (genderCode === "1" || genderCode === "2") {
+            // Born in 1900s
+            birthYear = 1900 + parseInt(yearPrefix);
+          } else if (genderCode === "3" || genderCode === "4") {
+            // Born in 2000s
+            birthYear = 2000 + parseInt(yearPrefix);
+          } else {
+            // Default to 1900s if gender code is invalid
+            birthYear = 1900 + parseInt(yearPrefix);
+          }
+
+          age = currentYear - birthYear;
+        }
+      }
+
       data.push({
         chartNumber: Number(row[0]), // 1st column
         address: row[7] ? String(row[7]) : "N/A", // 8th column
+        age: age, // Add the calculated age
       });
     }
   }
@@ -246,7 +280,7 @@ export async function parsePatientListEgis(
       item.address.trim().length > 0 // ensure it's not just whitespace
   );
 }
-
+/*
 export async function parsePatientIncomeEgis(
   files: FileList
 ): Promise<PatientIncomeEgis[]> {
@@ -278,6 +312,7 @@ export async function parsePatientIncomeEgis(
 
   return data.filter((item) => !isNaN(item.chartNumber) && !isNaN(item.age));
 }
+*/
 
 export const parseDaysFilesDentweb = async (
   files: FileList

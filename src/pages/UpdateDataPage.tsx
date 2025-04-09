@@ -4,7 +4,6 @@ import {
   parseDaysFilesEuisarang,
   parsePlaceFilesEuisarang,
   parseDailyIncomeEgis,
-  parsePatientIncomeEgis,
   parsePatientListEgis,
   parseDaysFilesDentweb,
   parsePlaceFilesDentWeb
@@ -31,7 +30,6 @@ const UpdateDataPage = () => {
   const [daysFiles, setDaysFiles] = useState<FileList | null>(null); // Euisarang
   const [placeFiles, setPlaceFiles] = useState<FileList | null>(null); // Euisarang & Egis
   const [dailyIncome, setDailyIncome] = useState<FileList | null>(null); // Egis
-  const [patient, setPatient] = useState<FileList | null>(null); // Egis
   const [progress, setProgress] = useState<number>(0);
   const [api, contextHolder] = notification.useNotification();
   const { isInActiveUser } = userStore();
@@ -219,7 +217,7 @@ const UpdateDataPage = () => {
 
 
   const handleProcessDataEgis = async (): Promise<void> => {
-    if (!placeFiles || !dailyIncome || !patient) {
+    if (!placeFiles || !dailyIncome) {
       openNotification("warning", "파일 누락", "모든 파일을 업로드해주세요.");
       return;
     }
@@ -230,12 +228,13 @@ const UpdateDataPage = () => {
       // New parsing logic for Version 2 (assuming new parser functions exist)
       const dailyIncomeData = await parseDailyIncomeEgis(dailyIncome);
       const patientListData = await parsePatientListEgis(placeFiles);
-      const patientIncomeData = await parsePatientIncomeEgis(patient);
+      //const patientIncomeData = await parsePatientIncomeEgis(patient);
 
+      console.log(patientListData);
 
       setProgress(40);
 
-      const uploadPromise = uploadDataToBackendEgis(dailyIncomeData, patientListData, patientIncomeData);
+      const uploadPromise = uploadDataToBackendEgis(dailyIncomeData, patientListData);
 
       openNotification(
         "success",
@@ -301,7 +300,7 @@ const UpdateDataPage = () => {
     ) {
       return !daysFiles || !placeFiles || progress > 0;
     }
-    return !dailyIncome || !placeFiles || !patient || progress > 0;
+    return !dailyIncome || !placeFiles || progress > 0;
   };
 
   return (
@@ -357,10 +356,6 @@ const UpdateDataPage = () => {
               <FileUpload
                 title="환자 목록 업로드"
                 onFilesUploaded={(files) => setPlaceFiles(files)}
-              />
-              <FileUpload
-                title="환자별 수입 현황 업로드"
-                onFilesUploaded={(files) => setPatient(files)}
               />
             </>
           )}

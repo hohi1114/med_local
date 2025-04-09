@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { Calendar } from "antd";
-import dayjs from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 import styled from "styled-components";
 
 import useUpdateUserInfo from "../../hooks/useUpdateUserInfo";
@@ -22,15 +22,11 @@ const UploadedCalendar = ({ progress }: UploadedCalendarProps) => {
 
   /** Find updated dates for disabled */
   const isDisabledDate = useMemo(() => {
-    if (!updatedDates || (updatedDates && updatedDates.length === 0))
-      return () => false;
+    if (!updatedDates) return;
+    const updatedDateStrings = updatedDates.slice(1);
 
-    const updatedDatedWithoutToday = updatedDates.filter((date) => {
-      return !dayjs(date).isSame(dayjs(), "day");
-    });
-
-    return (currentDate: string | Date) => {
-      return updatedDatedWithoutToday.some((date) =>
+    return (currentDate: Dayjs) => {
+      return updatedDateStrings.some((date) =>
         dayjs(date).isSame(dayjs(currentDate), "day")
       );
     };

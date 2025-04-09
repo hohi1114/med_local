@@ -25,11 +25,11 @@ package-lock.json
 *.sw?
 
 # Ignore Electron build output
+.env
 release/
 dist-electron/
 node_modules/
 *.env.*
-dist/
 
 out/
 package-lock.json
