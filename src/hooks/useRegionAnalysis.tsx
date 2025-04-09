@@ -6,6 +6,7 @@ import { RegionStatistics } from "../types/region-analysis";
 import { useRegionAnalysisStore } from "../store/useRegionAnalysisStore";
 import { regionAnalysisParams } from "../types/params";
 import userStore from "../store/userStore";
+import dayjs from "dayjs";
 
 export const LOCAL_SECTIONS_MAP = {
   소구역: "small",
@@ -17,7 +18,7 @@ export type LocalSectionKey = keyof typeof LOCAL_SECTIONS_MAP;
 
 const useRegionAnalysis = () => {
   const { dateRange, handleDateRangeChange } = useRangeDurationDatePicker();
-  const { isInActiveUser, user } = userStore();
+  const { isInActiveUser, user, lastedUpdatedDate } = userStore();
   const {
     setSmallSectionData,
     setGuSectionData,
@@ -83,10 +84,20 @@ const useRegionAnalysis = () => {
   };
 
   useEffect(() => {
-    if (user?.user_id && !isInActiveUser) {
+    if (user?.user_id && !isInActiveUser && lastedUpdatedDate) {
       fetchFirstRegion();
     }
   }, [dateRange, user, isInActiveUser]);
+
+  useEffect(() => {
+    if (lastedUpdatedDate && lastedUpdatedDate.length > 0) {
+      const start = dayjs(lastedUpdatedDate)
+        .subtract(1, "month")
+        .format("YYYY-MM-DD");
+      const end = dayjs(lastedUpdatedDate).format("YYYY-MM-DD");
+      handleDateRangeChange({ startDate: start, endDate: end });
+    }
+  }, [lastedUpdatedDate]);
 
   //SeclectBox Handler
   const handleLocalSectionChange = (value: LocalSectionKey) => {
