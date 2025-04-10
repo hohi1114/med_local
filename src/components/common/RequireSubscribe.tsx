@@ -2,21 +2,29 @@ import { Card } from "antd";
 import styled from "styled-components";
 import BaseButton from "./button/BaseButton";
 import { useNavigate } from "react-router-dom";
+import userStore from "../../store/userStore";
 
 const RequireSubscribe = () => {
   const navigate = useNavigate();
+  const { startTutorial, isInActiveUser } = userStore();
   return (
-    <Overlay>
-      <CardContainer>
-        <CardTitle>구독이 필요한 서비스입니다</CardTitle>
-        <CardDescription>
-          더 많은 기능과 데이터를 활용하기 위해 구독이 필요합니다.
-        </CardDescription>
-        <SubscribeButton type="button" onClick={() => navigate("/membership")}>
-          구독하러 가기
-        </SubscribeButton>
-      </CardContainer>
-    </Overlay>
+    !startTutorial &&
+    isInActiveUser && (
+      <Overlay>
+        <CardContainer>
+          <CardTitle>구독이 필요한 서비스입니다</CardTitle>
+          <CardDescription>
+            더 많은 기능과 데이터를 활용하기 위해 구독이 필요합니다.
+          </CardDescription>
+          <SubscribeButton
+            type="button"
+            onClick={() => navigate("/membership")}
+          >
+            구독하러 가기
+          </SubscribeButton>
+        </CardContainer>
+      </Overlay>
+    )
   );
 };
 

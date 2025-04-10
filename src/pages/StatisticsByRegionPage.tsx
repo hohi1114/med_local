@@ -35,7 +35,7 @@ export default function StatisticsByRegionPage() {
   return (
     <>
       {startTutorial && <FullDimOverlay />}
-      {!startTutorial && isInActiveUser && <RequireSubscribe />}
+      <RequireSubscribe />
       <ContentHeader title="지역 별 통계" />
       <DashBoardContainer>
         {startTutorial && (

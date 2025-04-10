@@ -36,11 +36,11 @@ export default function DashBoardPage() {
 
   const {
     user,
-    isInActiveUser,
     fetchingUserLoading,
     lastedUpdatedDate,
     startTutorial,
-    hasGuided
+    hasGuided,
+    needFreeTrial
   } = userStore();
 
   const navigate = useNavigate();
@@ -90,13 +90,11 @@ export default function DashBoardPage() {
     <>
       {(startTutorial || !hasGuided) && <FullDimOverlay />}
       <TutorialStartModal />
-      {!startTutorial && isInActiveUser && <RequireSubscribe />}
+      <RequireSubscribe />
       <ContentHeader title="대시보드" />
-      {!fetchingUserLoading &&
-        !user?.free &&
-        user?.is_free_trial === false &&
-        !startTutorial &&
-        hasGuided && <FreeTrialModal />}
+      {!fetchingUserLoading && needFreeTrial && !startTutorial && hasGuided && (
+        <FreeTrialModal />
+      )}
       {isLoading && <Loading content={LOADINGCONTENT} />}
       {dashboardInfoData && (
         <DashBoardContainer>
@@ -331,6 +329,7 @@ const GuideDescription = styled.div`
   text-align: center;
   max-width: 80%;
   color: ${(props) => props.theme.colors.white};
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2);
 `;
 
 const CloseGuideButton = styled(BaseButton)`

@@ -88,7 +88,7 @@ function CompareAvenuePage() {
 
   return (
     <>
-      {!startTutorial && isInActiveUser && <RequireSubscribe />}
+      <RequireSubscribe />
       {(isFetching || loading) && <Loading />}
       <MapContainer ref={mapElement}>
         <Wrapper>

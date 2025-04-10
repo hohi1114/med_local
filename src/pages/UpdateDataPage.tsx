@@ -295,7 +295,7 @@ const UpdateDataPage = () => {
 
   return (
     <>
-      {!startTutorial && isInActiveUser && <RequireSubscribe />}
+      <RequireSubscribe />
       {progress > 0 && progress < 100 && (
         <Loading content="데이터를 안전하게 처리중입니다." />
       )}

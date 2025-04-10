@@ -19,7 +19,7 @@ export const compareAvenueTutorialSteps = (refs: any) => [
       "선택한 두 기간의 매출 증감률이 지도에 색상으로 표시돼요. 빨간색은 감소, 파란색은 증가를 의미합니다.",
     targetRef: null,
     specialBackground: true,
-    boxPosition: "50%"
+    boxPosition: "30%"
   },
   {
     title: "기간별 상세 리포트",
