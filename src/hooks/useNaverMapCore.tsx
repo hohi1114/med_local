@@ -21,7 +21,7 @@ export function useNaverMapCore({
   getPolygonFillColor,
   getPolygonHighlightColor
 }: UseNaverMapCoreOptions = {}) {
-  const { user } = userStore();
+  const { user, startTutorial } = userStore();
   const {
     drawerDate,
     drawerDate1,
@@ -84,14 +84,13 @@ export function useNaverMapCore({
     : hilightColor;
   const defaultColor = isComparison ? basicColor : color;
 
-  const tutorial = true;
   // Initialize map only once
   useEffect(() => {
     if (!mapElement.current || map || !user.location) return;
 
     const newMap = new window.naver.maps.Map(mapElement.current, {
       center: new window.naver.maps.LatLng(
-        tutorial
+        startTutorial
           ? new window.naver.maps.LatLng(37.5040117, 127.029943)
           : new window.naver.maps.LatLng(
               user?.location.lat,

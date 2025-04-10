@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import dayjs from "dayjs";
 import StatisticsDrawer from "../components/medi_map/StatisticsDrawer";
 import mapStore from "../store/mapStore";
@@ -22,11 +22,10 @@ function MapByRegionPage() {
   const navigate = useNavigate();
   const tutorialSteps = MapByRegionTutorialSteps(tutorialRefs);
   const { mapElement, isFetching } = useNaverMapCore();
-  const { isInActiveUser, lastedUpdatedDate } = userStore();
+  const { isInActiveUser, lastedUpdatedDate, startTutorial } = userStore();
   const { loading, setDrawerDate, handleIsDrawerOpen } = mapStore();
   const { dateRange, handleDateRangeChange } = useRangeDurationDatePicker();
 
-  const [showTutorial, setShowTutorial] = useState(true);
   const { tutorialStep, setTutorialStep, nextStep } = useTutorial({
     steps: tutorialRefs
   });
@@ -57,14 +56,31 @@ function MapByRegionPage() {
   }, [dateRange]);
 
   useEffect(() => {
-    if (tutorialStep === 3) {
+    if (tutorialStep === 6) {
       handleIsDrawerOpen(true);
     }
   }, [tutorialStep]);
 
+  const getImageBasedonTutorialStep = () => {
+    switch (tutorialStep) {
+      case 1:
+        return "/images/MapByRegionTutorialMap.png";
+      case 2:
+        return "/images/MapByRegionTutorialMap.png";
+      case 3:
+        return "/images/MapByRegionTutorial_small.png";
+      case 4:
+        return "/images/MapByRegionTutorial_dong.png";
+      case 5:
+        return "/images/MapByRegionTutorial_gu.png";
+      default:
+        return "/images/MapByRegionTutorialMap.png";
+    }
+  };
+
   return (
     <>
-      {isInActiveUser && <RequireSubscribe />}
+      {!startTutorial && isInActiveUser && <RequireSubscribe />}
       {(isFetching || loading) && <Loading />}
       <MapContainer ref={mapElement}>
         <Wrapper>
@@ -82,7 +98,7 @@ function MapByRegionPage() {
           </ContentBox>
         </Wrapper>
       </MapContainer>
-      <StatisticsDrawer showTutorial={showTutorial} />
+      <StatisticsDrawer showTutorial={startTutorial} />
       {tutorialSteps[tutorialStep].specialBackground && (
         <div
           style={{
@@ -103,7 +119,7 @@ function MapByRegionPage() {
               handleIsDrawerOpen(true);
               nextStep();
             }}
-            src={"/images/MapByRegionTutorialMap.png"}
+            src={getImageBasedonTutorialStep()}
             alt="MapByRegionTutorialMap"
           />
         </div>
@@ -112,8 +128,8 @@ function MapByRegionPage() {
         steps={tutorialSteps}
         tutorialStep={tutorialStep}
         setTutorialStep={setTutorialStep}
-        onComplete={() => navigate("/update_data")}
-        showTutorial={showTutorial}
+        onComplete={() => navigate("/statistics-by-region")}
+        showTutorial={startTutorial}
       />
     </>
   );
