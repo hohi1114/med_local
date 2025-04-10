@@ -22,13 +22,13 @@ function CompareAvenuePage() {
     tutorialRef2: useRef(null)
   };
   const navigate = useNavigate();
-  const [showTutorial, setShowTutorial] = useState(true);
+
   const { tutorialStep, setTutorialStep, nextStep } = useTutorial({
     steps: tutorialRefs
   });
 
   const tutorialSteps = compareAvenueTutorialSteps(tutorialRefs);
-  const { isInActiveUser, lastedUpdatedDate } = userStore();
+  const { isInActiveUser, lastedUpdatedDate, startTutorial } = userStore();
   const { loading, setDrawerDate1, setDrawerDate2, handleIsDrawerOpen } =
     mapStore();
   const { mapElement, isFetching } = useNaverMapCore({ isComparison: true });
@@ -80,9 +80,15 @@ function CompareAvenuePage() {
     if (dateRange2) setDrawerDate2(dateRange2);
   }, [dateRange2]);
 
+  useEffect(() => {
+    if (tutorialStep === 4) {
+      handleIsDrawerOpen(true);
+    }
+  }, [tutorialStep]);
+
   return (
     <>
-      {isInActiveUser && <RequireSubscribe />}
+      {!startTutorial && isInActiveUser && <RequireSubscribe />}
       {(isFetching || loading) && <Loading />}
       <MapContainer ref={mapElement}>
         <Wrapper>
@@ -109,7 +115,7 @@ function CompareAvenuePage() {
           </Space>
         </Wrapper>
       </MapContainer>
-      <RevenueCompareDrawer showTutorial={showTutorial} />
+      <RevenueCompareDrawer showTutorial={startTutorial} />
       {/**튜토리얼 */}
       {tutorialSteps[tutorialStep].specialBackground && (
         <div
@@ -142,7 +148,7 @@ function CompareAvenuePage() {
         tutorialStep={tutorialStep}
         setTutorialStep={setTutorialStep}
         onComplete={() => navigate("/map")}
-        showTutorial={showTutorial}
+        showTutorial={startTutorial}
       />
     </>
   );

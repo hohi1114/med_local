@@ -10,6 +10,8 @@ interface UserStore {
   fetchingUserLoading: boolean;
   updatedDates: string[] | null;
   lastedUpdatedDate: string | null;
+  hasGuided: boolean;
+  startTutorial: boolean;
 
   setUser: (user: User) => void;
   clearUser: () => void;
@@ -19,6 +21,8 @@ interface UserStore {
   setHasUserCard: (hasUserCard: boolean) => void;
   setUpdatedDates: (updatedDates: string[]) => void;
   setLastedUpdatedDate: (lastedUpdatedDate: string) => void;
+  setGuided: (hasGuided: boolean) => void;
+  setStartTutorial: (startTutorial: boolean) => void;
 }
 
 const userStore = create<UserStore>((set) => ({
@@ -49,6 +53,8 @@ const userStore = create<UserStore>((set) => ({
   isFreetrialUser: false,
   isInActiveUser: false,
   hasUserCard: false,
+  hasGuided: false,
+  startTutorial: false,
   setHasUserCard: (hasUserCard: boolean) => set({ hasUserCard }),
   setFetchingUserLoading: (fetchingUserLoading: boolean) =>
     set({ fetchingUserLoading }),
@@ -94,7 +100,9 @@ const userStore = create<UserStore>((set) => ({
     }),
 
   setLastedUpdatedDate: (lastedUpdatedDate: string) =>
-    set({ lastedUpdatedDate })
+    set({ lastedUpdatedDate }),
+  setGuided: (hasGuided: boolean) => set({ hasGuided }),
+  setStartTutorial: (startTutorial: boolean) => set({ startTutorial })
 }));
 
 export default userStore;

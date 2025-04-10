@@ -56,9 +56,32 @@ export const MapByRegionTutorialSteps = (refs: any) => [
     boxPosition: "30%"
   },
   {
-    title: "지역 단위 자동 조정",
+    title: "지역 단위 조정",
     description:
       "지도를 확대하거나 축소하면, 표시되는 지역 단위가 소구역 → 동 → 구 단위로 자동 전환됩니다.",
+    targetRef: null,
+    specialBackground: true,
+    boxPosition: "30%"
+  },
+  {
+    title: "소구역 지역 단위",
+    description:
+      "지도를 확대하면 소구역 단위로 전환되며 환자 유입 분포를 확인할 수 있습니다.",
+    targetRef: null,
+    specialBackground: true,
+    boxPosition: "30%"
+  },
+  {
+    title: "동 지역 단위",
+    description: "지도를 축소하면 동 단위로 전환된 지도를 확인 할 수 있습니다.",
+    targetRef: null,
+    specialBackground: true,
+    boxPosition: "30%"
+  },
+  {
+    title: "구 지역 단위",
+    description:
+      "지도를 더 축소하면 구 단위로 전환된 지도를 확인 할 수 있습니다.",
     targetRef: null,
     specialBackground: true,
     boxPosition: "30%"

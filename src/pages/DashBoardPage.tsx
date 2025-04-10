@@ -17,6 +17,7 @@ import RequireSubscribe from "../components/common/RequireSubscribe";
 import { useNavigate } from "react-router-dom";
 import { mockDashboard } from "../utils/\bTutorialMock";
 import { FullDimOverlay } from "../components/tutorial/style/tutorial.styles";
+import TutorialStartModal from "../components/tutorial/TutorialStartModal";
 
 const LOADINGCONTENT = "데이터를 불러오는 중입니다.";
 export default function DashBoardPage() {
@@ -33,13 +34,18 @@ export default function DashBoardPage() {
     setDateChanged
   } = useDashBoard();
 
-  const { user, isInActiveUser, fetchingUserLoading, lastedUpdatedDate } =
-    userStore();
+  const {
+    user,
+    isInActiveUser,
+    fetchingUserLoading,
+    lastedUpdatedDate,
+    startTutorial,
+    hasGuided
+  } = userStore();
 
   const navigate = useNavigate();
-  const [showGuide, setShowGuide] = useState(true);
 
-  const dashboardInfoData = showGuide ? mockDashboard : dashboardInfo;
+  const dashboardInfoData = startTutorial ? mockDashboard : dashboardInfo;
 
   const barFormatData = () => {
     if (!dashboardInfoData) return [];
@@ -72,7 +78,6 @@ export default function DashBoardPage() {
   }, [lastedUpdatedDate]);
 
   const handleTutorialButton = () => {
-    setShowGuide(false);
     navigate("/compare-avenue");
   };
 
@@ -83,18 +88,20 @@ export default function DashBoardPage() {
 
   return (
     <>
-      {showGuide && <FullDimOverlay />}
-
-      {isInActiveUser && <RequireSubscribe />}
+      {startTutorial && <FullDimOverlay />}
+      <TutorialStartModal />
+      {!startTutorial && isInActiveUser && <RequireSubscribe />}
       <ContentHeader title="대시보드" />
-      {!fetchingUserLoading && !user?.free && user?.is_free_trial === false && (
-        <FreeTrialModal />
-      )}
+      {!fetchingUserLoading &&
+        !user?.free &&
+        user?.is_free_trial === false &&
+        !startTutorial &&
+        hasGuided && <FreeTrialModal />}
       {isLoading && <Loading content={LOADINGCONTENT} />}
       {dashboardInfoData && (
         <DashBoardContainer>
           {/** GUIDE CLOSE BUTTON*/}
-          {showGuide && (
+          {startTutorial && (
             <CloseGuideButton type="button" onClick={handleTutorialButton}>
               다음메뉴로
             </CloseGuideButton>
@@ -102,7 +109,7 @@ export default function DashBoardPage() {
 
           <SectionContainer>
             {/** GUIDE */}
-            {showGuide && (
+            {startTutorial && (
               <div style={{ display: "flex", justifyContent: "center" }}>
                 <GuideDescription>
                   기본 날짜는 <b>마지막 업데이트일 기준으로 1개월 전</b>이며,
@@ -111,7 +118,7 @@ export default function DashBoardPage() {
                 </GuideDescription>
               </div>
             )}
-            <FilterContainer highlight={showGuide}>
+            <FilterContainer highlight={startTutorial}>
               {Object.keys(AVAILABLE_DATE_RANGES).map(
                 (content: string, index: number) => {
                   const contentKey =
@@ -146,7 +153,7 @@ export default function DashBoardPage() {
             </FilterContainer>
           </SectionContainer>
           {/** GUIDE */}
-          {showGuide && (
+          {startTutorial && (
             <div style={{ display: "flex", justifyContent: "center" }}>
               <GuideDescription>
                 선택하신 날짜 기간 동안의 <b>매출 및 환자 통계</b>를 제공합니다.
@@ -156,7 +163,7 @@ export default function DashBoardPage() {
             </div>
           )}
           <SectionContainer>
-            <CardGrid highlight={showGuide}>
+            <CardGrid highlight={startTutorial}>
               <DashboardStats
                 title={"누적 매출"}
                 value={dashboardInfoData.total_cost}
@@ -189,7 +196,7 @@ export default function DashBoardPage() {
           </SectionContainer>
 
           <SectionContainer>
-            <CardGrid highlight={showGuide}>
+            <CardGrid highlight={startTutorial}>
               <Card>
                 <ChartTitle>일자별 매출 통계</ChartTitle>
                 <BaseLineChart
@@ -206,7 +213,7 @@ export default function DashBoardPage() {
           </SectionContainer>
 
           <SectionContainer>
-            <CardGrid highlight={showGuide}>
+            <CardGrid highlight={startTutorial}>
               <Card>
                 <ChartTitle>지역 별 매출 순위</ChartTitle>
                 <BaseTable data={dashboardInfoData.topRegions} />

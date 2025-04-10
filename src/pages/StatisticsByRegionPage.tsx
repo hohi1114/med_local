@@ -6,15 +6,16 @@ import Error from "../components/common/Error";
 import StatisticsTable from "../components/statics_by_region/table/StatisticsTable";
 import RequireSubscribe from "../components/common/RequireSubscribe";
 import userStore from "../store/userStore";
-import { useState } from "react";
 import {
   CloseGuideButton,
   FullDimOverlay,
   GuideDescription
 } from "../components/tutorial/style/tutorial.styles";
+import { useNavigate } from "react-router-dom";
 
 export default function StatisticsByRegionPage() {
-  const { isInActiveUser } = userStore();
+  const { isInActiveUser, startTutorial, setStartTutorial } = userStore();
+  const navigate = useNavigate();
   const {
     isPending,
     dateRange,
@@ -25,24 +26,24 @@ export default function StatisticsByRegionPage() {
   } = useRegionAnalysis();
 
   if (isError) return <Error message={error?.message} />;
-  const [showGuide, setShowGuide] = useState(true);
 
   const handleTutorialButton = () => {
-    setShowGuide(false);
+    setStartTutorial(false);
+    navigate("/");
   };
 
   return (
     <>
-      {showGuide && <FullDimOverlay />}
-      {isInActiveUser && <RequireSubscribe />}
+      {startTutorial && <FullDimOverlay />}
+      {!startTutorial && isInActiveUser && <RequireSubscribe />}
       <ContentHeader title="지역 별 통계" />
       <DashBoardContainer>
-        {showGuide && (
+        {startTutorial && (
           <CloseGuideButton type="button" onClick={handleTutorialButton}>
             가이드 마치기
           </CloseGuideButton>
         )}
-        {showGuide && (
+        {startTutorial && (
           <div style={{ display: "flex", justifyContent: "center" }}>
             <GuideDescription>
               기본 날짜는 <b>최근 업데이트일 기준으로 1개월 전</b>이며, 지역은{" "}
@@ -52,14 +53,14 @@ export default function StatisticsByRegionPage() {
         )}
 
         <StatisticByRegionFilter
-          isTutorial={showGuide}
+          isTutorial={startTutorial}
           rangeDate={dateRange}
           handleDateChange={handleDateRangeChange}
           handleLocalSectionChange={handleLocalSectionChange}
         />
 
         <DashBoardTableContainer>
-          {showGuide && (
+          {startTutorial && (
             <div style={{ display: "flex", justifyContent: "center" }}>
               <GuideDescription>
                 각 컬럼은 클릭하면 <b>오름차순 혹은 내림차순</b>으로 정렬할 수
@@ -67,7 +68,7 @@ export default function StatisticsByRegionPage() {
               </GuideDescription>
             </div>
           )}
-          <StatisticsTable isLoading={isPending} isTutorial={showGuide} />
+          <StatisticsTable isLoading={isPending} isTutorial={startTutorial} />
         </DashBoardTableContainer>
       </DashBoardContainer>
     </>

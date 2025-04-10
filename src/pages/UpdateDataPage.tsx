@@ -26,13 +26,15 @@ import RequireSubscribe from "../components/common/RequireSubscribe.tsx";
 import userStore from "../store/userStore.tsx";
 
 const UpdateDataPage = () => {
-  const [dataType, setDataType] = useState<"euisarang" | "egis" | "dentweb">("euisarang"); // Track data type
+  const [dataType, setDataType] = useState<"euisarang" | "egis" | "dentweb">(
+    "euisarang"
+  ); // Track data type
   const [daysFiles, setDaysFiles] = useState<FileList | null>(null); // Euisarang
   const [placeFiles, setPlaceFiles] = useState<FileList | null>(null); // Euisarang & Egis
   const [dailyIncome, setDailyIncome] = useState<FileList | null>(null); // Egis
   const [progress, setProgress] = useState<number>(0);
   const [api, contextHolder] = notification.useNotification();
-  const { isInActiveUser } = userStore();
+  const { isInActiveUser, startTutorial } = userStore();
 
   const openNotification = (
     type: "success" | "error" | "warning",
@@ -50,7 +52,7 @@ const UpdateDataPage = () => {
   // ✅ Load Naver Maps Script on Component Mount
   useEffect(() => {
     loadNaverMapsScript(import.meta.env.VITE_NAVER_MAPS_CLIENT_ID)
-      .then(() => { })
+      .then(() => {})
       .catch((error) =>
         console.error("❌ Failed to load Naver Maps script:", error)
       );
@@ -60,7 +62,11 @@ const UpdateDataPage = () => {
     const fetchEMRType = async () => {
       try {
         const emrType = await getUserEMR();
-        if (emrType === "euisarang" || emrType === "egis" || emrType === "dentweb") {
+        if (
+          emrType === "euisarang" ||
+          emrType === "egis" ||
+          emrType === "dentweb"
+        ) {
           setDataType(emrType);
         }
       } catch (error) {
@@ -70,9 +76,6 @@ const UpdateDataPage = () => {
 
     fetchEMRType();
   }, []);
-
-
-
 
   const handleProcessDataDentweb = async (): Promise<void> => {
     if (!placeFiles || !daysFiles) {
@@ -104,8 +107,6 @@ const UpdateDataPage = () => {
       // Set progress to 100% since from the user's perspective, the task is complete
       setProgress(100);
 
-
-
       uploadPromise
         .then((backendResponse) => {
           // Handle successful upload (when it eventually completes)
@@ -129,7 +130,6 @@ const UpdateDataPage = () => {
               : "알 수 없는 오류가 발생했습니다."
           );
         });
-
     } catch (error) {
       // This catch block handles errors in the initial parsing phase
       console.error("❌ Error processing data:", error);
@@ -143,8 +143,6 @@ const UpdateDataPage = () => {
       setProgress(0); // Reset progress on error
     }
   };
-
-
 
   // Process and upload data
   const handleProcessDataEuisarang = async (): Promise<void> => {
@@ -160,8 +158,6 @@ const UpdateDataPage = () => {
       const visits = await parseDaysFilesEuisarang(daysFiles);
       const patients = await parsePlaceFilesEuisarang(placeFiles);
       setProgress(40);
-
-
 
       // Upload to backend (token is handled by authApi interceptor)
       const uploadPromise = uploadDataToBackendEuisarang(visits, patients);
@@ -198,7 +194,6 @@ const UpdateDataPage = () => {
               : "알 수 없는 오류가 발생했습니다."
           );
         });
-
     } catch (error) {
       // This catch block handles errors in the initial parsing phase
       console.error("❌ Error processing data:", error);
@@ -212,9 +207,6 @@ const UpdateDataPage = () => {
       setProgress(0); // Reset progress on error
     }
   };
-
-
-
 
   const handleProcessDataEgis = async (): Promise<void> => {
     if (!placeFiles || !dailyIncome) {
@@ -234,7 +226,10 @@ const UpdateDataPage = () => {
 
       setProgress(40);
 
-      const uploadPromise = uploadDataToBackendEgis(dailyIncomeData, patientListData);
+      const uploadPromise = uploadDataToBackendEgis(
+        dailyIncomeData,
+        patientListData
+      );
 
       openNotification(
         "success",
@@ -243,8 +238,6 @@ const UpdateDataPage = () => {
       );
 
       setProgress(100);
-
-
 
       uploadPromise
         .then((backendResponse) => {
@@ -269,7 +262,6 @@ const UpdateDataPage = () => {
               : "알 수 없는 오류가 발생했습니다."
           );
         });
-
     } catch (error) {
       // This catch block handles errors in the initial parsing phase
       console.error("❌ Error processing data:", error);
@@ -292,12 +284,10 @@ const UpdateDataPage = () => {
     } else {
       handleProcessDataDentweb();
     }
-  }
-
+  };
 
   const isButtonDisabled = () => {
-    if (dataType === "euisarang" || dataType === "dentweb"
-    ) {
+    if (dataType === "euisarang" || dataType === "dentweb") {
       return !daysFiles || !placeFiles || progress > 0;
     }
     return !dailyIncome || !placeFiles || progress > 0;
@@ -305,7 +295,7 @@ const UpdateDataPage = () => {
 
   return (
     <>
-      {isInActiveUser && <RequireSubscribe />}
+      {!startTutorial && isInActiveUser && <RequireSubscribe />}
       {progress > 0 && progress < 100 && (
         <Loading content="데이터를 안전하게 처리중입니다." />
       )}
