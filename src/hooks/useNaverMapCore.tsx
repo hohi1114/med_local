@@ -97,8 +97,7 @@ export function useNaverMapCore({
               user?.location.long
             )
       ),
-      zoom: 16,
-      zoomControl: true
+      zoom: 16
     });
 
     setMap(newMap);
@@ -109,7 +108,12 @@ export function useNaverMapCore({
           user?.location.lat,
           user?.location.long
         ),
-        map: newMap
+        map: newMap,
+        zoom: 16,
+        icon: {
+          content: `<img src="/images/marker.png" style="width: auto; height: 45px; z-index:20;"/>`,
+          anchor: new window.naver.maps.Point(15, 30)
+        }
       });
       setHospitalMarker(newMarker);
     }
@@ -192,7 +196,9 @@ export function useNaverMapCore({
         const fillColor = getPolygonFillColor
           ? getPolygonFillColor(area)
           : isComparison
-          ? (area?.total_costA ?? 0) <= (area?.total_costB ?? 0)
+          ? (area?.total_costA ?? 0) === (area?.total_costB ?? 0)
+            ? "rgba(211, 212, 213, 0.3)"
+            : (area?.total_costA ?? 0) < (area?.total_costB ?? 0)
             ? "rgba(120, 180, 230, 0.3)"
             : "rgba(240, 180, 180, 0.3)"
           : `${getPolygonColorOpacity(

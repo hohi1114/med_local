@@ -48,7 +48,7 @@ const StatisticsDrawer = ({ showTutorial }: StatisticsDrawerProps) => {
   const [showTooltip, setShowTooltip] = useState(false);
 
   useEffect(() => {
-    if (isOpenDrawer && toggleValue === "전체") {
+    if (isOpenDrawer && toggleValue === "전체" && showTutorial) {
       const timeout = setTimeout(() => {
         setShowTooltip(true);
       }, 300);
@@ -57,7 +57,7 @@ const StatisticsDrawer = ({ showTutorial }: StatisticsDrawerProps) => {
     } else {
       setShowTooltip(false);
     }
-  }, [isOpenDrawer, toggleValue]);
+  }, [isOpenDrawer, toggleValue, showTutorial]);
 
   const renderContent = () => {
     if (!regionInfo && !showTutorial) return null;

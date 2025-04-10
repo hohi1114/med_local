@@ -33,6 +33,7 @@ const RevenueCompareDrawer = ({ showTutorial }: RevenueCompareDrawerProps) => {
     comparisonStatsData
   } = useDrawerData(true);
 
+  const areaNamDate = showTutorial ? "역삼1동 A" : areaName;
   const firstRegionPrivateData = showTutorial
     ? mockFirstRegionPrivate
     : firstRegionPrivate;
@@ -45,7 +46,7 @@ const RevenueCompareDrawer = ({ showTutorial }: RevenueCompareDrawerProps) => {
 
   const [showTooltip, setShowTooltip] = useState(false);
   useEffect(() => {
-    if (isOpenDrawer) {
+    if (isOpenDrawer && showTutorial) {
       const timeout = setTimeout(() => {
         setShowTooltip(true);
       }, 300);
@@ -54,7 +55,7 @@ const RevenueCompareDrawer = ({ showTutorial }: RevenueCompareDrawerProps) => {
     } else {
       setShowTooltip(false);
     }
-  }, [isOpenDrawer]);
+  }, [isOpenDrawer, showTutorial]);
 
   const renderContent = () => {
     return isPending ? (
@@ -174,7 +175,7 @@ const RevenueCompareDrawer = ({ showTutorial }: RevenueCompareDrawerProps) => {
       open={isOpenDrawer}
     >
       <div style={{ padding: "0.8rem 0rem" }}>
-        <AddressTitleStyle>{areaName}</AddressTitleStyle>
+        <AddressTitleStyle>{areaNamDate}</AddressTitleStyle>
       </div>
       {renderContent()}
     </Drawer>
