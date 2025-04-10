@@ -14,7 +14,7 @@ import { compareAvenueTutorialSteps } from "../components/tutorial/TutorialData"
 import { useNavigate } from "react-router-dom";
 import Tutorial from "../components/tutorial/Tutorial";
 import useTutorial from "../hooks/useTutorial";
-import { tutorialHighlightWithBlink } from "../styles/highlight";
+import { tutorialHighlightWithBlink } from "../components/tutorial/style/tutorial.styles";
 
 function CompareAvenuePage() {
   const tutorialRefs = {

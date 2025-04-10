@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import styled from "styled-components";
 import BaseButton from "../common/button/BaseButton";
-import { dimBackgroundStyle } from "../../styles/highlight";
+import { FullDimOverlay } from "./style/tutorial.styles";
 
 interface TutorialProps {
   steps: any;
@@ -66,7 +66,7 @@ const Tutorial = ({
   const needsSpecialBackground = steps[tutorialStep]?.specialBackground;
   return (
     <>
-      {!needsSpecialBackground && <DimBackground />}
+      {!needsSpecialBackground && <FullDimOverlay />}
       <TutorialBox left={steps[tutorialStep]?.boxPosition || "50%"}>
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           <TutorialTitle>{steps[tutorialStep].title}</TutorialTitle>
@@ -93,10 +93,6 @@ const Tutorial = ({
 };
 
 export default Tutorial;
-
-const DimBackground = styled.div`
-  ${dimBackgroundStyle}
-`;
 
 const TutorialBox = styled.div<{ left: string }>`
   position: fixed;

@@ -13,7 +13,7 @@ import { useNavigate } from "react-router-dom";
 import useTutorial from "../hooks/useTutorial";
 import Tutorial from "../components/tutorial/Tutorial";
 import { MapByRegionTutorialSteps } from "../components/tutorial/TutorialData";
-import { tutorialHighlightWithBlink } from "../styles/highlight";
+import { tutorialHighlightWithBlink } from "../components/tutorial/style/tutorial.styles";
 
 function MapByRegionPage() {
   const tutorialRefs = {

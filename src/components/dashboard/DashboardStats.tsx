@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import { tutorialHighlight } from "../../styles/highlight";
+import { tutorialHighlight } from "../tutorial/style/tutorial.styles";
 
 type CardWithChangeProps = {
   title: string;

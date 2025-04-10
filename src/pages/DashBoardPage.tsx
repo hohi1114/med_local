@@ -15,8 +15,8 @@ import userStore from "../store/userStore";
 import { FreeTrialModal } from "../components/membership/FreeTrialModal";
 import RequireSubscribe from "../components/common/RequireSubscribe";
 import { useNavigate } from "react-router-dom";
-import { dimBackgroundStyle } from "../styles/highlight";
 import { mockDashboard } from "../utils/\bTutorialMock";
+import { FullDimOverlay } from "../components/tutorial/style/tutorial.styles";
 
 const LOADINGCONTENT = "데이터를 불러오는 중입니다.";
 export default function DashBoardPage() {
@@ -235,10 +235,6 @@ const DashBoardContainer = styled.div`
   flex-direction: column;
   position: relative;
   padding-bottom: 2rem;
-`;
-
-const FullDimOverlay = styled.div`
-  ${dimBackgroundStyle}
 `;
 
 const SectionContainer = styled.div`

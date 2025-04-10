@@ -446,3 +446,150 @@ export const mockDashboard = {
   total_patient_count: 5138,
   total_visit_count: 7602
 };
+
+export const mockStatisticsByRegion = [
+  {
+    region_name: "가양1동 A",
+    population: 12456,
+    total_visit_count: 287,
+    total_cost: 15394820,
+    chojin_rejin_visit_count: 165,
+    sinhwan_visit_count: 122,
+    total_patient_count: 229,
+    average_cost_per_patient: 67220,
+    average_cost_per_visit: 53650,
+    average_patient_age: 35.2
+  },
+  {
+    region_name: "등촌3동 B",
+    population: 9820,
+    total_visit_count: 198,
+    total_cost: 10938290,
+    chojin_rejin_visit_count: 101,
+    sinhwan_visit_count: 97,
+    total_patient_count: 163,
+    average_cost_per_patient: 67080,
+    average_cost_per_visit: 55245,
+    average_patient_age: 33.7
+  },
+  {
+    region_name: "발산1동 A",
+    population: 14327,
+    total_visit_count: 345,
+    total_cost: 18752000,
+    chojin_rejin_visit_count: 200,
+    sinhwan_visit_count: 145,
+    total_patient_count: 278,
+    average_cost_per_patient: 67460,
+    average_cost_per_visit: 54355,
+    average_patient_age: 36.1
+  },
+  {
+    region_name: "가양3동 B",
+    population: 11089,
+    total_visit_count: 163,
+    total_cost: 9257000,
+    chojin_rejin_visit_count: 91,
+    sinhwan_visit_count: 72,
+    total_patient_count: 145,
+    average_cost_per_patient: 63841,
+    average_cost_per_visit: 56791,
+    average_patient_age: 32.4
+  },
+  {
+    region_name: "염창2동 A",
+    population: 8760,
+    total_visit_count: 142,
+    total_cost: 8032400,
+    chojin_rejin_visit_count: 78,
+    sinhwan_visit_count: 64,
+    total_patient_count: 128,
+    average_cost_per_patient: 62753,
+    average_cost_per_visit: 56565,
+    average_patient_age: 31.9
+  },
+  {
+    region_name: "마곡1동 A",
+    population: 15010,
+    total_visit_count: 310,
+    total_cost: 17200000,
+    chojin_rejin_visit_count: 180,
+    sinhwan_visit_count: 130,
+    total_patient_count: 255,
+    average_cost_per_patient: 67451,
+    average_cost_per_visit: 55483,
+    average_patient_age: 34.8
+  },
+  {
+    region_name: "마곡2동 B",
+    population: 10200,
+    total_visit_count: 189,
+    total_cost: 9850000,
+    chojin_rejin_visit_count: 105,
+    sinhwan_visit_count: 84,
+    total_patient_count: 150,
+    average_cost_per_patient: 65666,
+    average_cost_per_visit: 52116,
+    average_patient_age: 33.5
+  },
+  {
+    region_name: "등촌1동 A",
+    population: 11500,
+    total_visit_count: 212,
+    total_cost: 11284000,
+    chojin_rejin_visit_count: 117,
+    sinhwan_visit_count: 95,
+    total_patient_count: 172,
+    average_cost_per_patient: 65605,
+    average_cost_per_visit: 53226,
+    average_patient_age: 32.1
+  },
+  {
+    region_name: "등촌2동 B",
+    population: 10950,
+    total_visit_count: 195,
+    total_cost: 10340000,
+    chojin_rejin_visit_count: 110,
+    sinhwan_visit_count: 85,
+    total_patient_count: 160,
+    average_cost_per_patient: 64625,
+    average_cost_per_visit: 53025,
+    average_patient_age: 34.0
+  },
+  {
+    region_name: "화곡9동 A",
+    population: 9870,
+    total_visit_count: 178,
+    total_cost: 9200000,
+    chojin_rejin_visit_count: 98,
+    sinhwan_visit_count: 80,
+    total_patient_count: 148,
+    average_cost_per_patient: 62162,
+    average_cost_per_visit: 51685,
+    average_patient_age: 33.2
+  },
+  {
+    region_name: "방화1동 B",
+    population: 14020,
+    total_visit_count: 301,
+    total_cost: 16520000,
+    chojin_rejin_visit_count: 175,
+    sinhwan_visit_count: 126,
+    total_patient_count: 240,
+    average_cost_per_patient: 68833,
+    average_cost_per_visit: 54884,
+    average_patient_age: 36.4
+  },
+  {
+    region_name: "방화2동 A",
+    population: 11830,
+    total_visit_count: 254,
+    total_cost: 13832000,
+    chojin_rejin_visit_count: 140,
+    sinhwan_visit_count: 114,
+    total_patient_count: 208,
+    average_cost_per_patient: 66500,
+    average_cost_per_visit: 54457,
+    average_patient_age: 35.0
+  }
+];
