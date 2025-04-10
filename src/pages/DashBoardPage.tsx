@@ -16,9 +16,9 @@ import { FreeTrialModal } from "../components/membership/FreeTrialModal";
 import RequireSubscribe from "../components/common/RequireSubscribe";
 import { useNavigate } from "react-router-dom";
 import { dimBackgroundStyle } from "../styles/highlight";
+import { mockDashboard } from "../utils/\bTutorialMock";
 
 const LOADINGCONTENT = "데이터를 불러오는 중입니다.";
-
 export default function DashBoardPage() {
   const {
     dateRange,
@@ -39,9 +39,11 @@ export default function DashBoardPage() {
   const navigate = useNavigate();
   const [showGuide, setShowGuide] = useState(true);
 
+  const dashboardInfoData = showGuide ? mockDashboard : dashboardInfo;
+
   const barFormatData = () => {
-    if (!dashboardInfo) return [];
-    return Object.entries(dashboardInfo.patient_count_by_age_group).map(
+    if (!dashboardInfoData) return [];
+    return Object.entries(dashboardInfoData.patient_count_by_age_group).map(
       ([age, value]) => ({
         age,
         value
@@ -50,11 +52,13 @@ export default function DashBoardPage() {
   };
 
   const chartFormatData = () => {
-    if (!dashboardInfo) return [];
-    return Object.entries(dashboardInfo?.cost_by_date).map(([date, value]) => ({
-      date,
-      매출액: value
-    }));
+    if (!dashboardInfoData) return [];
+    return Object.entries(dashboardInfoData?.cost_by_date).map(
+      ([date, value]) => ({
+        date,
+        매출액: value
+      })
+    );
   };
 
   useEffect(() => {
@@ -66,6 +70,11 @@ export default function DashBoardPage() {
       handleDateRangeChange({ startDate: start, endDate: end });
     }
   }, [lastedUpdatedDate]);
+
+  const handleTutorialButton = () => {
+    setShowGuide(false);
+    navigate("/compare-avenue");
+  };
 
   if (isError)
     return (
@@ -82,15 +91,17 @@ export default function DashBoardPage() {
         <FreeTrialModal />
       )}
       {isLoading && <Loading content={LOADINGCONTENT} />}
-      {dashboardInfo && (
+      {dashboardInfoData && (
         <DashBoardContainer>
+          {/** GUIDE CLOSE BUTTON*/}
           {showGuide && (
-            <CloseGuideButton type="button" onClick={() => setShowGuide(false)}>
-              가이드 닫기
+            <CloseGuideButton type="button" onClick={handleTutorialButton}>
+              다음메뉴로
             </CloseGuideButton>
           )}
 
           <SectionContainer>
+            {/** GUIDE */}
             {showGuide && (
               <div style={{ display: "flex", justifyContent: "center" }}>
                 <GuideDescription>
@@ -134,6 +145,7 @@ export default function DashBoardPage() {
               </>
             </FilterContainer>
           </SectionContainer>
+          {/** GUIDE */}
           {showGuide && (
             <div style={{ display: "flex", justifyContent: "center" }}>
               <GuideDescription>
@@ -147,29 +159,29 @@ export default function DashBoardPage() {
             <CardGrid highlight={showGuide}>
               <DashboardStats
                 title={"누적 매출"}
-                value={dashboardInfo.total_cost}
-                diffRate={dashboardInfo.diff_rates.total_cost}
+                value={dashboardInfoData.total_cost}
+                diffRate={dashboardInfoData.diff_rates.total_cost}
                 buttonType={buttonType}
                 currencySymbol="₩"
               />
               <DashboardStats
                 title={"전체 환자 수"}
-                value={dashboardInfo.total_visit_count}
-                diffRate={dashboardInfo.diff_rates.total_visit_count}
+                value={dashboardInfoData.total_visit_count}
+                diffRate={dashboardInfoData.diff_rates.total_visit_count}
                 buttonType={buttonType}
                 currencySymbol="명"
               />
               <DashboardStats
                 title={"신규 환자 수"}
-                value={dashboardInfo.sinhwan_visit_count}
-                diffRate={dashboardInfo.diff_rates.sinhwan_visit_count}
+                value={dashboardInfoData.sinhwan_visit_count}
+                diffRate={dashboardInfoData.diff_rates.sinhwan_visit_count}
                 buttonType={buttonType}
                 currencySymbol="명"
               />
               <DashboardStats
                 title={"재방문 환자 수"}
-                value={dashboardInfo.chojin_rejin_visit_count}
-                diffRate={dashboardInfo.diff_rates.chojin_rejin_visit_count}
+                value={dashboardInfoData.chojin_rejin_visit_count}
+                diffRate={dashboardInfoData.diff_rates.chojin_rejin_visit_count}
                 buttonType={buttonType}
                 currencySymbol="명"
               />
@@ -181,7 +193,7 @@ export default function DashBoardPage() {
               <Card>
                 <ChartTitle>일자별 매출 통계</ChartTitle>
                 <BaseLineChart
-                  data={dashboardInfo.cost_by_date}
+                  data={dashboardInfoData.cost_by_date}
                   xField="date"
                   yField="매출액"
                   labelFormatterY={(v: number) => `${v / 1000}K`}
@@ -197,12 +209,12 @@ export default function DashBoardPage() {
             <CardGrid highlight={showGuide}>
               <Card>
                 <ChartTitle>지역 별 매출 순위</ChartTitle>
-                <BaseTable data={dashboardInfo.topRegions} />
+                <BaseTable data={dashboardInfoData.topRegions} />
               </Card>
               <Card>
                 <ChartTitle>연령 별 환자 분포</ChartTitle>
                 <BarChart
-                  data={dashboardInfo.patient_count_by_age_group}
+                  data={dashboardInfoData.patient_count_by_age_group}
                   xField="age"
                   yField="value"
                   formatData={barFormatData}
