@@ -29,7 +29,7 @@ export const FullDimOverlay = styled.div`
   display: flex;
   height: 100%;
   width: 100%;
-  background-color: rgba(0, 0, 0, 0.4);
+  background-color: rgba(0, 0, 0, 0.5);
   position: absolute;
   top: 0;
   left: 0;
@@ -84,7 +84,6 @@ export const TutorialBox = styled.div<{ left: string }>`
 `;
 
 export const TutorialTitle = styled.h3`
-  margin: 0;
   font-size: 1.6rem;
   font-weight: bold;
   color: ${(props) => props.theme.colors.primary};

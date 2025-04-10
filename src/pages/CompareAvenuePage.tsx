@@ -81,7 +81,7 @@ function CompareAvenuePage() {
   }, [dateRange2]);
 
   useEffect(() => {
-    if (tutorialStep === 4) {
+    if (tutorialStep === 3) {
       handleIsDrawerOpen(true);
     }
   }, [tutorialStep]);
