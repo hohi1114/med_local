@@ -3,7 +3,7 @@ import BaseButton from "../../common/button/BaseButton";
 
 export const tutorialHighlightWithBlink = css`
   position: relative;
-  z-index: 100;
+  z-index: ${(props) => props.theme.zIndex.rank2};
   box-shadow: 0 0 0 5px rgba(24, 144, 255, 0.5);
   border-radius: 3px;
   animation: highlight-blink 1.2s ease-in-out infinite;
@@ -21,7 +21,7 @@ export const tutorialHighlightWithBlink = css`
 
 export const tutorialHighlight = css`
   position: relative;
-  z-index: 100;
+  z-index: ${(props) => props.theme.zIndex.rank2};
   border-radius: 8px;
 `;
 
@@ -33,7 +33,7 @@ export const FullDimOverlay = styled.div`
   position: absolute;
   top: 0;
   left: 0;
-  z-index: 80;
+  z-index: ${(props) => props.theme.zIndex.rank3};
 `;
 export const GuideDescription = styled.div`
   border-radius: 6px;

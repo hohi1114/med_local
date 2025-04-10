@@ -118,20 +118,7 @@ function CompareAvenuePage() {
       <RevenueCompareDrawer showTutorial={startTutorial} />
       {/**튜토리얼 */}
       {tutorialSteps[tutorialStep].specialBackground && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100vw",
-            height: "100vh",
-            zIndex: 80,
-            cursor: "pointer",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center"
-          }}
-        >
+        <ImageContainer>
           <img
             onClick={() => {
               handleIsDrawerOpen(true);
@@ -140,7 +127,7 @@ function CompareAvenuePage() {
             src={"/images/compareAvenueTutorialMap.png"}
             alt="매출 증감 지도 튜토리얼"
           />
-        </div>
+        </ImageContainer>
       )}
 
       <Tutorial
@@ -156,6 +143,19 @@ function CompareAvenuePage() {
 
 export default CompareAvenuePage;
 
+const ImageContainer = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: ${(props) => props.theme.zIndex.rank4};
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+`;
+
 const MapContainer = styled.div`
   width: 100%;
   height: 100%;
@@ -166,7 +166,7 @@ const Wrapper = styled.div`
   position: absolute;
   top: 1rem;
   left: 4rem;
-  z-index: 90;
+  z-index: ${(props) => props.theme.zIndex.rank2};
   background-color: white;
   padding: 10px;
   border-radius: 8px;

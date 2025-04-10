@@ -3,6 +3,7 @@ import { RangePickerProps } from "antd/es/date-picker";
 import { DateRange } from "../../../hooks/useRangeDurationDatePicker";
 import dayjs from "dayjs";
 import userStore from "../../../store/userStore";
+import styled from "styled-components";
 
 const { RangePicker } = DatePicker;
 
@@ -46,8 +47,7 @@ const DurationDatePicker: React.FC<DurationDatePickerProps> = ({
   };
 
   return (
-    <RangePicker
-      style={{ zIndex: 100 }}
+    <DatePickerContainer
       {...props}
       disabledDate={isFreetrialUser ? disabledDateForFreetrial : undefined}
       format={"YYYY-MM-DD"}
@@ -58,3 +58,7 @@ const DurationDatePicker: React.FC<DurationDatePickerProps> = ({
 };
 
 export default DurationDatePicker;
+
+const DatePickerContainer = styled(RangePicker)`
+  z-index: ${(props) => props.theme.zIndex.rank4};
+`;

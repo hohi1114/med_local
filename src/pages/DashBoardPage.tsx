@@ -88,7 +88,7 @@ export default function DashBoardPage() {
 
   return (
     <>
-      {startTutorial && <FullDimOverlay />}
+      {(startTutorial || !hasGuided) && <FullDimOverlay />}
       <TutorialStartModal />
       {!startTutorial && isInActiveUser && <RequireSubscribe />}
       <ContentHeader title="대시보드" />
@@ -258,7 +258,8 @@ const FilterContainer = styled.div<{ highlight?: boolean }>`
   justify-content: flex-start;
   gap: 10px;
   position: relative;
-  z-index: ${(props) => (props.highlight ? "100" : "auto")};
+  z-index: ${(props) =>
+    props.highlight ? props.theme.zIndex.rank2 : props.theme.zIndex.rank4};
 `;
 
 const CardGrid = styled.div<{ highlight?: boolean }>`
@@ -267,7 +268,8 @@ const CardGrid = styled.div<{ highlight?: boolean }>`
   gap: 1rem;
   padding: 1rem;
   position: relative;
-  z-index: ${(props) => (props.highlight ? "100" : "auto")};
+  z-index: ${(props) =>
+    props.highlight ? props.theme.zIndex.rank2 : props.theme.zIndex.rank4};
 `;
 
 const Card = styled.div`
