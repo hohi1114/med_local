@@ -14,12 +14,11 @@ interface StatisticByRegionFilterProps {
   handleLocalSectionChange: (value: keyof typeof LOCAL_SECTIONS_MAP) => void;
 }
 const StatisticByRegionFilter: FC<StatisticByRegionFilterProps> = (props) => {
-  const { isTutorial, rangeDate, handleDateChange, handleLocalSectionChange } =
-    props;
+  const { rangeDate, handleDateChange, handleLocalSectionChange } = props;
   const { localSection } = useRegionAnalysisStore();
 
   return (
-    <FilterWrapper isTutorial={isTutorial}>
+    <FilterWrapper>
       {/* Left Filter Section */}
       <FilterContainer>
         <FilterItemContainer>
@@ -56,13 +55,12 @@ const StatisticByRegionFilter: FC<StatisticByRegionFilterProps> = (props) => {
 
 export default StatisticByRegionFilter;
 
-const FilterWrapper = styled.div<{ isTutorial?: boolean }>`
+const FilterWrapper = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 1rem 1.25rem;
   background-color: ${(props) => props.theme.colors.white01};
-  z-index: ${(props) => (props.isTutorial ? "100" : "auto")};
 `;
 
 const FilterContainer = styled.div`

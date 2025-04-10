@@ -117,3 +117,15 @@ export const TutorialProgress = styled.div`
   text-align: right;
   margin-bottom: 1rem;
 `;
+export const TutorialImageContainer = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: ${(props) => props.theme.zIndex.rank4};
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+`;

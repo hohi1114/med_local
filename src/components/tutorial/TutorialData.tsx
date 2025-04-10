@@ -103,3 +103,45 @@ export const MapByRegionTutorialSteps = (refs: any) => [
     boxPosition: "30%"
   }
 ];
+
+export const DashboardSteps = (refs: any) => [
+  {
+    description: `기본 날짜는 <b>마지막 업데이트일 기준으로 1개월 전</b>이며,
+                  버튼을 통해 기간을 빠르게 조정하거나 직접 선택을 통해 원하는
+                  기간을 설정할 수 있어요.`,
+    targetRef: refs.tutorialRef1
+  },
+  {
+    description: `기본 날짜는 <b>마지막 업데이트일 기준으로 1개월 전</b>이며,
+    버튼을 통해 기간을 빠르게 조정하거나 직접 선택을 통해 원하는
+    기간을 설정할 수 있어요.`,
+    targetRef: refs.tutorialRef2
+  },
+  {
+    description: `기본 날짜는 <b>마지막 업데이트일 기준으로 1개월 전</b>이며,
+    버튼을 통해 기간을 빠르게 조정하거나 직접 선택을 통해 원하는
+    기간을 설정할 수 있어요.`,
+    targetRef: refs.tutorialRef3
+  },
+  {
+    description: `기본 날짜는 <b>마지막 업데이트일 기준으로 1개월 전</b>이며,
+                  버튼을 통해 기간을 빠르게 조정하거나 직접 선택을 통해 원하는
+                  기간을 설정할 수 있어요.`,
+    targetRef: refs.tutorialRef4
+  }
+];
+
+export const StatisticsByRegionPageSteps = (refs: any) => [
+  {
+    description: `기본 날짜는 <b>마지막 업데이트일 기준으로 1개월 전</b>이며,
+                  버튼을 통해 기간을 빠르게 조정하거나 직접 선택을 통해 원하는
+                  기간을 설정할 수 있어요.`,
+    targetRef: refs.tutorialRef1
+  },
+  {
+    description: `기본 날짜는 <b>마지막 업데이트일 기준으로 1개월 전</b>이며,
+    버튼을 통해 기간을 빠르게 조정하거나 직접 선택을 통해 원하는
+    기간을 설정할 수 있어요.`,
+    targetRef: refs.tutorialRef2
+  }
+];

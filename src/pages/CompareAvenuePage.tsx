@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import dayjs from "dayjs";
 import useRangeDurationDatePicker from "../hooks/useRangeDurationDatePicker";
 import DurationDatePicker from "../components/common/datepicker/DurationDatePicker";
@@ -14,7 +14,10 @@ import { compareAvenueTutorialSteps } from "../components/tutorial/TutorialData"
 import { useNavigate } from "react-router-dom";
 import Tutorial from "../components/tutorial/Tutorial";
 import useTutorial from "../hooks/useTutorial";
-import { tutorialHighlightWithBlink } from "../components/tutorial/style/tutorial.styles";
+import {
+  tutorialHighlightWithBlink,
+  TutorialImageContainer
+} from "../components/tutorial/style/tutorial.styles";
 
 function CompareAvenuePage() {
   const tutorialRefs = {
@@ -23,12 +26,15 @@ function CompareAvenuePage() {
   };
   const navigate = useNavigate();
 
-  const { tutorialStep, setTutorialStep, nextStep } = useTutorial({
-    steps: tutorialRefs
-  });
-
   const tutorialSteps = compareAvenueTutorialSteps(tutorialRefs);
-  const { isInActiveUser, lastedUpdatedDate, startTutorial } = userStore();
+  const { lastedUpdatedDate, startTutorial } = userStore();
+  const { tutorialStep, handleNextStep, handlePrevStep } = useTutorial({
+    steps: tutorialSteps,
+    showTutorialModal: startTutorial,
+    onComplate: () => {
+      navigate("/map");
+    }
+  });
   const { loading, setDrawerDate1, setDrawerDate2, handleIsDrawerOpen } =
     mapStore();
   const { mapElement, isFetching } = useNaverMapCore({ isComparison: true });
@@ -118,43 +124,29 @@ function CompareAvenuePage() {
       <RevenueCompareDrawer showTutorial={startTutorial} />
       {/**튜토리얼 */}
       {tutorialSteps[tutorialStep].specialBackground && (
-        <ImageContainer>
+        <TutorialImageContainer>
           <img
             onClick={() => {
               handleIsDrawerOpen(true);
-              nextStep();
             }}
             src={"/images/compareAvenueTutorialMap.png"}
             alt="매출 증감 지도 튜토리얼"
           />
-        </ImageContainer>
+        </TutorialImageContainer>
       )}
 
       <Tutorial
         steps={tutorialSteps}
         tutorialStep={tutorialStep}
-        setTutorialStep={setTutorialStep}
-        onComplete={() => navigate("/map")}
         showTutorial={startTutorial}
+        handleNextStep={handleNextStep}
+        handlePrevStep={handlePrevStep}
       />
     </>
   );
 }
 
 export default CompareAvenuePage;
-
-const ImageContainer = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: ${(props) => props.theme.zIndex.rank4};
-  cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-`;
 
 const MapContainer = styled.div`
   width: 100%;

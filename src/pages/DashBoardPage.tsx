@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import styled from "styled-components";
 import ContentHeader from "../components/common/layout/ContentHeader";
 import BaseButton from "../components/common/button/BaseButton";
@@ -18,6 +18,8 @@ import { useNavigate } from "react-router-dom";
 import { mockDashboard } from "../utils/\bTutorialMock";
 import { FullDimOverlay } from "../components/tutorial/style/tutorial.styles";
 import TutorialStartModal from "../components/tutorial/TutorialStartModal";
+import useTutorial from "../hooks/useTutorial";
+import { DashboardSteps } from "../components/tutorial/TutorialData";
 
 const LOADINGCONTENT = "데이터를 불러오는 중입니다.";
 export default function DashBoardPage() {
@@ -35,13 +37,28 @@ export default function DashBoardPage() {
   } = useDashBoard();
 
   const {
-    user,
     fetchingUserLoading,
     lastedUpdatedDate,
     startTutorial,
     hasGuided,
     needFreeTrial
   } = userStore();
+
+  const tutorialRefs = {
+    tutorialRef1: useRef(null),
+    tutorialRef2: useRef(null),
+    tutorialRef3: useRef(null),
+    tutorialRef4: useRef(null)
+  };
+  const tutorialSteps = DashboardSteps(tutorialRefs);
+
+  const { tutorialStep, handleNextStep } = useTutorial({
+    steps: tutorialSteps,
+    showTutorialModal: startTutorial,
+    onComplate: () => {
+      navigate("/compare-avenue");
+    }
+  });
 
   const navigate = useNavigate();
 
@@ -77,10 +94,6 @@ export default function DashBoardPage() {
     }
   }, [lastedUpdatedDate]);
 
-  const handleTutorialButton = () => {
-    navigate("/compare-avenue");
-  };
-
   if (isError)
     return (
       <Error status={error?.status ?? "Unknown"} message={error?.message} />
@@ -100,14 +113,16 @@ export default function DashBoardPage() {
         <DashBoardContainer>
           {/** GUIDE CLOSE BUTTON*/}
           {startTutorial && (
-            <CloseGuideButton type="button" onClick={handleTutorialButton}>
-              다음메뉴로
+            <CloseGuideButton type="button" onClick={handleNextStep}>
+              {tutorialStep === tutorialSteps.length - 1
+                ? "다음메뉴로"
+                : "다음"}
             </CloseGuideButton>
           )}
 
           <SectionContainer>
             {/** GUIDE */}
-            {startTutorial && (
+            {tutorialStep === 0 && startTutorial && (
               <div style={{ display: "flex", justifyContent: "center" }}>
                 <GuideDescription>
                   기본 날짜는 <b>마지막 업데이트일 기준으로 1개월 전</b>이며,
@@ -116,7 +131,7 @@ export default function DashBoardPage() {
                 </GuideDescription>
               </div>
             )}
-            <FilterContainer highlight={startTutorial}>
+            <FilterContainer ref={tutorialRefs.tutorialRef1}>
               {Object.keys(AVAILABLE_DATE_RANGES).map(
                 (content: string, index: number) => {
                   const contentKey =
@@ -150,18 +165,19 @@ export default function DashBoardPage() {
               </>
             </FilterContainer>
           </SectionContainer>
-          {/** GUIDE */}
-          {startTutorial && (
+
+          {tutorialStep === 1 && startTutorial && (
             <div style={{ display: "flex", justifyContent: "center" }}>
               <GuideDescription>
-                선택하신 날짜 기간 동안의 <b>매출 및 환자 통계</b>를 제공합니다.
-                상단의 날짜 필터를 변경하면 해당 기간에 맞는 데이터로 자동
-                갱신됩니다.
+                기본 날짜는 <b>마지막 업데이트일 기준으로 1개월 전</b>이며,
+                버튼을 통해 기간을 빠르게 조정하거나 직접 선택을 통해 원하는
+                기간을 설정할 수 있어요.
               </GuideDescription>
             </div>
           )}
+
           <SectionContainer>
-            <CardGrid highlight={startTutorial}>
+            <CardGrid ref={tutorialRefs.tutorialRef2}>
               <DashboardStats
                 title={"누적 매출"}
                 value={dashboardInfoData.total_cost}
@@ -193,8 +209,17 @@ export default function DashBoardPage() {
             </CardGrid>
           </SectionContainer>
 
+          {tutorialStep === 2 && startTutorial && (
+            <div style={{ display: "flex", justifyContent: "center" }}>
+              <GuideDescription>
+                기본 날짜는 <b>마지막 업데이트일 기준으로 1개월 전</b>이며,
+                버튼을 통해 기간을 빠르게 조정하거나 직접 선택을 통해 원하는
+                기간을 설정할 수 있어요.
+              </GuideDescription>
+            </div>
+          )}
           <SectionContainer>
-            <CardGrid highlight={startTutorial}>
+            <CardGrid ref={tutorialRefs.tutorialRef3}>
               <Card>
                 <ChartTitle>일자별 매출 통계</ChartTitle>
                 <BaseLineChart
@@ -210,8 +235,18 @@ export default function DashBoardPage() {
             </CardGrid>
           </SectionContainer>
 
+          {tutorialStep === 3 && startTutorial && (
+            <div style={{ display: "flex", justifyContent: "center" }}>
+              <GuideDescription>
+                기본 날짜는 <b>마지막 업데이트일 기준으로 1개월 전</b>이며,
+                버튼을 통해 기간을 빠르게 조정하거나 직접 선택을 통해 원하는
+                기간을 설정할 수 있어요.
+              </GuideDescription>
+            </div>
+          )}
+
           <SectionContainer>
-            <CardGrid highlight={startTutorial}>
+            <CardGrid ref={tutorialRefs.tutorialRef4}>
               <Card>
                 <ChartTitle>지역 별 매출 순위</ChartTitle>
                 <BaseTable data={dashboardInfoData.topRegions} />
@@ -256,8 +291,10 @@ const FilterContainer = styled.div<{ highlight?: boolean }>`
   justify-content: flex-start;
   gap: 10px;
   position: relative;
-  z-index: ${(props) =>
-    props.highlight ? props.theme.zIndex.rank2 : props.theme.zIndex.rank4};
+  z-index: ${(props) => props.theme.zIndex.rank4};
+  &.tutorial-highlight {
+    z-index: ${(props) => props.theme.zIndex.rank2};
+  }
 `;
 
 const CardGrid = styled.div<{ highlight?: boolean }>`
@@ -266,8 +303,10 @@ const CardGrid = styled.div<{ highlight?: boolean }>`
   gap: 1rem;
   padding: 1rem;
   position: relative;
-  z-index: ${(props) =>
-    props.highlight ? props.theme.zIndex.rank2 : props.theme.zIndex.rank4};
+  z-index: ${(props) => props.theme.zIndex.rank4};
+  &.tutorial-highlight {
+    z-index: ${(props) => props.theme.zIndex.rank2};
+  }
 `;
 
 const Card = styled.div`

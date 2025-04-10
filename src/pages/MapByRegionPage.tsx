@@ -13,7 +13,10 @@ import { useNavigate } from "react-router-dom";
 import useTutorial from "../hooks/useTutorial";
 import Tutorial from "../components/tutorial/Tutorial";
 import { MapByRegionTutorialSteps } from "../components/tutorial/TutorialData";
-import { tutorialHighlightWithBlink } from "../components/tutorial/style/tutorial.styles";
+import {
+  tutorialHighlightWithBlink,
+  TutorialImageContainer
+} from "../components/tutorial/style/tutorial.styles";
 
 function MapByRegionPage() {
   const tutorialRefs = {
@@ -22,12 +25,16 @@ function MapByRegionPage() {
   const navigate = useNavigate();
   const tutorialSteps = MapByRegionTutorialSteps(tutorialRefs);
   const { mapElement, isFetching } = useNaverMapCore();
-  const { isInActiveUser, lastedUpdatedDate, startTutorial } = userStore();
+  const { lastedUpdatedDate, startTutorial } = userStore();
   const { loading, setDrawerDate, handleIsDrawerOpen } = mapStore();
   const { dateRange, handleDateRangeChange } = useRangeDurationDatePicker();
 
-  const { tutorialStep, setTutorialStep, nextStep } = useTutorial({
-    steps: tutorialRefs
+  const { tutorialStep, handleNextStep, handlePrevStep } = useTutorial({
+    steps: tutorialSteps,
+    showTutorialModal: startTutorial,
+    onComplate: () => {
+      navigate("/statistics-by-region");
+    }
   });
 
   useEffect(() => {
@@ -100,36 +107,24 @@ function MapByRegionPage() {
       </MapContainer>
       <StatisticsDrawer showTutorial={startTutorial} />
       {tutorialSteps[tutorialStep].specialBackground && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100vw",
-            height: "100vh",
-            zIndex: 80,
-            cursor: "pointer",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center"
-          }}
-        >
+        <TutorialImageContainer>
           <img
             onClick={() => {
               handleIsDrawerOpen(true);
-              nextStep();
+
+              // handleNextStep();
             }}
             src={getImageBasedonTutorialStep()}
             alt="MapByRegionTutorialMap"
           />
-        </div>
+        </TutorialImageContainer>
       )}
       <Tutorial
         steps={tutorialSteps}
         tutorialStep={tutorialStep}
-        setTutorialStep={setTutorialStep}
-        onComplete={() => navigate("/statistics-by-region")}
         showTutorial={startTutorial}
+        handleNextStep={handleNextStep}
+        handlePrevStep={handlePrevStep}
       />
     </>
   );
