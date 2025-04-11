@@ -114,6 +114,8 @@ export default function DashBoardPage() {
     return null;
   };
 
+  if (hasGuided && !dashboardInfo) return <Loading />;
+
   return (
     <>
       {(startTutorial || !hasGuided) && <FullDimOverlay />}
@@ -125,7 +127,7 @@ export default function DashBoardPage() {
         <FreeTrialModal />
       )}
 
-      {isLoading && <Loading content={LOADING_CONTENT} />}
+      {!startTutorial && isLoading && <Loading content={LOADING_CONTENT} />}
 
       {dashboardInfoData && (
         <DashBoardContainer>
