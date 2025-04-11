@@ -12,6 +12,8 @@ import { postActiveLicenseParams } from "../types/params";
 import useFingerPrintNumber from "../hooks/useFingerPrintNumber";
 import BaseInput from "../components/common/input/BaseInput";
 import useUpdateUserInfo from "../hooks/useUpdateUserInfo";
+import Loading from "../components/common/Loading";
+import { isDemo } from "../App";
 
 export type LoginParams = {
   email: string;
@@ -56,7 +58,7 @@ const LoginPage = () => {
     onError: (err: AxiosError) =>
       alert(
         (err.response?.data as { error?: string })?.error ||
-        "License activation failed"
+          "License activation failed"
       )
   });
 
@@ -105,6 +107,19 @@ const LoginPage = () => {
     };
     loginMutation.mutate(loginData);
   };
+
+  /**DEMO 버전일때 로그인 건너뛰기 */
+  useEffect(() => {
+    if (isDemo) {
+      loginMutation.mutate({
+        email: "test123@naver.com",
+        password: "test123",
+        hardwareFingerprint: "11"
+      });
+    }
+  }, []);
+
+  if (import.meta.env.VITE_DEMO === "true") return <Loading />;
 
   return (
     <LoginContainer>

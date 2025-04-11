@@ -16,6 +16,7 @@ import PaymentHistoryPage from "./pages/PaymentHistoryPage.tsx";
 import CompareAvenuePage from "./pages/CompareAvenuePage.tsx";
 import MapByRegionPage from "./pages/MapByRegionPage.tsx";
 
+export const isDemo = import.meta.env.VITE_DEMO === "true" ? true : false;
 function App() {
   const { fetchUserInfo } = useUpdateUserInfo();
 
