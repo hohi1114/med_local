@@ -5,7 +5,7 @@ import { RegionStatistics } from "../../../types/region-analysis";
 import { TableProps } from "antd/es/table";
 import { useRegionAnalysisStore } from "../../../store/useRegionAnalysisStore";
 import { statisticsColumn } from "./StatisticsTableData";
-import { mockStatisticsByRegion } from "../../../utils/\bTutorialMock";
+import { mockStatisticsByRegion } from "../../../utils/tutorial-mock";
 import userStore from "../../../store/userStore";
 
 interface DashBoardTableProps {

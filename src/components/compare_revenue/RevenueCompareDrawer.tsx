@@ -10,7 +10,7 @@ import {
   mockFirstRegionPrivate,
   mockSecondRegionPrivate,
   mockComparisonStatsData
-} from "../../utils/\bTutorialMock";
+} from "../../utils/tutorial-mock";
 import { useEffect, useState } from "react";
 
 dayjs.extend(isBetween);

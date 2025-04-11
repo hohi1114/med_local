@@ -13,7 +13,7 @@ import {
   mockRegionInfo,
   mockMapByRegionStats,
   mockMapByRegionRegionPrivate
-} from "../../utils/\bTutorialMock";
+} from "../../utils/tutorial-mock";
 
 dayjs.extend(isBetween);
 

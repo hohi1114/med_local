@@ -15,7 +15,7 @@ import userStore from "../store/userStore";
 import { FreeTrialModal } from "../components/membership/FreeTrialModal";
 import RequireSubscribe from "../components/common/RequireSubscribe";
 import { useNavigate } from "react-router-dom";
-import { mockDashboard } from "../utils/\bTutorialMock";
+import { mockDashboard } from "../utils/tutorial-mock";
 import {
   FullDimOverlay,
   GuideContainer,
