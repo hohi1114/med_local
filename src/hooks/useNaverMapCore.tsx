@@ -39,7 +39,6 @@ export function useNaverMapCore({
     clearMap
   } = mapStore();
 
-  const [isFirstViwed, setIsFirstViwed] = useState(false);
   const MarkerClustering = makeMarkerClustering(window.naver) as any;
   const mapElement = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<naver.maps.Map | null>(null);
@@ -52,6 +51,7 @@ export function useNaverMapCore({
   const patientGroupsMarkerClusterRef = useRef<any | null>(null);
   const [currentZoom, setCurrentZoom] = useState<number>(16);
   const clickedAreaRef = useRef<string>(null);
+  const [first, setFirst] = useState(false);
 
   // Map Logic
   const {
@@ -157,16 +157,23 @@ export function useNaverMapCore({
       0.3
     );
     const polygonsToRender = data;
-    setIsFirstViwed(true);
-    const { boundAreas } = getBoundAreas(polygonsToRender, mapBounds);
-    setBoundArea(boundAreas);
 
-    //만약 small polygon이 없을시 동으로
-    if (isFirstViwed) {
-      if (boundAreas.length === 0) {
-        map.setZoom(14);
+    const { boundAreas } = getBoundAreas(polygonsToRender, mapBounds);
+    if (
+      smallRegions.length > 0 &&
+      dongRegions.length > 0 &&
+      guRegions.length > 0
+    ) {
+      setFirst(true);
+      if (!first) {
+        if (boundAreas.length === 0) {
+          map.setZoom(14);
+        }
       }
     }
+
+    setBoundArea(boundAreas);
+
     // Remove polygons and markerClusters
     if (dateChanged) {
       polygonsRef.current.forEach((polygon) => {
@@ -266,8 +273,9 @@ export function useNaverMapCore({
       window.naver.maps.Event.clearListeners(map, "zoom_changed");
       window.naver.maps.Event.clearListeners(map, "idle");
     }
+
     handleZoomChange(true);
-  }, [isComparison ? drawerDate1 : drawerDate, map, currentZoom, isFirstViwed]);
+  }, [isComparison ? drawerDate1 : drawerDate, map, currentZoom]);
 
   // Set up event listeners
   useEffect(() => {
@@ -299,7 +307,7 @@ export function useNaverMapCore({
     dongRegionEtc,
     guRegionEtc,
     currentZoom,
-    isFirstViwed
+    first
   ]);
 
   const setPolygonClickListener = (
