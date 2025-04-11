@@ -97,8 +97,8 @@ const LoginPage = () => {
 
   const onSubmit = (data: LoginParams) => {
     setIsLoading(true);
-    const isTestUser = data.email === "test123@naver.com";
-    const customFingerprint = isTestUser ? "11" : hardwareFingerprint;
+    const isTestUser = data.email === "nicetest@naver.com";
+    const customFingerprint = isTestUser ? "nice" : hardwareFingerprint;
     const loginData = {
       ...data,
       hardwareFingerprint: customFingerprint
