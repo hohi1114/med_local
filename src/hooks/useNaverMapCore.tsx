@@ -39,6 +39,7 @@ export function useNaverMapCore({
     clearMap
   } = mapStore();
 
+  const [isFirstViwed, setIsFirstViwed] = useState(false);
   const MarkerClustering = makeMarkerClustering(window.naver) as any;
   const mapElement = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<naver.maps.Map | null>(null);
@@ -156,18 +157,16 @@ export function useNaverMapCore({
       0.3
     );
     const polygonsToRender = data;
-
-    // Get Bound Areas
+    setIsFirstViwed(true);
     const { boundAreas } = getBoundAreas(polygonsToRender, mapBounds);
-
     setBoundArea(boundAreas);
 
-    if (boundAreas.length === 0) {
-      polygonsRef.current.forEach((polygon) => polygon.setMap(null));
-      polygonsRef.current.clear();
-      return;
+    //만약 small polygon이 없을시 동으로
+    if (isFirstViwed) {
+      if (boundAreas.length === 0) {
+        map.setZoom(14);
+      }
     }
-
     // Remove polygons and markerClusters
     if (dateChanged) {
       polygonsRef.current.forEach((polygon) => {
@@ -268,7 +267,7 @@ export function useNaverMapCore({
       window.naver.maps.Event.clearListeners(map, "idle");
     }
     handleZoomChange(true);
-  }, [isComparison ? drawerDate1 : drawerDate, map, currentZoom]);
+  }, [isComparison ? drawerDate1 : drawerDate, map, currentZoom, isFirstViwed]);
 
   // Set up event listeners
   useEffect(() => {
@@ -299,7 +298,8 @@ export function useNaverMapCore({
     smallRegionEtc,
     dongRegionEtc,
     guRegionEtc,
-    currentZoom
+    currentZoom,
+    isFirstViwed
   ]);
 
   const setPolygonClickListener = (
