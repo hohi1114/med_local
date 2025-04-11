@@ -6,6 +6,7 @@ import { TableProps } from "antd/es/table";
 import { useRegionAnalysisStore } from "../../../store/useRegionAnalysisStore";
 import { statisticsColumn } from "./StatisticsTableData";
 import { mockStatisticsByRegion } from "../../../utils/\bTutorialMock";
+import userStore from "../../../store/userStore";
 
 interface DashBoardTableProps {
   isLoading: boolean;
@@ -32,9 +33,11 @@ const StatisticsTable: FC<DashBoardTableProps> = ({
     data
   } = useRegionAnalysisStore();
 
+  const { startTutorial } = userStore();
+
   useEffect(() => {
     const dataMap = {
-      소구역: isTutorial ? mockStatisticsByRegion : smallSectionData,
+      소구역: startTutorial ? mockStatisticsByRegion : smallSectionData,
       동: dongSectionData,
       구: guSectionData
     };
@@ -44,7 +47,7 @@ const StatisticsTable: FC<DashBoardTableProps> = ({
     smallSectionData,
     dongSectionData,
     guSectionData,
-    isTutorial
+    startTutorial
   ]);
 
   useEffect(() => {

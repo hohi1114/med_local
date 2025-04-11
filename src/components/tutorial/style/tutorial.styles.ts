@@ -35,16 +35,6 @@ export const FullDimOverlay = styled.div`
   left: 0;
   z-index: ${(props) => props.theme.zIndex.rank3};
 `;
-export const GuideDescription = styled.div`
-  border-radius: 6px;
-  padding: 0.5rem 0rem;
-  font-size: 1.2rem;
-  z-index: 101;
-  position: relative;
-  text-align: center;
-  max-width: 80%;
-  color: ${(props) => props.theme.colors.white};
-`;
 
 export const CloseGuideButton = styled(BaseButton)`
   position: fixed;
@@ -128,4 +118,32 @@ export const TutorialImageContainer = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
+`;
+export const HighlightWrapper = styled.div`
+  &.tutorial-highlight {
+    z-index: ${(props) => props.theme.zIndex.rank2};
+  }
+`;
+export const GuideContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  margin-bottom: 10px;
+`;
+
+export const GuideDescription = styled.div`
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-size: 1.2rem;
+  position: relative;
+  text-align: center;
+  max-width: 80%;
+  color: ${(props) => props.theme.colors.white};
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2);
+  display: block;
+  z-index: ${(props) => props.theme.zIndex.rank1};
+
+  &.tutorial-highlight {
+    flex: 1;
+    z-index: ${(props) => props.theme.zIndex.rank2};
+  }
 `;

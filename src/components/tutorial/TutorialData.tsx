@@ -43,7 +43,7 @@ export const MapByRegionTutorialSteps = (refs: any) => [
   {
     title: "분석 기간 설정",
     description:
-      "기본 설정은 데이터 업로드 기준으로 한 달 전부터 오늘까지입니다. 직접 원하는 기간을 선택할 수도 있어요.",
+      "기본 날짜는 마지막 업데이트일 기준으로 1개월 전 입니다. 직접 원하는 기간을 선택할 수도 있어요.",
     targetRef: refs.tutorialRef1,
     boxPosition: "50%"
   },
@@ -97,7 +97,7 @@ export const MapByRegionTutorialSteps = (refs: any) => [
   {
     title: "분석 튜토리얼 완료!",
     description:
-      "이제 데이터를 최신화하거나, 다른 기능을 사용해 더 깊은 인사이트를 얻어보세요.",
+      "이제 지역 별 통계로 넘어가 더욱 심화된 인사이트를 확인해 보세요.",
     specialBackground: true,
     targetRef: null,
     boxPosition: "30%"
@@ -106,42 +106,60 @@ export const MapByRegionTutorialSteps = (refs: any) => [
 
 export const DashboardSteps = (refs: any) => [
   {
-    description: `기본 날짜는 <b>마지막 업데이트일 기준으로 1개월 전</b>이며,
-                  버튼을 통해 기간을 빠르게 조정하거나 직접 선택을 통해 원하는
-                  기간을 설정할 수 있어요.`,
+    description: (
+      <>
+        기본 날짜는 <b>마지막 업데이트일 기준으로 1개월 전</b>이며,
+        <b>빠른 선택 버튼</b> 또는 <b>직접 선택</b>으로 원하는 기간을 지정할 수
+        있습니다.
+      </>
+    ),
     targetRef: refs.tutorialRef1
   },
   {
-    description: `기본 날짜는 <b>마지막 업데이트일 기준으로 1개월 전</b>이며,
-    버튼을 통해 기간을 빠르게 조정하거나 직접 선택을 통해 원하는
-    기간을 설정할 수 있어요.`,
+    description: (
+      <>
+        이곳에서는 <b>전체 통계 요약</b>을 확인할 수 있어요. 매출, 환자 수 등
+        주요 지표를 빠르게 파악할 수 있습니다.
+      </>
+    ),
     targetRef: refs.tutorialRef2
   },
   {
-    description: `기본 날짜는 <b>마지막 업데이트일 기준으로 1개월 전</b>이며,
-    버튼을 통해 기간을 빠르게 조정하거나 직접 선택을 통해 원하는
-    기간을 설정할 수 있어요.`,
+    description: (
+      <>
+        <b>일자별 매출 추이</b>를 그래프로 확인해보세요. 한눈에 매출 흐름을
+        파악하고, 특정 날짜를 비교할 수 있습니다.
+      </>
+    ),
     targetRef: refs.tutorialRef3
   },
   {
-    description: `기본 날짜는 <b>마지막 업데이트일 기준으로 1개월 전</b>이며,
-                  버튼을 통해 기간을 빠르게 조정하거나 직접 선택을 통해 원하는
-                  기간을 설정할 수 있어요.`,
+    description: (
+      <>
+        <b>지역별 매출 순위</b>와 <b>연령대별 환자 분포</b>를 통해 어떤 지역,
+        어떤 연령대가 핵심 타겟인지 확인해보세요.
+      </>
+    ),
     targetRef: refs.tutorialRef4
   }
 ];
 
 export const StatisticsByRegionPageSteps = (refs: any) => [
   {
-    description: `기본 날짜는 <b>마지막 업데이트일 기준으로 1개월 전</b>이며,
-                  버튼을 통해 기간을 빠르게 조정하거나 직접 선택을 통해 원하는
-                  기간을 설정할 수 있어요.`,
+    description: (
+      <>
+        기본 날짜는 <b>최근 업데이트일 기준으로 1개월 전</b>이며, 지역은{" "}
+        <b>소구역, 군, 구</b> 단위로 자유롭게 선택할 수 있어요.
+      </>
+    ),
     targetRef: refs.tutorialRef1
   },
   {
-    description: `기본 날짜는 <b>마지막 업데이트일 기준으로 1개월 전</b>이며,
-    버튼을 통해 기간을 빠르게 조정하거나 직접 선택을 통해 원하는
-    기간을 설정할 수 있어요.`,
+    description: (
+      <>
+        각 컬럼은 클릭하면 <b>오름차순 혹은 내림차순</b>으로 정렬할 수 있어요.
+      </>
+    ),
     targetRef: refs.tutorialRef2
   }
 ];

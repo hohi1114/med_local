@@ -13,8 +13,14 @@ import userStore from "../store/userStore";
 dayjs.extend(isBetween);
 
 const useDashBoard = () => {
-  const { isFreetrialUser, user, isInActiveUser, lastedUpdatedDate } =
-    userStore();
+  const {
+    isFreetrialUser,
+    user,
+    isInActiveUser,
+    lastedUpdatedDate,
+    startTutorial,
+    hasGuided
+  } = userStore();
 
   const getBaseDate = () =>
     lastedUpdatedDate && lastedUpdatedDate.length > 0
@@ -159,12 +165,18 @@ const useDashBoard = () => {
   ]);
 
   useEffect(() => {
-    if (user?.user_id && lastedUpdatedDate && !isInActiveUser) {
+    if (
+      user?.user_id &&
+      lastedUpdatedDate &&
+      !isInActiveUser &&
+      !startTutorial &&
+      hasGuided
+    ) {
       fetchFirstDate();
     } else {
       setDashboardInfo(null);
     }
-  }, [user, lastedUpdatedDate]);
+  }, [user, lastedUpdatedDate, startTutorial, hasGuided]);
 
   useEffect(() => {
     if (!buttonType) return;

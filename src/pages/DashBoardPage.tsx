@@ -16,12 +16,18 @@ import { FreeTrialModal } from "../components/membership/FreeTrialModal";
 import RequireSubscribe from "../components/common/RequireSubscribe";
 import { useNavigate } from "react-router-dom";
 import { mockDashboard } from "../utils/\bTutorialMock";
-import { FullDimOverlay } from "../components/tutorial/style/tutorial.styles";
+import {
+  FullDimOverlay,
+  GuideContainer,
+  GuideDescription
+} from "../components/tutorial/style/tutorial.styles";
 import TutorialStartModal from "../components/tutorial/TutorialStartModal";
 import useTutorial from "../hooks/useTutorial";
 import { DashboardSteps } from "../components/tutorial/TutorialData";
+import { RangeDateMapKey } from "../types/dashboard";
 
-const LOADINGCONTENT = "데이터를 불러오는 중입니다.";
+const LOADING_CONTENT = "데이터를 불러오는 중입니다.";
+
 export default function DashBoardPage() {
   const {
     dateRange,
@@ -44,43 +50,38 @@ export default function DashBoardPage() {
     needFreeTrial
   } = userStore();
 
+  const navigate = useNavigate();
+
   const tutorialRefs = {
     tutorialRef1: useRef(null),
     tutorialRef2: useRef(null),
     tutorialRef3: useRef(null),
     tutorialRef4: useRef(null)
   };
+
   const tutorialSteps = DashboardSteps(tutorialRefs);
 
   const { tutorialStep, handleNextStep } = useTutorial({
     steps: tutorialSteps,
     showTutorialModal: startTutorial,
-    onComplate: () => {
-      navigate("/compare-avenue");
-    }
+    onComplate: () => navigate("/compare-avenue")
   });
 
-  const navigate = useNavigate();
+  const dashboardInfoData = startTutorial
+    ? mockDashboard
+    : dashboardInfo ?? mockDashboard;
 
-  const dashboardInfoData = startTutorial ? mockDashboard : dashboardInfo;
-
-  const barFormatData = () => {
+  const formatBarData = () => {
     if (!dashboardInfoData) return [];
     return Object.entries(dashboardInfoData.patient_count_by_age_group).map(
-      ([age, value]) => ({
-        age,
-        value
-      })
+      ([age, value]) => ({ age, value })
     );
   };
 
-  const chartFormatData = () => {
+  const formatChartData = () => {
     if (!dashboardInfoData) return [];
     return Object.entries(dashboardInfoData?.cost_by_date).map(
-      ([date, value]) => ({
-        date,
-        매출액: value
-      })
+      ([date, value]) => ({ date, 매출액: value })
     );
   };
 
@@ -94,10 +95,24 @@ export default function DashBoardPage() {
     }
   }, [lastedUpdatedDate]);
 
-  if (isError)
+  if (isError) {
     return (
       <Error status={error?.status ?? "Unknown"} message={error?.message} />
     );
+  }
+
+  const renderGuideDescription = (step: number) => {
+    if (startTutorial && tutorialStep === step) {
+      return (
+        <GuideContainer>
+          <GuideDescription className="tutorial-highlight">
+            {tutorialSteps[tutorialStep].description}
+          </GuideDescription>
+        </GuideContainer>
+      );
+    }
+    return null;
+  };
 
   return (
     <>
@@ -105,13 +120,15 @@ export default function DashBoardPage() {
       <TutorialStartModal />
       <RequireSubscribe />
       <ContentHeader title="대시보드" />
+
       {!fetchingUserLoading && needFreeTrial && !startTutorial && hasGuided && (
         <FreeTrialModal />
       )}
-      {isLoading && <Loading content={LOADINGCONTENT} />}
+
+      {isLoading && <Loading content={LOADING_CONTENT} />}
+
       {dashboardInfoData && (
         <DashBoardContainer>
-          {/** GUIDE CLOSE BUTTON*/}
           {startTutorial && (
             <CloseGuideButton type="button" onClick={handleNextStep}>
               {tutorialStep === tutorialSteps.length - 1
@@ -121,63 +138,51 @@ export default function DashBoardPage() {
           )}
 
           <SectionContainer>
-            {/** GUIDE */}
-            {tutorialStep === 0 && startTutorial && (
-              <div style={{ display: "flex", justifyContent: "center" }}>
-                <GuideDescription>
-                  기본 날짜는 <b>마지막 업데이트일 기준으로 1개월 전</b>이며,
-                  버튼을 통해 기간을 빠르게 조정하거나 직접 선택을 통해 원하는
-                  기간을 설정할 수 있어요.
-                </GuideDescription>
-              </div>
-            )}
-            <FilterContainer ref={tutorialRefs.tutorialRef1}>
-              {Object.keys(AVAILABLE_DATE_RANGES).map(
-                (content: string, index: number) => {
-                  const contentKey =
-                    content as keyof typeof AVAILABLE_DATE_RANGES;
-                  return (
-                    <div style={{ width: "85px" }} key={content}>
-                      <CutomButton
-                        selected={contentKey === buttonType}
-                        onClick={() => handleDateFilterButton(contentKey)}
-                        type="button"
-                        textcolor={(props) => props.theme.colors.black}
-                        color={(props) => props.theme.colors.white}
-                        key={index}
-                      >
-                        {contentKey}
-                      </CutomButton>
-                    </div>
-                  );
-                }
-              )}
+            {renderGuideDescription(0)}
 
-              <>
-                <DateLabel>직접 선택</DateLabel>
-                <DurationDatePicker
-                  value={dateRange}
-                  onChange={(date) => {
-                    setDateChanged(true);
-                    handleDateRangeChange(date);
-                  }}
-                />
-              </>
+            <FilterContainer
+              ref={tutorialRefs.tutorialRef1}
+              className={
+                tutorialStep === 0 && startTutorial ? "tutorial-highlight" : ""
+              }
+            >
+              {Object.keys(AVAILABLE_DATE_RANGES).map((content) => {
+                const contentKey = content as RangeDateMapKey;
+                return (
+                  <ButtonWrapper key={content}>
+                    <CutomButton
+                      selected={contentKey === buttonType}
+                      onClick={() => handleDateFilterButton(contentKey)}
+                      type="button"
+                      textcolor={(props) => props.theme.colors.black}
+                      color={(props) => props.theme.colors.white}
+                    >
+                      {contentKey}
+                    </CutomButton>
+                  </ButtonWrapper>
+                );
+              })}
+
+              <DateLabel>직접 선택</DateLabel>
+              <DurationDatePicker
+                value={dateRange}
+                onChange={(date) => {
+                  setDateChanged(true);
+                  handleDateRangeChange(date);
+                }}
+              />
             </FilterContainer>
           </SectionContainer>
 
-          {tutorialStep === 1 && startTutorial && (
-            <div style={{ display: "flex", justifyContent: "center" }}>
-              <GuideDescription>
-                기본 날짜는 <b>마지막 업데이트일 기준으로 1개월 전</b>이며,
-                버튼을 통해 기간을 빠르게 조정하거나 직접 선택을 통해 원하는
-                기간을 설정할 수 있어요.
-              </GuideDescription>
-            </div>
-          )}
+          {renderGuideDescription(1)}
 
           <SectionContainer>
-            <CardGrid ref={tutorialRefs.tutorialRef2}>
+            <CardGrid
+              ref={tutorialRefs.tutorialRef2}
+              className={
+                tutorialStep === 1 && startTutorial ? "tutorial-highlight" : ""
+              }
+            >
               <DashboardStats
                 title={"누적 매출"}
                 value={dashboardInfoData.total_cost}
@@ -209,25 +214,23 @@ export default function DashBoardPage() {
             </CardGrid>
           </SectionContainer>
 
-          {tutorialStep === 2 && startTutorial && (
-            <div style={{ display: "flex", justifyContent: "center" }}>
-              <GuideDescription>
-                기본 날짜는 <b>마지막 업데이트일 기준으로 1개월 전</b>이며,
-                버튼을 통해 기간을 빠르게 조정하거나 직접 선택을 통해 원하는
-                기간을 설정할 수 있어요.
-              </GuideDescription>
-            </div>
-          )}
+          {renderGuideDescription(2)}
+
           <SectionContainer>
-            <CardGrid ref={tutorialRefs.tutorialRef3}>
+            <CardGrid
+              ref={tutorialRefs.tutorialRef3}
+              className={
+                tutorialStep === 2 && startTutorial ? "tutorial-highlight" : ""
+              }
+            >
               <Card>
                 <ChartTitle>일자별 매출 통계</ChartTitle>
                 <BaseLineChart
                   data={dashboardInfoData.cost_by_date}
                   xField="date"
                   yField="매출액"
-                  labelFormatterY={(v: number) => `${v / 1000}K`}
-                  formatData={chartFormatData}
+                  labelFormatterY={(v) => `${v / 1000}K`}
+                  formatData={formatChartData}
                   height={350}
                   limitDateXLength={30}
                 />
@@ -235,18 +238,15 @@ export default function DashBoardPage() {
             </CardGrid>
           </SectionContainer>
 
-          {tutorialStep === 3 && startTutorial && (
-            <div style={{ display: "flex", justifyContent: "center" }}>
-              <GuideDescription>
-                기본 날짜는 <b>마지막 업데이트일 기준으로 1개월 전</b>이며,
-                버튼을 통해 기간을 빠르게 조정하거나 직접 선택을 통해 원하는
-                기간을 설정할 수 있어요.
-              </GuideDescription>
-            </div>
-          )}
+          {renderGuideDescription(3)}
 
           <SectionContainer>
-            <CardGrid ref={tutorialRefs.tutorialRef4}>
+            <CardGrid
+              ref={tutorialRefs.tutorialRef4}
+              className={
+                tutorialStep === 3 && startTutorial ? "tutorial-highlight" : ""
+              }
+            >
               <Card>
                 <ChartTitle>지역 별 매출 순위</ChartTitle>
                 <BaseTable data={dashboardInfoData.topRegions} />
@@ -257,7 +257,7 @@ export default function DashBoardPage() {
                   data={dashboardInfoData.patient_count_by_age_group}
                   xField="age"
                   yField="value"
-                  formatData={barFormatData}
+                  formatData={formatBarData}
                   height={430}
                 />
               </Card>
@@ -282,7 +282,11 @@ const SectionContainer = styled.div`
   margin-bottom: 24px;
 `;
 
-const FilterContainer = styled.div<{ highlight?: boolean }>`
+const ButtonWrapper = styled.div`
+  width: 85px;
+`;
+
+const FilterContainer = styled.div`
   background-color: ${(props) => props.theme.colors.white};
   padding: 1rem;
   border-radius: 8px;
@@ -292,18 +296,20 @@ const FilterContainer = styled.div<{ highlight?: boolean }>`
   gap: 10px;
   position: relative;
   z-index: ${(props) => props.theme.zIndex.rank4};
+
   &.tutorial-highlight {
     z-index: ${(props) => props.theme.zIndex.rank2};
   }
 `;
 
-const CardGrid = styled.div<{ highlight?: boolean }>`
+const CardGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 1rem;
   padding: 1rem;
   position: relative;
   z-index: ${(props) => props.theme.zIndex.rank4};
+
   &.tutorial-highlight {
     z-index: ${(props) => props.theme.zIndex.rank2};
   }
@@ -326,7 +332,7 @@ const ChartTitle = styled.span`
   padding-bottom: 1.5rem;
 `;
 
-const CutomButton = styled(BaseButton)<{ selected?: boolean }>`
+const CutomButton = styled(BaseButton)<{ selected: boolean }>`
   font-weight: ${(props) => (props.selected ? "bold" : 500)};
   min-width: 85px;
   max-width: 100px;
@@ -357,18 +363,6 @@ const DateLabel = styled.div`
   justify-content: center;
   align-items: center;
   background-color: ${(props) => props.theme.colors.primary};
-`;
-
-const GuideDescription = styled.div`
-  border-radius: 6px;
-  padding: 0.5rem 0rem;
-  font-size: 1.2rem;
-  z-index: 101;
-  position: relative;
-  text-align: center;
-  max-width: 80%;
-  color: ${(props) => props.theme.colors.white};
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2);
 `;
 
 const CloseGuideButton = styled(BaseButton)`

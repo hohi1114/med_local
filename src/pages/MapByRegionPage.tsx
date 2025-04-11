@@ -63,7 +63,7 @@ function MapByRegionPage() {
   }, [dateRange]);
 
   useEffect(() => {
-    if (tutorialStep === 6) {
+    if (tutorialStep === 7) {
       handleIsDrawerOpen(true);
     }
   }, [tutorialStep]);
@@ -111,8 +111,6 @@ function MapByRegionPage() {
           <img
             onClick={() => {
               handleIsDrawerOpen(true);
-
-              // handleNextStep();
             }}
             src={getImageBasedonTutorialStep()}
             alt="MapByRegionTutorialMap"

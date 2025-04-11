@@ -40,7 +40,7 @@ const TutorialStartModal = () => {
 
           <TutorialButtonContainer>
             <TutorialButton type="button" onClick={handlSkipTutorialButton}>
-              Skip
+              건너뛰기
             </TutorialButton>
 
             <TutorialButton

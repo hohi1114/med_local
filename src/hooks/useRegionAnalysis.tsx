@@ -18,7 +18,8 @@ export type LocalSectionKey = keyof typeof LOCAL_SECTIONS_MAP;
 
 const useRegionAnalysis = () => {
   const { dateRange, handleDateRangeChange } = useRangeDurationDatePicker();
-  const { isInActiveUser, user, lastedUpdatedDate } = userStore();
+  const { isInActiveUser, user, lastedUpdatedDate, hasGuided, startTutorial } =
+    userStore();
   const {
     setSmallSectionData,
     setGuSectionData,
@@ -84,10 +85,16 @@ const useRegionAnalysis = () => {
   };
 
   useEffect(() => {
-    if (user?.user_id && !isInActiveUser && lastedUpdatedDate) {
+    if (
+      user?.user_id &&
+      !isInActiveUser &&
+      lastedUpdatedDate &&
+      hasGuided &&
+      !startTutorial
+    ) {
       fetchFirstRegion();
     }
-  }, [dateRange, user, isInActiveUser]);
+  }, [dateRange, user, isInActiveUser, hasGuided, startTutorial]);
 
   useEffect(() => {
     if (lastedUpdatedDate && lastedUpdatedDate.length > 0) {

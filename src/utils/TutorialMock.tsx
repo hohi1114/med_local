@@ -200,48 +200,16 @@ export const mockRegionInfo = {
   }
 };
 
-export const mockMapByRegionStats = [
-  {
-    id: 1,
-    data: "413명",
-    diffRate: 14.02
-  },
-  {
-    id: 2,
-    data: "23,498,159 ₩",
-    diffRate: 17
-  },
-  {
-    id: 3,
-    data: "54,520 ₩",
-    diffRate: -55.21
-  },
-  {
-    id: 4,
-    data: "93,993 ₩",
-    diffRate: 10.92
-  },
-  {
-    id: 5,
-    data: "277명",
-    diffRate: 95.67
-  },
-  {
-    id: 6,
-    data: "155명",
-    diffRate: -34.67
-  },
-  {
-    id: 7,
-    data: "준비중",
-    diffRate: null
-  },
-  {
-    id: 8,
-    data: "5.87%",
-    diffRate: -20
-  }
-];
+export const mockMapByRegionStats = {
+  1: { data: "257명", diffRate: -17.63 },
+  2: { data: "11,206,890 ₩", diffRate: -19.08 },
+  3: { data: "48,950 ₩", diffRate: 6.49 },
+  4: { data: "65,200 ₩", diffRate: -5.89 },
+  5: { data: "159명", diffRate: 8.62 },
+  6: { data: "98명", diffRate: 28.99 },
+  7: { data: "준비중" },
+  8: { data: "0 %", diffRate: -24.11 }
+};
 
 export const mockMapByRegionRegionPrivate = {
   total_cost: 45930,
