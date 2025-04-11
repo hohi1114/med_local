@@ -111,7 +111,7 @@ export function useNaverMapCore({
         map: newMap,
         zoom: 16,
         icon: {
-          content: `<img src="/images/marker.png" style="width: auto; height: 45px; z-index:20;"/>`,
+          content: `<img src="/images/marker.svg" style="width: auto; height: 43px; z-index:20;"/>`,
           anchor: new window.naver.maps.Point(15, 30)
         }
       });
