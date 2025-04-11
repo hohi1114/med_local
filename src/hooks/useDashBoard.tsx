@@ -22,16 +22,11 @@ const useDashBoard = () => {
     hasGuided
   } = userStore();
 
-  const getBaseDate = () =>
-    lastedUpdatedDate && lastedUpdatedDate.length > 0
-      ? dayjs(lastedUpdatedDate)
-      : dayjs();
-
   const makeRange = (
     startOffset: number,
     unit: dayjs.ManipulateType
   ): DateRange => {
-    const base = getBaseDate();
+    const base = dayjs();
     return {
       startDate: base.subtract(startOffset, unit).format("YYYY-MM-DD"),
       endDate: base.format("YYYY-MM-DD")
@@ -39,8 +34,8 @@ const useDashBoard = () => {
   };
   const RANGE_DATE_MAP: Record<RangeDateMapKey, DateRange> = {
     오늘: {
-      startDate: getBaseDate().format("YYYY-MM-DD"),
-      endDate: getBaseDate().format("YYYY-MM-DD")
+      startDate: dayjs().format("YYYY-MM-DD"),
+      endDate: dayjs().format("YYYY-MM-DD")
     },
     "3일": makeRange(3, "day"),
     "7일": makeRange(7, "day"),
@@ -58,7 +53,7 @@ const useDashBoard = () => {
     isFreetrialUser ? FREE_TRIAL_RANGES : RANGE_DATE_MAP;
 
   const { dateRange, handleDateRangeChange } = useRangeDurationDatePicker();
-  const [buttonType, setButtonType] = useState<RangeDateMapKey | null>("1개월");
+  const [buttonType, setButtonType] = useState<RangeDateMapKey | null>();
   const [isLoading, setIsLoading] = useState(false);
   const [dashboardInfo, setDashboardInfo] = useState<DashBoard | null>(null);
   const [dateChanged, setDateChanged] = useState(false);
@@ -81,7 +76,6 @@ const useDashBoard = () => {
     retry: false
   });
 
-  // Type-safe data saving map
   const saveDataMap: Record<RangeDateMapKey, (data: DashBoard) => void> = {
     오늘: dashboardStore.setTodayData,
     "3일": dashboardStore.setThreeDaysData,
@@ -131,18 +125,17 @@ const useDashBoard = () => {
   const fetchFirstDate = useCallback(async () => {
     try {
       setIsLoading(true);
-      const date =
-        lastedUpdatedDate && lastedUpdatedDate.length > 0
-          ? {
-              startDate: dayjs(lastedUpdatedDate)
-                .subtract(1, "month")
-                .format("YYYY-MM-DD"),
-              endDate: dayjs(lastedUpdatedDate).format("YYYY-MM-DD")
-            }
-          : dateRange;
-      const data = await dashboardInfoMutation(date);
+      const lastedUpdateDateRange = {
+        startDate: dayjs(lastedUpdatedDate)
+          .subtract(1, "month")
+          .format("YYYY-MM-DD"),
+        endDate: dayjs(lastedUpdatedDate).format("YYYY-MM-DD")
+      };
 
-      saveData("1개월", data);
+      if (lastedUpdatedDate && lastedUpdatedDate.length > 0) {
+        const data = await dashboardInfoMutation(lastedUpdateDateRange);
+        setDashboardInfo(data);
+      }
 
       if (!isFreetrialUser) {
         await fetchOtherDate(
@@ -172,6 +165,9 @@ const useDashBoard = () => {
       !startTutorial &&
       hasGuided
     ) {
+      if (!(lastedUpdatedDate && lastedUpdatedDate.length > 0)) {
+        setButtonType("1개월");
+      }
       fetchFirstDate();
     } else {
       setDashboardInfo(null);
@@ -226,7 +222,6 @@ const useDashBoard = () => {
   const handleDateFilterButton = useCallback(
     (content: RangeDateMapKey) => {
       if (!AVAILABLE_DATE_RANGES[content]) return;
-
       setButtonType(content);
       handleDateRangeChange({
         startDate: AVAILABLE_DATE_RANGES[content].startDate,
