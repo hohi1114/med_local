@@ -114,7 +114,7 @@ export default function DashBoardPage() {
     return null;
   };
 
-  if (hasGuided && !dashboardInfo) return <Loading />;
+  if (!startTutorial && hasGuided && !dashboardInfo) return <Loading />;
 
   return (
     <>
