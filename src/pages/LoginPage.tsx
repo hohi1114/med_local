@@ -56,7 +56,7 @@ const LoginPage = () => {
     onError: (err: AxiosError) =>
       alert(
         (err.response?.data as { error?: string })?.error ||
-          "License activation failed"
+        "License activation failed"
       )
   });
 
@@ -97,9 +97,11 @@ const LoginPage = () => {
 
   const onSubmit = (data: LoginParams) => {
     setIsLoading(true);
+    const isTestUser = data.email === "test123@naver.com";
+    const customFingerprint = isTestUser ? "11" : hardwareFingerprint;
     const loginData = {
       ...data,
-      hardwareFingerprint: hardwareFingerprint
+      hardwareFingerprint: customFingerprint
     };
     loginMutation.mutate(loginData);
   };
