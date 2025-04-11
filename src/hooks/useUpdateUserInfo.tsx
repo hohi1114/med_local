@@ -9,6 +9,7 @@ import usePaymentStore from "../store/usePaymenyStore";
 import dayjs from "dayjs";
 import userStore from "../store/userStore";
 import { User } from "../types/auth";
+import { getCookie } from "../utils/api/cookie";
 
 const useUpdateUserInfo = () => {
   const {
@@ -19,7 +20,8 @@ const useUpdateUserInfo = () => {
     setIsFreetrialUser,
     setIsInActiveUser,
     setHasUserCard,
-    setUpdatedDates
+    setUpdatedDates,
+    setGuided
   } = userStore();
 
   const { memberships, setMemberships } = usePaymentStore();
@@ -73,6 +75,11 @@ const useUpdateUserInfo = () => {
   });
 
   const fetchUserInfo = async () => {
+    /**For Tutorial */
+    const hasGuided = localStorage.getItem("tutorial");
+    if (hasGuided) {
+      setGuided(true);
+    }
     const { data: userData } = await loginRefetch();
     const { user, subscription } = userData;
 

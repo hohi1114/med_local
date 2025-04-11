@@ -10,6 +10,9 @@ interface UserStore {
   fetchingUserLoading: boolean;
   updatedDates: string[] | null;
   lastedUpdatedDate: string | null;
+  hasGuided: boolean;
+  needFreeTrial: boolean;
+  startTutorial: boolean;
 
   setUser: (user: User) => void;
   clearUser: () => void;
@@ -19,6 +22,9 @@ interface UserStore {
   setHasUserCard: (hasUserCard: boolean) => void;
   setUpdatedDates: (updatedDates: string[]) => void;
   setLastedUpdatedDate: (lastedUpdatedDate: string) => void;
+  setGuided: (hasGuided: boolean) => void;
+  setStartTutorial: (startTutorial: boolean) => void;
+  setNeedFreeTrial: (needFreeTrial: boolean) => void;
 }
 
 const userStore = create<UserStore>((set) => ({
@@ -49,10 +55,16 @@ const userStore = create<UserStore>((set) => ({
   isFreetrialUser: false,
   isInActiveUser: false,
   hasUserCard: false,
+  hasGuided: false,
+  startTutorial: false,
+  needFreeTrial: false,
   setHasUserCard: (hasUserCard: boolean) => set({ hasUserCard }),
   setFetchingUserLoading: (fetchingUserLoading: boolean) =>
     set({ fetchingUserLoading }),
-  setUser: (user: User) => set({ user }),
+  setUser: (user: User) =>
+    set(() => {
+      return { user, needFreeTrial: !user?.free && !user?.is_free_trial };
+    }),
   clearUser: () =>
     set({
       user: {
@@ -94,7 +106,10 @@ const userStore = create<UserStore>((set) => ({
     }),
 
   setLastedUpdatedDate: (lastedUpdatedDate: string) =>
-    set({ lastedUpdatedDate })
+    set({ lastedUpdatedDate }),
+  setGuided: (hasGuided: boolean) => set({ hasGuided }),
+  setStartTutorial: (startTutorial: boolean) => set({ startTutorial }),
+  setNeedFreeTrial: (needFreeTrial: boolean) => set({ needFreeTrial })
 }));
 
 export default userStore;

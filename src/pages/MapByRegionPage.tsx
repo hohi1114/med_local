@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import dayjs from "dayjs";
 import StatisticsDrawer from "../components/medi_map/StatisticsDrawer";
 import mapStore from "../store/mapStore";
@@ -9,12 +9,33 @@ import { useNaverMapCore } from "../hooks/useNaverMapCore";
 import styled from "styled-components";
 import Loading from "../components/common/Loading";
 import DurationDatePicker from "../components/common/datepicker/DurationDatePicker";
+import { useNavigate } from "react-router-dom";
+import useTutorial from "../hooks/useTutorial";
+import Tutorial from "../components/tutorial/Tutorial";
+import { MapByRegionTutorialSteps } from "../components/tutorial/TutorialData";
+import {
+  tutorialHighlightWithBlink,
+  TutorialImageContainer
+} from "../components/tutorial/style/tutorial.styles";
 
 function MapByRegionPage() {
+  const tutorialRefs = {
+    tutorialRef1: useRef(null)
+  };
+  const navigate = useNavigate();
+  const tutorialSteps = MapByRegionTutorialSteps(tutorialRefs);
   const { mapElement, isFetching } = useNaverMapCore();
-  const { isInActiveUser, lastedUpdatedDate } = userStore();
+  const { lastedUpdatedDate, startTutorial } = userStore();
   const { loading, setDrawerDate, handleIsDrawerOpen } = mapStore();
   const { dateRange, handleDateRangeChange } = useRangeDurationDatePicker();
+
+  const { tutorialStep, handleNextStep, handlePrevStep } = useTutorial({
+    steps: tutorialSteps,
+    showTutorialModal: startTutorial,
+    onComplate: () => {
+      navigate("/statistics-by-region");
+    }
+  });
 
   useEffect(() => {
     return () => {
@@ -41,14 +62,37 @@ function MapByRegionPage() {
     }
   }, [dateRange]);
 
+  useEffect(() => {
+    if (tutorialStep === 7) {
+      handleIsDrawerOpen(true);
+    }
+  }, [tutorialStep]);
+
+  const getImageBasedonTutorialStep = () => {
+    switch (tutorialStep) {
+      case 1:
+        return "/images/MapByRegionTutorialMap.png";
+      case 2:
+        return "/images/MapByRegionTutorialMap.png";
+      case 3:
+        return "/images/MapByRegionTutorial_small.png";
+      case 4:
+        return "/images/MapByRegionTutorial_dong.png";
+      case 5:
+        return "/images/MapByRegionTutorial_gu.png";
+      default:
+        return "/images/MapByRegionTutorialMap.png";
+    }
+  };
+
   return (
     <>
-      {isInActiveUser && <RequireSubscribe />}
+      <RequireSubscribe />
       {(isFetching || loading) && <Loading />}
       <MapContainer ref={mapElement}>
         <Wrapper>
           <ContentBox>
-            <DatePickerContainer>
+            <DatePickerContainer ref={tutorialRefs.tutorialRef1}>
               <DurationDatePicker
                 style={{ width: "100%" }}
                 value={dateRange}
@@ -61,7 +105,25 @@ function MapByRegionPage() {
           </ContentBox>
         </Wrapper>
       </MapContainer>
-      <StatisticsDrawer />
+      <StatisticsDrawer showTutorial={startTutorial} />
+      {tutorialSteps[tutorialStep].specialBackground && (
+        <TutorialImageContainer>
+          <img
+            onClick={() => {
+              handleIsDrawerOpen(true);
+            }}
+            src={getImageBasedonTutorialStep()}
+            alt="MapByRegionTutorialMap"
+          />
+        </TutorialImageContainer>
+      )}
+      <Tutorial
+        steps={tutorialSteps}
+        tutorialStep={tutorialStep}
+        showTutorial={startTutorial}
+        handleNextStep={handleNextStep}
+        handlePrevStep={handlePrevStep}
+      />
     </>
   );
 }
@@ -89,12 +151,17 @@ const ContentBox = styled.div`
   display: flex;
   flex-direction: column;
   gap: 10px;
+  z-index: 100;
 `;
 
 const DatePickerContainer = styled.div`
   display: flex;
   gap: 10px;
   width: 100%;
+
+  &.tutorial-highlight {
+    ${tutorialHighlightWithBlink}
+  }
 `;
 
 const SubText = styled.span`

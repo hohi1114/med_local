@@ -35,6 +35,13 @@ const colors = {
   black01: "#333333"
 };
 
+const zIndex = {
+  rank1: 100,
+  rank2: 90,
+  rank3: 80,
+  rank4: 70
+};
+
 const shadows = {
   small: "0 0 5px rgba(0, 0, 0, 0.1)",
   medium: "0 4px 10px rgba(0, 0, 0, 0.1)",
@@ -43,7 +50,9 @@ const shadows = {
 
 export type ColorsTypes = typeof colors;
 export type ShadowTypes = typeof shadows;
+export type ZIndexTypes = typeof zIndex;
 export const theme: DefaultTheme = {
   colors,
-  shadows
+  shadows,
+  zIndex
 };

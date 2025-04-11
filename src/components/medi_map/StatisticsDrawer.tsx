@@ -1,18 +1,27 @@
-import { Drawer } from "antd";
+import { Drawer, Tooltip } from "antd";
 import styled from "styled-components";
 import mapStore from "../../store/mapStore";
 import isBetween from "dayjs/plugin/isBetween";
 import dayjs from "dayjs";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import RegionInfo from "./RegionInfo";
 import RevenuInfo from "./chart/RevenueInfo";
 import Loading from "../common/Loading";
 import BaseToggle from "../common/toggle/BaseToggle";
 import { useDrawerData } from "../../hooks/useDrawerData";
+import {
+  mockRegionInfo,
+  mockMapByRegionStats,
+  mockMapByRegionRegionPrivate
+} from "../../utils/\bTutorialMock";
+
 dayjs.extend(isBetween);
 
 const TOGGLEOPTION = ["지역", "매출", "전체"];
-const StatisticsDrawer = () => {
+interface StatisticsDrawerProps {
+  showTutorial: boolean;
+}
+const StatisticsDrawer = ({ showTutorial }: StatisticsDrawerProps) => {
   const { region, isOpenDrawer, handleIsDrawerOpen } = mapStore();
   const {
     regionInfo,
@@ -25,27 +34,51 @@ const StatisticsDrawer = () => {
     barFormatData
   } = useDrawerData(false);
 
-  const [toggleValue, setToggleValue] = useState<string>("지역");
+  const areaNamDate = showTutorial ? mockRegionInfo.name : areaName;
+  const regionInfoData = showTutorial ? mockRegionInfo : regionInfo;
+  const statsDataData = showTutorial ? mockMapByRegionStats : statsData;
+  const regionPrivateData = showTutorial
+    ? mockMapByRegionRegionPrivate
+    : regionPrivate;
+
+  const [toggleValue, setToggleValue] = useState<string>(
+    showTutorial ? "전체" : "지역"
+  );
+
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  useEffect(() => {
+    if (isOpenDrawer && toggleValue === "전체" && showTutorial) {
+      const timeout = setTimeout(() => {
+        setShowTooltip(true);
+      }, 300);
+
+      return () => clearTimeout(timeout);
+    } else {
+      setShowTooltip(false);
+    }
+  }, [isOpenDrawer, toggleValue, showTutorial]);
+
   const renderContent = () => {
-    if (!regionInfo) return null;
+    if (!regionInfo && !showTutorial) return null;
     if (toggleValue === "지역")
-      return <RegionInfo data={regionInfo} region={region} />;
+      return <RegionInfo data={regionInfoData} region={region} />;
     if (toggleValue === "매출") {
       return isPending ? (
         <Loading />
       ) : (
         <RevenuInfo
-          statsData={statsData}
-          revenueTrend={regionPrivate?.cost_by_date}
-          dailyRevenue={regionPrivate?.average_cost_per_visit_by_date}
-          ageGroups={regionPrivate?.patient_count_by_age_group}
+          statsData={statsDataData}
+          revenueTrend={regionPrivateData?.cost_by_date}
+          dailyRevenue={regionPrivateData?.average_cost_per_visit_by_date}
+          ageGroups={regionPrivateData?.patient_count_by_age_group}
           formatDataForRevenueTrend={() =>
-            formatDataForRevenueTrend(regionPrivate)
+            formatDataForRevenueTrend(regionPrivateData)
           }
           formatDataForAverageRevenue={() =>
-            formatDataForAverageRevenue(regionPrivate)
+            formatDataForAverageRevenue(regionPrivateData)
           }
-          barFormatData={() => barFormatData(regionPrivate)}
+          barFormatData={() => barFormatData(regionPrivateData)}
         />
       );
     }
@@ -62,16 +95,23 @@ const StatisticsDrawer = () => {
             gap: "1rem"
           }}
         >
-          <div
-            style={{
-              textAlign: "center",
-              padding: "0.5rem 1rem",
-              backgroundColor: "#f0f2f5"
-            }}
+          <Tooltip
+            title="클릭한 지역에 대한 의료와 관련된 정보를 제공합니다."
+            open={showTooltip}
+            placement="top"
+            autoAdjustOverflow={false}
           >
-            <ChartTitleStyle>지역 데이터</ChartTitleStyle>
-          </div>
-          <RegionInfo data={regionInfo} region={region} />
+            <div
+              style={{
+                textAlign: "center",
+                padding: "0.5rem 1rem",
+                backgroundColor: "#f0f2f5"
+              }}
+            >
+              <ChartTitleStyle>지역 데이터</ChartTitleStyle>
+            </div>
+          </Tooltip>
+          <RegionInfo data={regionInfoData} region={region} />
         </div>
         <div
           style={{
@@ -81,28 +121,34 @@ const StatisticsDrawer = () => {
             gap: "1rem"
           }}
         >
-          <div
-            style={{
-              textAlign: "center",
-              padding: "0.5rem 1rem",
-              backgroundColor: "#f0f2f5"
-            }}
+          <Tooltip
+            title="해당 지역의 매출 정보를 제공하며 기준 기간과 비교한 증감 비율을 나타낸 데이터를 제공합니다."
+            open={showTooltip}
+            placement="top"
+            autoAdjustOverflow={false}
           >
-            <ChartTitleStyle>매출 데이터</ChartTitleStyle>
-          </div>
-
+            <div
+              style={{
+                textAlign: "center",
+                padding: "0.5rem 1rem",
+                backgroundColor: "#f0f2f5"
+              }}
+            >
+              <ChartTitleStyle>매출 데이터</ChartTitleStyle>
+            </div>
+          </Tooltip>
           <RevenuInfo
-            statsData={statsData}
-            revenueTrend={regionPrivate?.cost_by_date}
-            dailyRevenue={regionPrivate?.average_cost_per_visit_by_date}
-            ageGroups={regionPrivate?.patient_count_by_age_group}
+            statsData={statsDataData}
+            revenueTrend={regionPrivateData?.cost_by_date}
+            dailyRevenue={regionPrivateData?.average_cost_per_visit_by_date}
+            ageGroups={regionPrivateData?.patient_count_by_age_group}
             formatDataForRevenueTrend={() =>
-              formatDataForRevenueTrend(regionPrivate)
+              formatDataForRevenueTrend(regionPrivateData)
             }
             formatDataForAverageRevenue={() =>
-              formatDataForAverageRevenue(regionPrivate)
+              formatDataForAverageRevenue(regionPrivateData)
             }
-            barFormatData={() => barFormatData(regionPrivate)}
+            barFormatData={() => barFormatData(regionPrivateData)}
           />
         </div>
       </div>
@@ -137,7 +183,7 @@ const StatisticsDrawer = () => {
       </ToggleContainer>
 
       <div style={{ padding: "0.8rem 0rem" }}>
-        <AddressTitleStyle>{areaName}</AddressTitleStyle>
+        <AddressTitleStyle>{areaNamDate}</AddressTitleStyle>
       </div>
       {renderContent()}
     </Drawer>

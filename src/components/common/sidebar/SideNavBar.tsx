@@ -1,4 +1,4 @@
-import { Menu, MenuProps } from "antd";
+import { Menu } from "antd";
 import { MenuItem, MENUITEMS } from "./sidebarData";
 import styled from "styled-components";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -8,7 +8,7 @@ import userStore from "../../../store/userStore";
 const SideNavBar = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = userStore();
+  const { user, hasGuided } = userStore();
 
   const [collapsed, setCollapsed] = useState<boolean>(window.innerWidth <= 768);
   const [selectedKeys, setSelectedKeys] = useState<string[]>([
@@ -70,6 +70,7 @@ const SidebarContainer = styled.div<{ collapsed: boolean }>`
   box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
   background-color: ${(props) => props.theme.colors.white};
   transition: width 0.3s ease;
+  z-index: 10000000;
 `;
 
 const LogoContainer = styled.div<{ collapsed: boolean }>`

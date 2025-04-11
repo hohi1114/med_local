@@ -21,7 +21,7 @@ export function useNaverMapCore({
   getPolygonFillColor,
   getPolygonHighlightColor
 }: UseNaverMapCoreOptions = {}) {
-  const { user } = userStore();
+  const { user, startTutorial } = userStore();
   const {
     drawerDate,
     drawerDate1,
@@ -90,10 +90,14 @@ export function useNaverMapCore({
 
     const newMap = new window.naver.maps.Map(mapElement.current, {
       center: new window.naver.maps.LatLng(
-        new window.naver.maps.LatLng(user?.location.lat, user?.location.long)
+        startTutorial
+          ? new window.naver.maps.LatLng(37.5040117, 127.029943)
+          : new window.naver.maps.LatLng(
+              user?.location.lat,
+              user?.location.long
+            )
       ),
-      zoom: 16,
-      zoomControl: true
+      zoom: 16
     });
 
     setMap(newMap);
@@ -104,7 +108,12 @@ export function useNaverMapCore({
           user?.location.lat,
           user?.location.long
         ),
-        map: newMap
+        map: newMap,
+        zoom: 16,
+        icon: {
+          content: `<img src="/images/marker.png" style="width: auto; height: 45px; z-index:20;"/>`,
+          anchor: new window.naver.maps.Point(15, 30)
+        }
       });
       setHospitalMarker(newMarker);
     }
@@ -187,7 +196,9 @@ export function useNaverMapCore({
         const fillColor = getPolygonFillColor
           ? getPolygonFillColor(area)
           : isComparison
-          ? (area?.total_costA ?? 0) <= (area?.total_costB ?? 0)
+          ? (area?.total_costA ?? 0) === (area?.total_costB ?? 0)
+            ? "rgba(211, 212, 213, 0.3)"
+            : (area?.total_costA ?? 0) < (area?.total_costB ?? 0)
             ? "rgba(120, 180, 230, 0.3)"
             : "rgba(240, 180, 180, 0.3)"
           : `${getPolygonColorOpacity(
@@ -322,7 +333,7 @@ export function useNaverMapCore({
             ? getPolygonHighlightColor(area)
             : isComparison
             ? (area?.total_costA ?? 0) <= (area?.total_costB ?? 0)
-              ? "rgb(90, 140, 210)"
+              ? "rgb(80, 170, 255)"
               : "rgb(245, 100, 130)"
             : defaultHighlightColor;
 
@@ -375,7 +386,7 @@ export function useNaverMapCore({
             ? getPolygonHighlightColor(area)
             : isComparison
             ? (area?.total_costA ?? 0) <= (area?.total_costB ?? 0)
-              ? "rgb(90, 140, 210)"
+              ? "rgb(80, 170, 255)"
               : "rgb(245, 100, 130)"
             : defaultHighlightColor;
 

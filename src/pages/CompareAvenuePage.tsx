@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import dayjs from "dayjs";
 import useRangeDurationDatePicker from "../hooks/useRangeDurationDatePicker";
 import DurationDatePicker from "../components/common/datepicker/DurationDatePicker";
@@ -9,9 +9,32 @@ import { useNaverMapCore } from "../hooks/useNaverMapCore";
 import Loading from "../components/common/Loading";
 import userStore from "../store/userStore";
 import RequireSubscribe from "../components/common/RequireSubscribe";
+import { Space } from "antd";
+import { compareAvenueTutorialSteps } from "../components/tutorial/TutorialData";
+import { useNavigate } from "react-router-dom";
+import Tutorial from "../components/tutorial/Tutorial";
+import useTutorial from "../hooks/useTutorial";
+import {
+  tutorialHighlightWithBlink,
+  TutorialImageContainer
+} from "../components/tutorial/style/tutorial.styles";
 
 function CompareAvenuePage() {
-  const { isInActiveUser, lastedUpdatedDate } = userStore();
+  const tutorialRefs = {
+    tutorialRef1: useRef(null),
+    tutorialRef2: useRef(null)
+  };
+  const navigate = useNavigate();
+
+  const tutorialSteps = compareAvenueTutorialSteps(tutorialRefs);
+  const { lastedUpdatedDate, startTutorial } = userStore();
+  const { tutorialStep, handleNextStep, handlePrevStep } = useTutorial({
+    steps: tutorialSteps,
+    showTutorialModal: startTutorial,
+    onComplate: () => {
+      navigate("/map");
+    }
+  });
   const { loading, setDrawerDate1, setDrawerDate2, handleIsDrawerOpen } =
     mapStore();
   const { mapElement, isFetching } = useNaverMapCore({ isComparison: true });
@@ -63,30 +86,62 @@ function CompareAvenuePage() {
     if (dateRange2) setDrawerDate2(dateRange2);
   }, [dateRange2]);
 
+  useEffect(() => {
+    if (tutorialStep === 3) {
+      handleIsDrawerOpen(true);
+    }
+  }, [tutorialStep]);
+
   return (
     <>
-      {isInActiveUser && <RequireSubscribe />}
+      <RequireSubscribe />
       {(isFetching || loading) && <Loading />}
       <MapContainer ref={mapElement}>
         <Wrapper>
-          <DatePickerContainer>
-            <DateTitle>기준 기간</DateTitle>
-            <DurationDatePicker
-              value={dateRange1}
-              onChange={handleDateRangeChange1}
-            />
+          <Space>
+            <DatePickerContainer>
+              <DatePickerContainer ref={tutorialRefs.tutorialRef1}>
+                <DateTitle>기준 기간</DateTitle>
+                <DurationDatePicker
+                  value={dateRange1}
+                  onChange={handleDateRangeChange1}
+                />
+              </DatePickerContainer>
 
-            <DateTitle>비교 기간</DateTitle>
-            <DurationDatePicker
-              value={dateRange2}
-              onChange={handleDateRangeChange2}
-            />
+              <DatePickerContainer ref={tutorialRefs.tutorialRef2}>
+                <DateTitle>비교 기간</DateTitle>
+                <DurationDatePicker
+                  value={dateRange2}
+                  onChange={handleDateRangeChange2}
+                />
+              </DatePickerContainer>
 
-            <SubText>* 두 기간의 대한 매출 데이터를 비교합니다.</SubText>
-          </DatePickerContainer>
+              <SubText>* 두 기간의 대한 매출 데이터를 비교합니다.</SubText>
+            </DatePickerContainer>
+          </Space>
         </Wrapper>
       </MapContainer>
-      <RevenueCompareDrawer />
+      <RevenueCompareDrawer showTutorial={startTutorial} />
+      {/**튜토리얼 */}
+      {tutorialSteps[tutorialStep].specialBackground && (
+        <TutorialImageContainer>
+          <img
+            onClick={() => {
+              handleIsDrawerOpen(true);
+            }}
+            src={"/images/compareAvenueTutorialMap.png"}
+            alt="매출 증감 지도 튜토리얼"
+          />
+        </TutorialImageContainer>
+      )}
+
+      <Tutorial
+        steps={tutorialSteps}
+        tutorialStep={tutorialStep}
+        showTutorial={startTutorial}
+        handleNextStep={handleNextStep}
+        handlePrevStep={handlePrevStep}
+      />
     </>
   );
 }
@@ -103,7 +158,7 @@ const Wrapper = styled.div`
   position: absolute;
   top: 1rem;
   left: 4rem;
-  z-index: 90;
+  z-index: ${(props) => props.theme.zIndex.rank2};
   background-color: white;
   padding: 10px;
   border-radius: 8px;
@@ -113,8 +168,12 @@ const Wrapper = styled.div`
 const DatePickerContainer = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.8rem;
   width: 100%;
+
+  &.tutorial-highlight {
+    ${tutorialHighlightWithBlink}
+  }
 `;
 
 const DateTitle = styled.span`

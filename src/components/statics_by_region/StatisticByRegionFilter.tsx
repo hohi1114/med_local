@@ -8,6 +8,7 @@ import { useRegionAnalysisStore } from "../../store/useRegionAnalysisStore";
 import StatisticByRegionSearch from "./StatisticByRegionSearch";
 
 interface StatisticByRegionFilterProps {
+  isTutorial?: boolean;
   rangeDate: DateRange;
   handleDateChange: (dates: DateRange) => void;
   handleLocalSectionChange: (value: keyof typeof LOCAL_SECTIONS_MAP) => void;

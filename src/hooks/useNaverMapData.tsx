@@ -26,7 +26,7 @@ const REGION_KEYS: Record<RegionLevel, string> = {
 
 const useNaverMapData = (twoType: boolean) => {
   const { drawerDate, drawerDate1, drawerDate2 } = mapStore();
-  const { isInActiveUser, user } = userStore();
+  const { isInActiveUser, user, hasGuided, startTutorial } = userStore();
 
   const [maxCost, setMaxCost] = useState<Record<RegionLevel, number>>({
     small: 0,
@@ -65,14 +65,17 @@ const useNaverMapData = (twoType: boolean) => {
           { type: "B", date: drawerDate2 }
         ].map((data) => ({
           queryKey: [`allRegionsEtc${data.type}`, data.date],
-          queryFn: () => getAllRegionsEtc(data.date!)
+          queryFn: () => getAllRegionsEtc(data.date!),
+          enabled:
+            !!user.user_id && !isInActiveUser && hasGuided && !startTutorial
         }))
       : drawerDate
       ? [
           {
             queryKey: ["allRegionsEtc", drawerDate],
             queryFn: () => getAllRegionsEtc(drawerDate),
-            enabled: !!user.user_id && !isInActiveUser
+            enabled:
+              !!user.user_id && !isInActiveUser && hasGuided && !startTutorial
           }
         ]
       : []

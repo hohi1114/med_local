@@ -1,4 +1,4 @@
-import { Drawer } from "antd";
+import { Drawer, Tooltip } from "antd";
 import styled from "styled-components";
 import mapStore from "../../store/mapStore";
 import isBetween from "dayjs/plugin/isBetween";
@@ -6,9 +6,20 @@ import dayjs from "dayjs";
 import Loading from "../common/Loading";
 import RevenuInfo from "../medi_map/chart/RevenueInfo";
 import { useDrawerData } from "../../hooks/useDrawerData";
+import {
+  mockFirstRegionPrivate,
+  mockSecondRegionPrivate,
+  mockComparisonStatsData
+} from "../../utils/\bTutorialMock";
+import { useEffect, useState } from "react";
+
 dayjs.extend(isBetween);
 
-const RevenueCompareDrawer = () => {
+interface RevenueCompareDrawerProps {
+  showTutorial: boolean;
+}
+
+const RevenueCompareDrawer = ({ showTutorial }: RevenueCompareDrawerProps) => {
   const { isOpenDrawer, drawerDate1, drawerDate2, handleIsDrawerOpen } =
     mapStore();
   const {
@@ -21,6 +32,30 @@ const RevenueCompareDrawer = () => {
     barFormatData,
     comparisonStatsData
   } = useDrawerData(true);
+
+  const areaNamDate = showTutorial ? "역삼1동 A" : areaName;
+  const firstRegionPrivateData = showTutorial
+    ? mockFirstRegionPrivate
+    : firstRegionPrivate;
+  const secondRegionPrivateData = showTutorial
+    ? mockSecondRegionPrivate
+    : secondRegionPrivate;
+  const comparisonStatsDataData = showTutorial
+    ? mockComparisonStatsData
+    : comparisonStatsData;
+
+  const [showTooltip, setShowTooltip] = useState(false);
+  useEffect(() => {
+    if (isOpenDrawer && showTutorial) {
+      const timeout = setTimeout(() => {
+        setShowTooltip(true);
+      }, 300);
+
+      return () => clearTimeout(timeout);
+    } else {
+      setShowTooltip(false);
+    }
+  }, [isOpenDrawer, showTutorial]);
 
   const renderContent = () => {
     return isPending ? (
@@ -53,17 +88,19 @@ const RevenueCompareDrawer = () => {
           </div>
           <RevenuInfo
             disabledCompare={true}
-            statsData={comparisonStatsData?.first}
-            revenueTrend={firstRegionPrivate?.cost_by_date}
-            dailyRevenue={firstRegionPrivate?.average_cost_per_visit_by_date}
-            ageGroups={firstRegionPrivate?.patient_count_by_age_group}
+            statsData={comparisonStatsDataData?.first}
+            revenueTrend={firstRegionPrivateData?.cost_by_date}
+            dailyRevenue={
+              firstRegionPrivateData?.average_cost_per_visit_by_date
+            }
+            ageGroups={firstRegionPrivateData?.patient_count_by_age_group}
             formatDataForRevenueTrend={() =>
-              formatDataForRevenueTrend(firstRegionPrivate)
+              formatDataForRevenueTrend(firstRegionPrivateData)
             }
             formatDataForAverageRevenue={() =>
-              formatDataForAverageRevenue(firstRegionPrivate)
+              formatDataForAverageRevenue(firstRegionPrivateData)
             }
-            barFormatData={() => barFormatData(firstRegionPrivate)}
+            barFormatData={() => barFormatData(firstRegionPrivateData)}
           />
         </div>
         <div
@@ -74,35 +111,44 @@ const RevenueCompareDrawer = () => {
             gap: "1rem"
           }}
         >
-          <div
-            style={{
-              textAlign: "center",
-              padding: "0.5rem 1rem",
-              backgroundColor: "#f0f2f5"
-            }}
+          <Tooltip
+            title="기준 기간과 비교한 증감 비율을 나타낸 데이터를 제공합니다."
+            open={showTooltip}
+            placement="top"
+            autoAdjustOverflow={false}
           >
-            <TitleContainer>
-              <span>비교 기간</span>
-              <span>
-                {dayjs(drawerDate2?.startDate).format("YYYY-MM-DD") +
-                  " ~ " +
-                  dayjs(drawerDate2?.endDate).format("YYYY-MM-DD")}
-              </span>
-            </TitleContainer>
-          </div>
+            <div
+              style={{
+                textAlign: "center",
+                padding: "0.5rem 1rem",
+                backgroundColor: "#f0f2f5"
+              }}
+            >
+              <TitleContainer>
+                <span>비교 기간</span>
+                <span>
+                  {dayjs(drawerDate2?.startDate).format("YYYY-MM-DD") +
+                    " ~ " +
+                    dayjs(drawerDate2?.endDate).format("YYYY-MM-DD")}
+                </span>
+              </TitleContainer>
+            </div>
+          </Tooltip>
 
           <RevenuInfo
-            statsData={comparisonStatsData?.second}
-            revenueTrend={secondRegionPrivate?.cost_by_date}
-            dailyRevenue={secondRegionPrivate?.average_cost_per_visit_by_date}
-            ageGroups={secondRegionPrivate?.patient_count_by_age_group}
+            statsData={comparisonStatsDataData?.second}
+            revenueTrend={secondRegionPrivateData?.cost_by_date}
+            dailyRevenue={
+              secondRegionPrivateData?.average_cost_per_visit_by_date
+            }
+            ageGroups={secondRegionPrivateData?.patient_count_by_age_group}
             formatDataForRevenueTrend={() =>
-              formatDataForRevenueTrend(secondRegionPrivate)
+              formatDataForRevenueTrend(secondRegionPrivateData)
             }
             formatDataForAverageRevenue={() =>
-              formatDataForAverageRevenue(secondRegionPrivate)
+              formatDataForAverageRevenue(secondRegionPrivateData)
             }
-            barFormatData={() => barFormatData(secondRegionPrivate)}
+            barFormatData={() => barFormatData(secondRegionPrivateData)}
           />
         </div>
       </div>
@@ -129,7 +175,7 @@ const RevenueCompareDrawer = () => {
       open={isOpenDrawer}
     >
       <div style={{ padding: "0.8rem 0rem" }}>
-        <AddressTitleStyle>{areaName}</AddressTitleStyle>
+        <AddressTitleStyle>{areaNamDate}</AddressTitleStyle>
       </div>
       {renderContent()}
     </Drawer>
