@@ -15,6 +15,7 @@ import CardManagementPage from "./pages/CardManagementPage.tsx";
 import PaymentHistoryPage from "./pages/PaymentHistoryPage.tsx";
 import CompareAvenuePage from "./pages/CompareAvenuePage.tsx";
 import MapByRegionPage from "./pages/MapByRegionPage.tsx";
+import { Alert } from "antd";
 
 export const isDemo = import.meta.env.VITE_DEMO === "true" ? true : false;
 function App() {
@@ -28,6 +29,21 @@ function App() {
 
   return (
     <BrowserRouter>
+      {import.meta.env.VITE_DEMO === "true" && (
+        <Alert
+          message="데모는 2024.04.24 부터 2024.12.31까지의 데이터만 존재합니다."
+          type="info"
+          style={{
+            width: "30%",
+            position: "fixed",
+            top: 0,
+            right: 0,
+            zIndex: 100,
+            fontWeight: 600
+          }}
+          closable
+        />
+      )}
       <Routes>
         <Route path="/login" element={<LoginPage />} />
 
