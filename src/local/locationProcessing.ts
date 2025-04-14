@@ -3,6 +3,9 @@
 import { getLatLonForAddresses } from "./geolocation"; // Your geocoding function
 import { findMatchingRegion, parsePolygon } from "./geometry"; // Your region helpers
 import axios from "axios";
+import fs from "fs";
+import path from "path";
+import * as XLSX from "xlsx";
 
 // Types
 interface MergedData {
@@ -45,6 +48,9 @@ interface RegionResponse {
   dongRegions: RawRegion[]; // Optional if not always present
   guRegions: RawRegion[]; // Optional if not always present
 }
+interface MappingResponse {
+  [key: string]: string;
+}
 
 export async function fetchRegionData(token: string): Promise<RegionResponse> {
   try {
@@ -67,14 +73,82 @@ export async function fetchRegionData(token: string): Promise<RegionResponse> {
   }
 }
 
+export async function getMappingData(token: string): Promise<MappingResponse> {
+  try {
+    const baseURL = "http://localhost:3001/api";
+
+    const response = await axios.post<MappingResponse>(
+      `${baseURL}/data/get_mapping`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error fetching region data:", error);
+    throw error;
+  }
+}
+
+export async function uploadDataToBackend(
+  processedData: any,
+  token: string
+): Promise<any> {
+  try {
+    const baseURL = "http://localhost:3001/api";
+
+    const dataToUpload = {
+      patient_records: processedData.patient_records,
+      date_location_groups: processedData.date_location_groups,
+    };
+
+    const response = await axios.post(
+      `${baseURL}/data/process_data`,
+      dataToUpload,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error in uploadDataToBackend:", error);
+    throw error;
+  }
+}
+
 export async function processDataLocally(
   mergedData: MergedData[],
   accessToken: string,
   progressCallback?: (current: number, total: number) => void
 ) {
   try {
+    // Step 0: Load chart number mapping and update chartNumber- 중요한 익명화 작업
+    const chartNumberMapping = await getMappingData(accessToken);
+
+    // Step 1: Update chartNumber using the fetched mapping
+    const mappedData = mergedData.map((record, index) => {
+      // Call progress callback if provided
+      if (progressCallback) {
+        progressCallback(index + 1, mergedData.length);
+      }
+
+      return {
+        ...record,
+        chartNumber:
+          Number(chartNumberMapping[record.chartNumber]) ?? record.chartNumber,
+      };
+    });
+
     // Step 1: Add location_true field to all records (false by default)
-    const recordsWithLocationFlag = mergedData.map((record) => ({
+    const recordsWithLocationFlag = mappedData.map((record) => ({
       ...record,
       location_true: record.address !== "N/D",
     }));
