@@ -73,8 +73,19 @@ function CompareAvenuePage() {
         ? dayjs(lastedUpdatedDate).format("YYYY-MM-DD")
         : dayjs().format("YYYY-MM-DD");
 
-      handleDateRangeChange1({ startDate: start1, endDate: end1 });
-      handleDateRangeChange2({ startDate: start2, endDate: end2 });
+      if (import.meta.env.VITE_DEMO === "true") {
+        handleDateRangeChange1({
+          startDate: "2024-12-10",
+          endDate: "2024-12-16"
+        });
+        handleDateRangeChange2({
+          startDate: "2024-12-17",
+          endDate: "2024-12-23"
+        });
+      } else {
+        handleDateRangeChange1({ startDate: start1, endDate: end1 });
+        handleDateRangeChange2({ startDate: start2, endDate: end2 });
+      }
     }
   }, [lastedUpdatedDate]);
 
