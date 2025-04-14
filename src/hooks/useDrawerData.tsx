@@ -14,6 +14,7 @@ import { RegionPrivateData } from "../types/naver-maps";
  */
 export const useDrawerData = (twoType: boolean) => {
   const {
+    isOpenDrawer,
     areaName,
     drawerDate,
     drawerDate1,
@@ -41,6 +42,7 @@ export const useDrawerData = (twoType: boolean) => {
   // 단일 날짜 파라미터
   const singleDateParams = useMemo(() => {
     if (!areaName || !region || !drawerDate || loading) return null;
+
     return {
       name: areaName,
       regionType: region,
@@ -99,24 +101,24 @@ export const useDrawerData = (twoType: boolean) => {
 
   // 첫번째 날짜 요청
   useEffect(() => {
-    if (twoType && firstDateParams) {
+    if (twoType && firstDateParams && isOpenDrawer) {
       firstDateMutation(firstDateParams);
     }
-  }, [twoType, firstDateParams]);
+  }, [twoType, firstDateParams, isOpenDrawer]);
 
   // 두 번째 날짜 요청
   useEffect(() => {
-    if (twoType && secondDateParams) {
+    if (twoType && secondDateParams && isOpenDrawer) {
       secondDateMutation(secondDateParams);
     }
-  }, [twoType, secondDateParams]);
+  }, [twoType, secondDateParams, isOpenDrawer]);
 
   // 단일 날짜 요청
   useEffect(() => {
-    if (!twoType && singleDateParams) {
+    if (!twoType && singleDateParams && isOpenDrawer) {
       regionPrivateMutation(singleDateParams);
     }
-  }, [twoType, singleDateParams]);
+  }, [twoType, singleDateParams, isOpenDrawer]);
 
   useEffect(() => {
     if (boundArea && boundArea.length > 0) {

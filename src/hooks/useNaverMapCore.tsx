@@ -51,7 +51,6 @@ export function useNaverMapCore({
   const patientGroupsMarkerClusterRef = useRef<any | null>(null);
   const [currentZoom, setCurrentZoom] = useState<number>(16);
   const clickedAreaRef = useRef<string>(null);
-  const [first, setFirst] = useState(false);
 
   // Map Logic
   const {
@@ -69,21 +68,9 @@ export function useNaverMapCore({
     isFetching
   } = useNaverMapData(isComparison);
 
-  const {
-    data,
-    name,
-    fontSize,
-    color,
-    hilightColor,
-    basicColor,
-    basicHighlightColor
-  } = getRegionName(currentZoom);
-
   // Default highlight colors
-  const defaultHighlightColor = isComparison
-    ? basicHighlightColor
-    : hilightColor;
-  const defaultColor = isComparison ? basicColor : color;
+  const defaultHighlightColor = isComparison ? "#52555A" : "#0000b4";
+  const defaultColor = isComparison ? "#ABADAF" : "#6666E0";
 
   // Initialize map only once
   useEffect(() => {
@@ -146,32 +133,27 @@ export function useNaverMapCore({
     if (!map) return;
 
     setCurrentZoom(map.getZoom());
+
+    let regionData = getRegionName(map.getZoom());
+
     const patientTemp: { areaName: string; patients: PatientData[] }[] = [];
     const regionMarkers: naver.maps.Marker[] = [];
     const patientGroupsMarkers: naver.maps.Marker[] = [];
 
     // Get Region Info
-    setRegion(name);
+    setRegion(regionData.name);
     const mapBounds = expandBounds(
       map.getBounds() as naver.maps.LatLngBounds,
       0.3
     );
-    const polygonsToRender = data;
+    const polygonsToRender = regionData.data;
 
-    const { boundAreas } = getBoundAreas(polygonsToRender, mapBounds);
-    if (
-      smallRegions.length > 0 &&
-      dongRegions.length > 0 &&
-      guRegions.length > 0
-    ) {
-      setFirst(true);
-      if (!first) {
-        if (boundAreas.length === 0) {
-          map.setZoom(14);
-        }
-      }
+    let { boundAreas } = getBoundAreas(polygonsToRender, mapBounds);
+    if (boundAreas.length === 0) {
+      regionData = getRegionName(map.getZoom(), boundAreas);
+      ({ boundAreas } = getBoundAreas(regionData.data, mapBounds));
     }
-
+    setRegion(regionData.name);
     setBoundArea(boundAreas);
 
     // Remove polygons and markerClusters
@@ -209,7 +191,7 @@ export function useNaverMapCore({
             : "rgba(240, 180, 180, 0.3)"
           : `${getPolygonColorOpacity(
               area.total_cost ?? 0,
-              name as RegionLevel
+              regionData.name as RegionLevel
             )}`;
 
         polygon = new window.naver.maps.Polygon({
@@ -226,14 +208,19 @@ export function useNaverMapCore({
         polygon.setMap(map);
 
         // Set click event listener
-        setPolygonClickListener(polygon, area);
+        setPolygonClickListener(polygon, area, regionData.name);
 
         // Set region name marker
         const bounds = polygon.getBounds();
         if (bounds) {
           const center = bounds.getCenter();
-          const marker = createRegionMarker(center, fontSize, area.name, name);
-          setMarkerClickListener(marker, area, polygon);
+          const marker = createRegionMarker(
+            center,
+            regionData.fontSize,
+            area.name,
+            regionData.name
+          );
+          setMarkerClickListener(marker, area, polygon, regionData.name);
           regionMarkers.push(marker);
         }
 
@@ -306,13 +293,13 @@ export function useNaverMapCore({
     smallRegionEtc,
     dongRegionEtc,
     guRegionEtc,
-    currentZoom,
-    first
+    currentZoom
   ]);
 
   const setPolygonClickListener = (
     polygon: naver.maps.Polygon,
-    area: RegionData
+    area: RegionData,
+    region: string
   ) => {
     if (!polygon.hasListener("click")) {
       polygon.addListener("click", () => {
@@ -340,7 +327,9 @@ export function useNaverMapCore({
           const highlightColor = getPolygonHighlightColor
             ? getPolygonHighlightColor(area)
             : isComparison
-            ? (area?.total_costA ?? 0) <= (area?.total_costB ?? 0)
+            ? (area?.total_costA ?? 0) === (area?.total_costB ?? 0)
+              ? "rgba(0, 0, 0, 0.4)"
+              : (area?.total_costA ?? 0) < (area?.total_costB ?? 0)
               ? "rgb(80, 170, 255)"
               : "rgb(245, 100, 130)"
             : defaultHighlightColor;
@@ -354,7 +343,7 @@ export function useNaverMapCore({
 
           setSelectedRegionData(area);
 
-          if (name === "small" && area.dong) {
+          if (region === "small" && area.dong) {
             setDongNameForSmall(area?.dong);
           }
         }
@@ -365,7 +354,8 @@ export function useNaverMapCore({
   const setMarkerClickListener = (
     marker: naver.maps.Marker,
     area: RegionData,
-    polygon: naver.maps.Polygon
+    polygon: naver.maps.Polygon,
+    region: string
   ) => {
     if (!marker.hasListener("click")) {
       marker.addListener("click", () => {
@@ -412,7 +402,7 @@ export function useNaverMapCore({
             setSelectedRegionData(area);
           }
 
-          if (name === "small" && area.dong) {
+          if (region === "small" && area.dong) {
             setDongNameForSmall(area?.dong);
           }
         }

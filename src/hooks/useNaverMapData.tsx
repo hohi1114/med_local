@@ -67,7 +67,12 @@ const useNaverMapData = (twoType: boolean) => {
           queryKey: [`allRegionsEtc${data.type}`, data.date],
           queryFn: () => getAllRegionsEtc(data.date!),
           enabled:
-            !!user.user_id && !isInActiveUser && hasGuided && !startTutorial
+            !!user.user_id &&
+            !isInActiveUser &&
+            hasGuided &&
+            !startTutorial &&
+            !!drawerDate1 &&
+            !!drawerDate2
         }))
       : drawerDate
       ? [
@@ -75,7 +80,11 @@ const useNaverMapData = (twoType: boolean) => {
             queryKey: ["allRegionsEtc", drawerDate],
             queryFn: () => getAllRegionsEtc(drawerDate),
             enabled:
-              !!user.user_id && !isInActiveUser && hasGuided && !startTutorial
+              !!user.user_id &&
+              !isInActiveUser &&
+              hasGuided &&
+              !startTutorial &&
+              !!drawerDate
           }
         ]
       : []
@@ -237,36 +246,32 @@ const useNaverMapData = (twoType: boolean) => {
     }
   }, [regionComparisionEtc]);
 
-  const getRegionName = (zoom: number) => {
+  const getRegionName = (zoom: number, boundAreas?: any) => {
+    if (boundAreas && boundAreas.length === 0) {
+      return {
+        data: regionData.dong,
+        name: "dong",
+        fontSize: "1rem"
+      };
+    }
+
     if (zoom >= 15) {
       return {
         data: regionData.small,
         name: "small",
-        fontSize: "1rem",
-        color: "#6666E0",
-        hilightColor: "#0000b4",
-        basicColor: "#ABADAF",
-        basicHighlightColor: "#52555A"
+        fontSize: "1rem"
       };
     } else if (zoom >= 14) {
       return {
         data: regionData.dong,
         name: "dong",
-        fontSize: "1rem",
-        color: "#6666E0",
-        hilightColor: "#0000b4",
-        basicColor: "#ABADAF",
-        basicHighlightColor: "#52555A"
+        fontSize: "1rem"
       };
     } else {
       return {
         data: regionData.gu,
         name: "gu",
-        fontSize: "1.2rem",
-        color: "#6666E0",
-        hilightColor: "#0000b4",
-        basicColor: "#ABADAF",
-        basicHighlightColor: "#52555A"
+        fontSize: "1.2rem"
       };
     }
   };
