@@ -1,4 +1,3 @@
-import { json } from "body-parser";
 import * as XLSX from "xlsx";
 
 // Interfaces for your data structures
@@ -16,18 +15,14 @@ export interface BackendResponse {
 
 export interface PatientData {
   chartNumber: number;
-  age: string;
+  age: number;
   address: string;
-  latitude: number | null;
-  longitude: number | null;
 }
 
 export interface PatientDataDentWeb {
   chartNumber: number;
-  age: number | null;
+  age: number;
   address: string;
-  latitude: number | null;
-  longitude: number | null;
 }
 
 // 일자별 수입 현황
@@ -42,6 +37,17 @@ export interface PatientListEgis {
   chartNumber: number; // 1st column
   address: string; // 8th column
   age: number; //2nd column
+}
+
+// In src/services/fileProcessing.ts
+
+// Helper function to normalize age into 10-year groups
+function normalizeAge(age: number): number {
+  if (age < 0) return 0;
+  if (age >= 80) return 80;
+
+  // For ages 0-79, round down to nearest 10
+  return Math.floor(age / 10) * 10;
 }
 
 /**
@@ -84,23 +90,22 @@ function excelSerialToDate(serial: number): string {
   return `${year}-${month}-${day}`;
 }
 
-export const parseDaysFilesEuisarang = async (
-  files: FileList
-): Promise<VisitData[]> => {
+export async function parseDaysFilesEuisarang(
+  fileBuffers: ArrayBuffer[]
+): Promise<VisitData[]> {
   let data: VisitData[] = [];
 
-  for (const file of Array.from(files)) {
-    const buffer = await file.arrayBuffer();
+  for (const buffer of fileBuffers) {
     const workbook = XLSX.read(buffer, { type: "array" });
 
     if (workbook.SheetNames.length === 0) {
-      console.error("❌ No worksheets found in the file:", file.name);
+      console.error("❌ No worksheets found in the file");
       continue; // Skip this file
     }
 
     const worksheet = workbook.Sheets[workbook.SheetNames[0]]; // First sheet
 
-    const jsonData = XLSX.utils.sheet_to_json<any>(worksheet, {
+    const jsonData = XLSX.utils.sheet_to_json(worksheet, {
       header: 1,
       range: 3,
     }); // Skip first 3 rows
@@ -126,19 +131,58 @@ export const parseDaysFilesEuisarang = async (
   return data.filter(
     (item) => !isNaN(item.chartNumber) && item.visitDate !== "내원/수납일"
   );
-};
+}
 
-export const parsePlaceFilesEuisarang = async (
-  files: FileList
-): Promise<PatientData[]> => {
+// In src/services/fileProcessing.ts (add this function)
+
+export async function parsePlaceFilesEuisarang(
+  fileBuffers: ArrayBuffer[]
+): Promise<PatientData[]> {
   let data: PatientData[] = [];
 
-  for (const file of Array.from(files)) {
-    const buffer = await file.arrayBuffer();
+  // Helper function for age parsing
+  const parseAgeEuisarang = (ageString: string | number): number => {
+    // If it's already a number, just return it
+    if (typeof ageString === "number") {
+      return ageString;
+    }
+
+    if (!ageString) return 0;
+
+    // Check for combined format (e.g., "5세 11개월")
+    const combinedMatch = ageString.match(/(\d+)세\s+(\d+)개월/);
+    if (combinedMatch && combinedMatch[1] && combinedMatch[2]) {
+      const years = parseInt(combinedMatch[1], 10);
+      const months = parseInt(combinedMatch[2], 10);
+      return Math.floor(years + months / 12);
+    }
+
+    // Extract the main age number (before "세")
+    const yearMatch = ageString.match(/(\d+)세/);
+    if (yearMatch && yearMatch[1]) {
+      return parseInt(yearMatch[1], 10);
+    }
+
+    // Check if it's just months (e.g., "15개월")
+    const monthMatch = ageString.match(/(\d+)개월/);
+    if (monthMatch && monthMatch[1]) {
+      return Math.floor(parseInt(monthMatch[1], 10) / 12);
+    }
+
+    // Try to parse as direct number
+    const parsed = parseInt(ageString, 10);
+    if (!isNaN(parsed)) {
+      return parsed;
+    }
+
+    return 0; // Default value if parsing fails
+  };
+
+  for (const buffer of fileBuffers) {
     const workbook = XLSX.read(buffer, { type: "array" });
 
     if (workbook.SheetNames.length === 0) {
-      console.error("❌ No worksheets found in the file:", file.name);
+      console.error("❌ No worksheets found in the file");
       continue; // Skip this file
     }
 
@@ -151,29 +195,30 @@ export const parsePlaceFilesEuisarang = async (
 
     jsonData.forEach((row: any) => {
       if (row.length >= 9) {
+        const parsedAge = parseAgeEuisarang(row[4] || "");
+        // Normalize age if it's a valid number
+        let normalizedAge = normalizeAge(parsedAge);
+
         data.push({
           chartNumber: Number(row[1]),
-          age: row[4] || "N/D",
+          age: normalizedAge,
           address: row[8] || "N/D",
-          latitude: null,
-          longitude: null,
         });
       }
     });
   }
   return data.filter((item) => !isNaN(item.chartNumber));
-};
+}
 
 export async function parseDailyIncomeEgis(
-  files: FileList
+  fileBuffers: ArrayBuffer[]
 ): Promise<DailyIncomeEgis[]> {
   const data: DailyIncomeEgis[] = [];
 
-  for (const file of Array.from(files)) {
-    const buffer = await file.arrayBuffer();
+  for (const buffer of fileBuffers) {
     const workbook = XLSX.read(buffer, { type: "array" });
     if (workbook.SheetNames.length === 0) {
-      console.error("❌ No worksheets found in file:", file.name);
+      console.error("❌ No worksheets found in file");
       continue;
     }
 
@@ -210,17 +255,17 @@ export async function parseDailyIncomeEgis(
   );
 }
 
+// Second function
 export async function parsePatientListEgis(
-  files: FileList
+  fileBuffers: ArrayBuffer[]
 ): Promise<PatientListEgis[]> {
   const data: PatientListEgis[] = [];
   const currentYear = new Date().getFullYear();
 
-  for (const file of Array.from(files)) {
-    const buffer = await file.arrayBuffer();
+  for (const buffer of fileBuffers) {
     const workbook = XLSX.read(buffer, { type: "array" });
     if (workbook.SheetNames.length === 0) {
-      console.error("❌ No worksheets found in file:", file.name);
+      console.error("❌ No worksheets found in file");
       continue;
     }
 
@@ -236,7 +281,6 @@ export async function parsePatientListEgis(
       // Calculate age from resident registration number
       let age = 0;
       const idNumber = row[2] ? String(row[2]).trim() : "";
-      console.log(idNumber);
 
       if (idNumber && idNumber.length >= 8) {
         // Extract birth year (first two digits)
@@ -265,10 +309,13 @@ export async function parsePatientListEgis(
         }
       }
 
+      // Normalize age if it's a valid number
+      let normalizedAge = !isNaN(age) ? normalizeAge(age) : 0;
+
       data.push({
         chartNumber: Number(row[0]), // 1st column
         address: row[7] ? String(row[7]) : "N/A", // 8th column
-        age: age, // Add the calculated age
+        age: normalizedAge,
       });
     }
   }
@@ -280,55 +327,23 @@ export async function parsePatientListEgis(
       item.address.trim().length > 0 // ensure it's not just whitespace
   );
 }
-/*
-export async function parsePatientIncomeEgis(
-  files: FileList
-): Promise<PatientIncomeEgis[]> {
-  const data: PatientIncomeEgis[] = [];
 
-  for (const file of Array.from(files)) {
-    const buffer = await file.arrayBuffer();
-    const workbook = XLSX.read(buffer, { type: "array" });
-    if (workbook.SheetNames.length === 0) {
-      console.error("❌ No worksheets found in file:", file.name);
-      continue;
-    }
+// In src/services/fileProcessing.ts
 
-    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json<any[]>(worksheet, {
-      header: 1,
-      range: 1,
-    });
-
-    for (const row of rows) {
-      if (row.length < 4) continue;
-
-      data.push({
-        chartNumber: Number(row[0]), // 1st column
-        age: Number(row[3]), // 4th column
-      });
-    }
-  }
-
-  return data.filter((item) => !isNaN(item.chartNumber) && !isNaN(item.age));
-}
-*/
-
-export const parseDaysFilesDentweb = async (
-  files: FileList
-): Promise<VisitData[]> => {
+export async function parseDaysFilesDentweb(
+  fileBuffers: ArrayBuffer[]
+): Promise<VisitData[]> {
   let data: VisitData[] = [];
 
-  for (const file of Array.from(files)) {
-    const buffer = await file.arrayBuffer();
+  for (const buffer of fileBuffers) {
     const workbook = XLSX.read(buffer, { type: "array" });
 
-    if (workbook.SheetNames.length === 0) {
-      console.error("❌ No worksheets found in the file:", file.name);
+    if (workbook.SheetNames.length < 2) {
+      console.error("❌ No second sheet found in the file");
       continue; // Skip this file
     }
 
-    const worksheet = workbook.Sheets[workbook.SheetNames[1]]; // second sheet\
+    const worksheet = workbook.Sheets[workbook.SheetNames[1]]; // second sheet
 
     const jsonData = XLSX.utils.sheet_to_json<any>(worksheet, {
       header: 1,
@@ -355,21 +370,20 @@ export const parseDaysFilesDentweb = async (
   }
 
   return data.filter((item) => !isNaN(item.chartNumber));
-};
+}
 
-export const parsePlaceFFilesDentWeb = async (
-  files: FileList
-): Promise<PatientDataDentWeb[]> => {
+export async function parsePlaceFilesDentWeb(
+  fileBuffers: ArrayBuffer[]
+): Promise<PatientDataDentWeb[]> {
   let data: PatientDataDentWeb[] = [];
 
-  for (const file of Array.from(files)) {
-    const buffer = await file.arrayBuffer();
+  for (const buffer of fileBuffers) {
     const workbook = XLSX.read(buffer, {
       type: "array",
     });
 
-    if (workbook.SheetNames.length === 0) {
-      console.error("❌ No worksheets found in the file:", file.name);
+    if (workbook.SheetNames.length < 2) {
+      console.error("❌ No second sheet found in the file");
       continue; // Skip this file
     }
 
@@ -386,7 +400,7 @@ export const parsePlaceFFilesDentWeb = async (
       if (!row[3]) {
         continue;
       }
-      let age = null;
+      let age = 0;
       const birthDateValue = row[3];
 
       if (birthDateValue) {
@@ -395,17 +409,18 @@ export const parsePlaceFFilesDentWeb = async (
         age = calculateAge(birthDateValue);
       }
 
+      // Normalize age if it's a valid number
+      let normalizedAge = !isNaN(age) ? normalizeAge(age) : 0;
+
       data.push({
         chartNumber: Number(row[2]),
-        age: age,
+        age: normalizedAge,
         address: row[10] || "N/D",
-        latitude: null,
-        longitude: null,
       });
     }
   }
   return data.filter((item) => !isNaN(item.chartNumber));
-};
+}
 
 function calculateAge(birthDateStr: string): number {
   const today = new Date();

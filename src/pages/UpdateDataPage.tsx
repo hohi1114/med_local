@@ -19,11 +19,14 @@ import {
   uploadDataToBackendEgis,
   uploadDataToBackendEuisarang,
   getUserEMR,
-  uploadDataToBackendDentWeb
+  uploadDataToBackend
 } from "../utils/api/apis";
 import ContentHeader from "../components/common/layout/ContentHeader.tsx";
 import RequireSubscribe from "../components/common/RequireSubscribe.tsx";
-import userStore from "../store/userStore.tsx";
+import { getCookie } from "../utils/api/cookie.ts";
+
+
+
 
 const UpdateDataPage = () => {
   const [dataType, setDataType] = useState<"euisarang" | "egis" | "dentweb">(
@@ -34,7 +37,6 @@ const UpdateDataPage = () => {
   const [dailyIncome, setDailyIncome] = useState<FileList | null>(null); // Egis
   const [progress, setProgress] = useState<number>(0);
   const [api, contextHolder] = notification.useNotification();
-  const { isInActiveUser, startTutorial } = userStore();
 
   const openNotification = (
     type: "success" | "error" | "warning",
@@ -49,10 +51,12 @@ const UpdateDataPage = () => {
     });
   };
 
+
+
   // ✅ Load Naver Maps Script on Component Mount
   useEffect(() => {
     loadNaverMapsScript(import.meta.env.VITE_NAVER_MAPS_CLIENT_ID)
-      .then(() => {})
+      .then(() => { })
       .catch((error) =>
         console.error("❌ Failed to load Naver Maps script:", error)
       );
@@ -85,23 +89,63 @@ const UpdateDataPage = () => {
 
     setProgress(1); // Start progress
 
+    const removeProgressListener = window.electron.onGeocodingProgress(({ current, total }) => {
+      // Calculate overall progress (giving geocoding 60% of the total weight)
+      // First 20% for file processing and merging, last 20% for final processing and upload prep
+      const geocodingProgress = (current / total) * 80;
+      setProgress(10 + geocodingProgress);
+    });
+
+
     try {
-      const visits = await parseDaysFilesDentweb(daysFiles);
-      const patients = await parsePlaceFilesDentWeb(placeFiles);
-      setProgress(40);
+      // Step 1: Convert files to ArrayBuffers for local processing
+      const daysBuffers = await Promise.all(
+        Array.from(daysFiles).map(file => file.arrayBuffer())
+      );
 
-      console.log(visits);
-      console.log(patients);
+      const placeBuffers = await Promise.all(
+        Array.from(placeFiles).map(file => file.arrayBuffer())
+      );
 
+
+
+
+      // Step 2: Parse files locally via Electron
+      const visits = await window.electron.parseDaysFilesDentweb(daysBuffers);
+
+      const patients = await window.electron.parsePlaceFilesDentWeb(placeBuffers);
+
+      console.log("Parsed visits:", visits);
+      console.log("Parsed patients:", patients);
+
+      // Step 3: Merge data locally
+      const mergedData = await window.electron.mergeDataDentWeb(visits, patients);
+
+      setProgress(10);
+
+      console.log("MergedData", mergedData);
+
+      // Step 4: Process the merged data (geocoding, region assignment, etc.)
+      const processedData = await window.electron.processDataLocally(mergedData, getCookie("accessToken"));
+
+      removeProgressListener();
+
+      setProgress(90);
+
+      console.log("Processed data:", processedData);
+
+      // Step 5: Send only the processed data to the backend
       // Start the upload but don't await it
-      // This way we can continue execution without waiting
-      const uploadPromise = uploadDataToBackendDentWeb(visits, patients);
+      const uploadPromise = uploadDataToBackend(processedData);
+
+      setProgress(95);
+
 
       // Inform the user that data is being processed in the background
       openNotification(
         "success",
         "데이터 업로드 중",
-        "데이터 처리중입니다. 처리가 완료되면 알려드립니다. 프로그램을 종료하지 마세요"
+        "데이터가 처리되어 업로드 중입니다. 업로드가 완료되면 알려드립니다. 프로그램을 종료하지 마세요."
       );
 
       // Set progress to 100% since from the user's perspective, the task is complete
@@ -131,7 +175,7 @@ const UpdateDataPage = () => {
           );
         });
     } catch (error) {
-      // This catch block handles errors in the initial parsing phase
+      // This catch block handles errors in the processing phase
       console.error("❌ Error processing data:", error);
       openNotification(
         "error",
@@ -143,6 +187,9 @@ const UpdateDataPage = () => {
       setProgress(0); // Reset progress on error
     }
   };
+
+
+
 
   // Process and upload data
   const handleProcessDataEuisarang = async (): Promise<void> => {

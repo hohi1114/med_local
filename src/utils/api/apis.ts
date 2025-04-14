@@ -16,7 +16,6 @@ import {
   PatientData,
   DailyIncomeEgis,
   PatientListEgis,
-  PatientIncomeEgis,
   BackendResponse,
   PatientDataDentWeb,
 } from "../ExcelParser";
@@ -277,6 +276,26 @@ export const uploadDataToBackendDentWeb = async (
     return response as BackendResponse;
   } catch (error) {
     console.error("Error in uploadDataToBackend:", error);
+    throw error; // Re-throw to handle in the component
+  }
+};
+
+// New function to upload only the processed data
+export const uploadDataToBackend = async (processedData: any) => {
+  try {
+    const dataToUpload = {
+      patient_records: processedData.patient_records,
+      date_location_groups: processedData.date_location_groups,
+    };
+    // Here you can use your existing API client or fetch
+    const response = await apiRequest(
+      "post",
+      "/data/process_data",
+      dataToUpload
+    );
+    return response as BackendResponse;
+  } catch (error) {
+    console.error("❌ Error in uploadDataToBackendDentWeb:", error);
     throw error; // Re-throw to handle in the component
   }
 };

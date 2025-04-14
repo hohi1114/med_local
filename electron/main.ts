@@ -2,6 +2,22 @@ import { app, BrowserWindow, ipcMain } from "electron";
 import path from "path";
 import si from "systeminformation";
 
+import {
+  parsePlaceFilesDentWeb,
+  parsePlaceFilesEuisarang,
+  parseDailyIncomeEgis,
+  parseDaysFilesDentweb,
+  parseDaysFilesEuisarang,
+  parsePatientListEgis,
+} from "../src/local/ExcelParser";
+
+import {
+  mergeDataDentWeb,
+  mergeDataEgis,
+  mergeDataEuisarang,
+} from "../src/local/dataMerge";
+import { processDataLocally } from "../src/local/locationProcessing";
+
 const isDev = process.env.NODE_ENV === "development";
 
 let mainWindow: BrowserWindow | null = null;
@@ -15,8 +31,8 @@ const createMainWindow = () => {
       contextIsolation: true, // 보안을 위해 true로 설정
       preload: path.join(__dirname, "preload.js"), // Preload 파일 경로 설정
       webSecurity: false, // 외부 맵 스크립트 등의 보안 문제 해결
-      allowRunningInsecureContent: true // HTTPS 관련 문제 해결
-    }
+      allowRunningInsecureContent: true, // HTTPS 관련 문제 해결
+    },
   });
 
   if (isDev) {
@@ -37,6 +53,108 @@ app.whenReady().then(() => {
     const uuid = await si.uuid(); // systeminformation 라이브러리로 UUID 가져오기
     return uuid;
   });
+
+  ipcMain.handle("parse-days-files-euisarang", async (event, fileBuffers) => {
+    try {
+      return await parseDaysFilesEuisarang(fileBuffers);
+    } catch (error) {
+      console.error("Error parsing days files:", error);
+      throw error;
+    }
+  });
+
+  // In main.ts, add this inside your app.whenReady().then() block:
+  ipcMain.handle("parse-place-files-euisarang", async (event, fileBuffers) => {
+    try {
+      return await parsePlaceFilesEuisarang(fileBuffers);
+    } catch (error) {
+      console.error("Error parsing place files:", error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle("parse-daily-income-egis", async (event, fileBuffers) => {
+    try {
+      return await parseDailyIncomeEgis(fileBuffers);
+    } catch (error) {
+      console.error("Error parsing daily income:", error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle("parse-patient-list-egis", async (event, fileBuffers) => {
+    try {
+      return await parsePatientListEgis(fileBuffers);
+    } catch (error) {
+      console.error("Error parsing patient list:", error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle("parse-days-files-dentweb", async (event, fileBuffers) => {
+    try {
+      return await parseDaysFilesDentweb(fileBuffers);
+    } catch (error) {
+      console.error("Error parsing days files (DentWeb):", error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle("parse-place-files-dentweb", async (event, fileBuffers) => {
+    try {
+      return await parsePlaceFilesDentWeb(fileBuffers);
+    } catch (error) {
+      console.error("Error parsing place files (DentWeb):", error);
+      throw error;
+    }
+  });
+
+  // Add these handlers
+  ipcMain.handle("merge-data-euisarang", async (event, visits, patients) => {
+    try {
+      return mergeDataEuisarang(visits, patients);
+    } catch (error) {
+      console.error("Error merging Euisarang data:", error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle("merge-data-dentweb", async (event, visits, patients) => {
+    try {
+      return mergeDataDentWeb(visits, patients);
+    } catch (error) {
+      console.error("Error merging DentWeb data:", error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle("merge-data-egis", async (event, dailyIncome, patientList) => {
+    try {
+      return mergeDataEgis(dailyIncome, patientList);
+    } catch (error) {
+      console.error("Error merging Egis data:", error);
+      throw error;
+    }
+  });
+
+  // Final data processing
+  ipcMain.handle(
+    "process-data-locally",
+    async (event, mergedData, accessToken) => {
+      try {
+        return await processDataLocally(
+          mergedData,
+          accessToken,
+          (current, total) => {
+            event.sender.send("geocoding-progress", { current, total });
+          }
+        );
+      } catch (error) {
+        console.error("Error processing data:", error);
+        throw error;
+      }
+    }
+  );
 });
 
 app.on("window-all-closed", () => {
