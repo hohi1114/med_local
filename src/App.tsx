@@ -38,8 +38,7 @@ function App() {
             position: "fixed",
             top: 0,
             right: 0,
-            zIndex: 100,
-            fontWeight: 600
+            zIndex: 100
           }}
           closable
         />
