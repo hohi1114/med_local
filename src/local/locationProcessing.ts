@@ -22,7 +22,7 @@ interface RawRegion {
   polygon: string;
 }
 
-interface ProcessedPatientData {
+export interface ProcessedPatientData {
   chart_number: number;
   age: number | string;
   total_cost: number;
@@ -38,7 +38,7 @@ interface LocationPoint {
   lng: number;
 }
 
-interface DateLocationGroup {
+export interface DateLocationGroup {
   date: string;
   patient_locations: LocationPoint[];
 }
@@ -94,40 +94,10 @@ export async function getMappingData(token: string): Promise<MappingResponse> {
   }
 }
 
-export async function uploadDataToBackend(
-  processedData: any,
-  token: string
-): Promise<any> {
-  try {
-    const baseURL = "http://localhost:3001/api";
-
-    const dataToUpload = {
-      patient_records: processedData.patient_records,
-      date_location_groups: processedData.date_location_groups,
-    };
-
-    const response = await axios.post(
-      `${baseURL}/data/process_data`,
-      dataToUpload,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    return response.data;
-  } catch (error) {
-    console.error("❌ Error in uploadDataToBackend:", error);
-    throw error;
-  }
-}
-
 export async function processDataLocally(
   mergedData: MergedData[],
   accessToken: string,
-  progressCallback?: (current: number, total: number) => void
+  progressCallback?: (current: number, total: numbWr) => void
 ) {
   try {
     // Step 0: Load chart number mapping and update chartNumber- 중요한 익명화 작업

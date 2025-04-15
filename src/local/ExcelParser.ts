@@ -343,29 +343,37 @@ export async function parseDaysFilesDentweb(
       continue; // Skip this file
     }
 
-    const worksheet = workbook.Sheets[workbook.SheetNames[1]]; // second sheet
+    // Process all sheets starting from the second one (index 1)
+    for (
+      let sheetIndex = 1;
+      sheetIndex < workbook.SheetNames.length;
+      sheetIndex++
+    ) {
+      const sheetName = workbook.SheetNames[sheetIndex];
+      const worksheet = workbook.Sheets[sheetName];
 
-    const jsonData = XLSX.utils.sheet_to_json<any>(worksheet, {
-      header: 1,
-      range: 1,
-    });
-
-    for (const row of jsonData) {
-      if (!row[10]) {
-        continue;
-      }
-      let visitDate = row[1];
-
-      // ✅ Convert Excel serial date to string format
-      if (typeof visitDate === "number") {
-        visitDate = excelSerialToDate(visitDate);
-      }
-
-      data.push({
-        chartNumber: Number(row[2]),
-        visitDate: visitDate,
-        totalCost: Number(row[10]),
+      const jsonData = XLSX.utils.sheet_to_json<any>(worksheet, {
+        header: 1,
+        range: 1,
       });
+
+      for (const row of jsonData) {
+        if (!row[10]) {
+          continue;
+        }
+        let visitDate = row[1];
+
+        // ✅ Convert Excel serial date to string format
+        if (typeof visitDate === "number") {
+          visitDate = excelSerialToDate(visitDate);
+        }
+
+        data.push({
+          chartNumber: Number(row[2]),
+          visitDate: visitDate,
+          totalCost: Number(row[10]),
+        });
+      }
     }
   }
 
