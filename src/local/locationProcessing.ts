@@ -54,7 +54,7 @@ interface MappingResponse {
 
 export async function fetchRegionData(token: string): Promise<RegionResponse> {
   try {
-    const baseURL = "http://3.39.10.210:3000/api";
+    const baseURL = "http://localhost:3001/api";
 
     const response = await axios.get<RegionResponse>(
       `${baseURL}/fetch/region_data`,
@@ -97,7 +97,7 @@ export async function getMappingData(token: string): Promise<MappingResponse> {
 export async function processDataLocally(
   mergedData: MergedData[],
   accessToken: string,
-  progressCallback?: (current: number, total: numbWr) => void
+  progressCallback?: (current: number, total: number) => void
 ) {
   try {
     // Step 0: Load chart number mapping and update chartNumber- 중요한 익명화 작업

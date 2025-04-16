@@ -60,7 +60,7 @@ export const getLatLonForAddresses = async (
   for (let i = 0; i < total; i++) {
     const { chartNumber, address } = addresses[i];
     const { latitude, longitude } = await getLatLonNaver(address, i, total);
-''    results.push({ chartNumber, latitude, longitude });
+    results.push({ chartNumber, latitude, longitude });
 
     // Report progress after each address is processed
     if (progressCallback) {
