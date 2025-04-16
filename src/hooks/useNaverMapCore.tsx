@@ -85,6 +85,7 @@ export function useNaverMapCore({
               user?.location.long
             )
       ),
+      zoomControl: true,
       zoom: 16
     });
 
@@ -96,6 +97,7 @@ export function useNaverMapCore({
           user?.location.lat,
           user?.location.long
         ),
+        zoomControl: true,
         map: newMap,
         zoom: 16
       });
