@@ -22,23 +22,23 @@ const useDashBoard = () => {
     hasGuided
   } = userStore();
 
+  const getBaseDate = () =>
+    lastedUpdatedDate && lastedUpdatedDate.length > 0
+      ? dayjs(lastedUpdatedDate)
+      : dayjs();
+
   const makeRange = (
     startOffset: number,
     unit: dayjs.ManipulateType
   ): DateRange => {
-    const base = dayjs();
+    const base = getBaseDate();
     return {
       startDate: base.subtract(startOffset, unit).format("YYYY-MM-DD"),
       endDate: base.format("YYYY-MM-DD")
     };
   };
   const RANGE_DATE_MAP: Record<RangeDateMapKey, DateRange> = {
-    오늘: {
-      startDate: dayjs().format("YYYY-MM-DD"),
-      endDate: dayjs().format("YYYY-MM-DD")
-    },
-    "3일": makeRange(3, "day"),
-    "7일": makeRange(7, "day"),
+    일주일: makeRange(7, "day"),
     "1개월": makeRange(1, "month"),
     "3개월": makeRange(3, "month"),
     "1년": makeRange(1, "year")
@@ -77,9 +77,7 @@ const useDashBoard = () => {
   });
 
   const saveDataMap: Record<RangeDateMapKey, (data: DashBoard) => void> = {
-    오늘: dashboardStore.setTodayData,
-    "3일": dashboardStore.setThreeDaysData,
-    "7일": dashboardStore.setWeekData,
+    일주일: dashboardStore.setWeekData,
     "1개월": dashboardStore.setMonthData,
     "3개월": dashboardStore.setThreeMonthData,
     "1년": dashboardStore.setOneYearData

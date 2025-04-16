@@ -97,11 +97,7 @@ export function useNaverMapCore({
           user?.location.long
         ),
         map: newMap,
-        zoom: 16,
-        icon: {
-          content: `<img src="/images/marker.svg" style="width: auto; height: 43px; z-index:20;"/>`,
-          anchor: new window.naver.maps.Point(15, 30)
-        }
+        zoom: 16
       });
       setHospitalMarker(newMarker);
     }
