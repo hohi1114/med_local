@@ -150,9 +150,8 @@ export function useNaverMapCore({
     let { boundAreas, boundPatientLocations } = getBoundAreas(
       polygonsToRender,
       mapBounds,
-      patientLocations
+      patientLocations.length > 0 ? patientLocations : undefined
     );
-    console.log(boundPatientLocations);
 
     if (boundAreas.length === 0) {
       regionData = getRegionName(map.getZoom(), boundAreas);
@@ -234,7 +233,7 @@ export function useNaverMapCore({
         if (!isComparison && currentZoom >= 17) {
           const groupPatients = groupPatientsByProximity(
             boundPatientLocations,
-            100
+            300
           );
           createPatientGroupMarkers(groupPatients, patientGroupsMarkers);
         }
