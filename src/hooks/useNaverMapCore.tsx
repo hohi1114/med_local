@@ -65,7 +65,8 @@ export function useNaverMapCore({
     smallRegions,
     dongRegions,
     guRegions,
-    isFetching
+    isFetching,
+    patientLocations
   } = useNaverMapData(isComparison);
 
   // Default highlight colors
@@ -86,7 +87,7 @@ export function useNaverMapCore({
             )
       ),
       zoomControl: true,
-      zoom: 16
+      zoom: 15
     });
 
     setMap(newMap);
@@ -99,7 +100,7 @@ export function useNaverMapCore({
         ),
         zoomControl: true,
         map: newMap,
-        zoom: 16
+        zoom: 15
       });
       setHospitalMarker(newMarker);
     }
@@ -146,11 +147,18 @@ export function useNaverMapCore({
     );
     const polygonsToRender = regionData.data;
 
-    let { boundAreas } = getBoundAreas(polygonsToRender, mapBounds);
+    let { boundAreas, boundPatientLocations } = getBoundAreas(
+      polygonsToRender,
+      mapBounds,
+      patientLocations
+    );
+    console.log(boundPatientLocations);
+
     if (boundAreas.length === 0) {
       regionData = getRegionName(map.getZoom(), boundAreas);
       ({ boundAreas } = getBoundAreas(regionData.data, mapBounds));
     }
+
     setRegion(regionData.name);
     setBoundArea(boundAreas);
 
@@ -225,8 +233,8 @@ export function useNaverMapCore({
         // Create patient markers for non-comparison mode at high zoom levels
         if (!isComparison && currentZoom >= 17) {
           const groupPatients = groupPatientsByProximity(
-            area.patient_locations,
-            200
+            boundPatientLocations,
+            100
           );
           createPatientGroupMarkers(groupPatients, patientGroupsMarkers);
         }

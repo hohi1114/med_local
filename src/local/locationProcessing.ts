@@ -61,8 +61,8 @@ export async function fetchRegionData(token: string): Promise<RegionResponse> {
       {
         headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+          "Content-Type": "application/json"
+        }
       }
     );
 
@@ -82,8 +82,8 @@ export async function getMappingData(token: string): Promise<MappingResponse> {
       {
         headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+          "Content-Type": "application/json"
+        }
       }
     );
 
@@ -113,14 +113,14 @@ export async function processDataLocally(
       return {
         ...record,
         chartNumber:
-          Number(chartNumberMapping[record.chartNumber]) ?? record.chartNumber,
+          Number(chartNumberMapping[record.chartNumber]) ?? record.chartNumber
       };
     });
 
     // Step 1: Add location_true field to all records (false by default)
     const recordsWithLocationFlag = mappedData.map((record) => ({
       ...record,
-      location_true: record.address !== "N/D",
+      location_true: record.address !== "N/D"
     }));
 
     // Step 2: Extract records with valid addresses for geocoding
@@ -128,7 +128,7 @@ export async function processDataLocally(
       .filter((record) => record.location_true)
       .map((record) => ({
         chartNumber: record.chartNumber,
-        address: String(record.address),
+        address: String(record.address)
       }));
 
     // Step 3: Geocode addresses
@@ -144,8 +144,8 @@ export async function processDataLocally(
         {
           latitude: g.latitude,
           longitude: g.longitude,
-          geocoded: g.latitude !== null && g.longitude !== null,
-        },
+          geocoded: g.latitude !== null && g.longitude !== null
+        }
       ])
     );
 
@@ -157,7 +157,7 @@ export async function processDataLocally(
         ...record,
         latitude: geoData?.latitude ?? null,
         longitude: geoData?.longitude ?? null,
-        location_true: geoData?.geocoded ?? false,
+        location_true: geoData?.geocoded ?? false
       };
     });
 
@@ -169,19 +169,19 @@ export async function processDataLocally(
     const smallRegions = regionData.smallRegions.map((region) => ({
       id: region.id, // Use name as id if id is not available
       name: region.name,
-      coords: parsePolygon(region.polygon),
+      coords: parsePolygon(region.polygon)
     }));
 
     const dongRegions = regionData.dongRegions.map((region) => ({
       id: region.id, // Use name as id if id is not available
       name: region.name,
-      coords: parsePolygon(region.polygon),
+      coords: parsePolygon(region.polygon)
     }));
 
     const guRegions = regionData.guRegions.map((region) => ({
       id: region.id, // Use name as id if id is not available
       name: region.name,
-      coords: parsePolygon(region.polygon),
+      coords: parsePolygon(region.polygon)
     }));
 
     const processedRecords: ProcessedPatientData[] = recordsWithGeodata.map(
@@ -212,7 +212,7 @@ export async function processDataLocally(
           location_true: record.location_true,
           small_region_id,
           dong_region_id,
-          gu_region_id,
+          gu_region_id
         };
       }
     );
@@ -240,7 +240,7 @@ export async function processDataLocally(
       // Add the location to the array for this date
       dateLocationMap.get(dateStr)!.push({
         lat: latitude,
-        lng: longitude,
+        lng: longitude
       });
     });
 
@@ -249,13 +249,13 @@ export async function processDataLocally(
       dateLocationMap.entries()
     ).map(([date, locations]) => ({
       date,
-      patient_locations: locations,
+      patient_locations: locations
     }));
 
     // Return both data structures
     return {
       patient_records: processedRecords,
-      date_location_groups: dateLocationGroups,
+      date_location_groups: dateLocationGroups
     };
   } catch (error) {
     console.error("Error processing data locally:", error);

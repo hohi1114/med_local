@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQueries } from "@tanstack/react-query";
-import { getAllRegionsEtc } from "../utils/api/apis";
+import { getAllRegionsEtc, getPatientLocations } from "../utils/api/apis";
 import { getDataFromRegionDB } from "../store/indexded_db/RegionDB";
 import mapStore from "../store/mapStore";
 import userStore from "../store/userStore";
@@ -27,6 +27,7 @@ const REGION_KEYS: Record<RegionLevel, string> = {
 const useNaverMapData = (twoType: boolean) => {
   const { drawerDate, drawerDate1, drawerDate2 } = mapStore();
   const { isInActiveUser, user, hasGuided, startTutorial } = userStore();
+  const [patientLocations, setPatientLocations] = useState<Point[]>([]);
 
   const [maxCost, setMaxCost] = useState<Record<RegionLevel, number>>({
     small: 0,
@@ -85,6 +86,16 @@ const useNaverMapData = (twoType: boolean) => {
               hasGuided &&
               !startTutorial &&
               !!drawerDate
+          },
+          {
+            queryKey: ["allPatientLocations", drawerDate],
+            queryFn: () => getPatientLocations(drawerDate),
+            enabled:
+              !!user.user_id &&
+              !isInActiveUser &&
+              hasGuided &&
+              !startTutorial &&
+              !!drawerDate
           }
         ]
       : []
@@ -98,7 +109,10 @@ const useNaverMapData = (twoType: boolean) => {
     if (!twoType && regionQueries[0]?.data) {
       processRegionEtcData(regionQueries[0].data);
     }
-  }, [twoType, regionQueries[0]?.data]);
+    if (regionQueries[1]?.data) {
+      setPatientLocations(regionQueries[1].data);
+    }
+  }, [twoType, regionQueries[0]?.data, regionQueries[1]?.data]);
 
   // 기간 2개 일때
   useEffect(() => {
@@ -182,8 +196,7 @@ const useNaverMapData = (twoType: boolean) => {
             return {
               ...region,
               polygon: JSON.parse(region.polygon)[0],
-              total_cost: matchedEtc?.total_cost ?? 0,
-              patient_locations: matchedEtc?.patient_locations ?? []
+              total_cost: matchedEtc?.total_cost ?? 0
             };
           });
         })
@@ -223,9 +236,7 @@ const useNaverMapData = (twoType: boolean) => {
               ...region,
               polygon: JSON.parse(region.polygon)[0],
               total_costA: matchedEtcA?.total_cost ?? 0,
-              total_costB: matchedEtcB?.total_cost ?? 0,
-              patient_locationsA: matchedEtcA?.patient_locations ?? [],
-              patient_locationsB: matchedEtcB?.patient_locations ?? []
+              total_costB: matchedEtcB?.total_cost ?? 0
             };
           });
         })
@@ -255,7 +266,7 @@ const useNaverMapData = (twoType: boolean) => {
       };
     }
 
-    if (zoom >= 15) {
+    if (zoom > 15) {
       return {
         data: regionData.small,
         name: "small",
@@ -315,15 +326,26 @@ const useNaverMapData = (twoType: boolean) => {
 
   const getBoundAreas = (
     areas: RegionData[],
-    bounds: naver.maps.LatLngBounds
+    bounds: naver.maps.LatLngBounds,
+    patientLocations?: { lat: number; lng: number }[]
   ) => {
+    const boundAreas = areas.filter((area) => {
+      const polygonLatLngs = area.polygon.map(
+        ([lng, lat]) => new naver.maps.LatLng(lat, lng)
+      );
+      return polygonLatLngs.some((latlng) => bounds.hasLatLng(latlng));
+    });
+    let boundPatientLocations: Point[] = [];
+
+    if (patientLocations) {
+      boundPatientLocations = patientLocations.filter((loc) =>
+        bounds.hasLatLng(new naver.maps.LatLng(loc.lat, loc.lng))
+      );
+    }
+
     return {
-      boundAreas: areas.filter((area) => {
-        const polygonLatLngs = area.polygon.map(
-          ([lng, lat]) => new naver.maps.LatLng(lat, lng)
-        );
-        return polygonLatLngs.some((latlng) => bounds.hasLatLng(latlng));
-      })
+      boundAreas,
+      boundPatientLocations
     };
   };
 
@@ -390,7 +412,8 @@ const useNaverMapData = (twoType: boolean) => {
     getBoundAreas,
     getPolygonColorOpacity,
     groupPatientsByProximity,
-    isFetching: isFetchingRegionData
+    isFetching: isFetchingRegionData,
+    patientLocations
   };
 };
 

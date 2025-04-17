@@ -1,13 +1,5 @@
 import { useState } from "react";
 import FileUpload from "../components/upload_data/FileUpload.tsx";
-import {
-  parseDaysFilesEuisarang,
-  parsePlaceFilesEuisarang,
-  parseDailyIncomeEgis,
-  parsePatientListEgis,
-  parseDaysFilesDentweb,
-  parsePlaceFilesDentWeb
-} from "../utils/ExcelParser.ts";
 import styled from "styled-components";
 import BaseButton from "../components/common/button/BaseButton";
 import { loadNaverMapsScript } from "../utils/NaverGeocode";
@@ -15,20 +7,16 @@ import { useEffect } from "react";
 import { Progress, notification } from "antd";
 import UploadedCalendar from "../components/upload_data/UploadedCalendar.tsx";
 import Loading from "../components/common/Loading.tsx";
-import {
-  uploadDataToBackendEgis,
-  uploadDataToBackendEuisarang,
-  getUserEMR
-} from "../utils/api/apis";
+import { getUserEMR } from "../utils/api/apis";
 import ContentHeader from "../components/common/layout/ContentHeader.tsx";
 import RequireSubscribe from "../components/common/RequireSubscribe.tsx";
 import { getCookie } from "../utils/api/cookie.ts";
-import { ProcessedPatientData, DateLocationGroup } from "../local/locationProcessing.ts"
+import {
+  ProcessedPatientData,
+  DateLocationGroup
+} from "../local/locationProcessing.ts";
 import axios from "axios";
-
-
-
-
+import useUpdateUserInfo from "../hooks/useUpdateUserInfo.tsx";
 
 interface ProcessDataResponse {
   status: string;
@@ -71,8 +59,8 @@ export async function uploadDataToBackend(
       {
         headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+          "Content-Type": "application/json"
+        }
       }
     );
 
@@ -81,17 +69,17 @@ export async function uploadDataToBackend(
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {
       console.error("❌ Error processing patient data:", error.response.data);
-      throw new Error(error.response.data.error || "Failed to process patient data");
+      throw new Error(
+        error.response.data.error || "Failed to process patient data"
+      );
     } else {
       console.error("❌ Unexpected error processing patient data:", error);
-      throw new Error("An unexpected error occurred while processing patient data");
+      throw new Error(
+        "An unexpected error occurred while processing patient data"
+      );
     }
   }
 }
-
-
-
-
 
 const UpdateDataPage = () => {
   const [dataType, setDataType] = useState<"euisarang" | "egis" | "dentweb">(
@@ -102,6 +90,7 @@ const UpdateDataPage = () => {
   const [dailyIncome, setDailyIncome] = useState<FileList | null>(null); // Egis
   const [progress, setProgress] = useState<number>(0);
   const [api, contextHolder] = notification.useNotification();
+  const { fetchUploadedDates } = useUpdateUserInfo();
 
   const openNotification = (
     type: "success" | "error" | "warning",
@@ -116,12 +105,10 @@ const UpdateDataPage = () => {
     });
   };
 
-
-
   // ✅ Load Naver Maps Script on Component Mount
   useEffect(() => {
     loadNaverMapsScript(import.meta.env.VITE_NAVER_MAPS_CLIENT_ID)
-      .then(() => { })
+      .then(() => {})
       .catch((error) =>
         console.error("❌ Failed to load Naver Maps script:", error)
       );
@@ -154,41 +141,45 @@ const UpdateDataPage = () => {
 
     setProgress(1); // Start progress
 
-    const removeProgressListener = window.electron.onGeocodingProgress(({ current, total }) => {
-      // Calculate overall progress (giving geocoding 60% of the total weight)
-      // First 20% for file processing and merging, last 20% for final processing and upload prep
-      const geocodingProgress = (current / total) * 80;
-      setProgress(10 + geocodingProgress);
-    });
-
+    const removeProgressListener = window.electron.onGeocodingProgress(
+      ({ current, total }) => {
+        // Calculate overall progress (giving geocoding 60% of the total weight)
+        // First 20% for file processing and merging, last 20% for final processing and upload prep
+        const geocodingProgress = (current / total) * 80;
+        setProgress(10 + geocodingProgress);
+      }
+    );
 
     try {
       // Step 1: Convert files to ArrayBuffers for local processing
       const daysBuffers = await Promise.all(
-        Array.from(daysFiles).map(file => file.arrayBuffer())
+        Array.from(daysFiles).map((file) => file.arrayBuffer())
       );
 
       const placeBuffers = await Promise.all(
-        Array.from(placeFiles).map(file => file.arrayBuffer())
+        Array.from(placeFiles).map((file) => file.arrayBuffer())
       );
-
-
-
 
       // Step 2: Parse files locally via Electron
       const visits = await window.electron.parseDaysFilesDentweb(daysBuffers);
 
-      const patients = await window.electron.parsePlaceFilesDentWeb(placeBuffers);
-
+      const patients = await window.electron.parsePlaceFilesDentWeb(
+        placeBuffers
+      );
 
       // Step 3: Merge data locally
-      const mergedData = await window.electron.mergeDataDentWeb(visits, patients);
+      const mergedData = await window.electron.mergeDataDentWeb(
+        visits,
+        patients
+      );
 
       setProgress(10);
 
-
       // Step 4: Process the merged data (geocoding, region assignment, etc.)
-      const processedData = await window.electron.processDataLocally(mergedData, getCookie("accessToken"));
+      const processedData = await window.electron.processDataLocally(
+        mergedData,
+        getCookie("accessToken")
+      );
 
       removeProgressListener();
 
@@ -198,7 +189,10 @@ const UpdateDataPage = () => {
 
       // Step 5: Send only the processed data to the backend
       // Start the upload but don't await it
-      const uploadPromise = uploadDataToBackend(getCookie("accessToken"), processedData);
+      const uploadPromise = uploadDataToBackend(
+        getCookie("accessToken"),
+        processedData
+      );
 
       setProgress(95);
 
@@ -214,6 +208,7 @@ const UpdateDataPage = () => {
 
       uploadPromise
         .then((backendResponse) => {
+          fetchUploadedDates();
           // Handle successful upload (when it eventually completes)
           openNotification(
             "success",
@@ -248,9 +243,6 @@ const UpdateDataPage = () => {
       setProgress(0); // Reset progress on error
     }
   };
-
-
-
 
   const handleProcessDataEuisarang = async (): Promise<void> => {
     if (!placeFiles || !daysFiles) {
@@ -260,42 +252,45 @@ const UpdateDataPage = () => {
 
     setProgress(1); // Start progress
 
-    const removeProgressListener = window.electron.onGeocodingProgress(({ current, total }) => {
-      // Calculate overall progress (giving geocoding 60% of the total weight)
-      // First 20% for file processing and merging, last 20% for final processing and upload prep
-      const geocodingProgress = (current / total) * 80;
-      setProgress(10 + geocodingProgress);
-    });
-
+    const removeProgressListener = window.electron.onGeocodingProgress(
+      ({ current, total }) => {
+        // Calculate overall progress (giving geocoding 60% of the total weight)
+        // First 20% for file processing and merging, last 20% for final processing and upload prep
+        const geocodingProgress = (current / total) * 80;
+        setProgress(10 + geocodingProgress);
+      }
+    );
 
     try {
       // Step 1: Convert files to ArrayBuffers for local processing
       const daysBuffers = await Promise.all(
-        Array.from(daysFiles).map(file => file.arrayBuffer())
+        Array.from(daysFiles).map((file) => file.arrayBuffer())
       );
 
       const placeBuffers = await Promise.all(
-        Array.from(placeFiles).map(file => file.arrayBuffer())
+        Array.from(placeFiles).map((file) => file.arrayBuffer())
       );
-
-
-
 
       // Step 2: Parse files locally via Electron
       const visits = await window.electron.parseDaysFilesEuisarang(daysBuffers);
 
-      const patients = await window.electron.parsePlaceFilesEuisarang(placeBuffers);
-
+      const patients = await window.electron.parsePlaceFilesEuisarang(
+        placeBuffers
+      );
 
       // Step 3: Merge data locally
-      const mergedData = await window.electron.mergeDataEuisarang(visits, patients);
+      const mergedData = await window.electron.mergeDataEuisarang(
+        visits,
+        patients
+      );
 
       setProgress(10);
 
-
       // Step 4: Process the merged data (geocoding, region assignment, etc.)
-      const processedData = await window.electron.processDataLocally(mergedData, getCookie("accessToken"));
-
+      const processedData = await window.electron.processDataLocally(
+        mergedData,
+        getCookie("accessToken")
+      );
 
       console.log("Processed data:", processedData);
 
@@ -305,7 +300,10 @@ const UpdateDataPage = () => {
 
       // Step 5: Send only the processed data to the backend
       // Start the upload but don't await it
-      const uploadPromise = uploadDataToBackend(getCookie("accessToken"), processedData);
+      const uploadPromise = uploadDataToBackend(
+        getCookie("accessToken"),
+        processedData
+      );
 
       setProgress(95);
 
@@ -321,6 +319,7 @@ const UpdateDataPage = () => {
 
       uploadPromise
         .then((backendResponse) => {
+          fetchUploadedDates();
           // Handle successful upload (when it eventually completes)
           openNotification(
             "success",
@@ -355,8 +354,6 @@ const UpdateDataPage = () => {
       setProgress(0); // Reset progress on error
     }
   };
-
-
 
   const handleProcessDataEgis = async (): Promise<void> => {
     if (!placeFiles || !dailyIncome) {
@@ -366,22 +363,22 @@ const UpdateDataPage = () => {
 
     setProgress(1); // Start progress
 
-
-    const removeProgressListener = window.electron.onGeocodingProgress(({ current, total }) => {
-      // Calculate overall progress (giving geocoding 60% of the total weight)
-      // First 20% for file processing and merging, last 20% for final processing and upload prep
-      const geocodingProgress = (current / total) * 80;
-      setProgress(10 + geocodingProgress);
-    });
+    const removeProgressListener = window.electron.onGeocodingProgress(
+      ({ current, total }) => {
+        // Calculate overall progress (giving geocoding 60% of the total weight)
+        // First 20% for file processing and merging, last 20% for final processing and upload prep
+        const geocodingProgress = (current / total) * 80;
+        setProgress(10 + geocodingProgress);
+      }
+    );
 
     try {
-
       const daysBuffers = await Promise.all(
-        Array.from(dailyIncome).map(file => file.arrayBuffer())
+        Array.from(dailyIncome).map((file) => file.arrayBuffer())
       );
 
       const placeBuffers = await Promise.all(
-        Array.from(placeFiles).map(file => file.arrayBuffer())
+        Array.from(placeFiles).map((file) => file.arrayBuffer())
       );
 
       // Step 2: Parse files locally via Electron
@@ -389,15 +386,16 @@ const UpdateDataPage = () => {
 
       const patients = await window.electron.parsePatientListEgis(placeBuffers);
 
-
       // Step 3: Merge data locally
       const mergedData = await window.electron.mergeDataEgis(visits, patients);
 
       setProgress(10);
 
-
       // Step 4: Process the merged data (geocoding, region assignment, etc.)
-      const processedData = await window.electron.processDataLocally(mergedData, getCookie("accessToken"));
+      const processedData = await window.electron.processDataLocally(
+        mergedData,
+        getCookie("accessToken")
+      );
 
       removeProgressListener();
 
@@ -407,7 +405,10 @@ const UpdateDataPage = () => {
 
       // Step 5: Send only the processed data to the backend
       // Start the upload but don't await it
-      const uploadPromise = uploadDataToBackend(getCookie("accessToken"), processedData);
+      const uploadPromise = uploadDataToBackend(
+        getCookie("accessToken"),
+        processedData
+      );
 
       setProgress(95);
 
@@ -423,6 +424,7 @@ const UpdateDataPage = () => {
 
       uploadPromise
         .then((backendResponse) => {
+          fetchUploadedDates();
           // Handle successful upload (when it eventually completes)
           openNotification(
             "success",
@@ -457,7 +459,6 @@ const UpdateDataPage = () => {
       setProgress(0); // Reset progress on error
     }
   };
-
 
   const handleProcessData = () => {
     if (dataType === "euisarang") {
