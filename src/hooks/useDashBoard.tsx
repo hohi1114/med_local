@@ -53,7 +53,7 @@ const useDashBoard = () => {
     isFreetrialUser ? FREE_TRIAL_RANGES : RANGE_DATE_MAP;
 
   const { dateRange, handleDateRangeChange } = useRangeDurationDatePicker();
-  const [buttonType, setButtonType] = useState<RangeDateMapKey | null>();
+  const [buttonType, setButtonType] = useState<RangeDateMapKey | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [dashboardInfo, setDashboardInfo] = useState<DashBoard | null>(null);
   const [dateChanged, setDateChanged] = useState(false);

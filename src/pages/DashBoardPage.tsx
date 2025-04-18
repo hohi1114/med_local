@@ -7,7 +7,6 @@ import useDashBoard from "../hooks/useDashBoard";
 import BarChart from "../components/medi_map/chart/BarChart";
 import dayjs from "dayjs";
 import BaseLineChart from "../components/medi_map/chart/BaseLineChart";
-import BaseTable from "../components/medi_map/chart/BaseTable";
 import DashboardStats from "../components/dashboard/DashboardStats";
 import Loading from "../components/common/Loading";
 import Error from "../components/common/Error";
@@ -25,6 +24,7 @@ import TutorialStartModal from "../components/tutorial/TutorialStartModal";
 import useTutorial from "../hooks/useTutorial";
 import { DashboardSteps } from "../components/tutorial/TutorialData";
 import { RangeDateMapKey } from "../types/dashboard";
+import DashboardGrowthStats from "../components/dashboard/DashboardGrowthStats";
 
 const LOADING_CONTENT = "데이터를 불러오는 중입니다.";
 
@@ -113,9 +113,8 @@ export default function DashBoardPage() {
     }
     return null;
   };
-
+  console.log(dashboardInfoData);
   if (!startTutorial && hasGuided && !dashboardInfo) return <Loading />;
-
   return (
     <>
       {(startTutorial || !hasGuided) && <FullDimOverlay />}
@@ -250,8 +249,8 @@ export default function DashBoardPage() {
               }
             >
               <Card>
-                <ChartTitle>지역 별 매출 순위</ChartTitle>
-                <BaseTable data={dashboardInfoData.topRegions} />
+                <ChartTitle>3개월 전월 대비 성장률 평균</ChartTitle>
+                <DashboardGrowthStats dashboardInfo={dashboardInfoData} />
               </Card>
               <Card>
                 <ChartTitle>연령 별 환자 분포</ChartTitle>
