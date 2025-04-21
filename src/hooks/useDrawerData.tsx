@@ -163,7 +163,7 @@ export const useDrawerData = (twoType: boolean) => {
     if (!twoType && regionPrivate) {
       setStatsData({
         1: {
-          data: `${regionPrivate?.total_visit_count || 0}명`,
+          data: `${regionPrivate?.total_visit_count || 0}회`,
           diffRate: regionPrivate?.diff_rates?.total_visit_count
         },
         2: {
@@ -213,7 +213,7 @@ export const useDrawerData = (twoType: boolean) => {
       // 첫 번째 날짜 데이터
       const firstStats = {
         1: {
-          data: `${firstRegionPrivate?.total_visit_count || 0}명`
+          data: `${firstRegionPrivate?.total_visit_count || 0}회`
         },
         2: {
           data: `${Math.ceil(

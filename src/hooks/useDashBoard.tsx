@@ -57,8 +57,17 @@ const useDashBoard = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [dashboardInfo, setDashboardInfo] = useState<DashBoard | null>(null);
   const [dateChanged, setDateChanged] = useState(false);
-
-  const dashboardStore = useDashboardStore();
+  const {
+    setSelectedDateRange,
+    weekData,
+    monthData,
+    threeMonthData,
+    oneYearData,
+    setWeekData,
+    setMonthData,
+    setThreeMonthData,
+    setOneYearData
+  } = useDashboardStore();
 
   const {
     mutateAsync: dashboardInfoMutation,
@@ -77,10 +86,10 @@ const useDashBoard = () => {
   });
 
   const saveDataMap: Record<RangeDateMapKey, (data: DashBoard) => void> = {
-    일주일: dashboardStore.setWeekData,
-    "1개월": dashboardStore.setMonthData,
-    "3개월": dashboardStore.setThreeMonthData,
-    "1년": dashboardStore.setOneYearData
+    일주일: setWeekData,
+    "1개월": setMonthData,
+    "3개월": setThreeMonthData,
+    "1년": setOneYearData
   };
 
   const saveData = useCallback((section: RangeDateMapKey, data: DashBoard) => {
@@ -176,27 +185,18 @@ const useDashBoard = () => {
     if (!buttonType) return;
 
     const dataMap: Record<RangeDateMapKey, DashBoard | null> = {
-      오늘: dashboardStore.todayData,
-      "3일": dashboardStore.threeDaysData,
-      "7일": dashboardStore.weekData,
-      "1개월": dashboardStore.monthData,
-      "3개월": dashboardStore.threeMonthData,
-      "1년": dashboardStore.oneYearData
+      일주일: weekData,
+      "1개월": monthData,
+      "3개월": threeMonthData,
+      "1년": oneYearData
     };
 
     if (dataMap[buttonType]) setDashboardInfo(dataMap[buttonType]);
-  }, [
-    buttonType,
-    dashboardStore.todayData,
-    dashboardStore.threeDaysData,
-    dashboardStore.weekData,
-    dashboardStore.monthData,
-    dashboardStore.threeMonthData,
-    dashboardStore.oneYearData
-  ]);
+  }, [buttonType, weekData, monthData, threeMonthData, oneYearData]);
 
   // Fetch data when date range changes
   useEffect(() => {
+    setSelectedDateRange(dateRange);
     if (!dateChanged) return;
 
     const fetchData = async () => {

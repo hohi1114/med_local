@@ -189,14 +189,18 @@ const useNaverMapData = (twoType: boolean) => {
 
           const rawRegions = await getDataFromRegionDB(key);
           updated[level] = rawRegions.map((region) => {
-            const matchedEtc = etcData.find(
-              (item) => item[`${level}_region_name`] === region.name
-            );
+            let costRank = -1;
+            const matchedEtc = etcData.find((item, index) => {
+              costRank = index + 1;
+              return item[`${level}_region_name`] === region.name;
+            });
 
             return {
               ...region,
+              costRank,
               polygon: JSON.parse(region.polygon)[0],
-              total_cost: matchedEtc?.total_cost ?? 0
+              total_cost: matchedEtc?.total_cost ?? 0,
+              growth_metrics: matchedEtc?.growth_metrics
             };
           });
         })

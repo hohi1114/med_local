@@ -1,4 +1,5 @@
-import dayjs from "dayjs";
+import { AverageGrowth } from "../../../types/dashboard";
+import DashboardGrowthStats from "../../dashboard/DashboardGrowthStats";
 import {
   GridWrapper,
   GraphContainer,
@@ -18,6 +19,7 @@ interface RegionStatisticsProps {
   formatDataForAverageRevenue: (data: any) => any;
   barFormatData: () => any;
   disabledCompare?: boolean;
+  avgGrowth?: AverageGrowth;
 }
 const RevenuInfo: React.FC<RegionStatisticsProps> = ({
   statsData,
@@ -27,7 +29,8 @@ const RevenuInfo: React.FC<RegionStatisticsProps> = ({
   formatDataForRevenueTrend,
   formatDataForAverageRevenue,
   barFormatData,
-  disabledCompare = false
+  disabledCompare = false,
+  avgGrowth
 }) => {
   return (
     <>
@@ -44,6 +47,7 @@ const RevenuInfo: React.FC<RegionStatisticsProps> = ({
           );
         })}
       </GridWrapper>
+      <DashboardGrowthStats data={avgGrowth} />
       <GraphContainer>
         <GrapWrapper>
           <ChartTitleStyle>매출액 변화 추이</ChartTitleStyle>
@@ -54,7 +58,6 @@ const RevenuInfo: React.FC<RegionStatisticsProps> = ({
             xField="date"
             yField="매출액"
             labelFormatterY={(v: number) => `${v / 1000}K`}
-            // labelFormatterX={(v: string) => dayjs(v).format("MM/DD")}
             formatData={formatDataForRevenueTrend}
           />
         </GrapWrapper>
@@ -77,7 +80,6 @@ const RevenuInfo: React.FC<RegionStatisticsProps> = ({
             xField="date"
             yField="매출액"
             labelFormatterY={(v: number) => `${v / 1000}K`}
-            // labelFormatterX={(v: string) => dayjs(v).format("MM/DD")}
             formatData={formatDataForAverageRevenue}
             height={350}
           />

@@ -69,6 +69,7 @@ const StatisticsDrawer = ({ showTutorial }: StatisticsDrawerProps) => {
       ) : (
         <RevenuInfo
           statsData={statsDataData}
+          avgGrowth={regionInfoData?.growth_metrics}
           revenueTrend={regionPrivateData?.cost_by_date}
           dailyRevenue={regionPrivateData?.average_cost_per_visit_by_date}
           ageGroups={regionPrivateData?.patient_count_by_age_group}
@@ -101,15 +102,9 @@ const StatisticsDrawer = ({ showTutorial }: StatisticsDrawerProps) => {
             placement="top"
             autoAdjustOverflow={false}
           >
-            <div
-              style={{
-                textAlign: "center",
-                padding: "0.5rem 1rem",
-                backgroundColor: "#f0f2f5"
-              }}
-            >
-              <ChartTitleStyle>지역 데이터</ChartTitleStyle>
-            </div>
+            <SectionTitle>
+              <span>지역 데이터</span>
+            </SectionTitle>
           </Tooltip>
           <RegionInfo data={regionInfoData} region={region} />
         </div>
@@ -127,21 +122,14 @@ const StatisticsDrawer = ({ showTutorial }: StatisticsDrawerProps) => {
             placement="top"
             autoAdjustOverflow={false}
           >
-            <div
-              style={{
-                textAlign: "center",
-                padding: "0.5rem 1rem",
-                backgroundColor: "#f0f2f5"
-              }}
-            >
-              <ChartTitleStyle>매출 데이터</ChartTitleStyle>
-            </div>
+            <SectionTitle>매출 데이터</SectionTitle>
           </Tooltip>
           <RevenuInfo
             statsData={statsDataData}
             revenueTrend={regionPrivateData?.cost_by_date}
             dailyRevenue={regionPrivateData?.average_cost_per_visit_by_date}
             ageGroups={regionPrivateData?.patient_count_by_age_group}
+            avgGrowth={regionInfoData?.growth_metrics}
             formatDataForRevenueTrend={() =>
               formatDataForRevenueTrend(regionPrivateData)
             }
@@ -204,7 +192,8 @@ const AddressTitleStyle = styled.span`
 `;
 
 export const ChartTitleStyle = styled.span`
-  font-size: 1.2rem;
+  font-size: 1.3rem;
+  line-height: 5rem;
   margin-left: 1rem;
   font-weight: bold;
 `;
@@ -219,11 +208,20 @@ export const GridWrapper = styled.section`
 export const GraphContainer = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 5rem;
 `;
 
 export const GrapWrapper = styled.div`
   background-color: ${(props) => props.theme.colors.white};
   border-radius: 1rem;
-  padding: 2rem 1rem 0rem 1rem;
+`;
+
+const SectionTitle = styled.div`
+  font-size: 1.3rem;
+  color: ${(props) => props.theme.colors.black01};
+  background-color: ${(props) => props.theme.colors.gray02};
+  font-weight: bold;
+  margin-bottom: 1rem;
+  text-align: center;
+  padding: 0.5rem 0rem;
 `;

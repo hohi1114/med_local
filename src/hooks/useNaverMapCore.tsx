@@ -49,6 +49,7 @@ export function useNaverMapCore({
   const polygonsRef = useRef<Map<string, naver.maps.Polygon>>(new Map());
   const regionMarkerClusterRef = useRef<any | null>(null);
   const patientGroupsMarkerClusterRef = useRef<any | null>(null);
+  const noticeMarketerClusterRef = useRef<any | null>(null);
   const [currentZoom, setCurrentZoom] = useState<number>(16);
   const clickedAreaRef = useRef<string>(null);
 
@@ -138,6 +139,7 @@ export function useNaverMapCore({
     const patientTemp: { areaName: string; patients: PatientData[] }[] = [];
     const regionMarkers: naver.maps.Marker[] = [];
     const patientGroupsMarkers: naver.maps.Marker[] = [];
+    const noticeMarkers: naver.maps.Marker[] = [];
 
     // Get Region Info
     setRegion(regionData.name);
@@ -178,6 +180,7 @@ export function useNaverMapCore({
 
     clearClusters(regionMarkerClusterRef);
     clearClusters(patientGroupsMarkerClusterRef);
+    clearClusters(noticeMarketerClusterRef);
 
     const areaPromises = boundAreas.map(async (area) => {
       const latLngs = (area.polygon ?? []).map(
@@ -219,6 +222,17 @@ export function useNaverMapCore({
         const bounds = polygon.getBounds();
         if (bounds) {
           const center = bounds.getCenter();
+
+          if (
+            area.costRank <= 30 &&
+            area.growth_metrics &&
+            area.growth_metrics?.data_available &&
+            area.growth_metrics?.avg_growth_total_cost > 10
+          ) {
+            const noticeMarker = createNoticeMarker(center);
+            noticeMarkers.push(noticeMarker);
+          }
+
           const marker = createRegionMarker(
             center,
             regionData.fontSize,
@@ -246,6 +260,7 @@ export function useNaverMapCore({
     // Marker clustering
     createMarkerCluster(regionMarkers, regionMarkerClusterRef);
     createMarkerCluster(patientGroupsMarkers, patientGroupsMarkerClusterRef);
+    createMarkerCluster(noticeMarkers, noticeMarketerClusterRef);
     setPatients(patientTemp);
     setLoading(false);
   }, 500);
@@ -353,6 +368,42 @@ export function useNaverMapCore({
           }
         }
       });
+
+      // polygon.addListener("mouseover", () => {
+      //   // 모달을 표시하기 위한 state 업데이트
+      //   // 예시: setMouseOverModal({ isOpen: true, data: area, position: polygon.getBounds().getCenter() });
+
+      //   // 또는 간단한 툴팁을 표시하고 싶다면
+      //   const hoverOverlayOptions = {
+      //     position: polygon.getBounds().getCenter(),
+      //     content: `<div style="padding: 8px 12px; background: white; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+      //               <strong>${area.name}</strong><br/>
+      //               ${
+      //                 isComparison
+      //                   ? `비용 A: ${area.total_costA}<br/>비용 B: ${area.total_costB}`
+      //                   : `총 비용: ${area.total_cost ?? 0}`
+      //               }
+      //             </div>`,
+      //     yAnchor: 0
+      //   };
+
+      //   if (!polygon.hoverOverlay) {
+      //     polygon.hoverOverlay = new window.naver.maps.InfoWindow(
+      //       hoverOverlayOptions
+      //     );
+      //   }
+      //   polygon.hoverOverlay.open(map);
+      // });
+
+      // // mouseout 이벤트 추가
+      // polygon.addListener("mouseout", () => {
+      //   // 모달을 숨기기 위한 state 업데이트
+      //   // 예시: setMouseOverModal({ isOpen: false });
+
+      //   if (polygon.hoverOverlay) {
+      //     polygon.hoverOverlay.close();
+      //   }
+      // });
     }
   };
 
@@ -483,6 +534,39 @@ export function useNaverMapCore({
             ${region === "dong" ? reNamedDong : areaName}
           </span>
         </div>`,
+        origin: new naver.maps.Point(0, 67),
+        anchor: new naver.maps.Point(20, 67)
+      }
+    });
+  };
+
+  const createNoticeMarker = (center: naver.maps.Coord) => {
+    return new naver.maps.Marker({
+      position: center,
+      icon: {
+        content: `
+        <div style="
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin-top:2rem;
+
+">
+  <div style="
+    font-size: 1.2rem;
+    width:3rem;
+    height:3rem;
+    color: white;
+    background: linear-gradient(135deg, #ff5a5f, #ff8080);
+    border-radius: 100%;
+    opacity:0.8;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    white-space: nowrap;
+      text-align: center;
+    font-weight: bold;
+  "/>
+</div>`,
         origin: new naver.maps.Point(0, 67),
         anchor: new naver.maps.Point(20, 67)
       }

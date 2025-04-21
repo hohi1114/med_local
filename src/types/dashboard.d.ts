@@ -28,7 +28,7 @@ export type Region = {
   total_cost: number;
 };
 
-type AverageGrowth = {
+export type AverageGrowth = {
   data_available: boolean;
   avg_growth_total_cost: number | null;
   avg_growth_sinhwan: number | null;
