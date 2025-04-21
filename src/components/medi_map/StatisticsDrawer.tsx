@@ -69,7 +69,7 @@ const StatisticsDrawer = ({ showTutorial }: StatisticsDrawerProps) => {
       ) : (
         <RevenuInfo
           statsData={statsDataData}
-          avgGrowth={regionInfoData?.growth_metrics}
+          avgGrowth={regionPrivateData?.growth_metrics}
           revenueTrend={regionPrivateData?.cost_by_date}
           dailyRevenue={regionPrivateData?.average_cost_per_visit_by_date}
           ageGroups={regionPrivateData?.patient_count_by_age_group}
@@ -129,7 +129,7 @@ const StatisticsDrawer = ({ showTutorial }: StatisticsDrawerProps) => {
             revenueTrend={regionPrivateData?.cost_by_date}
             dailyRevenue={regionPrivateData?.average_cost_per_visit_by_date}
             ageGroups={regionPrivateData?.patient_count_by_age_group}
-            avgGrowth={regionInfoData?.growth_metrics}
+            avgGrowth={regionPrivateData?.growth_metrics}
             formatDataForRevenueTrend={() =>
               formatDataForRevenueTrend(regionPrivateData)
             }
@@ -208,7 +208,7 @@ export const GridWrapper = styled.section`
 export const GraphContainer = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 5rem;
+  gap: 2rem;
 `;
 
 export const GrapWrapper = styled.div`

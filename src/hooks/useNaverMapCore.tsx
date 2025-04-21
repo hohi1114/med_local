@@ -49,7 +49,6 @@ export function useNaverMapCore({
   const polygonsRef = useRef<Map<string, naver.maps.Polygon>>(new Map());
   const regionMarkerClusterRef = useRef<any | null>(null);
   const patientGroupsMarkerClusterRef = useRef<any | null>(null);
-  const noticeMarketerClusterRef = useRef<any | null>(null);
   const [currentZoom, setCurrentZoom] = useState<number>(16);
   const clickedAreaRef = useRef<string>(null);
 
@@ -180,7 +179,6 @@ export function useNaverMapCore({
 
     clearClusters(regionMarkerClusterRef);
     clearClusters(patientGroupsMarkerClusterRef);
-    clearClusters(noticeMarketerClusterRef);
 
     const areaPromises = boundAreas.map(async (area) => {
       const latLngs = (area.polygon ?? []).map(
@@ -222,26 +220,24 @@ export function useNaverMapCore({
         const bounds = polygon.getBounds();
         if (bounds) {
           const center = bounds.getCenter();
-
-          if (
+          const alert =
             area.costRank <= 30 &&
             area.growth_metrics &&
             area.growth_metrics?.data_available &&
             (area.growth_metrics?.avg_growth_total_cost <= -10 ||
               area.growth_metrics?.avg_growth_sinhwan <= -20 ||
-              area.growth_metrics?.avg_growth_revisit <= -20)
-          ) {
-            const noticeMarker = createNoticeMarker(center);
-            noticeMarkers.push(noticeMarker);
-          }
+              area.growth_metrics?.avg_growth_revisit <= -20);
 
           const marker = createRegionMarker(
             center,
             regionData.fontSize,
             area.name,
-            regionData.name
+            regionData.name,
+            alert
           );
+
           setMarkerClickListener(marker, area, polygon, regionData.name);
+
           regionMarkers.push(marker);
         }
 
@@ -262,7 +258,6 @@ export function useNaverMapCore({
     // Marker clustering
     createMarkerCluster(regionMarkers, regionMarkerClusterRef);
     createMarkerCluster(patientGroupsMarkers, patientGroupsMarkerClusterRef);
-    createMarkerCluster(noticeMarkers, noticeMarketerClusterRef);
     setPatients(patientTemp);
     setLoading(false);
   }, 500);
@@ -508,7 +503,8 @@ export function useNaverMapCore({
     center: naver.maps.Coord,
     fontSize: string,
     areaName: string,
-    region: string
+    region: string,
+    alert: boolean
   ) => {
     const reNamedDong = areaName
       .split(" ")
@@ -517,56 +513,46 @@ export function useNaverMapCore({
       position: center,
       icon: {
         content: `
-        <div style="display: flex; align-items: center; justify-content: center;">
-          <span style="font-size: ${fontSize}; 
-                    color: #4A4A4A;
-                    white-space: nowrap;
-                    background-color: rgba(255, 255, 255, 0.8);
-                    border-radius: 16px;
-                    padding: 4px 10px;
-                    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
-                    text-align: center; z-index:10;">
-            ${region === "dong" ? reNamedDong : areaName}
-          </span>
-        </div>`,
+       <div style="position: relative; display: inline-flex; align-items: center; justify-content: center;">
+        <span style="font-size: ${fontSize}; 
+                      color: #4A4A4A;
+                      white-space: nowrap;
+                      background-color: rgba(255, 255, 255, 0.8);
+                      border-radius: 16px;
+                      padding: 4px 10px;
+                      box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+                      text-align: center; z-index: 1;">
+          ${region === "dong" ? reNamedDong : areaName}
+        </span>
+        ${
+          alert
+            ? `<div style="
+                position: absolute;
+                top: -1.3rem;
+                right: -1.3rem;
+                font-size: 1.3rem;
+                width: 2.2rem;
+                height: 2.2rem;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                color: white;
+                background: radial-gradient(circle at 30% 30%, #ff9a9e, #ff6a6a);
+                border-radius: 50%;
+                opacity: 0.95;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+                font-weight: 600;
+                z-index: 2;
+              ">
+              !
+              </div>`
+            : ""
+        }
+      </div>
+
+`,
         origin: new naver.maps.Point(0, 0),
         anchor: new naver.maps.Point(20, 30)
-      }
-    });
-  };
-
-  const createNoticeMarker = (center: naver.maps.Coord) => {
-    return new naver.maps.Marker({
-      position: center,
-      icon: {
-        content: `
-        <div style="
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  margin-top: 2rem;
-">
-  <div style="
-    font-size: 1.8rem;
-    width: 3.5rem;
-    height: 3.5rem;
-    line-height: 3.5rem;
-    color: white;
-    background: radial-gradient(circle at 30% 30%, #ff9a9e, #ff6a6a);
-    border-radius: 50%;
-    opacity: 0.9;
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
-    text-align: center;
-    font-weight: 600;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    cursor: pointer;
-  ">
-    !
-  </div>
-</div>`,
-        origin: new naver.maps.Point(0, 67),
-        anchor: new naver.maps.Point(20, 67)
       }
     });
   };

@@ -33,7 +33,7 @@ export type AverageGrowth = {
   avg_growth_total_cost: number | null;
   avg_growth_sinhwan: number | null;
   avg_growth_revisit: number | null;
-  top_age_growth: {
+  top_age_changes: {
     age: string;
     change_percent: number;
   }[];
@@ -53,6 +53,6 @@ export interface DashBoard {
   patient_count_by_age_group: PatientCountByAgeGroup;
   diff_rates: DiffRates;
   topRegions: TopRegion;
-  average_growths: AverageGrowth;
+  top_age_growth: AverageGrowth;
 }
 export type RangeDateMapKey = "일주일" | "1개월" | "3개월" | "1년";

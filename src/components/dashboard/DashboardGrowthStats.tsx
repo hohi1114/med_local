@@ -11,7 +11,6 @@ export default function DashboardGrowthStats({
   isDashboard?: boolean;
 }) {
   const { lastedUpdatedDate } = userStore();
-
   if (!data?.data_available || !data) {
     return <NoDataContainer>불러올 데이터가 없습니다.</NoDataContainer>;
   }
@@ -77,7 +76,7 @@ export default function DashboardGrowthStats({
         </StatComment>
       </GrowthCardContainer>
       <GrowthCardContainer>
-        {/* <StatComment isDashboard={isDashboard}>
+        <StatComment isDashboard={isDashboard}>
           [ 나이대 변화율 ]
           <StatList>
             {data.top_age_growth.map((ageGroup, index) => (
@@ -100,7 +99,7 @@ export default function DashboardGrowthStats({
               </div>
             ))}
           </StatList>
-        </StatComment> */}
+        </StatComment>
       </GrowthCardContainer>
     </Container>
   );
@@ -170,6 +169,5 @@ const ListItem = styled.li`
 const GrowthCardContainer = styled.div`
   display: flex;
   flex-direction: column;
-  padding: 1rem;
   gap: 0.5rem;
 `;
