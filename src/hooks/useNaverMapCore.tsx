@@ -227,7 +227,9 @@ export function useNaverMapCore({
             area.costRank <= 30 &&
             area.growth_metrics &&
             area.growth_metrics?.data_available &&
-            area.growth_metrics?.avg_growth_total_cost > 10
+            (area.growth_metrics?.avg_growth_total_cost <= -10 ||
+              area.growth_metrics?.avg_growth_sinhwan <= -20 ||
+              area.growth_metrics?.avg_growth_revisit <= -20)
           ) {
             const noticeMarker = createNoticeMarker(center);
             noticeMarkers.push(noticeMarker);
@@ -550,22 +552,25 @@ export function useNaverMapCore({
   align-items: center;
   justify-content: center;
   position: relative;
-  margin-top:2rem;
-
+  margin-top: 2rem;
 ">
   <div style="
-    font-size: 1.2rem;
-    width:3rem;
-    height:3rem;
+    font-size: 1.8rem;
+    width: 3.5rem;
+    height: 3.5rem;
+    line-height: 3.5rem;
     color: white;
-    background: linear-gradient(135deg, #ff5a5f, #ff8080);
-    border-radius: 100%;
-    opacity:0.8;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-    white-space: nowrap;
-      text-align: center;
-    font-weight: bold;
-  "/>
+    background: radial-gradient(circle at 30% 30%, #ff9a9e, #ff6a6a);
+    border-radius: 50%;
+    opacity: 0.9;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
+    text-align: center;
+    font-weight: 600;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    cursor: pointer;
+  ">
+    !
+  </div>
 </div>`,
         origin: new naver.maps.Point(0, 67),
         anchor: new naver.maps.Point(20, 67)
