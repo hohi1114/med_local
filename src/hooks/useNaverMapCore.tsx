@@ -498,14 +498,7 @@ export function useNaverMapCore({
       minClusterSize: 2,
       maxZoom: 13,
       map,
-      markers,
-      icons: [
-        {
-          content: `<div></div>`,
-          size: new window.naver.maps.Size(40, 40),
-          anchor: new window.naver.maps.Point(20, 20)
-        }
-      ]
+      markers
     });
 
     ref.current = cluster;
@@ -536,8 +529,8 @@ export function useNaverMapCore({
             ${region === "dong" ? reNamedDong : areaName}
           </span>
         </div>`,
-        origin: new naver.maps.Point(0, 67),
-        anchor: new naver.maps.Point(20, 67)
+        origin: new naver.maps.Point(0, 0),
+        anchor: new naver.maps.Point(20, 30)
       }
     });
   };

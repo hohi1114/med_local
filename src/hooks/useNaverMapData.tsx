@@ -270,17 +270,17 @@ const useNaverMapData = (twoType: boolean) => {
       };
     }
 
-    if (zoom > 15) {
+    if (zoom > 16) {
       return {
         data: regionData.small,
         name: "small",
         fontSize: "1rem"
       };
-    } else if (zoom >= 14) {
+    } else if (zoom > 14) {
       return {
         data: regionData.dong,
         name: "dong",
-        fontSize: "1rem"
+        fontSize: "1.1rem"
       };
     } else {
       return {
