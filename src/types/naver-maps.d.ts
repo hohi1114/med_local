@@ -69,6 +69,8 @@ type RegionData = {
   dong?: string;
   total_costA?: number;
   total_costB?: number;
+  costRank?: number;
+  growth_metrics: AverageGrowth;
 };
 
 export interface AgeGroupPopulation {

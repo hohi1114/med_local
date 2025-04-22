@@ -219,7 +219,7 @@ export const GrapWrapper = styled.div`
 const SectionTitle = styled.div`
   font-size: 1.3rem;
   color: ${(props) => props.theme.colors.black01};
-  background-color: ${(props) => props.theme.colors.gray02};
+  background-color: ${(props) => props.theme.colors.gray01};
   font-weight: bold;
   margin-bottom: 1rem;
   text-align: center;

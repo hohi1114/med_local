@@ -1,3 +1,4 @@
+import styled from "styled-components";
 import { AverageGrowth } from "../../../types/dashboard";
 import DashboardGrowthStats from "../../dashboard/DashboardGrowthStats";
 import {
@@ -19,7 +20,7 @@ interface RegionStatisticsProps {
   formatDataForAverageRevenue: (data: any) => any;
   barFormatData: () => any;
   disabledCompare?: boolean;
-  avgGrowth?: AverageGrowth;
+  avgGrowth: AverageGrowth;
 }
 const RevenuInfo: React.FC<RegionStatisticsProps> = ({
   statsData,
@@ -47,13 +48,18 @@ const RevenuInfo: React.FC<RegionStatisticsProps> = ({
           );
         })}
       </GridWrapper>
-      <DashboardGrowthStats data={avgGrowth} />
+      {!disabledCompare && (
+        <GrowthCommentContainer>
+          <DashboardGrowthStats data={avgGrowth} />
+        </GrowthCommentContainer>
+      )}
+
       <GraphContainer>
         <GrapWrapper>
           <ChartTitleStyle>매출액 변화 추이</ChartTitleStyle>
           <BaseLineChart
             height={330}
-            width={350}
+            width={390}
             data={revenueTrend}
             xField="date"
             yField="매출액"
@@ -65,7 +71,7 @@ const RevenuInfo: React.FC<RegionStatisticsProps> = ({
           <ChartTitleStyle>연령대 별 환자 분포</ChartTitleStyle>
           <BarChart
             height={280}
-            width={350}
+            width={390}
             data={ageGroups}
             xField="연령"
             yField="세"
@@ -75,13 +81,13 @@ const RevenuInfo: React.FC<RegionStatisticsProps> = ({
         <GrapWrapper>
           <ChartTitleStyle>1인당 평균 매출액</ChartTitleStyle>
           <BaseLineChart
-            width={350}
             data={dailyRevenue}
             xField="date"
             yField="매출액"
             labelFormatterY={(v: number) => `${v / 1000}K`}
             formatData={formatDataForAverageRevenue}
             height={350}
+            width={390}
           />
         </GrapWrapper>
       </GraphContainer>
@@ -90,3 +96,10 @@ const RevenuInfo: React.FC<RegionStatisticsProps> = ({
 };
 
 export default RevenuInfo;
+
+const GrowthCommentContainer = styled.div`
+  padding: 1rem 0;
+  border-style: solid;
+  border-width: 1px 0px;
+  border-color: ${(props) => props.theme.colors.gray02};
+`;

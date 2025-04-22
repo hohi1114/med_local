@@ -260,7 +260,6 @@ export default function DashBoardPage() {
                 <ChartTitle>최근 3개월 월평균 성장률</ChartTitle>
                 <DashboardGrowthStats
                   data={dashboardInfoData?.average_growths}
-                  isDashboard
                 />
               </Card>
               <Card>

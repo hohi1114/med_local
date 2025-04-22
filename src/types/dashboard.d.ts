@@ -30,11 +30,12 @@ export type Region = {
 
 export type AverageGrowth = {
   data_available: boolean;
-  avg_growth_total_cost: number | null;
-  avg_growth_sinhwan: number | null;
-  avg_growth_revisit: number | null;
-  top_age_changes: {
-    age: string;
+  message?: string;
+  avg_growth_total_cost?: number;
+  avg_growth_sinhwan?: number;
+  avg_growth_revisit?: number;
+  top_age_growth: {
+    age: number;
     change_percent: number;
   }[];
 };

@@ -13,7 +13,7 @@ interface SexPieChartComponentProps {
 const SexPieChart = ({ data }: SexPieChartComponentProps) => {
   const config = {
     height: 200,
-    width: 350,
+    width: 390,
     data: data,
     angleField: "value",
     colorField: "type",

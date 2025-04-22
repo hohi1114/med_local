@@ -138,7 +138,6 @@ export function useNaverMapCore({
     const patientTemp: { areaName: string; patients: PatientData[] }[] = [];
     const regionMarkers: naver.maps.Marker[] = [];
     const patientGroupsMarkers: naver.maps.Marker[] = [];
-    const noticeMarkers: naver.maps.Marker[] = [];
 
     // Get Region Info
     setRegion(regionData.name);
@@ -220,13 +219,17 @@ export function useNaverMapCore({
         const bounds = polygon.getBounds();
         if (bounds) {
           const center = bounds.getCenter();
-          const alert =
-            area.costRank <= 30 &&
-            area.growth_metrics &&
-            area.growth_metrics?.data_available &&
-            (area.growth_metrics?.avg_growth_total_cost <= -10 ||
-              area.growth_metrics?.avg_growth_sinhwan <= -20 ||
-              area.growth_metrics?.avg_growth_revisit <= -20);
+          //top 30개 지역에대해 진료비, 신환, 재방문 환자수 감소 한개라도 -10% 이라면,
+          let alert = false;
+          if (area?.costRank && area?.growth_metrics) {
+            alert =
+              area.costRank <= 30 &&
+              area.growth_metrics &&
+              area.growth_metrics?.data_available &&
+              ((area.growth_metrics?.avg_growth_total_cost ?? 0) <= -10 ||
+                (area.growth_metrics?.avg_growth_sinhwan ?? 0) <= -10 ||
+                (area.growth_metrics?.avg_growth_revisit ?? 0) <= -10);
+          }
 
           const marker = createRegionMarker(
             center,
@@ -357,7 +360,6 @@ export function useNaverMapCore({
             strokeWeight: 3,
             zIndex: 100
           });
-
           setSelectedRegionData(area);
 
           if (region === "small" && area.dong) {

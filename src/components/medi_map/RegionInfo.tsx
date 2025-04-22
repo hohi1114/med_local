@@ -126,8 +126,8 @@ const RegionInfo = ({ data, region }: RegionInfoProps) => {
       {renderGraphWrapper(
         "연령대별 인구 수",
         <BarChart
-          width={350}
           height={280}
+          width={390}
           data={data.age_group_population}
           xField="연령"
           yField="세"
@@ -139,7 +139,7 @@ const RegionInfo = ({ data, region }: RegionInfoProps) => {
         "시간대별/요일 유동인구 수",
         footTrafficToggle === "시간대" ? (
           <BaseLineChart
-            width={350}
+            width={390}
             height={280}
             data={data.population_by_time}
             xField="time"
@@ -149,7 +149,7 @@ const RegionInfo = ({ data, region }: RegionInfoProps) => {
           />
         ) : (
           <BarChart
-            width={350}
+            width={400}
             height={280}
             data={data.population_by_day}
             xField="day"

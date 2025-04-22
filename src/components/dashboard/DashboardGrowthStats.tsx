@@ -2,71 +2,45 @@ import styled from "styled-components";
 import { AverageGrowth } from "../../types/dashboard";
 import userStore from "../../store/userStore";
 import dayjs from "dayjs";
+import {
+  getGrowthAgeMessage,
+  getGrowthMessage
+} from "../medi_map/util/mapUtil";
 
 export default function DashboardGrowthStats({
-  data,
-  isDashboard = false
+  data
 }: {
   data: AverageGrowth;
-  isDashboard?: boolean;
 }) {
   const { lastedUpdatedDate } = userStore();
   if (!data?.data_available || !data) {
-    return <NoDataContainer>불러올 데이터가 없습니다.</NoDataContainer>;
+    return (
+      <div>
+        <NoDataContainer>불러올 데이터가 없습니다.</NoDataContainer>
+      </div>
+    );
   }
 
   return (
     <Container>
       <GrowthCardContainer>
-        <StatComment isDashboard={isDashboard}>
-          [{dayjs(lastedUpdatedDate).subtract(3, "month").format("YYYY.MM.DD")}
+        <StatComment>
+          [ {dayjs(lastedUpdatedDate).subtract(3, "month").format("YYYY.MM.DD")}
           {" ~ "}
-          {dayjs(lastedUpdatedDate).format("YYYY.MM.DD")}]
+          {dayjs(lastedUpdatedDate).format("YYYY.MM.DD")} ]
           <StatList>
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "0.5rem"
-              }}
-            >
-              <ListItem>
-                매출, 신환, 재진이 모두 긍정적인 추이를 보이고 있어요.
-              </ListItem>
-              <span style={{ color: "gray" }}>
+            <div>
+              <ListItem>{getGrowthMessage(data)}</ListItem>
+              <span>
                 총 진료비는 평균적으로{" "}
                 <ChangeWithIcon value={data?.avg_growth_total_cost!} />
                 했어요.
               </span>
-            </div>
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "0.5rem"
-              }}
-            >
-              <ListItem>
-                매출 추이는 좋으나, 신환이 감소하는 추세에요. 신규 환자 유입에
-                신경써보시는 건 어떨까요?
-              </ListItem>
-              <span style={{ color: "gray" }}>
+              <span>
                 신환 유입은 <ChangeWithIcon value={data?.avg_growth_sinhwan!} />
                 했어요.
               </span>
-            </div>
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "0.5rem"
-              }}
-            >
-              <ListItem>
-                매출 추이는 좋으나 신환 유입, 재진율 상승에 신경 써보시는 건
-                어떨까요? (객단가 이야기 해야 하나?)
-              </ListItem>
-              <span style={{ color: "gray" }}>
+              <span>
                 재방문 환자는{" "}
                 <ChangeWithIcon value={data?.avg_growth_revisit!} />
                 하였습니다.
@@ -76,28 +50,26 @@ export default function DashboardGrowthStats({
         </StatComment>
       </GrowthCardContainer>
       <GrowthCardContainer>
-        <StatComment isDashboard={isDashboard}>
-          [ 나이대 변화율 ]
+        <StatComment>
+          [ 변화율 TOP 2 연령대 ]
           <StatList>
-            {data.top_age_growth.map((ageGroup, index) => (
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "0.5rem"
-                }}
-              >
-                <ListItem>
-                  매출 추이는 좋으나 신환 유입, 재진율 상승에 신경 써보시는 건
-                  어떨까요? (객단가 이야기 해야 하나?)
-                </ListItem>
-                <span style={{ color: "gray" }}>
-                  <strong>{ageGroup.age}대</strong> 이며{" "}
-                  <ChangeWithIcon value={ageGroup.change_percent!} />
-                  했어요.
-                </span>
-              </div>
-            ))}
+            {data.top_age_growth.map((ageGroup, index) => {
+              const message = getGrowthAgeMessage(
+                ageGroup.age,
+                ageGroup.change_percent
+              );
+              return (
+                <div key={ageGroup.age}>
+                  <ListItem>{message.summaryMessage}</ListItem>
+                  <span>
+                    <strong>{ageGroup.age}대</strong> 이며{" "}
+                    <ChangeWithIcon value={ageGroup.change_percent!} />
+                    했어요.
+                  </span>
+                  <span>{message.strategyMessage}</span>
+                </div>
+              );
+            })}
           </StatList>
         </StatComment>
       </GrowthCardContainer>
@@ -130,7 +102,7 @@ const Container = styled.div`
   width: 100%;
   display: flex;
   flex-direction: column;
-  border-radius: 0.3rem;
+  gap: 1rem;
 `;
 
 const NoDataContainer = styled.div`
@@ -142,7 +114,7 @@ const NoDataContainer = styled.div`
   color: ${(props) => props.theme.colors.gray05};
 `;
 
-const StatComment = styled.div<{ isDashboard: boolean }>`
+const StatComment = styled.div`
   font-size: 1.2rem;
   color: ${(props) => props.theme.colors.gray05};
   text-align: left;
@@ -158,7 +130,16 @@ const StatList = styled.ul`
   color: ${(props) => props.theme.colors.black01};
   display: flex;
   flex-direction: column;
-  gap: 3rem;
+  gap: 2rem;
+
+  span {
+    color: ${(props) => props.theme.colors.gray05};
+  }
+  div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
 `;
 
 const ListItem = styled.li`
