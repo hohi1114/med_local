@@ -219,12 +219,13 @@ export function useNaverMapCore({
         const bounds = polygon.getBounds();
         if (bounds) {
           const center = bounds.getCenter();
-          //top 30개 지역에대해 진료비, 신환, 재방문 환자수 감소 한개라도 -10% 이라면,
+          //top 20개 지역에대해 진료비, 신환, 재방문 환자수 감소 한개라도 -20% 이라면 Red 표시
+          //혹은 셋다 15% 이상 증가한 경우에 green 표시
           let alert = "none";
           if (
             area?.costRank &&
             area?.growth_metrics &&
-            area.costRank <= 30 &&
+            area.costRank <= 20 &&
             area.growth_metrics?.data_available
           ) {
             alert =
@@ -232,9 +233,9 @@ export function useNaverMapCore({
               (area.growth_metrics?.avg_growth_sinhwan ?? 0) <= -20 ||
               (area.growth_metrics?.avg_growth_revisit ?? 0) <= -20
                 ? "red"
-                : (area.growth_metrics?.avg_growth_total_cost ?? 0) >= 20 &&
-                  (area.growth_metrics?.avg_growth_sinhwan ?? 0) >= 20 &&
-                  (area.growth_metrics?.avg_growth_revisit ?? 0) >= 20
+                : (area.growth_metrics?.avg_growth_total_cost ?? 0) >= 15 &&
+                  (area.growth_metrics?.avg_growth_sinhwan ?? 0) >= 15 &&
+                  (area.growth_metrics?.avg_growth_revisit ?? 0) >= 15
                 ? "blue"
                 : "none";
           }

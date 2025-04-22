@@ -145,6 +145,17 @@ export default function DashboardGrowthStats({
     );
   }
 
+  const alert =
+    (data?.avg_growth_total_cost ?? 0) <= -20 ||
+    (data?.avg_growth_sinhwan ?? 0) <= -20 ||
+    (data?.avg_growth_revisit ?? 0) <= -20
+      ? "red"
+      : (data?.avg_growth_total_cost ?? 0) >= 20 &&
+        (data?.avg_growth_sinhwan ?? 0) >= 20 &&
+        (data?.avg_growth_revisit ?? 0) >= 20
+      ? "blue"
+      : "none";
+
   return (
     <Container>
       <CardContent>
@@ -157,7 +168,7 @@ export default function DashboardGrowthStats({
 
         <StatList>
           <StatItem>
-            <StrongText>{getGrowthMessage(data)}</StrongText>
+            <StrongText alert={alert}>{getGrowthMessage(data)}</StrongText>
           </StatItem>
         </StatList>
       </CardContent>
@@ -284,10 +295,15 @@ const ListItem = styled.li`
   margin-bottom: 0.5rem;
 `;
 
-const StrongText = styled.div`
+const StrongText = styled.div<{ alert?: string }>`
   font-weight: 600;
   font-size: 1.3rem;
-  color: ${(props) => props.theme.colors.black01};
+  color: ${(props) =>
+    props?.alert
+      ? props?.alert === "red"
+        ? "#FF3B30"
+        : "#00c41e"
+      : props.theme.colors.black01};
 `;
 
 const StrategyText = styled.div`
