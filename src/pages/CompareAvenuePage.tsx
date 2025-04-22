@@ -35,46 +35,63 @@ function CompareAvenuePage() {
       navigate("/map");
     }
   });
-  const { loading, setDrawerDate1, setDrawerDate2, handleIsDrawerOpen } =
-    mapStore();
+  const {
+    loading,
+    selectedDateRangeForCompare1,
+    selectedDateRangeForCompare2,
+    setDrawerDate1,
+    setDrawerDate2,
+    handleIsDrawerOpen,
+    setSelectedDateRangeForCompare1,
+    setSelectedDateRangeForCompare2
+  } = mapStore();
   const { mapElement, isFetching } = useNaverMapCore({ isComparison: true });
 
   //날짜선택 1
   const {
     dateRange: dateRange1,
-    handleDateRangeChange: handleDateRangeChange1
-  } = useRangeDurationDatePicker();
+    handleDateRangeChange: handleDateRangeChange1,
+    latestDateRangeRef: latestDateRangeRef1
+  } = useRangeDurationDatePicker({ startDate: "", endDate: "" });
 
   //날짜선택 2
   const {
     dateRange: dateRange2,
-    handleDateRangeChange: handleDateRangeChange2
-  } = useRangeDurationDatePicker();
+    handleDateRangeChange: handleDateRangeChange2,
+    latestDateRangeRef: latestDateRangeRef2
+  } = useRangeDurationDatePicker({ startDate: "", endDate: "" });
 
   useEffect(() => {
     return () => {
+      setSelectedDateRangeForCompare1(latestDateRangeRef1.current);
+      setSelectedDateRangeForCompare2(latestDateRangeRef2.current);
       handleIsDrawerOpen(false);
     };
   }, []);
 
   useEffect(() => {
-    if (lastedUpdatedDate && lastedUpdatedDate.length > 0) {
-      const start1 = lastedUpdatedDate
-        ? dayjs(lastedUpdatedDate).subtract(30, "day").format("YYYY-MM-DD")
-        : dayjs().subtract(30, "day").format("YYYY-MM-DD");
-      const end1 = lastedUpdatedDate
-        ? dayjs(lastedUpdatedDate).subtract(15, "day").format("YYYY-MM-DD")
-        : dayjs().subtract(15, "day").format("YYYY-MM-DD");
+    if (selectedDateRangeForCompare1 && selectedDateRangeForCompare2) {
+      handleDateRangeChange1(selectedDateRangeForCompare1);
+      handleDateRangeChange2(selectedDateRangeForCompare2);
+    } else {
+      if (lastedUpdatedDate && lastedUpdatedDate.length > 0) {
+        const start1 = lastedUpdatedDate
+          ? dayjs(lastedUpdatedDate).subtract(30, "day").format("YYYY-MM-DD")
+          : dayjs().subtract(30, "day").format("YYYY-MM-DD");
+        const end1 = lastedUpdatedDate
+          ? dayjs(lastedUpdatedDate).subtract(15, "day").format("YYYY-MM-DD")
+          : dayjs().subtract(15, "day").format("YYYY-MM-DD");
 
-      const start2 = lastedUpdatedDate
-        ? dayjs(lastedUpdatedDate).subtract(14, "day").format("YYYY-MM-DD")
-        : dayjs().subtract(14, "day").format("YYYY-MM-DD");
-      const end2 = lastedUpdatedDate
-        ? dayjs(lastedUpdatedDate).format("YYYY-MM-DD")
-        : dayjs().format("YYYY-MM-DD");
+        const start2 = lastedUpdatedDate
+          ? dayjs(lastedUpdatedDate).subtract(14, "day").format("YYYY-MM-DD")
+          : dayjs().subtract(14, "day").format("YYYY-MM-DD");
+        const end2 = lastedUpdatedDate
+          ? dayjs(lastedUpdatedDate).format("YYYY-MM-DD")
+          : dayjs().format("YYYY-MM-DD");
 
-      handleDateRangeChange1({ startDate: start1, endDate: end1 });
-      handleDateRangeChange2({ startDate: start2, endDate: end2 });
+        handleDateRangeChange1({ startDate: start1, endDate: end1 });
+        handleDateRangeChange2({ startDate: start2, endDate: end2 });
+      }
     }
   }, [lastedUpdatedDate]);
 

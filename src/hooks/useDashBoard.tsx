@@ -37,6 +37,7 @@ const useDashBoard = () => {
       endDate: base.format("YYYY-MM-DD")
     };
   };
+
   const RANGE_DATE_MAP: Record<RangeDateMapKey, DateRange> = {
     일주일: makeRange(7, "day"),
     "1개월": makeRange(1, "month"),
@@ -52,13 +53,14 @@ const useDashBoard = () => {
   const AVAILABLE_DATE_RANGES: Partial<Record<RangeDateMapKey, DateRange>> =
     isFreetrialUser ? FREE_TRIAL_RANGES : RANGE_DATE_MAP;
 
-  const { dateRange, handleDateRangeChange } = useRangeDurationDatePicker();
+  const { dateRange, handleDateRangeChange, latestDateRangeRef } =
+    useRangeDurationDatePicker();
   const [buttonType, setButtonType] = useState<RangeDateMapKey | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [dashboardInfo, setDashboardInfo] = useState<DashBoard | null>(null);
   const [dateChanged, setDateChanged] = useState(false);
   const {
-    setSelectedDateRange,
+    selectedDateRange,
     weekData,
     monthData,
     threeMonthData,
@@ -138,10 +140,14 @@ const useDashBoard = () => {
           .format("YYYY-MM-DD"),
         endDate: dayjs(lastedUpdatedDate).format("YYYY-MM-DD")
       };
-
-      if (lastedUpdatedDate && lastedUpdatedDate.length > 0) {
-        const data = await dashboardInfoMutation(lastedUpdateDateRange);
+      if (selectedDateRange) {
+        const data = await dashboardInfoMutation(selectedDateRange);
         setDashboardInfo(data);
+      } else {
+        if (lastedUpdatedDate && lastedUpdatedDate.length > 0) {
+          const data = await dashboardInfoMutation(lastedUpdateDateRange);
+          setDashboardInfo(data);
+        }
       }
 
       if (!isFreetrialUser) {
@@ -161,7 +167,8 @@ const useDashBoard = () => {
     isFreetrialUser,
     AVAILABLE_DATE_RANGES,
     saveData,
-    lastedUpdatedDate
+    lastedUpdatedDate,
+    selectedDateRange
   ]);
 
   useEffect(() => {
@@ -196,7 +203,6 @@ const useDashBoard = () => {
 
   // Fetch data when date range changes
   useEffect(() => {
-    setSelectedDateRange(dateRange);
     if (!dateChanged) return;
 
     const fetchData = async () => {
@@ -240,7 +246,8 @@ const useDashBoard = () => {
     dashboardInfo,
     buttonType,
     AVAILABLE_DATE_RANGES,
-    dateRange
+    dateRange,
+    latestDateRangeRef
   };
 };
 

@@ -28,16 +28,18 @@ export type Region = {
   total_cost: number;
 };
 
+export type TopAgeGrowth = {
+  age: number;
+  change_percent: number;
+};
+
 export type AverageGrowth = {
   data_available: boolean;
   message?: string;
   avg_growth_total_cost?: number;
   avg_growth_sinhwan?: number;
   avg_growth_revisit?: number;
-  top_age_growth: {
-    age: number;
-    change_percent: number;
-  }[];
+  top_age_growth: TopAgeGrowth[];
 };
 
 type TopRegion = Region[];

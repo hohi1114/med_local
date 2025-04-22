@@ -40,10 +40,11 @@ export default function DashBoardPage() {
     dashboardInfo,
     buttonType,
     AVAILABLE_DATE_RANGES,
-    setDateChanged
+    setDateChanged,
+    latestDateRangeRef
   } = useDashBoard();
 
-  const { selectedDateRange } = useDashboardStore();
+  const { selectedDateRange, setSelectedDateRange } = useDashboardStore();
   const {
     fetchingUserLoading,
     lastedUpdatedDate,
@@ -89,8 +90,10 @@ export default function DashBoardPage() {
 
   useEffect(() => {
     //만약 사용자가 처음 대시보드에 접근했을때
-    if (!selectedDateRange) {
+    if (selectedDateRange) {
       //사용자가 업데이트한 날짜가 있다면
+      handleDateRangeChange(selectedDateRange);
+    } else {
       if (lastedUpdatedDate && lastedUpdatedDate.length > 0) {
         const start = dayjs(lastedUpdatedDate)
           .subtract(1, "month")
@@ -98,10 +101,14 @@ export default function DashBoardPage() {
         const end = dayjs(lastedUpdatedDate).format("YYYY-MM-DD");
         handleDateRangeChange({ startDate: start, endDate: end });
       }
-    } else {
-      handleDateRangeChange(selectedDateRange);
     }
   }, [lastedUpdatedDate]);
+
+  useEffect(() => {
+    return () => {
+      setSelectedDateRange(latestDateRangeRef.current);
+    };
+  }, []);
 
   if (isError) {
     return (
@@ -260,6 +267,7 @@ export default function DashBoardPage() {
                 <ChartTitle>최근 3개월 월평균 성장률</ChartTitle>
                 <DashboardGrowthStats
                   data={dashboardInfoData?.average_growths}
+                  isDashboard
                 />
               </Card>
               <Card>

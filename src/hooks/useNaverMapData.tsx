@@ -72,8 +72,10 @@ const useNaverMapData = (twoType: boolean) => {
             !isInActiveUser &&
             hasGuided &&
             !startTutorial &&
-            !!drawerDate1 &&
-            !!drawerDate2
+            !!drawerDate1?.endDate &&
+            !!drawerDate1?.startDate &&
+            !!drawerDate2?.startDate &&
+            !!drawerDate2?.endDate
         }))
       : drawerDate
       ? [
@@ -85,7 +87,8 @@ const useNaverMapData = (twoType: boolean) => {
               !isInActiveUser &&
               hasGuided &&
               !startTutorial &&
-              !!drawerDate
+              !!drawerDate.endDate &&
+              !!drawerDate.startDate
           },
           {
             queryKey: ["allPatientLocations", drawerDate],
@@ -95,7 +98,8 @@ const useNaverMapData = (twoType: boolean) => {
               !isInActiveUser &&
               hasGuided &&
               !startTutorial &&
-              !!drawerDate
+              !!drawerDate.endDate &&
+              !!drawerDate.startDate
           }
         ]
       : []

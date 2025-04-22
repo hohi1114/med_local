@@ -220,15 +220,23 @@ export function useNaverMapCore({
         if (bounds) {
           const center = bounds.getCenter();
           //top 30개 지역에대해 진료비, 신환, 재방문 환자수 감소 한개라도 -10% 이라면,
-          let alert = false;
-          if (area?.costRank && area?.growth_metrics) {
+          let alert = "none";
+          if (
+            area?.costRank &&
+            area?.growth_metrics &&
+            area.costRank <= 30 &&
+            area.growth_metrics?.data_available
+          ) {
             alert =
-              area.costRank <= 30 &&
-              area.growth_metrics &&
-              area.growth_metrics?.data_available &&
-              ((area.growth_metrics?.avg_growth_total_cost ?? 0) <= -10 ||
-                (area.growth_metrics?.avg_growth_sinhwan ?? 0) <= -10 ||
-                (area.growth_metrics?.avg_growth_revisit ?? 0) <= -10);
+              (area.growth_metrics?.avg_growth_total_cost ?? 0) <= -20 ||
+              (area.growth_metrics?.avg_growth_sinhwan ?? 0) <= -20 ||
+              (area.growth_metrics?.avg_growth_revisit ?? 0) <= -20
+                ? "red"
+                : (area.growth_metrics?.avg_growth_total_cost ?? 0) >= 20 &&
+                  (area.growth_metrics?.avg_growth_sinhwan ?? 0) >= 20 &&
+                  (area.growth_metrics?.avg_growth_revisit ?? 0) >= 20
+                ? "blue"
+                : "none";
           }
 
           const marker = createRegionMarker(
@@ -367,42 +375,6 @@ export function useNaverMapCore({
           }
         }
       });
-
-      // polygon.addListener("mouseover", () => {
-      //   // 모달을 표시하기 위한 state 업데이트
-      //   // 예시: setMouseOverModal({ isOpen: true, data: area, position: polygon.getBounds().getCenter() });
-
-      //   // 또는 간단한 툴팁을 표시하고 싶다면
-      //   const hoverOverlayOptions = {
-      //     position: polygon.getBounds().getCenter(),
-      //     content: `<div style="padding: 8px 12px; background: white; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-      //               <strong>${area.name}</strong><br/>
-      //               ${
-      //                 isComparison
-      //                   ? `비용 A: ${area.total_costA}<br/>비용 B: ${area.total_costB}`
-      //                   : `총 비용: ${area.total_cost ?? 0}`
-      //               }
-      //             </div>`,
-      //     yAnchor: 0
-      //   };
-
-      //   if (!polygon.hoverOverlay) {
-      //     polygon.hoverOverlay = new window.naver.maps.InfoWindow(
-      //       hoverOverlayOptions
-      //     );
-      //   }
-      //   polygon.hoverOverlay.open(map);
-      // });
-
-      // // mouseout 이벤트 추가
-      // polygon.addListener("mouseout", () => {
-      //   // 모달을 숨기기 위한 state 업데이트
-      //   // 예시: setMouseOverModal({ isOpen: false });
-
-      //   if (polygon.hoverOverlay) {
-      //     polygon.hoverOverlay.close();
-      //   }
-      // });
     }
   };
 
@@ -506,7 +478,7 @@ export function useNaverMapCore({
     fontSize: string,
     areaName: string,
     region: string,
-    alert: boolean
+    alert?: "red" | "blue" | "none"
   ) => {
     const reNamedDong = areaName
       .split(" ")
@@ -527,26 +499,31 @@ export function useNaverMapCore({
           ${region === "dong" ? reNamedDong : areaName}
         </span>
         ${
-          alert
+          alert === "red"
             ? `<div style="
                 position: absolute;
-                top: -1.3rem;
-                right: -1.3rem;
-                font-size: 1.3rem;
-                width: 2.2rem;
-                height: 2.2rem;
+                top: -0.3rem;
+                right: -0.3rem;
+                width: 1rem;
+                height: 1rem;
                 display: flex;
-                justify-content: center;
-                align-items: center;
-                color: white;
-                background: radial-gradient(circle at 30% 30%, #ff9a9e, #ff6a6a);
+                background: #FF3B30;
                 border-radius: 50%;
-                opacity: 0.95;
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-                font-weight: 600;
                 z-index: 2;
               ">
-              !
+              </div>`
+            : alert === "blue"
+            ? `<div style="
+                position: absolute;
+                top: -0.3rem;
+                right: -0.3rem;
+                width: 1rem;
+                height: 1rem;
+                display: flex;
+                background: 	#00c41e;
+                border-radius: 50%;
+                z-index: 2;
+              ">
               </div>`
             : ""
         }
@@ -574,7 +551,6 @@ export function useNaverMapCore({
     loading,
     isFetching,
     currentZoom,
-    name,
     handleZoomChange,
     clearClusters,
     createMarkerCluster,

@@ -17,7 +17,11 @@ export const LOCAL_SECTIONS_MAP = {
 export type LocalSectionKey = keyof typeof LOCAL_SECTIONS_MAP;
 
 const useRegionAnalysis = () => {
-  const { dateRange, handleDateRangeChange } = useRangeDurationDatePicker();
+  const { dateRange, handleDateRangeChange, latestDateRangeRef } =
+    useRangeDurationDatePicker({
+      startDate: "",
+      endDate: ""
+    });
   const { isInActiveUser, user, lastedUpdatedDate, hasGuided, startTutorial } =
     userStore();
   const {
@@ -25,7 +29,9 @@ const useRegionAnalysis = () => {
     setGuSectionData,
     setDongSectionData,
     setLocalSection,
-    localSection
+    localSection,
+    selectedDateRange,
+    setSelectedDateRange
   } = useRegionAnalysisStore();
 
   const {
@@ -90,35 +96,43 @@ const useRegionAnalysis = () => {
       !isInActiveUser &&
       lastedUpdatedDate &&
       hasGuided &&
-      !startTutorial
+      !startTutorial &&
+      dateRange.startDate !== "" &&
+      dateRange.endDate !== ""
     ) {
       fetchFirstRegion();
     }
   }, [dateRange, user, isInActiveUser, hasGuided, startTutorial]);
 
   useEffect(() => {
-    if (lastedUpdatedDate && lastedUpdatedDate.length > 0) {
-      const start = dayjs(lastedUpdatedDate)
-        .subtract(1, "month")
-        .format("YYYY-MM-DD");
-      const end = dayjs(lastedUpdatedDate).format("YYYY-MM-DD");
-      handleDateRangeChange({ startDate: start, endDate: end });
+    if (selectedDateRange) {
+      handleDateRangeChange(selectedDateRange);
+    } else {
+      if (lastedUpdatedDate && lastedUpdatedDate.length > 0) {
+        const start = dayjs(lastedUpdatedDate)
+          .subtract(1, "month")
+          .format("YYYY-MM-DD");
+        const end = dayjs(lastedUpdatedDate).format("YYYY-MM-DD");
+        handleDateRangeChange({ startDate: start, endDate: end });
+      } else {
+        handleDateRangeChange({
+          startDate: dayjs().subtract(1, "month").format("YYYY-MM-DD"),
+          endDate: dayjs().format("YYYY-MM-DD")
+        });
+      }
     }
   }, [lastedUpdatedDate]);
+
+  useEffect(() => {
+    return () => {
+      setSelectedDateRange(latestDateRangeRef.current);
+    };
+  }, []);
 
   //SeclectBox Handler
   const handleLocalSectionChange = (value: LocalSectionKey) => {
     setLocalSection(value);
   };
-
-  //SearchBox Handler
-  // const handleSearchwordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  //   setSearchword(e.target.value);
-  // };
-
-  // const filterSearchData = regionAnalysisData?.filter((data) => {
-  //   item.re;
-  // });
 
   return {
     isError,

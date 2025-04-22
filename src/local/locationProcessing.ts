@@ -161,8 +161,6 @@ export async function processDataLocally(
       };
     });
 
-    console.log(recordsWithGeodata);
-
     const regionData = await fetchRegionData(accessToken);
 
     // Parse the polygon data

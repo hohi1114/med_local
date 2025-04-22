@@ -42,7 +42,7 @@ const StatisticsDrawer = ({ showTutorial }: StatisticsDrawerProps) => {
     : regionPrivate;
 
   const [toggleValue, setToggleValue] = useState<string>(
-    showTutorial ? "전체" : "지역"
+    showTutorial ? "전체" : "매출"
   );
 
   const [showTooltip, setShowTooltip] = useState(false);

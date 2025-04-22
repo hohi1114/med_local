@@ -77,8 +77,7 @@ const getAgeRange = (ageStr: number): "0-20" | "20-40" | "40-60" | "60+" => {
 };
 
 const getSummaryMessage = (age: number, percent: number): string => {
-  if (percent >= 10)
-    return `${age}대 환자군이 많이 증가했네요~! 좋은 추세에요.`;
+  if (percent >= 10) return `${age}대 환자군이 많이 증가했네요! 좋은 추세에요.`;
   if (percent <= -10) return `${age}대 환자군이 감소하는 추세에요.`;
   return `${age}대 환자군은 안정적인 추이를 보이고 있어요.`;
 };

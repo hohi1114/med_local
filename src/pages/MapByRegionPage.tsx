@@ -26,8 +26,15 @@ function MapByRegionPage() {
   const tutorialSteps = MapByRegionTutorialSteps(tutorialRefs);
   const { mapElement, isFetching } = useNaverMapCore();
   const { lastedUpdatedDate, startTutorial } = userStore();
-  const { loading, setDrawerDate, handleIsDrawerOpen } = mapStore();
-  const { dateRange, handleDateRangeChange } = useRangeDurationDatePicker();
+  const {
+    selectedDateRange,
+    setSelectedDateRange,
+    loading,
+    setDrawerDate,
+    handleIsDrawerOpen
+  } = mapStore();
+  const { dateRange, handleDateRangeChange, latestDateRangeRef } =
+    useRangeDurationDatePicker({ startDate: "", endDate: "" });
 
   const { tutorialStep, handleNextStep, handlePrevStep } = useTutorial({
     steps: tutorialSteps,
@@ -40,19 +47,24 @@ function MapByRegionPage() {
   useEffect(() => {
     return () => {
       handleIsDrawerOpen(false);
+      setSelectedDateRange(latestDateRangeRef.current);
     };
   }, []);
 
   useEffect(() => {
-    if (lastedUpdatedDate && lastedUpdatedDate.length > 0) {
-      const start = lastedUpdatedDate
-        ? dayjs(lastedUpdatedDate).subtract(1, "month").format("YYYY-MM-DD")
-        : dayjs().subtract(1, "month").format("YYYY-MM-DD");
-      const end = lastedUpdatedDate
-        ? dayjs(lastedUpdatedDate).format("YYYY-MM-DD")
-        : dayjs().format("YYYY-MM-DD");
+    if (selectedDateRange) {
+      handleDateRangeChange(selectedDateRange);
+    } else {
+      if (lastedUpdatedDate && lastedUpdatedDate.length > 0) {
+        const start = lastedUpdatedDate
+          ? dayjs(lastedUpdatedDate).subtract(1, "month").format("YYYY-MM-DD")
+          : dayjs().subtract(1, "month").format("YYYY-MM-DD");
+        const end = lastedUpdatedDate
+          ? dayjs(lastedUpdatedDate).format("YYYY-MM-DD")
+          : dayjs().format("YYYY-MM-DD");
 
-      handleDateRangeChange({ startDate: start, endDate: end });
+        handleDateRangeChange({ startDate: start, endDate: end });
+      }
     }
   }, [lastedUpdatedDate]);
 

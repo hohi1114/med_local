@@ -4,6 +4,9 @@ import { Polygon, RegionData } from "../types/naver-maps";
 import { DateRange } from "../hooks/useRangeDurationDatePicker";
 
 interface IMapStore {
+  selectedDateRange: DateRange | null;
+  selectedDateRangeForCompare1: DateRange | null;
+  selectedDateRangeForCompare2: DateRange | null;
   region: string;
   areaName: string;
   selectedRegionData: RegionData | null;
@@ -17,6 +20,9 @@ interface IMapStore {
   loading: boolean;
   patients: { areaName: string; patients: PatientData[] }[];
 
+  setSelectedDateRange: (dateRange: DateRange) => void;
+  setSelectedDateRangeForCompare1: (dateRange: DateRange) => void;
+  setSelectedDateRangeForCompare2: (dateRange: DateRange) => void;
   setRegion: (region: string) => void;
   setAreaName: (areaName: string) => void;
   setDrawerDate: (drawerDate: DateRange) => void;
@@ -35,6 +41,9 @@ interface IMapStore {
 }
 
 const mapStore = create<IMapStore>((set) => ({
+  selectedDateRange: null,
+  selectedDateRangeForCompare1: null,
+  selectedDateRangeForCompare2: null,
   region: "small",
   areaName: "",
   selectedRegionData: null,
@@ -48,6 +57,12 @@ const mapStore = create<IMapStore>((set) => ({
   loading: false,
   patients: [],
 
+  setSelectedDateRange: (dateRange: DateRange) =>
+    set({ selectedDateRange: dateRange }),
+  setSelectedDateRangeForCompare1: (selectedDateRangeForCompare1: DateRange) =>
+    set({ selectedDateRangeForCompare1 }),
+  setSelectedDateRangeForCompare2: (selectedDateRangeForCompare2: DateRange) =>
+    set({ selectedDateRangeForCompare2 }),
   setRegion: (region) => set({ region }),
   setAreaName: (areaName) => set({ areaName }),
   setDongNameForSmall: (dongNmaeFroSmall) => set({ dongNmaeFroSmall }),
