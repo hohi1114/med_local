@@ -69,7 +69,7 @@ type RegionData = {
   dong?: string;
   total_costA?: number;
   total_costB?: number;
-  costRank?: number;
+  cost_rank?: number;
   growth_metrics: AverageGrowth;
 };
 

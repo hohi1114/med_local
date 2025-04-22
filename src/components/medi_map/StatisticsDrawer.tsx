@@ -36,6 +36,7 @@ const StatisticsDrawer = ({ showTutorial }: StatisticsDrawerProps) => {
 
   const areaNamDate = showTutorial ? mockRegionInfo.name : areaName;
   const regionInfoData = showTutorial ? mockRegionInfo : regionInfo;
+
   const statsDataData = showTutorial ? mockMapByRegionStats : statsData;
   const regionPrivateData = showTutorial
     ? mockMapByRegionRegionPrivate
@@ -69,6 +70,7 @@ const StatisticsDrawer = ({ showTutorial }: StatisticsDrawerProps) => {
       ) : (
         <RevenuInfo
           statsData={statsDataData}
+          costRank={regionInfoData.cost_rank}
           avgGrowth={regionPrivateData?.growth_metrics}
           revenueTrend={regionPrivateData?.cost_by_date}
           dailyRevenue={regionPrivateData?.average_cost_per_visit_by_date}
@@ -125,6 +127,7 @@ const StatisticsDrawer = ({ showTutorial }: StatisticsDrawerProps) => {
             <SectionTitle>매출 데이터</SectionTitle>
           </Tooltip>
           <RevenuInfo
+            costRank={regionInfoData.cost_rank}
             statsData={statsDataData}
             revenueTrend={regionPrivateData?.cost_by_date}
             dailyRevenue={regionPrivateData?.average_cost_per_visit_by_date}

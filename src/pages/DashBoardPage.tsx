@@ -277,7 +277,7 @@ export default function DashBoardPage() {
                   xField="age"
                   yField="value"
                   formatData={formatBarData}
-                  height={430}
+                  height={380}
                 />
               </Card>
             </CardGrid>

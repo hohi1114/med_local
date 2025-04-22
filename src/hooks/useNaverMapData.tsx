@@ -193,15 +193,15 @@ const useNaverMapData = (twoType: boolean) => {
 
           const rawRegions = await getDataFromRegionDB(key);
           updated[level] = rawRegions.map((region) => {
-            let costRank = -1;
+            let cost_rank = -1;
             const matchedEtc = etcData.find((item, index) => {
-              costRank = index + 1;
+              cost_rank = index + 1;
               return item[`${level}_region_name`] === region.name;
             });
 
             return {
               ...region,
-              costRank,
+              cost_rank,
               polygon: JSON.parse(region.polygon)[0],
               total_cost: matchedEtc?.total_cost ?? 0,
               growth_metrics: matchedEtc?.growth_metrics

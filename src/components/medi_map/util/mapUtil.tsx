@@ -119,3 +119,21 @@ export const getGrowthAgeMessage = (
     strategyMessage
   };
 };
+
+//top 20개 지역에대해 진료비, 신환, 재방문 환자수 감소 한개라도 -20% 이라면 Red 표시
+//혹은 셋다 15% 이상 증가한 경우에 green 표시
+export const needNotify = (
+  costRank: number,
+  data: Partial<AverageGrowth>
+): "none" | "good" | "bad" => {
+  if (costRank > 20 || !data?.data_available) {
+    return "none";
+  }
+  const totalCost = data?.avg_growth_total_cost ?? 0;
+  const sinhwan = data?.avg_growth_sinhwan ?? 0;
+  const revisit = data?.avg_growth_revisit ?? 0;
+
+  if (totalCost <= -20 || sinhwan <= -20 || revisit <= -20) return "bad";
+  if (totalCost >= 15 && sinhwan >= 15 && revisit >= 15) return "good";
+  return "none";
+};

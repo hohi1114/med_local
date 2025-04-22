@@ -7,6 +7,7 @@ import { makeMarkerClustering } from "../utils/marker-cluster";
 import { PatientData } from "../utils/ExcelParser";
 import { RegionData, RegionLevel } from "../types/naver-maps";
 import userStore from "../store/userStore";
+import { needNotify } from "../components/medi_map/util/mapUtil";
 
 export interface UseNaverMapCoreOptions {
   isComparison?: boolean;
@@ -219,25 +220,11 @@ export function useNaverMapCore({
         const bounds = polygon.getBounds();
         if (bounds) {
           const center = bounds.getCenter();
-          //top 20개 지역에대해 진료비, 신환, 재방문 환자수 감소 한개라도 -20% 이라면 Red 표시
-          //혹은 셋다 15% 이상 증가한 경우에 green 표시
-          let alert = "none";
-          if (
-            area?.costRank &&
-            area?.growth_metrics &&
-            area.costRank <= 20 &&
-            area.growth_metrics?.data_available
-          ) {
-            alert =
-              (area.growth_metrics?.avg_growth_total_cost ?? 0) <= -20 ||
-              (area.growth_metrics?.avg_growth_sinhwan ?? 0) <= -20 ||
-              (area.growth_metrics?.avg_growth_revisit ?? 0) <= -20
-                ? "red"
-                : (area.growth_metrics?.avg_growth_total_cost ?? 0) >= 15 &&
-                  (area.growth_metrics?.avg_growth_sinhwan ?? 0) >= 15 &&
-                  (area.growth_metrics?.avg_growth_revisit ?? 0) >= 15
-                ? "blue"
-                : "none";
+
+          let alert: "none" | "bad" | "good" = "none";
+
+          if (area?.cost_rank && area?.growth_metrics) {
+            alert = needNotify(area?.cost_rank, area.growth_metrics);
           }
 
           const marker = createRegionMarker(
@@ -479,8 +466,29 @@ export function useNaverMapCore({
     fontSize: string,
     areaName: string,
     region: string,
-    alert?: "red" | "blue" | "none"
+    alert?: "bad" | "good" | "none"
   ) => {
+    const alertBadge =
+      alert && alert !== "none"
+        ? `<div style="
+              position: absolute;
+              top: -0.4rem;
+              right: -0.4rem;
+              width: 1.2rem;
+              height: 1.2rem;
+              display: flex;
+              background-color: ${
+                alert === "bad"
+                  ? "#FF3B30"
+                  : alert === "good"
+                  ? "#00C41E"
+                  : "transparent"
+              };
+              border-radius: 50%;
+              z-index: 2;
+            "></div>`
+        : "";
+
     const reNamedDong = areaName
       .split(" ")
       .slice(areaName.split(" ").length - 1);
@@ -499,38 +507,9 @@ export function useNaverMapCore({
                       text-align: center; z-index: 1;">
           ${region === "dong" ? reNamedDong : areaName}
         </span>
-        ${
-          alert === "red"
-            ? `<div style="
-                position: absolute;
-                top: -0.3rem;
-                right: -0.3rem;
-                width: 1rem;
-                height: 1rem;
-                display: flex;
-                background: #FF3B30;
-                border-radius: 50%;
-                z-index: 2;
-              ">
-              </div>`
-            : alert === "blue"
-            ? `<div style="
-                position: absolute;
-                top: -0.3rem;
-                right: -0.3rem;
-                width: 1rem;
-                height: 1rem;
-                display: flex;
-                background: 	#00c41e;
-                border-radius: 50%;
-                z-index: 2;
-              ">
-              </div>`
-            : ""
-        }
+        ${alertBadge}
       </div>
-
-`,
+    `,
         origin: new naver.maps.Point(0, 0),
         anchor: new naver.maps.Point(20, 30)
       }

@@ -87,7 +87,6 @@ const RevenueCompareDrawer = ({ showTutorial }: RevenueCompareDrawerProps) => {
             </TitleContainer>
           </div>
           <RevenuInfo
-            disabledCompare={true}
             statsData={comparisonStatsDataData?.first}
             revenueTrend={firstRegionPrivateData?.cost_by_date}
             dailyRevenue={

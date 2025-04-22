@@ -5,9 +5,11 @@ import { AverageGrowth, TopAgeGrowth } from "../../types/dashboard";
 import userStore from "../../store/userStore";
 import {
   getGrowthAgeMessage,
-  getGrowthMessage
+  getGrowthMessage,
+  needNotify
 } from "../medi_map/util/mapUtil";
 import { ReactNode } from "react";
+import { TooltipPlacement } from "antd/es/tooltip";
 
 // 재사용 가능한 컴포넌트들
 const ChangeIndicator = ({ value }: { value: number }) => {
@@ -24,10 +26,16 @@ const ChangeIndicator = ({ value }: { value: number }) => {
   );
 };
 
-const InfoTooltip = ({ content }: { content: ReactNode }) => (
+const InfoTooltip = ({
+  content,
+  placement
+}: {
+  content: ReactNode;
+  placement?: string;
+}) => (
   <TooltipIcon>
     <Tooltip
-      placement="top"
+      placement={(placement ?? "top") as TooltipPlacement}
       color="white"
       title={<TooltipContent>{content}</TooltipContent>}
     >
@@ -39,10 +47,12 @@ const InfoTooltip = ({ content }: { content: ReactNode }) => (
 // 메인 컴포넌트
 export default function DashboardGrowthStats({
   data,
-  isDashboard = false
+  isDashboard = false,
+  costRank
 }: {
   data: AverageGrowth;
   isDashboard?: boolean;
+  costRank?: number;
 }) {
   const { lastedUpdatedDate } = userStore();
 
@@ -121,7 +131,7 @@ export default function DashboardGrowthStats({
           <StatComment>
             [ 변화율 TOP 2 연령대 ]
             <StatList2>
-              {data.top_age_growth.map((ageGroup, index) => {
+              {data.top_age_growth.map((ageGroup) => {
                 const message = getGrowthAgeMessage(
                   ageGroup.age,
                   ageGroup.change_percent
@@ -145,17 +155,6 @@ export default function DashboardGrowthStats({
     );
   }
 
-  const alert =
-    (data?.avg_growth_total_cost ?? 0) <= -20 ||
-    (data?.avg_growth_sinhwan ?? 0) <= -20 ||
-    (data?.avg_growth_revisit ?? 0) <= -20
-      ? "red"
-      : (data?.avg_growth_total_cost ?? 0) >= 20 &&
-        (data?.avg_growth_sinhwan ?? 0) >= 20 &&
-        (data?.avg_growth_revisit ?? 0) >= 20
-      ? "blue"
-      : "none";
-
   return (
     <Container>
       <CardContent>
@@ -168,7 +167,9 @@ export default function DashboardGrowthStats({
 
         <StatList>
           <StatItem>
-            <StrongText alert={alert}>{getGrowthMessage(data)}</StrongText>
+            <StrongText alert={needNotify(costRank ?? 0, data)}>
+              {getGrowthMessage(data)}
+            </StrongText>
           </StatItem>
         </StatList>
       </CardContent>
@@ -176,7 +177,7 @@ export default function DashboardGrowthStats({
       <CardContent>
         <HeaderRow>
           <DateRange>[ 변화율 TOP 2 연령대 ]</DateRange>
-          <InfoTooltip content={ageGroupTooltipContent} />
+          <InfoTooltip content={ageGroupTooltipContent} placement="right" />
         </HeaderRow>
 
         <StatList>
@@ -187,7 +188,7 @@ export default function DashboardGrowthStats({
             );
             return (
               <StatItem key={ageGroup.age}>
-                <StrongText>{message.summaryMessage}</StrongText>
+                <StrongText alert="none">{message.summaryMessage}</StrongText>
                 <StrategyText>{message.strategyMessage}</StrategyText>
               </StatItem>
             );
@@ -210,12 +211,10 @@ const GrowthCard = styled.div``;
 const Container = styled.div`
   display: flex;
   flex-direction: column;
-  background-color: ${(props) => props.theme.colors.white};
-  border-radius: 1rem;
 `;
 
 const CardContent = styled.div`
-  padding: 1.5rem;
+  padding: 1rem 1rem;
 `;
 
 const HeaderRow = styled.div`
@@ -228,6 +227,7 @@ const HeaderRow = styled.div`
 const DateRange = styled.span`
   color: ${(props) => props.theme.colors.gray05};
   font-size: 1.1rem;
+  line-height: 1.8rem;
 `;
 
 const StatComment = styled.div`
@@ -299,11 +299,11 @@ const StrongText = styled.div<{ alert?: string }>`
   font-weight: 600;
   font-size: 1.3rem;
   color: ${(props) =>
-    props?.alert
-      ? props?.alert === "red"
-        ? "#FF3B30"
-        : "#00c41e"
-      : props.theme.colors.black01};
+    props?.alert === "none"
+      ? props.theme.colors.black01
+      : props?.alert === "bad"
+      ? props.theme.colors.red
+      : props.theme.colors.green03};
 `;
 
 const StrategyText = styled.div`
@@ -318,14 +318,12 @@ const NoDataContainer = styled.div`
   height: 16rem;
   font-size: 1.1rem;
   color: ${(props) => props.theme.colors.gray05};
-  background-color: ${(props) => props.theme.colors.gray01};
-  border-radius: 1rem;
 `;
 
 const ChangeWrapper = styled.span`
   display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
+  gap: 0.3rem;
+  align-items: baseline;
 `;
 
 const ChangeIcon = styled.img`

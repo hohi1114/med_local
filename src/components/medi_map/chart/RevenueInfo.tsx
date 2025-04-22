@@ -21,6 +21,7 @@ interface RegionStatisticsProps {
   barFormatData: () => any;
   disabledCompare?: boolean;
   avgGrowth: AverageGrowth;
+  costRank?: number;
 }
 const RevenuInfo: React.FC<RegionStatisticsProps> = ({
   statsData,
@@ -31,7 +32,8 @@ const RevenuInfo: React.FC<RegionStatisticsProps> = ({
   formatDataForAverageRevenue,
   barFormatData,
   disabledCompare = false,
-  avgGrowth
+  avgGrowth,
+  costRank
 }) => {
   return (
     <>
@@ -48,9 +50,9 @@ const RevenuInfo: React.FC<RegionStatisticsProps> = ({
           );
         })}
       </GridWrapper>
-      {!disabledCompare && (
+      {!disabledCompare && costRank && (
         <GrowthCommentContainer>
-          <DashboardGrowthStats data={avgGrowth} />
+          <DashboardGrowthStats data={avgGrowth} costRank={costRank} />
         </GrowthCommentContainer>
       )}
 
