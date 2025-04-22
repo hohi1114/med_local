@@ -132,6 +132,7 @@ export default function DashboardGrowthStats({
             [ 변화율 TOP 2 연령대 ]
             <StatList2>
               {data.top_age_growth.map((ageGroup) => {
+                if (ageGroup.change_percent === 0) return null;
                 const message = getGrowthAgeMessage(
                   ageGroup.age,
                   ageGroup.change_percent
@@ -182,6 +183,7 @@ export default function DashboardGrowthStats({
 
         <StatList>
           {data.top_age_growth.map((ageGroup: TopAgeGrowth) => {
+            if (ageGroup.change_percent === 0) return null;
             const message = getGrowthAgeMessage(
               ageGroup.age,
               ageGroup.change_percent
