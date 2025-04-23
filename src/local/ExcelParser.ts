@@ -209,6 +209,7 @@ export async function parsePlaceFilesEuisarang(
   }
   return data.filter((item) => !isNaN(item.chartNumber));
 }
+
 export async function parseDailyIncomeEgis(
   fileBuffers: ArrayBuffer[]
 ): Promise<DailyIncomeEgis[]> {
