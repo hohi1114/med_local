@@ -447,20 +447,14 @@ export function useNaverMapCore({
       }
     });
   };
-
   const createMarkerCluster = (
     markers: naver.maps.Marker[],
     ref: React.RefObject<any>
   ) => {
     const cluster = new MarkerClustering({
       minClusterSize: 2,
-      maxZoom: 30,
-      minZoom: 0,
       map,
-      markers,
-      icon: {
-        content: `<div></div>`
-      }
+      markers
     });
 
     ref.current = cluster;
