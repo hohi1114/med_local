@@ -21,7 +21,7 @@ export const useDrawerData = (twoType: boolean) => {
     drawerDate2,
     region,
     selectedRegionData,
-    dongNmaeFroSmall,
+    dongNameFroSmall,
     boundArea,
     loading,
     handleIsDrawerOpen
@@ -130,8 +130,8 @@ export const useDrawerData = (twoType: boolean) => {
   // small 지역 데이터 = dong 데이터와 매치
   useEffect(() => {
     const fetchRegionInfo = async () => {
-      if (region === "small" && dongNmaeFroSmall) {
-        const containingDong = await findContainingDong(dongNmaeFroSmall);
+      if (region === "small" && dongNameFroSmall) {
+        const containingDong = await findContainingDong(dongNameFroSmall);
 
         if (containingDong && selectedRegionData) {
           const newSmallRegion = {
@@ -156,7 +156,7 @@ export const useDrawerData = (twoType: boolean) => {
       }
     };
     fetchRegionInfo();
-  }, [areaName, region, dongNmaeFroSmall, selectedRegionData]);
+  }, [areaName, region, dongNameFroSmall, selectedRegionData]);
 
   // set STATS DATA
   useEffect(() => {

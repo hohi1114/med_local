@@ -15,10 +15,11 @@ interface IMapStore {
   drawerDate2: DateRange | null;
   isOpenDrawer: boolean;
   dongPolygons: Polygon[];
-  dongNmaeFroSmall: string | null;
+  dongNameFroSmall: string | null;
   boundArea: RegionData[] | null;
   loading: boolean;
   patients: { areaName: string; patients: PatientData[] }[];
+  isChangedDateRange: boolean;
 
   setSelectedDateRange: (dateRange: DateRange) => void;
   setSelectedDateRangeForCompare1: (dateRange: DateRange) => void;
@@ -31,16 +32,18 @@ interface IMapStore {
   handleIsDrawerOpen: (isDrawerOpen: boolean) => void;
   setSelectedRegionData: (data: RegionData) => void;
   setDongPolygons: (dongPolygons: Polygon[]) => void;
-  setDongNameForSmall: (dongNmaeFroSmall: string | null) => void;
+  setDongNameForSmall: (dongNameFroSmall: string | null) => void;
   setBoundArea: (boundArea: RegionData[]) => void;
   setLoading: (loading: boolean) => void;
   setPatients: (
     patients: { areaName: string; patients: PatientData[] }[]
   ) => void;
   clearMap: () => void;
+  setIsChangedDateRange: (isChangedDateRange: boolean) => void;
 }
 
 const mapStore = create<IMapStore>((set) => ({
+  isChangedDateRange: false,
   selectedDateRange: null,
   selectedDateRangeForCompare1: null,
   selectedDateRangeForCompare2: null,
@@ -52,7 +55,7 @@ const mapStore = create<IMapStore>((set) => ({
   drawerDate2: null,
   isOpenDrawer: false,
   dongPolygons: [],
-  dongNmaeFroSmall: null,
+  dongNameFroSmall: null,
   boundArea: null,
   loading: false,
   patients: [],
@@ -65,7 +68,7 @@ const mapStore = create<IMapStore>((set) => ({
     set({ selectedDateRangeForCompare2 }),
   setRegion: (region) => set({ region }),
   setAreaName: (areaName) => set({ areaName }),
-  setDongNameForSmall: (dongNmaeFroSmall) => set({ dongNmaeFroSmall }),
+  setDongNameForSmall: (dongNameFroSmall) => set({ dongNameFroSmall }),
   setSelectedRegionData: (selectedRegionData: RegionData) =>
     set({ selectedRegionData }),
   setLoading: (loading: boolean) => set({ loading }),
@@ -84,11 +87,13 @@ const mapStore = create<IMapStore>((set) => ({
       drawerDate: null,
       isOpenDrawer: false,
       dongPolygons: [],
-      dongNmaeFroSmall: null,
+      dongNameFroSmall: null,
       boundArea: null,
       loading: false,
       patients: []
-    })
+    }),
+  setIsChangedDateRange: (isChangedDateRange: boolean) =>
+    set({ isChangedDateRange })
 }));
 
 export default mapStore;

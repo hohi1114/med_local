@@ -10,6 +10,7 @@ import {
 import StatsBox, { STATSTYPE } from "../StatsBox";
 import BarChart from "./BarChart";
 import BaseLineChart from "./BaseLineChart";
+import mapStore from "../../../store/mapStore";
 
 interface RegionStatisticsProps {
   statsData: { [key: number]: { data: string; diffRate: number | null } };
@@ -35,6 +36,7 @@ const RevenuInfo: React.FC<RegionStatisticsProps> = ({
   avgGrowth,
   costRank
 }) => {
+  const { isChangedDateRange } = mapStore();
   return (
     <>
       <GridWrapper>
@@ -50,7 +52,7 @@ const RevenuInfo: React.FC<RegionStatisticsProps> = ({
           );
         })}
       </GridWrapper>
-      {!disabledCompare && costRank && (
+      {!disabledCompare && costRank && !isChangedDateRange && (
         <GrowthCommentContainer>
           <DashboardGrowthStats data={avgGrowth} costRank={costRank} />
         </GrowthCommentContainer>

@@ -62,6 +62,7 @@ export default function DashboardGrowthStats({
 
   const startDate = dayjs(lastedUpdatedDate)
     .subtract(3, "month")
+    .subtract(1, "day")
     .format("YYYY.MM.DD");
   const endDate = dayjs(lastedUpdatedDate).format("YYYY.MM.DD");
 
@@ -305,7 +306,7 @@ const StrongText = styled.div<{ alert?: string }>`
       ? props.theme.colors.black01
       : props?.alert === "bad"
       ? props.theme.colors.red
-      : props.theme.colors.green03};
+      : props.theme.colors.macGreen};
 `;
 
 const StrategyText = styled.div`

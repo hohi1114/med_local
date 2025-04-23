@@ -24,9 +24,11 @@ function MapByRegionPage() {
   };
   const navigate = useNavigate();
   const tutorialSteps = MapByRegionTutorialSteps(tutorialRefs);
+  const { setIsChangedDateRange } = mapStore();
   const { mapElement, isFetching } = useNaverMapCore();
   const { lastedUpdatedDate, startTutorial } = userStore();
   const {
+    isChangedDateRange,
     selectedDateRange,
     setSelectedDateRange,
     loading,
@@ -68,9 +70,16 @@ function MapByRegionPage() {
     }
   }, [lastedUpdatedDate]);
 
+  const dateChangeCountRef = useRef(0);
+
   useEffect(() => {
     if (dateRange) {
+      //처음에만 Notify를 띄우기 위한 날짜 변환 감지
+      dateChangeCountRef.current += 1;
       setDrawerDate(dateRange);
+      if (dateChangeCountRef.current === 3 && !isChangedDateRange) {
+        setIsChangedDateRange(true);
+      }
     }
   }, [dateRange]);
 

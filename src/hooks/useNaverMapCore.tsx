@@ -37,7 +37,8 @@ export function useNaverMapCore({
     setLoading,
     areaName,
     loading,
-    clearMap
+    clearMap,
+    isChangedDateRange
   } = mapStore();
 
   const MarkerClustering = makeMarkerClustering(window.naver) as any;
@@ -223,7 +224,7 @@ export function useNaverMapCore({
 
           let alert: "none" | "bad" | "good" = "none";
 
-          if (area?.cost_rank && area?.growth_metrics) {
+          if (area?.cost_rank && area?.growth_metrics && !isChangedDateRange) {
             alert = needNotify(area?.cost_rank, area.growth_metrics);
           }
 
