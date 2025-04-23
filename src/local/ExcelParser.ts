@@ -209,7 +209,6 @@ export async function parsePlaceFilesEuisarang(
   }
   return data.filter((item) => !isNaN(item.chartNumber));
 }
-
 export async function parseDailyIncomeEgis(
   fileBuffers: ArrayBuffer[]
 ): Promise<DailyIncomeEgis[]> {
@@ -224,20 +223,26 @@ export async function parseDailyIncomeEgis(
 
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
 
-    // header: 1 => each row is an array
-    // range: 1 => start reading from the 2nd row (skip the 1st/header row)
     const rows = XLSX.utils.sheet_to_json<any[]>(worksheet, {
       header: 1,
       range: 1,
     });
 
     for (const row of rows) {
-      // We need at least 8 columns: chartNumber(1st), visitDate(3rd), totalCost(8th)
       if (row.length < 8) continue;
 
       let visitDate = row[2]; // 3rd column
-      // Convert if it's an Excel serial date (number)
-      if (typeof visitDate === "number") {
+
+      // Format the date - now handling string format "YYYY/MM/DD"
+      if (
+        typeof visitDate === "string" &&
+        visitDate.match(/^\d{4}\/\d{2}\/\d{2}$/)
+      ) {
+        // Replace slashes with hyphens to standardize to YYYY-MM-DD
+        visitDate = visitDate.replace(/\//g, "-");
+      }
+      // Still handle Excel serial dates in case they appear
+      else if (typeof visitDate === "number") {
         visitDate = excelSerialToDate(visitDate);
       }
 
@@ -249,7 +254,6 @@ export async function parseDailyIncomeEgis(
     }
   }
 
-  // Filter invalid entries (e.g., non-numeric chartNumber)
   return data.filter(
     (item) => !isNaN(item.chartNumber) && !isNaN(item.totalCost)
   );
