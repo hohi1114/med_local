@@ -23,7 +23,7 @@ const createMainWindow = () => {
     mainWindow.loadURL("http://localhost:5173"); // React 앱 로드
     mainWindow.webContents.openDevTools();
   } else {
-    mainWindow.loadURL(`http://3.39.10.210?v=${app.getVersion()}`);
+    mainWindow.loadURL(`http://3.39.10.210:8000`);
   }
 
   mainWindow.on("closed", () => (mainWindow = null));

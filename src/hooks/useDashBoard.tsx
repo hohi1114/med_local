@@ -39,7 +39,7 @@ const useDashBoard = () => {
   };
 
   const RANGE_DATE_MAP: Record<RangeDateMapKey, DateRange> = {
-    일주일: makeRange(7, "day"),
+    "1주일": makeRange(7, "day"),
     "1개월": makeRange(1, "month"),
     "3개월": makeRange(3, "month"),
     "1년": makeRange(1, "year")
@@ -88,7 +88,7 @@ const useDashBoard = () => {
   });
 
   const saveDataMap: Record<RangeDateMapKey, (data: DashBoard) => void> = {
-    일주일: setWeekData,
+    "1주일": setWeekData,
     "1개월": setMonthData,
     "3개월": setThreeMonthData,
     "1년": setOneYearData
@@ -105,7 +105,7 @@ const useDashBoard = () => {
 
   useEffect(() => {
     if (allregionData) {
-      saveDataToIndexDB(allregionData, 14);
+      saveDataToIndexDB(allregionData, 15);
     }
   }, [allregionData]);
 
@@ -192,7 +192,7 @@ const useDashBoard = () => {
     if (!buttonType) return;
 
     const dataMap: Record<RangeDateMapKey, DashBoard | null> = {
-      일주일: weekData,
+      "1주일": weekData,
       "1개월": monthData,
       "3개월": threeMonthData,
       "1년": oneYearData

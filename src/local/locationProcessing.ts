@@ -54,7 +54,7 @@ interface MappingResponse {
 
 export async function fetchRegionData(token: string): Promise<RegionResponse> {
   try {
-    const baseURL = "http://localhost:3001/api";
+    const baseURL = "http://3.39.10.210:3001/api";
 
     const response = await axios.get<RegionResponse>(
       `${baseURL}/fetch/region_data`,
@@ -75,7 +75,7 @@ export async function fetchRegionData(token: string): Promise<RegionResponse> {
 
 export async function getMappingData(token: string): Promise<MappingResponse> {
   try {
-    const baseURL = "http://localhost:3001/api";
+    const baseURL = "http://3.39.10.210:3001/api";
 
     const response = await axios.post<MappingResponse>(
       `${baseURL}/data/get_mapping`,

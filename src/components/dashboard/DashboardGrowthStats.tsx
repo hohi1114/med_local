@@ -21,7 +21,6 @@ const ChangeIndicator = ({ value }: { value: number }) => {
         alt={isPositive ? "increase" : "decrease"}
       />
       <ChangeValue isPositive={isPositive}>{value}%</ChangeValue>
-      {isPositive ? "증가" : "감소"}
     </ChangeWrapper>
   );
 };
@@ -70,35 +69,39 @@ export default function DashboardGrowthStats({
   const overallTooltipContent = (
     <>
       <span>
-        총 진료비는 평균적으로{" "}
-        <ChangeIndicator value={data?.avg_growth_total_cost ?? 0} /> 했어요.
+        <strong>진료비</strong> -{" "}
+        <ChangeIndicator value={data?.avg_growth_total_cost ?? 0} />
       </span>
       <br />
       <span>
-        신환 유입은 <ChangeIndicator value={data?.avg_growth_sinhwan ?? 0} />{" "}
-        했어요.
+        <strong>신규환자 유입</strong> -{" "}
+        <ChangeIndicator value={data?.avg_growth_sinhwan ?? 0} />
       </span>
       <br />
       <span>
-        재방문 환자는 <ChangeIndicator value={data?.avg_growth_revisit ?? 0} />{" "}
-        하였습니다.
+        <strong>재방문 환자</strong> -{" "}
+        <ChangeIndicator value={data?.avg_growth_revisit ?? 0} />
       </span>
     </>
   );
 
   const ageGroupTooltipContent = (
     <>
-      {data.top_age_growth.map((ageGroup: TopAgeGrowth, index: number) => (
-        <div key={index}>
-          <span>
-            <strong>{ageGroup.age}대</strong> 이며{" "}
-            <ChangeIndicator value={ageGroup.change_percent} /> 했어요.
-          </span>
-        </div>
-      ))}
+      {data.top_age_growth.map((ageGroup: TopAgeGrowth, index: number) => {
+        if (ageGroup.change_percent === 0) return null;
+
+        return (
+          <div key={index}>
+            <span>
+              <strong>{ageGroup.age === 0 ? "0~10" : ageGroup.age}대</strong>
+              {"    "}-{"   "}
+              <ChangeIndicator value={ageGroup.change_percent} />
+            </span>
+          </div>
+        );
+      })}
     </>
   );
-
   if (isDashboard) {
     return (
       <DashboardContainer>
@@ -140,13 +143,16 @@ export default function DashboardGrowthStats({
                 );
                 return (
                   <div key={ageGroup.age}>
-                    <ListItem>{message.summaryMessage}</ListItem>
+                    <StrongText alert="none">
+                      {message.strategyMessage}
+                    </StrongText>
                     <StatText>
-                      <strong>{ageGroup.age}대</strong> 이며{" "}
-                      <ChangeIndicator value={ageGroup.change_percent} />
+                      <strong>
+                        {ageGroup.age === 0 ? "0~10" : ageGroup.age}대
+                      </strong>{" "}
+                      이며 <ChangeIndicator value={ageGroup.change_percent} />
                       했어요.
                     </StatText>
-                    <StatText>{message.strategyMessage}</StatText>
                   </div>
                 );
               })}
@@ -191,8 +197,8 @@ export default function DashboardGrowthStats({
             );
             return (
               <StatItem key={ageGroup.age}>
-                <StrongText alert="none">{message.summaryMessage}</StrongText>
-                <StrategyText>{message.strategyMessage}</StrategyText>
+                <StrongText alert="none">{message.strategyMessage}</StrongText>
+                <StatText>{message.summaryMessage}</StatText>
               </StatItem>
             );
           })}
@@ -301,17 +307,14 @@ const ListItem = styled.li`
 const StrongText = styled.div<{ alert?: string }>`
   font-weight: 600;
   font-size: 1.3rem;
+  line-height: 2rem;
+  white-space: pre-line;
   color: ${(props) =>
     props?.alert === "none"
       ? props.theme.colors.black01
       : props?.alert === "bad"
       ? props.theme.colors.red
       : props.theme.colors.macGreen};
-`;
-
-const StrategyText = styled.div`
-  font-size: 1.1rem;
-  color: ${(props) => props.theme.colors.gray05};
 `;
 
 const NoDataContainer = styled.div`
