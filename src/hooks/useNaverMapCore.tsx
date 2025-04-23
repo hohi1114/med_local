@@ -219,7 +219,7 @@ export function useNaverMapCore({
 
         // Set region name marker
         const bounds = polygon.getBounds();
-        if (bounds) {
+        if (bounds && map.getZoom() > 12) {
           const center = bounds.getCenter();
 
           let alert: "none" | "bad" | "good" = "none";
@@ -454,9 +454,13 @@ export function useNaverMapCore({
   ) => {
     const cluster = new MarkerClustering({
       minClusterSize: 2,
-      maxZoom: 13,
+      maxZoom: 30,
+      minZoom: 0,
       map,
-      markers
+      markers,
+      icon: {
+        content: `<div></div>`
+      }
     });
 
     ref.current = cluster;
