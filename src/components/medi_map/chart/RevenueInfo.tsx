@@ -52,14 +52,11 @@ const RevenuInfo: React.FC<RegionStatisticsProps> = ({
           );
         })}
       </GridWrapper>
-      {!disabledCompare &&
-        costRank &&
-        !isChangedDateRange &&
-        import.meta.env.VITE_DEMO !== "true" && (
-          <GrowthCommentContainer>
-            <DashboardGrowthStats data={avgGrowth} costRank={costRank} />
-          </GrowthCommentContainer>
-        )}
+      {!disabledCompare && costRank && !isChangedDateRange && (
+        <GrowthCommentContainer>
+          <DashboardGrowthStats data={avgGrowth} costRank={costRank} />
+        </GrowthCommentContainer>
+      )}
 
       <GraphContainer>
         <GrapWrapper>

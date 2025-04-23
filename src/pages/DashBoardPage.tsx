@@ -7,7 +7,6 @@ import useDashBoard from "../hooks/useDashBoard";
 import BarChart from "../components/medi_map/chart/BarChart";
 import dayjs from "dayjs";
 import BaseLineChart from "../components/medi_map/chart/BaseLineChart";
-import BaseTable from "../components/medi_map/chart/BaseTable";
 import DashboardStats from "../components/dashboard/DashboardStats";
 import Loading from "../components/common/Loading";
 import Error from "../components/common/Error";
@@ -25,6 +24,8 @@ import TutorialStartModal from "../components/tutorial/TutorialStartModal";
 import useTutorial from "../hooks/useTutorial";
 import { DashboardSteps } from "../components/tutorial/TutorialData";
 import { RangeDateMapKey } from "../types/dashboard";
+import DashboardGrowthStats from "../components/dashboard/DashboardGrowthStats";
+import useDashboardStore from "../store/useDashboardStore";
 
 const LOADING_CONTENT = "데이터를 불러오는 중입니다.";
 
@@ -39,9 +40,11 @@ export default function DashBoardPage() {
     dashboardInfo,
     buttonType,
     AVAILABLE_DATE_RANGES,
-    setDateChanged
+    setDateChanged,
+    latestDateRangeRef
   } = useDashBoard();
 
+  const { selectedDateRange, setSelectedDateRange } = useDashboardStore();
   const {
     fetchingUserLoading,
     lastedUpdatedDate,
@@ -86,14 +89,26 @@ export default function DashBoardPage() {
   };
 
   useEffect(() => {
-    if (lastedUpdatedDate && lastedUpdatedDate.length > 0) {
-      const start = dayjs(lastedUpdatedDate)
-        .subtract(1, "month")
-        .format("YYYY-MM-DD");
-      const end = dayjs(lastedUpdatedDate).format("YYYY-MM-DD");
-      handleDateRangeChange({ startDate: start, endDate: end });
+    //만약 사용자가 처음 대시보드에 접근했을때
+    if (selectedDateRange) {
+      //사용자가 업데이트한 날짜가 있다면
+      handleDateRangeChange(selectedDateRange);
+    } else {
+      if (lastedUpdatedDate && lastedUpdatedDate.length > 0) {
+        const start = dayjs(lastedUpdatedDate)
+          .subtract(1, "month")
+          .format("YYYY-MM-DD");
+        const end = dayjs(lastedUpdatedDate).format("YYYY-MM-DD");
+        handleDateRangeChange({ startDate: start, endDate: end });
+      }
     }
   }, [lastedUpdatedDate]);
+
+  useEffect(() => {
+    return () => {
+      setSelectedDateRange(latestDateRangeRef.current);
+    };
+  }, []);
 
   if (isError) {
     return (
@@ -115,7 +130,6 @@ export default function DashBoardPage() {
   };
 
   if (!startTutorial && hasGuided && !dashboardInfo) return <Loading />;
-
   return (
     <>
       {(startTutorial || !hasGuided) && <FullDimOverlay />}
@@ -250,8 +264,11 @@ export default function DashBoardPage() {
               }
             >
               <Card>
-                <ChartTitle>지역 별 매출 순위</ChartTitle>
-                <BaseTable data={dashboardInfoData.topRegions} />
+                <ChartTitle>최근 3개월 월평균 성장률</ChartTitle>
+                <DashboardGrowthStats
+                  data={dashboardInfoData?.average_growths}
+                  isDashboard
+                />
               </Card>
               <Card>
                 <ChartTitle>연령 별 환자 분포</ChartTitle>
@@ -260,7 +277,7 @@ export default function DashBoardPage() {
                   xField="age"
                   yField="value"
                   formatData={formatBarData}
-                  height={430}
+                  height={380}
                 />
               </Card>
             </CardGrid>
