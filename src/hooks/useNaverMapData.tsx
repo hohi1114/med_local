@@ -280,7 +280,7 @@ const useNaverMapData = (twoType: boolean) => {
         name: "small",
         fontSize: "1rem"
       };
-    } else if (zoom > 14) {
+    } else if (zoom >= 14) {
       return {
         data: regionData.dong,
         name: "dong",
