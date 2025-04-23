@@ -44,7 +44,7 @@ export async function uploadDataToBackend(
   processedData: ProcessDataPayload
 ): Promise<ProcessDataResponse> {
   try {
-    const baseURL = "http://3.39.10.210:3000/api";
+    const baseURL = "http://3.39.10.210:3001/api";
 
     // Prepare the request payload
     const payload = {
