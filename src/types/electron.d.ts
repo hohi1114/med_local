@@ -3,6 +3,32 @@ declare global {
   interface Window {
     electron: {
       getSystemUUID: () => Promise<SystemUUID>;
+
+      // File processing - Euisarang
+      parseDaysFilesEuisarang: (fileBuffers: ArrayBuffer[]) => Promise<any>;
+      parsePlaceFilesEuisarang: (fileBuffers: ArrayBuffer[]) => Promise<any>;
+
+      // File processing - DentWeb
+      parseDaysFilesDentweb: (fileBuffers: ArrayBuffer[]) => Promise<any>;
+      parsePlaceFilesDentWeb: (fileBuffers: ArrayBuffer[]) => Promise<any>;
+
+      // File processing - Egis
+      parseDailyIncomeEgis: (fileBuffers: ArrayBuffer[]) => Promise<any>;
+      parsePatientListEgis: (fileBuffers: ArrayBuffer[]) => Promise<any>;
+
+      // Data merging
+      mergeDataEuisarang: (visits: any[], patients: any[]) => Promise<any>;
+      mergeDataDentWeb: (visits: any[], patients: any[]) => Promise<any>;
+      mergeDataEgis: (dailyIncome: any[], patientList: any[]) => Promise<any>;
+
+      // Final data processing
+      processDataLocally: (
+        mergedData: any[],
+        accessToken: string
+      ) => Promise<any>;
+      onGeocodingProgress: (
+        callback: (data: { current: number; total: number }) => void
+      ) => () => void;
     };
   }
 }

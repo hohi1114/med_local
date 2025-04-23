@@ -28,6 +28,20 @@ export type Region = {
   total_cost: number;
 };
 
+export type TopAgeGrowth = {
+  age: number;
+  change_percent: number;
+};
+
+export type AverageGrowth = {
+  data_available: boolean;
+  message?: string;
+  avg_growth_total_cost?: number;
+  avg_growth_sinhwan?: number;
+  avg_growth_revisit?: number;
+  top_age_growth: TopAgeGrowth[];
+};
+
 type TopRegion = Region[];
 
 export interface DashBoard {
@@ -42,11 +56,6 @@ export interface DashBoard {
   patient_count_by_age_group: PatientCountByAgeGroup;
   diff_rates: DiffRates;
   topRegions: TopRegion;
+  top_age_growth: AverageGrowth;
 }
-export type RangeDateMapKey =
-  | "오늘"
-  | "3일"
-  | "7일"
-  | "1개월"
-  | "3개월"
-  | "1년";
+export type RangeDateMapKey = "일주일" | "1개월" | "3개월" | "1년";

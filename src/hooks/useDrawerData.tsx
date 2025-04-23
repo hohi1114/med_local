@@ -14,13 +14,14 @@ import { RegionPrivateData } from "../types/naver-maps";
  */
 export const useDrawerData = (twoType: boolean) => {
   const {
+    isOpenDrawer,
     areaName,
     drawerDate,
     drawerDate1,
     drawerDate2,
     region,
     selectedRegionData,
-    dongNmaeFroSmall,
+    dongNameFroSmall,
     boundArea,
     loading,
     handleIsDrawerOpen
@@ -41,6 +42,7 @@ export const useDrawerData = (twoType: boolean) => {
   // 단일 날짜 파라미터
   const singleDateParams = useMemo(() => {
     if (!areaName || !region || !drawerDate || loading) return null;
+
     return {
       name: areaName,
       regionType: region,
@@ -99,24 +101,24 @@ export const useDrawerData = (twoType: boolean) => {
 
   // 첫번째 날짜 요청
   useEffect(() => {
-    if (twoType && firstDateParams) {
+    if (twoType && firstDateParams && isOpenDrawer) {
       firstDateMutation(firstDateParams);
     }
-  }, [twoType, firstDateParams]);
+  }, [twoType, firstDateParams, isOpenDrawer]);
 
   // 두 번째 날짜 요청
   useEffect(() => {
-    if (twoType && secondDateParams) {
+    if (twoType && secondDateParams && isOpenDrawer) {
       secondDateMutation(secondDateParams);
     }
-  }, [twoType, secondDateParams]);
+  }, [twoType, secondDateParams, isOpenDrawer]);
 
   // 단일 날짜 요청
   useEffect(() => {
-    if (!twoType && singleDateParams) {
+    if (!twoType && singleDateParams && isOpenDrawer) {
       regionPrivateMutation(singleDateParams);
     }
-  }, [twoType, singleDateParams]);
+  }, [twoType, singleDateParams, isOpenDrawer]);
 
   useEffect(() => {
     if (boundArea && boundArea.length > 0) {
@@ -128,8 +130,8 @@ export const useDrawerData = (twoType: boolean) => {
   // small 지역 데이터 = dong 데이터와 매치
   useEffect(() => {
     const fetchRegionInfo = async () => {
-      if (region === "small" && dongNmaeFroSmall) {
-        const containingDong = await findContainingDong(dongNmaeFroSmall);
+      if (region === "small" && dongNameFroSmall) {
+        const containingDong = await findContainingDong(dongNameFroSmall);
 
         if (containingDong && selectedRegionData) {
           const newSmallRegion = {
@@ -154,14 +156,14 @@ export const useDrawerData = (twoType: boolean) => {
       }
     };
     fetchRegionInfo();
-  }, [areaName, region, dongNmaeFroSmall, selectedRegionData]);
+  }, [areaName, region, dongNameFroSmall, selectedRegionData]);
 
   // set STATS DATA
   useEffect(() => {
     if (!twoType && regionPrivate) {
       setStatsData({
         1: {
-          data: `${regionPrivate?.total_visit_count || 0}명`,
+          data: `${regionPrivate?.total_visit_count || 0}회`,
           diffRate: regionPrivate?.diff_rates?.total_visit_count
         },
         2: {
@@ -211,7 +213,7 @@ export const useDrawerData = (twoType: boolean) => {
       // 첫 번째 날짜 데이터
       const firstStats = {
         1: {
-          data: `${firstRegionPrivate?.total_visit_count || 0}명`
+          data: `${firstRegionPrivate?.total_visit_count || 0}회`
         },
         2: {
           data: `${Math.ceil(

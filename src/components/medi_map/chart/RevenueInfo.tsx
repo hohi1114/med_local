@@ -1,4 +1,6 @@
-import dayjs from "dayjs";
+import styled from "styled-components";
+import { AverageGrowth } from "../../../types/dashboard";
+import DashboardGrowthStats from "../../dashboard/DashboardGrowthStats";
 import {
   GridWrapper,
   GraphContainer,
@@ -8,6 +10,7 @@ import {
 import StatsBox, { STATSTYPE } from "../StatsBox";
 import BarChart from "./BarChart";
 import BaseLineChart from "./BaseLineChart";
+import mapStore from "../../../store/mapStore";
 
 interface RegionStatisticsProps {
   statsData: { [key: number]: { data: string; diffRate: number | null } };
@@ -18,6 +21,8 @@ interface RegionStatisticsProps {
   formatDataForAverageRevenue: (data: any) => any;
   barFormatData: () => any;
   disabledCompare?: boolean;
+  avgGrowth: AverageGrowth;
+  costRank?: number;
 }
 const RevenuInfo: React.FC<RegionStatisticsProps> = ({
   statsData,
@@ -27,8 +32,11 @@ const RevenuInfo: React.FC<RegionStatisticsProps> = ({
   formatDataForRevenueTrend,
   formatDataForAverageRevenue,
   barFormatData,
-  disabledCompare = false
+  disabledCompare = false,
+  avgGrowth,
+  costRank
 }) => {
+  const { isChangedDateRange } = mapStore();
   return (
     <>
       <GridWrapper>
@@ -44,17 +52,22 @@ const RevenuInfo: React.FC<RegionStatisticsProps> = ({
           );
         })}
       </GridWrapper>
+      {!disabledCompare && costRank && !isChangedDateRange && (
+        <GrowthCommentContainer>
+          <DashboardGrowthStats data={avgGrowth} costRank={costRank} />
+        </GrowthCommentContainer>
+      )}
+
       <GraphContainer>
         <GrapWrapper>
           <ChartTitleStyle>매출액 변화 추이</ChartTitleStyle>
           <BaseLineChart
             height={330}
-            width={350}
+            width={390}
             data={revenueTrend}
             xField="date"
             yField="매출액"
             labelFormatterY={(v: number) => `${v / 1000}K`}
-            // labelFormatterX={(v: string) => dayjs(v).format("MM/DD")}
             formatData={formatDataForRevenueTrend}
           />
         </GrapWrapper>
@@ -62,7 +75,7 @@ const RevenuInfo: React.FC<RegionStatisticsProps> = ({
           <ChartTitleStyle>연령대 별 환자 분포</ChartTitleStyle>
           <BarChart
             height={280}
-            width={350}
+            width={390}
             data={ageGroups}
             xField="연령"
             yField="세"
@@ -72,14 +85,13 @@ const RevenuInfo: React.FC<RegionStatisticsProps> = ({
         <GrapWrapper>
           <ChartTitleStyle>1인당 평균 매출액</ChartTitleStyle>
           <BaseLineChart
-            width={350}
             data={dailyRevenue}
             xField="date"
             yField="매출액"
             labelFormatterY={(v: number) => `${v / 1000}K`}
-            // labelFormatterX={(v: string) => dayjs(v).format("MM/DD")}
             formatData={formatDataForAverageRevenue}
             height={350}
+            width={390}
           />
         </GrapWrapper>
       </GraphContainer>
@@ -88,3 +100,10 @@ const RevenuInfo: React.FC<RegionStatisticsProps> = ({
 };
 
 export default RevenuInfo;
+
+const GrowthCommentContainer = styled.div`
+  padding: 1rem 0;
+  border-style: solid;
+  border-width: 1px 0px;
+  border-color: ${(props) => props.theme.colors.gray02};
+`;

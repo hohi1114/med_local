@@ -4,6 +4,9 @@ import { Polygon, RegionData } from "../types/naver-maps";
 import { DateRange } from "../hooks/useRangeDurationDatePicker";
 
 interface IMapStore {
+  selectedDateRange: DateRange | null;
+  selectedDateRangeForCompare1: DateRange | null;
+  selectedDateRangeForCompare2: DateRange | null;
   region: string;
   areaName: string;
   selectedRegionData: RegionData | null;
@@ -12,11 +15,15 @@ interface IMapStore {
   drawerDate2: DateRange | null;
   isOpenDrawer: boolean;
   dongPolygons: Polygon[];
-  dongNmaeFroSmall: string | null;
+  dongNameFroSmall: string | null;
   boundArea: RegionData[] | null;
   loading: boolean;
   patients: { areaName: string; patients: PatientData[] }[];
+  isChangedDateRange: boolean;
 
+  setSelectedDateRange: (dateRange: DateRange) => void;
+  setSelectedDateRangeForCompare1: (dateRange: DateRange) => void;
+  setSelectedDateRangeForCompare2: (dateRange: DateRange) => void;
   setRegion: (region: string) => void;
   setAreaName: (areaName: string) => void;
   setDrawerDate: (drawerDate: DateRange) => void;
@@ -25,16 +32,21 @@ interface IMapStore {
   handleIsDrawerOpen: (isDrawerOpen: boolean) => void;
   setSelectedRegionData: (data: RegionData) => void;
   setDongPolygons: (dongPolygons: Polygon[]) => void;
-  setDongNameForSmall: (dongNmaeFroSmall: string | null) => void;
+  setDongNameForSmall: (dongNameFroSmall: string | null) => void;
   setBoundArea: (boundArea: RegionData[]) => void;
   setLoading: (loading: boolean) => void;
   setPatients: (
     patients: { areaName: string; patients: PatientData[] }[]
   ) => void;
   clearMap: () => void;
+  setIsChangedDateRange: (isChangedDateRange: boolean) => void;
 }
 
 const mapStore = create<IMapStore>((set) => ({
+  isChangedDateRange: false,
+  selectedDateRange: null,
+  selectedDateRangeForCompare1: null,
+  selectedDateRangeForCompare2: null,
   region: "small",
   areaName: "",
   selectedRegionData: null,
@@ -43,14 +55,20 @@ const mapStore = create<IMapStore>((set) => ({
   drawerDate2: null,
   isOpenDrawer: false,
   dongPolygons: [],
-  dongNmaeFroSmall: null,
+  dongNameFroSmall: null,
   boundArea: null,
   loading: false,
   patients: [],
 
+  setSelectedDateRange: (dateRange: DateRange) =>
+    set({ selectedDateRange: dateRange }),
+  setSelectedDateRangeForCompare1: (selectedDateRangeForCompare1: DateRange) =>
+    set({ selectedDateRangeForCompare1 }),
+  setSelectedDateRangeForCompare2: (selectedDateRangeForCompare2: DateRange) =>
+    set({ selectedDateRangeForCompare2 }),
   setRegion: (region) => set({ region }),
   setAreaName: (areaName) => set({ areaName }),
-  setDongNameForSmall: (dongNmaeFroSmall) => set({ dongNmaeFroSmall }),
+  setDongNameForSmall: (dongNameFroSmall) => set({ dongNameFroSmall }),
   setSelectedRegionData: (selectedRegionData: RegionData) =>
     set({ selectedRegionData }),
   setLoading: (loading: boolean) => set({ loading }),
@@ -69,11 +87,13 @@ const mapStore = create<IMapStore>((set) => ({
       drawerDate: null,
       isOpenDrawer: false,
       dongPolygons: [],
-      dongNmaeFroSmall: null,
+      dongNameFroSmall: null,
       boundArea: null,
       loading: false,
       patients: []
-    })
+    }),
+  setIsChangedDateRange: (isChangedDateRange: boolean) =>
+    set({ isChangedDateRange })
 }));
 
 export default mapStore;

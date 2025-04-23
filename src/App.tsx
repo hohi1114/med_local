@@ -31,7 +31,7 @@ function App() {
     <BrowserRouter>
       {import.meta.env.VITE_DEMO === "true" && (
         <Alert
-          message="데모는 2024.11.30 부터 2024.12.31까지의 데이터만 존재합니다."
+          message="데모 버전에는 2024.11.30 부터 2024.12.31까지의 데이터만 존재합니다."
           type="info"
           style={{
             width: "30%",

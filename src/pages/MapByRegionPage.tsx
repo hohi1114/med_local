@@ -24,10 +24,19 @@ function MapByRegionPage() {
   };
   const navigate = useNavigate();
   const tutorialSteps = MapByRegionTutorialSteps(tutorialRefs);
+  const { setIsChangedDateRange } = mapStore();
   const { mapElement, isFetching } = useNaverMapCore();
   const { lastedUpdatedDate, startTutorial } = userStore();
-  const { loading, setDrawerDate, handleIsDrawerOpen } = mapStore();
-  const { dateRange, handleDateRangeChange } = useRangeDurationDatePicker();
+  const {
+    isChangedDateRange,
+    selectedDateRange,
+    setSelectedDateRange,
+    loading,
+    setDrawerDate,
+    handleIsDrawerOpen
+  } = mapStore();
+  const { dateRange, handleDateRangeChange, latestDateRangeRef } =
+    useRangeDurationDatePicker({ startDate: "", endDate: "" });
 
   const { tutorialStep, handleNextStep, handlePrevStep } = useTutorial({
     steps: tutorialSteps,
@@ -40,25 +49,37 @@ function MapByRegionPage() {
   useEffect(() => {
     return () => {
       handleIsDrawerOpen(false);
+      setSelectedDateRange(latestDateRangeRef.current);
     };
   }, []);
 
   useEffect(() => {
-    if (lastedUpdatedDate && lastedUpdatedDate.length > 0) {
-      const start = lastedUpdatedDate
-        ? dayjs(lastedUpdatedDate).subtract(1, "month").format("YYYY-MM-DD")
-        : dayjs().subtract(1, "month").format("YYYY-MM-DD");
-      const end = lastedUpdatedDate
-        ? dayjs(lastedUpdatedDate).format("YYYY-MM-DD")
-        : dayjs().format("YYYY-MM-DD");
+    if (selectedDateRange) {
+      handleDateRangeChange(selectedDateRange);
+    } else {
+      if (lastedUpdatedDate && lastedUpdatedDate.length > 0) {
+        const start = lastedUpdatedDate
+          ? dayjs(lastedUpdatedDate).subtract(1, "month").format("YYYY-MM-DD")
+          : dayjs().subtract(1, "month").format("YYYY-MM-DD");
+        const end = lastedUpdatedDate
+          ? dayjs(lastedUpdatedDate).format("YYYY-MM-DD")
+          : dayjs().format("YYYY-MM-DD");
 
-      handleDateRangeChange({ startDate: start, endDate: end });
+        handleDateRangeChange({ startDate: start, endDate: end });
+      }
     }
   }, [lastedUpdatedDate]);
 
+  const dateChangeCountRef = useRef(0);
+
   useEffect(() => {
     if (dateRange) {
+      //처음에만 Notify를 띄우기 위한 날짜 변환 감지
+      dateChangeCountRef.current += 1;
       setDrawerDate(dateRange);
+      if (dateChangeCountRef.current === 3 && !isChangedDateRange) {
+        setIsChangedDateRange(true);
+      }
     }
   }, [dateRange]);
 

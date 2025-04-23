@@ -7,6 +7,7 @@ import { makeMarkerClustering } from "../utils/marker-cluster";
 import { PatientData } from "../utils/ExcelParser";
 import { RegionData, RegionLevel } from "../types/naver-maps";
 import userStore from "../store/userStore";
+import { needNotify } from "../components/medi_map/util/mapUtil";
 
 export interface UseNaverMapCoreOptions {
   isComparison?: boolean;
@@ -36,7 +37,8 @@ export function useNaverMapCore({
     setLoading,
     areaName,
     loading,
-    clearMap
+    clearMap,
+    isChangedDateRange
   } = mapStore();
 
   const MarkerClustering = makeMarkerClustering(window.naver) as any;
@@ -65,24 +67,13 @@ export function useNaverMapCore({
     smallRegions,
     dongRegions,
     guRegions,
-    isFetching
+    isFetching,
+    patientLocations
   } = useNaverMapData(isComparison);
 
-  const {
-    data,
-    name,
-    fontSize,
-    color,
-    hilightColor,
-    basicColor,
-    basicHighlightColor
-  } = getRegionName(currentZoom);
-
   // Default highlight colors
-  const defaultHighlightColor = isComparison
-    ? basicHighlightColor
-    : hilightColor;
-  const defaultColor = isComparison ? basicColor : color;
+  const defaultHighlightColor = isComparison ? "#52555A" : "#0000b4";
+  const defaultColor = isComparison ? "#ABADAF" : "#6666E0";
 
   // Initialize map only once
   useEffect(() => {
@@ -97,7 +88,8 @@ export function useNaverMapCore({
               user?.location.long
             )
       ),
-      zoom: 16
+      zoomControl: true,
+      zoom: 15
     });
 
     setMap(newMap);
@@ -108,12 +100,9 @@ export function useNaverMapCore({
           user?.location.lat,
           user?.location.long
         ),
+        zoomControl: true,
         map: newMap,
-        zoom: 16,
-        icon: {
-          content: `<img src="/images/marker.svg" style="width: auto; height: 43px; z-index:20;"/>`,
-          anchor: new window.naver.maps.Point(15, 30)
-        }
+        zoom: 15
       });
       setHospitalMarker(newMarker);
     }
@@ -145,28 +134,34 @@ export function useNaverMapCore({
     if (!map) return;
 
     setCurrentZoom(map.getZoom());
+
+    let regionData = getRegionName(map.getZoom());
+
     const patientTemp: { areaName: string; patients: PatientData[] }[] = [];
     const regionMarkers: naver.maps.Marker[] = [];
     const patientGroupsMarkers: naver.maps.Marker[] = [];
 
     // Get Region Info
-    setRegion(name);
+    setRegion(regionData.name);
     const mapBounds = expandBounds(
       map.getBounds() as naver.maps.LatLngBounds,
       0.3
     );
-    const polygonsToRender = data;
+    const polygonsToRender = regionData.data;
 
-    // Get Bound Areas
-    const { boundAreas } = getBoundAreas(polygonsToRender, mapBounds);
-
-    setBoundArea(boundAreas);
+    let { boundAreas, boundPatientLocations } = getBoundAreas(
+      polygonsToRender,
+      mapBounds,
+      patientLocations.length > 0 ? patientLocations : undefined
+    );
 
     if (boundAreas.length === 0) {
-      polygonsRef.current.forEach((polygon) => polygon.setMap(null));
-      polygonsRef.current.clear();
-      return;
+      regionData = getRegionName(map.getZoom(), boundAreas);
+      ({ boundAreas } = getBoundAreas(regionData.data, mapBounds));
     }
+
+    setRegion(regionData.name);
+    setBoundArea(boundAreas);
 
     // Remove polygons and markerClusters
     if (dateChanged) {
@@ -203,7 +198,7 @@ export function useNaverMapCore({
             : "rgba(240, 180, 180, 0.3)"
           : `${getPolygonColorOpacity(
               area.total_cost ?? 0,
-              name as RegionLevel
+              regionData.name as RegionLevel
             )}`;
 
         polygon = new window.naver.maps.Polygon({
@@ -220,22 +215,37 @@ export function useNaverMapCore({
         polygon.setMap(map);
 
         // Set click event listener
-        setPolygonClickListener(polygon, area);
+        setPolygonClickListener(polygon, area, regionData.name);
 
         // Set region name marker
         const bounds = polygon.getBounds();
         if (bounds) {
           const center = bounds.getCenter();
-          const marker = createRegionMarker(center, fontSize, area.name, name);
-          setMarkerClickListener(marker, area, polygon);
+
+          let alert: "none" | "bad" | "good" = "none";
+
+          if (area?.cost_rank && area?.growth_metrics && !isChangedDateRange) {
+            alert = needNotify(area?.cost_rank, area.growth_metrics);
+          }
+
+          const marker = createRegionMarker(
+            center,
+            regionData.fontSize,
+            area.name,
+            regionData.name,
+            alert
+          );
+
+          setMarkerClickListener(marker, area, polygon, regionData.name);
+
           regionMarkers.push(marker);
         }
 
         // Create patient markers for non-comparison mode at high zoom levels
         if (!isComparison && currentZoom >= 17) {
           const groupPatients = groupPatientsByProximity(
-            area.patient_locations,
-            200
+            boundPatientLocations,
+            300
           );
           createPatientGroupMarkers(groupPatients, patientGroupsMarkers);
         }
@@ -267,6 +277,7 @@ export function useNaverMapCore({
       window.naver.maps.Event.clearListeners(map, "zoom_changed");
       window.naver.maps.Event.clearListeners(map, "idle");
     }
+
     handleZoomChange(true);
   }, [isComparison ? drawerDate1 : drawerDate, map, currentZoom]);
 
@@ -304,7 +315,8 @@ export function useNaverMapCore({
 
   const setPolygonClickListener = (
     polygon: naver.maps.Polygon,
-    area: RegionData
+    area: RegionData,
+    region: string
   ) => {
     if (!polygon.hasListener("click")) {
       polygon.addListener("click", () => {
@@ -332,7 +344,9 @@ export function useNaverMapCore({
           const highlightColor = getPolygonHighlightColor
             ? getPolygonHighlightColor(area)
             : isComparison
-            ? (area?.total_costA ?? 0) <= (area?.total_costB ?? 0)
+            ? (area?.total_costA ?? 0) === (area?.total_costB ?? 0)
+              ? "rgba(0, 0, 0, 0.4)"
+              : (area?.total_costA ?? 0) < (area?.total_costB ?? 0)
               ? "rgb(80, 170, 255)"
               : "rgb(245, 100, 130)"
             : defaultHighlightColor;
@@ -343,10 +357,9 @@ export function useNaverMapCore({
             strokeWeight: 3,
             zIndex: 100
           });
-
           setSelectedRegionData(area);
 
-          if (name === "small" && area.dong) {
+          if (region === "small" && area.dong) {
             setDongNameForSmall(area?.dong);
           }
         }
@@ -357,7 +370,8 @@ export function useNaverMapCore({
   const setMarkerClickListener = (
     marker: naver.maps.Marker,
     area: RegionData,
-    polygon: naver.maps.Polygon
+    polygon: naver.maps.Polygon,
+    region: string
   ) => {
     if (!marker.hasListener("click")) {
       marker.addListener("click", () => {
@@ -404,7 +418,7 @@ export function useNaverMapCore({
             setSelectedRegionData(area);
           }
 
-          if (name === "small" && area.dong) {
+          if (region === "small" && area.dong) {
             setDongNameForSmall(area?.dong);
           }
         }
@@ -442,14 +456,7 @@ export function useNaverMapCore({
       minClusterSize: 2,
       maxZoom: 13,
       map,
-      markers,
-      icons: [
-        {
-          content: `<div></div>`,
-          size: new window.naver.maps.Size(40, 40),
-          anchor: new window.naver.maps.Point(20, 20)
-        }
-      ]
+      markers
     });
 
     ref.current = cluster;
@@ -459,8 +466,30 @@ export function useNaverMapCore({
     center: naver.maps.Coord,
     fontSize: string,
     areaName: string,
-    region: string
+    region: string,
+    alert?: "bad" | "good" | "none"
   ) => {
+    const alertBadge =
+      alert && alert !== "none"
+        ? `<div style="
+              position: absolute;
+              top: -0.4rem;
+              right: -0.4rem;
+              width: 1.2rem;
+              height: 1.2rem;
+              display: flex;
+              background-color: ${
+                alert === "bad"
+                  ? "#FF3B30"
+                  : alert === "good"
+                  ? "#00C41E"
+                  : "transparent"
+              };
+              border-radius: 50%;
+              z-index: 2;
+            "></div>`
+        : "";
+
     const reNamedDong = areaName
       .split(" ")
       .slice(areaName.split(" ").length - 1);
@@ -468,20 +497,22 @@ export function useNaverMapCore({
       position: center,
       icon: {
         content: `
-        <div style="display: flex; align-items: center; justify-content: center;">
-          <span style="font-size: ${fontSize}; 
-                    color: #4A4A4A;
-                    white-space: nowrap;
-                    background-color: rgba(255, 255, 255, 0.8);
-                    border-radius: 16px;
-                    padding: 4px 10px;
-                    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
-                    text-align: center; z-index:10;">
-            ${region === "dong" ? reNamedDong : areaName}
-          </span>
-        </div>`,
-        origin: new naver.maps.Point(0, 67),
-        anchor: new naver.maps.Point(20, 67)
+       <div style="position: relative; display: inline-flex; align-items: center; justify-content: center;">
+        <span style="font-size: ${fontSize}; 
+                      color: #4A4A4A;
+                      white-space: nowrap;
+                      background-color: rgba(255, 255, 255, 0.8);
+                      border-radius: 16px;
+                      padding: 4px 10px;
+                      box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+                      text-align: center; z-index: 1;">
+          ${region === "dong" ? reNamedDong : areaName}
+        </span>
+        ${alertBadge}
+      </div>
+    `,
+        origin: new naver.maps.Point(0, 0),
+        anchor: new naver.maps.Point(20, 30)
       }
     });
   };
@@ -501,7 +532,6 @@ export function useNaverMapCore({
     loading,
     isFetching,
     currentZoom,
-    name,
     handleZoomChange,
     clearClusters,
     createMarkerCluster,

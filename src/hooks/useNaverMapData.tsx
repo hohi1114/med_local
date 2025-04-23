@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQueries } from "@tanstack/react-query";
-import { getAllRegionsEtc } from "../utils/api/apis";
+import { getAllRegionsEtc, getPatientLocations } from "../utils/api/apis";
 import { getDataFromRegionDB } from "../store/indexded_db/RegionDB";
 import mapStore from "../store/mapStore";
 import userStore from "../store/userStore";
@@ -27,6 +27,7 @@ const REGION_KEYS: Record<RegionLevel, string> = {
 const useNaverMapData = (twoType: boolean) => {
   const { drawerDate, drawerDate1, drawerDate2 } = mapStore();
   const { isInActiveUser, user, hasGuided, startTutorial } = userStore();
+  const [patientLocations, setPatientLocations] = useState<Point[]>([]);
 
   const [maxCost, setMaxCost] = useState<Record<RegionLevel, number>>({
     small: 0,
@@ -67,7 +68,14 @@ const useNaverMapData = (twoType: boolean) => {
           queryKey: [`allRegionsEtc${data.type}`, data.date],
           queryFn: () => getAllRegionsEtc(data.date!),
           enabled:
-            !!user.user_id && !isInActiveUser && hasGuided && !startTutorial
+            !!user.user_id &&
+            !isInActiveUser &&
+            hasGuided &&
+            !startTutorial &&
+            !!drawerDate1?.endDate &&
+            !!drawerDate1?.startDate &&
+            !!drawerDate2?.startDate &&
+            !!drawerDate2?.endDate
         }))
       : drawerDate
       ? [
@@ -75,7 +83,23 @@ const useNaverMapData = (twoType: boolean) => {
             queryKey: ["allRegionsEtc", drawerDate],
             queryFn: () => getAllRegionsEtc(drawerDate),
             enabled:
-              !!user.user_id && !isInActiveUser && hasGuided && !startTutorial
+              !!user.user_id &&
+              !isInActiveUser &&
+              hasGuided &&
+              !startTutorial &&
+              !!drawerDate.endDate &&
+              !!drawerDate.startDate
+          },
+          {
+            queryKey: ["allPatientLocations", drawerDate],
+            queryFn: () => getPatientLocations(drawerDate),
+            enabled:
+              !!user.user_id &&
+              !isInActiveUser &&
+              hasGuided &&
+              !startTutorial &&
+              !!drawerDate.endDate &&
+              !!drawerDate.startDate
           }
         ]
       : []
@@ -89,7 +113,10 @@ const useNaverMapData = (twoType: boolean) => {
     if (!twoType && regionQueries[0]?.data) {
       processRegionEtcData(regionQueries[0].data);
     }
-  }, [twoType, regionQueries[0]?.data]);
+    if (regionQueries[1]?.data) {
+      setPatientLocations(regionQueries[1].data);
+    }
+  }, [twoType, regionQueries[0]?.data, regionQueries[1]?.data]);
 
   // 기간 2개 일때
   useEffect(() => {
@@ -166,15 +193,18 @@ const useNaverMapData = (twoType: boolean) => {
 
           const rawRegions = await getDataFromRegionDB(key);
           updated[level] = rawRegions.map((region) => {
-            const matchedEtc = etcData.find(
-              (item) => item[`${level}_region_name`] === region.name
-            );
+            let cost_rank = -1;
+            const matchedEtc = etcData.find((item, index) => {
+              cost_rank = index + 1;
+              return item[`${level}_region_name`] === region.name;
+            });
 
             return {
               ...region,
+              cost_rank,
               polygon: JSON.parse(region.polygon)[0],
               total_cost: matchedEtc?.total_cost ?? 0,
-              patient_locations: matchedEtc?.patient_locations ?? []
+              growth_metrics: matchedEtc?.growth_metrics
             };
           });
         })
@@ -214,9 +244,7 @@ const useNaverMapData = (twoType: boolean) => {
               ...region,
               polygon: JSON.parse(region.polygon)[0],
               total_costA: matchedEtcA?.total_cost ?? 0,
-              total_costB: matchedEtcB?.total_cost ?? 0,
-              patient_locationsA: matchedEtcA?.patient_locations ?? [],
-              patient_locationsB: matchedEtcB?.patient_locations ?? []
+              total_costB: matchedEtcB?.total_cost ?? 0
             };
           });
         })
@@ -237,36 +265,32 @@ const useNaverMapData = (twoType: boolean) => {
     }
   }, [regionComparisionEtc]);
 
-  const getRegionName = (zoom: number) => {
-    if (zoom >= 15) {
-      return {
-        data: regionData.small,
-        name: "small",
-        fontSize: "1rem",
-        color: "#6666E0",
-        hilightColor: "#0000b4",
-        basicColor: "#ABADAF",
-        basicHighlightColor: "#52555A"
-      };
-    } else if (zoom >= 14) {
+  const getRegionName = (zoom: number, boundAreas?: any) => {
+    if (boundAreas && boundAreas.length === 0) {
       return {
         data: regionData.dong,
         name: "dong",
-        fontSize: "1rem",
-        color: "#6666E0",
-        hilightColor: "#0000b4",
-        basicColor: "#ABADAF",
-        basicHighlightColor: "#52555A"
+        fontSize: "1rem"
+      };
+    }
+
+    if (zoom > 16) {
+      return {
+        data: regionData.small,
+        name: "small",
+        fontSize: "1rem"
+      };
+    } else if (zoom > 14) {
+      return {
+        data: regionData.dong,
+        name: "dong",
+        fontSize: "1.1rem"
       };
     } else {
       return {
         data: regionData.gu,
         name: "gu",
-        fontSize: "1.2rem",
-        color: "#6666E0",
-        hilightColor: "#0000b4",
-        basicColor: "#ABADAF",
-        basicHighlightColor: "#52555A"
+        fontSize: "1.2rem"
       };
     }
   };
@@ -310,15 +334,26 @@ const useNaverMapData = (twoType: boolean) => {
 
   const getBoundAreas = (
     areas: RegionData[],
-    bounds: naver.maps.LatLngBounds
+    bounds: naver.maps.LatLngBounds,
+    patientLocations?: { lat: number; lng: number }[]
   ) => {
+    const boundAreas = areas.filter((area) => {
+      const polygonLatLngs = area.polygon.map(
+        ([lng, lat]) => new naver.maps.LatLng(lat, lng)
+      );
+      return polygonLatLngs.some((latlng) => bounds.hasLatLng(latlng));
+    });
+    let boundPatientLocations: Point[] = [];
+
+    if (patientLocations) {
+      boundPatientLocations = patientLocations.filter((loc) =>
+        bounds.hasLatLng(new naver.maps.LatLng(loc.lat, loc.lng))
+      );
+    }
+
     return {
-      boundAreas: areas.filter((area) => {
-        const polygonLatLngs = area.polygon.map(
-          ([lng, lat]) => new naver.maps.LatLng(lat, lng)
-        );
-        return polygonLatLngs.some((latlng) => bounds.hasLatLng(latlng));
-      })
+      boundAreas,
+      boundPatientLocations
     };
   };
 
@@ -385,7 +420,8 @@ const useNaverMapData = (twoType: boolean) => {
     getBoundAreas,
     getPolygonColorOpacity,
     groupPatientsByProximity,
-    isFetching: isFetchingRegionData
+    isFetching: isFetchingRegionData,
+    patientLocations
   };
 };
 

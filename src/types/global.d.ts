@@ -1,4 +1,4 @@
-// src/types/global.d.ts
+p// src/types/global.d.ts
 declare global {
   interface Error {
     status?: string;

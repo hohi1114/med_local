@@ -22,23 +22,24 @@ const useDashBoard = () => {
     hasGuided
   } = userStore();
 
+  const getBaseDate = () =>
+    lastedUpdatedDate && lastedUpdatedDate.length > 0
+      ? dayjs(lastedUpdatedDate)
+      : dayjs();
+
   const makeRange = (
     startOffset: number,
     unit: dayjs.ManipulateType
   ): DateRange => {
-    const base = dayjs();
+    const base = getBaseDate();
     return {
       startDate: base.subtract(startOffset, unit).format("YYYY-MM-DD"),
       endDate: base.format("YYYY-MM-DD")
     };
   };
+
   const RANGE_DATE_MAP: Record<RangeDateMapKey, DateRange> = {
-    오늘: {
-      startDate: dayjs().format("YYYY-MM-DD"),
-      endDate: dayjs().format("YYYY-MM-DD")
-    },
-    "3일": makeRange(3, "day"),
-    "7일": makeRange(7, "day"),
+    일주일: makeRange(7, "day"),
     "1개월": makeRange(1, "month"),
     "3개월": makeRange(3, "month"),
     "1년": makeRange(1, "year")
@@ -52,13 +53,23 @@ const useDashBoard = () => {
   const AVAILABLE_DATE_RANGES: Partial<Record<RangeDateMapKey, DateRange>> =
     isFreetrialUser ? FREE_TRIAL_RANGES : RANGE_DATE_MAP;
 
-  const { dateRange, handleDateRangeChange } = useRangeDurationDatePicker();
-  const [buttonType, setButtonType] = useState<RangeDateMapKey | null>();
+  const { dateRange, handleDateRangeChange, latestDateRangeRef } =
+    useRangeDurationDatePicker();
+  const [buttonType, setButtonType] = useState<RangeDateMapKey | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [dashboardInfo, setDashboardInfo] = useState<DashBoard | null>(null);
   const [dateChanged, setDateChanged] = useState(false);
-
-  const dashboardStore = useDashboardStore();
+  const {
+    selectedDateRange,
+    weekData,
+    monthData,
+    threeMonthData,
+    oneYearData,
+    setWeekData,
+    setMonthData,
+    setThreeMonthData,
+    setOneYearData
+  } = useDashboardStore();
 
   const {
     mutateAsync: dashboardInfoMutation,
@@ -77,12 +88,10 @@ const useDashBoard = () => {
   });
 
   const saveDataMap: Record<RangeDateMapKey, (data: DashBoard) => void> = {
-    오늘: dashboardStore.setTodayData,
-    "3일": dashboardStore.setThreeDaysData,
-    "7일": dashboardStore.setWeekData,
-    "1개월": dashboardStore.setMonthData,
-    "3개월": dashboardStore.setThreeMonthData,
-    "1년": dashboardStore.setOneYearData
+    일주일: setWeekData,
+    "1개월": setMonthData,
+    "3개월": setThreeMonthData,
+    "1년": setOneYearData
   };
 
   const saveData = useCallback((section: RangeDateMapKey, data: DashBoard) => {
@@ -131,10 +140,14 @@ const useDashBoard = () => {
           .format("YYYY-MM-DD"),
         endDate: dayjs(lastedUpdatedDate).format("YYYY-MM-DD")
       };
-
-      if (lastedUpdatedDate && lastedUpdatedDate.length > 0) {
-        const data = await dashboardInfoMutation(lastedUpdateDateRange);
+      if (selectedDateRange) {
+        const data = await dashboardInfoMutation(selectedDateRange);
         setDashboardInfo(data);
+      } else {
+        if (lastedUpdatedDate && lastedUpdatedDate.length > 0) {
+          const data = await dashboardInfoMutation(lastedUpdateDateRange);
+          setDashboardInfo(data);
+        }
       }
 
       if (!isFreetrialUser) {
@@ -154,7 +167,8 @@ const useDashBoard = () => {
     isFreetrialUser,
     AVAILABLE_DATE_RANGES,
     saveData,
-    lastedUpdatedDate
+    lastedUpdatedDate,
+    selectedDateRange
   ]);
 
   useEffect(() => {
@@ -178,24 +192,14 @@ const useDashBoard = () => {
     if (!buttonType) return;
 
     const dataMap: Record<RangeDateMapKey, DashBoard | null> = {
-      오늘: dashboardStore.todayData,
-      "3일": dashboardStore.threeDaysData,
-      "7일": dashboardStore.weekData,
-      "1개월": dashboardStore.monthData,
-      "3개월": dashboardStore.threeMonthData,
-      "1년": dashboardStore.oneYearData
+      일주일: weekData,
+      "1개월": monthData,
+      "3개월": threeMonthData,
+      "1년": oneYearData
     };
 
     if (dataMap[buttonType]) setDashboardInfo(dataMap[buttonType]);
-  }, [
-    buttonType,
-    dashboardStore.todayData,
-    dashboardStore.threeDaysData,
-    dashboardStore.weekData,
-    dashboardStore.monthData,
-    dashboardStore.threeMonthData,
-    dashboardStore.oneYearData
-  ]);
+  }, [buttonType, weekData, monthData, threeMonthData, oneYearData]);
 
   // Fetch data when date range changes
   useEffect(() => {
@@ -242,7 +246,8 @@ const useDashBoard = () => {
     dashboardInfo,
     buttonType,
     AVAILABLE_DATE_RANGES,
-    dateRange
+    dateRange,
+    latestDateRangeRef
   };
 };
 

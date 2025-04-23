@@ -6,20 +6,21 @@ export const mockComparisonStatsData = {
     4: { data: "69,280 ₩" },
     5: { data: "174명" },
     6: { data: "138명" },
-    7: { data: "준비중" },
-    8: { data: "0 %" }
+    7: { data: "10 위" },
+    8: { data: "11 %" }
   },
   second: {
-    1: { data: "257명", diffRate: -17.63 },
-    2: { data: "11,206,890 ₩", diffRate: -19.08 },
-    3: { data: "48,950 ₩", diffRate: -6.49 },
-    4: { data: "65,200 ₩", diffRate: -5.89 },
-    5: { data: "159명", diffRate: -8.62 },
+    1: { data: "265명", diffRate: 17.63 },
+    2: { data: "11,201,389 ₩", diffRate: -19.08 },
+    3: { data: "48,917 ₩", diffRate: -6.49 },
+    4: { data: "73,384 ₩", diffRate: 5.89 },
+    5: { data: "189명", diffRate: 8.62 },
     6: { data: "98명", diffRate: -28.99 },
-    7: { data: "준비중" },
-    8: { data: "0 %", diffRate: -24.11 }
+    7: { data: "13 위", diffRate: 30 },
+    8: { data: "8 %", diffRate: -27.27 }
   }
 };
+
 export const mockFirstRegionPrivate = {
   total_visit_count: 283,
   total_cost: 12578000,
@@ -201,14 +202,14 @@ export const mockRegionInfo = {
 };
 
 export const mockMapByRegionStats = {
-  1: { data: "257명", diffRate: -17.63 },
+  1: { data: "257명", diffRate: 17.63 },
   2: { data: "11,206,890 ₩", diffRate: -19.08 },
-  3: { data: "48,950 ₩", diffRate: 6.49 },
+  3: { data: "48,950 ₩", diffRate: -6.49 },
   4: { data: "65,200 ₩", diffRate: -5.89 },
   5: { data: "159명", diffRate: 8.62 },
   6: { data: "98명", diffRate: 28.99 },
-  7: { data: "준비중" },
-  8: { data: "0 %", diffRate: -24.11 }
+  7: { data: "4 위" },
+  8: { data: "24 %", diffRate: 10.11 }
 };
 
 export const mockMapByRegionRegionPrivate = {

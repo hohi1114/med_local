@@ -12,7 +12,7 @@ const SexHorizantalBar = ({ data }: SexHorizantalBarComponentProps) => {
   const config = {
     data,
     height: 250,
-    width: 340,
+    width: 390,
     xField: "type",
     yField: "value",
     colorField: "type",
