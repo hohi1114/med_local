@@ -8,13 +8,13 @@ import {
   parseDailyIncomeEgis,
   parseDaysFilesDentweb,
   parseDaysFilesEuisarang,
-  parsePatientListEgis,
+  parsePatientListEgis
 } from "../src/local/ExcelParser";
 
 import {
   mergeDataDentWeb,
   mergeDataEgis,
-  mergeDataEuisarang,
+  mergeDataEuisarang
 } from "../src/local/dataMerge";
 import { processDataLocally } from "../src/local/locationProcessing";
 
@@ -31,15 +31,15 @@ const createMainWindow = () => {
       contextIsolation: true, // 보안을 위해 true로 설정
       preload: path.join(__dirname, "preload.js"), // Preload 파일 경로 설정
       webSecurity: false, // 외부 맵 스크립트 등의 보안 문제 해결
-      allowRunningInsecureContent: true, // HTTPS 관련 문제 해결
-    },
+      allowRunningInsecureContent: true // HTTPS 관련 문제 해결
+    }
   });
 
   if (isDev) {
     mainWindow.loadURL("http://localhost:5173"); // React 앱 로드
     mainWindow.webContents.openDevTools();
   } else {
-    mainWindow.loadURL(`http://3.39.10.210?v=${app.getVersion()}`);
+    mainWindow.loadURL(`http://3.39.10.210`);
   }
 
   mainWindow.on("closed", () => (mainWindow = null));
