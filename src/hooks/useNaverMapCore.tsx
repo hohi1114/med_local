@@ -475,8 +475,8 @@ export function useNaverMapCore({
               position: absolute;
               top: -0.4rem;
               right: -0.4rem;
-              width: 1.2rem;
-              height: 1.2rem;
+              width: 1.1rem;
+              height: 1.1rem;
               display: flex;
               background-color: ${
                 alert === "bad"

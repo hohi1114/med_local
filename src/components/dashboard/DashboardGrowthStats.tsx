@@ -88,17 +88,20 @@ export default function DashboardGrowthStats({
 
   const ageGroupTooltipContent = (
     <>
-      {data.top_age_growth.map((ageGroup: TopAgeGrowth, index: number) => (
-        <div key={index}>
-          <span>
-            <strong>{ageGroup.age}대</strong> 이며{" "}
-            <ChangeIndicator value={ageGroup.change_percent} /> 했어요.
-          </span>
-        </div>
-      ))}
+      {data.top_age_growth.map((ageGroup: TopAgeGrowth, index: number) => {
+        if (ageGroup.change_percent === 0) return null;
+
+        return (
+          <div key={index}>
+            <span>
+              <strong>{ageGroup.age === 0 ? "0~10" : ageGroup.age}대</strong>{" "}
+              이며 <ChangeIndicator value={ageGroup.change_percent} /> 했어요.
+            </span>
+          </div>
+        );
+      })}
     </>
   );
-
   if (isDashboard) {
     return (
       <DashboardContainer>
@@ -142,8 +145,10 @@ export default function DashboardGrowthStats({
                   <div key={ageGroup.age}>
                     <ListItem>{message.summaryMessage}</ListItem>
                     <StatText>
-                      <strong>{ageGroup.age}대</strong> 이며{" "}
-                      <ChangeIndicator value={ageGroup.change_percent} />
+                      <strong>
+                        {ageGroup.age === 0 ? "0~10" : ageGroup.age}대
+                      </strong>{" "}
+                      이며 <ChangeIndicator value={ageGroup.change_percent} />
                       했어요.
                     </StatText>
                     <StatText>{message.strategyMessage}</StatText>
@@ -185,6 +190,7 @@ export default function DashboardGrowthStats({
         <StatList>
           {data.top_age_growth.map((ageGroup: TopAgeGrowth) => {
             if (ageGroup.change_percent === 0) return null;
+            console.log(ageGroup);
             const message = getGrowthAgeMessage(
               ageGroup.age,
               ageGroup.change_percent
