@@ -242,13 +242,13 @@ export function useNaverMapCore({
         }
 
         // Create patient markers for non-comparison mode at high zoom levels
-        if (!isComparison && currentZoom >= 17) {
-          const groupPatients = groupPatientsByProximity(
-            boundPatientLocations,
-            300
-          );
-          createPatientGroupMarkers(groupPatients, patientGroupsMarkers);
-        }
+        // if (!isComparison && currentZoom >= 17) {
+        //   const groupPatients = groupPatientsByProximity(
+        //     boundPatientLocations,
+        //     300
+        //   );
+        //   createPatientGroupMarkers(groupPatients, patientGroupsMarkers);
+        // }
       }
     });
 

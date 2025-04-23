@@ -89,18 +89,18 @@ const useNaverMapData = (twoType: boolean) => {
               !startTutorial &&
               !!drawerDate.endDate &&
               !!drawerDate.startDate
-          },
-          {
-            queryKey: ["allPatientLocations", drawerDate],
-            queryFn: () => getPatientLocations(drawerDate),
-            enabled:
-              !!user.user_id &&
-              !isInActiveUser &&
-              hasGuided &&
-              !startTutorial &&
-              !!drawerDate.endDate &&
-              !!drawerDate.startDate
           }
+          // {
+          //   queryKey: ["allPatientLocations", drawerDate],
+          //   queryFn: () => getPatientLocations(drawerDate),
+          //   enabled:
+          //     !!user.user_id &&
+          //     !isInActiveUser &&
+          //     hasGuided &&
+          //     !startTutorial &&
+          //     !!drawerDate.endDate &&
+          //     !!drawerDate.startDate
+          // }
         ]
       : []
   });
