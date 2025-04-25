@@ -432,15 +432,7 @@ export default function DashBoardPage() {
                   isGrouped={true}
                   seriesField="type"
                   legend={true}
-                  colors={[
-                    "#0077C0",
-                    "#96E2D6",
-                    "#000000",
-                    "#92BFFF",
-                    "#AEC7ED",
-                    "#94E9B8",
-                    "#E4A9FF"
-                  ]}
+                  colors={["#92BFFF", "#96E2D6"]}
                 />
               </Card>
             </CardGrid>

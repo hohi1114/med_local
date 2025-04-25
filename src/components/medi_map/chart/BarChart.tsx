@@ -90,10 +90,11 @@ const BarChart = <T,>({
   // 그룹화된 바 차트 설정
   const groupedBarConfig = {
     ...baseConfig,
-    colorField: xField,
+    // colorField: xField,
     yField: Array.isArray(yField) ? yField[0] : yField,
     seriesField: seriesField || "type",
-    isGroup: true
+    isGroup: true,
+    colorField: seriesField || "type"
   };
 
   const config = isGrouped ? groupedBarConfig : singleBarConfig;
