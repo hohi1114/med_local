@@ -58,4 +58,4 @@ export interface DashBoard {
   topRegions: TopRegion;
   top_age_growth: AverageGrowth;
 }
-export type RangeDateMapKey = "일주일" | "1개월" | "3개월" | "1년";
+export type RangeDateMapKey = "1주일" | "1개월" | "3개월" | "1년";

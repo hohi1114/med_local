@@ -37,6 +37,7 @@ const RevenuInfo: React.FC<RegionStatisticsProps> = ({
   costRank
 }) => {
   const { isChangedDateRange } = mapStore();
+
   return (
     <>
       <GridWrapper>
