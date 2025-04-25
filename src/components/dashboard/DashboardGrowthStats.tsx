@@ -21,6 +21,7 @@ const ChangeIndicator = ({ value }: { value: number }) => {
         alt={isPositive ? "increase" : "decrease"}
       />
       <ChangeValue isPositive={isPositive}>{value}%</ChangeValue>
+      {isPositive ? "증가" : "감소"}
     </ChangeWrapper>
   );
 };
@@ -112,18 +113,18 @@ export default function DashboardGrowthStats({
               <div>
                 <ListItem>{getGrowthMessage(data)}</ListItem>
                 <StatText>
-                  진료비 -{" "}
-                  <ChangeIndicator value={data?.avg_growth_total_cost ?? 0} />
+                  총 진료비는 평균적으로{" "}
+                  <ChangeIndicator value={data?.avg_growth_total_cost ?? 0} />{" "}
                   했어요.
                 </StatText>
                 <StatText>
-                  신규 환자 -{" "}
-                  <ChangeIndicator value={data?.avg_growth_sinhwan ?? 0} />
+                  신규 환자 유입은{" "}
+                  <ChangeIndicator value={data?.avg_growth_sinhwan ?? 0} />{" "}
                   했어요.
                 </StatText>
                 <StatText>
-                  재방문 환 -{" "}
-                  <ChangeIndicator value={data?.avg_growth_revisit ?? 0} />
+                  재방문 환자는{" "}
+                  <ChangeIndicator value={data?.avg_growth_revisit ?? 0} />{" "}
                   하였습니다.
                 </StatText>
               </div>
@@ -150,7 +151,8 @@ export default function DashboardGrowthStats({
                       <strong>
                         {ageGroup.age === 0 ? "0~10" : ageGroup.age}대
                       </strong>{" "}
-                      - <ChangeIndicator value={ageGroup.change_percent} />
+                      비율이 <ChangeIndicator value={ageGroup.change_percent} />{" "}
+                      했어요.
                     </StatText>
                   </div>
                 );

@@ -28,7 +28,14 @@
       "icon": "public/logo.ico"
     },
     "mac": {
-      "target": null,
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "universal"
+          ]
+        }
+      ],
       "icon": "public/logo.icns"
     },
     "linux": {
