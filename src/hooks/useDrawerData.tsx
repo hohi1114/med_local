@@ -202,7 +202,7 @@ export const useDrawerData = (twoType: boolean) => {
                 ).toFixed(3)
               : 0
           } %`,
-          diffRate: regionPrivate?.diff_rates?.total_patient_count
+          diffRate: regionPrivate?.diff_rates?.total_visit_count
         }
       });
     }
@@ -310,8 +310,8 @@ export const useDrawerData = (twoType: boolean) => {
               : 0
           } %`,
           diffRate: calculateDiff(
-            secondRegionPrivate?.total_patient_count,
-            firstRegionPrivate?.total_patient_count
+            secondRegionPrivate?.total_visit_count,
+            firstRegionPrivate?.total_visit_count
           )
         }
       };

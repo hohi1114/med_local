@@ -47,13 +47,12 @@ const BaseLineChart = ({
   ): ILineData[] => {
     const sortedKeys = Object.keys(data).sort();
     const result: ILineData[] = [];
-
     for (let i = 0; i < sortedKeys.length; i += 7) {
       const group = sortedKeys.slice(i, i + 7);
       const sum = group.reduce((acc, dateKey) => acc + data[dateKey], 0);
       result.push({
         date: group[0],
-        [yField]: sum
+        [yField]: sum / group.length
       });
     }
 
