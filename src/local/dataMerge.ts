@@ -72,6 +72,42 @@ export function mergeDataEuisarang(
   return df_merged;
 }
 
+// For Euisarang data
+export function mergeDataOrm(
+  visits: VisitData[],
+  patients: PatientData[]
+): MergedData[] {
+  // Create merged data from visits
+  const df_merged = visits.map((visit) => ({
+    chartNumber: visit.chartNumber,
+    visitDate: visit.visitDate,
+    totalCost: visit.totalCost,
+    age: null as number | null, // Will be filled in later
+    address: "N/D", // Will be filled in later
+  }));
+
+  console.log(df_merged);
+
+  // Create patient map for quick lookup
+  const patientMap = new Map<number, PatientData>(
+    patients.map((p) => [p.chartNumber, p])
+  );
+
+  // Ensure visitDate is a Date object and standardize to ISO string
+  df_merged.forEach((record) => {
+    record.visitDate = new Date(record.visitDate); // ✅ Ensure it's a Date object
+  });
+
+  // Fill in patient data
+  df_merged.forEach((record) => {
+    const patient = patientMap.get(record.chartNumber);
+    record.age = patient?.age || null;
+    record.address = patient?.address || "N/D";
+  });
+
+  return df_merged;
+}
+
 // For DentWeb data
 export function mergeDataDentWeb(
   visits: VisitData[],

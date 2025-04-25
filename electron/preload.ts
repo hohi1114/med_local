@@ -10,6 +10,11 @@ contextBridge.exposeInMainWorld("electron", {
   parsePlaceFilesEuisarang: (fileBuffers: ArrayBuffer[]) =>
     ipcRenderer.invoke("parse-place-files-euisarang", fileBuffers),
 
+  parseDaysFilesOrm: (fileBuffers: ArrayBuffer[]) =>
+    ipcRenderer.invoke("parse-days-files-orm", fileBuffers),
+  parsePlaceFilesOrm: (fileBuffers: ArrayBuffer[]) =>
+    ipcRenderer.invoke("parse-place-files-orm", fileBuffers),
+
   // File processing - DentWeb
   parseDaysFilesDentweb: (fileBuffers: ArrayBuffer[]) =>
     ipcRenderer.invoke("parse-days-files-dentweb", fileBuffers),
@@ -29,6 +34,8 @@ contextBridge.exposeInMainWorld("electron", {
     ipcRenderer.invoke("merge-data-dentweb", visits, patients),
   mergeDataEgis: (dailyIncome: any[], patientList: any[]) =>
     ipcRenderer.invoke("merge-data-egis", dailyIncome, patientList),
+  mergeDataOrm: (visits: any[], patients: any[]) =>
+    ipcRenderer.invoke("merge-data-euisarang", visits, patients),
 
   // Final data processing
   processDataLocally: (mergedData: any[], accessToken: string) =>

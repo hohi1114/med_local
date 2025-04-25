@@ -435,6 +435,94 @@ export async function parsePlaceFilesDentWeb(
   return data.filter((item) => !isNaN(item.chartNumber));
 }
 
+export async function parseDaysFilesOrm(
+  fileBuffers: ArrayBuffer[]
+): Promise<VisitData[]> {
+  let data: VisitData[] = [];
+
+  for (const buffer of fileBuffers) {
+    const workbook = XLSX.read(buffer, { type: "array" });
+
+    if (workbook.SheetNames.length === 0) {
+      console.error("❌ No worksheets found in the file");
+      continue; // Skip this file
+    }
+
+    // Start from the second sheet and go to the last sheet
+    for (let i = 1; i < workbook.SheetNames.length; i++) {
+      const sheetName = workbook.SheetNames[i];
+      const worksheet = workbook.Sheets[sheetName];
+
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, {
+        header: 1,
+        range: 1, // Skip only the first row (header)
+      });
+
+      jsonData.forEach((row: any) => {
+        if (row.length >= 12) {
+          // Make sure we have enough columns
+          let visitDate = row[0];
+          let chartNumber = row[1];
+          let totalCost = row[11];
+
+          // Convert Excel serial date to string format if needed
+          if (typeof visitDate === "number") {
+            visitDate = excelSerialToDate(visitDate);
+          }
+
+          data.push({
+            chartNumber: Number(chartNumber),
+            visitDate: visitDate,
+            totalCost: Number(totalCost),
+          });
+        }
+      });
+    }
+  }
+
+  return data.filter(
+    (item) => !isNaN(item.chartNumber) && item.visitDate !== "진료일"
+  );
+}
+
+export async function parsePlaceFilesOrm(
+  fileBuffers: ArrayBuffer[]
+): Promise<PatientData[]> {
+  let data: PatientData[] = [];
+
+  for (const buffer of fileBuffers) {
+    const workbook = XLSX.read(buffer, { type: "array" });
+
+    if (workbook.SheetNames.length === 0) {
+      console.error("❌ No worksheets found in the file");
+      continue; // Skip this file
+    }
+
+    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+
+    const jsonData = XLSX.utils.sheet_to_json<any>(worksheet, {
+      header: 1,
+      range: 4,
+    });
+
+    jsonData.forEach((row: any) => {
+      if (row.length >= 3) {
+        // Normalize age if it's a valid number
+        let normalizedAge = normalizeAge(row[3]);
+
+        console.log(row[1], row[3], row[4]);
+
+        data.push({
+          chartNumber: Number(row[1]),
+          age: normalizedAge,
+          address: row[4] || "N/D",
+        });
+      }
+    });
+  }
+  return data.filter((item) => !isNaN(item.chartNumber));
+}
+
 function calculateAge(birthDateStr: string): number {
   const today = new Date();
   const birthDate = new Date(birthDateStr);

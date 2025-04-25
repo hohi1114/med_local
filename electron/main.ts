@@ -8,13 +8,16 @@ import {
   parseDailyIncomeEgis,
   parseDaysFilesDentweb,
   parseDaysFilesEuisarang,
-  parsePatientListEgis
+  parsePatientListEgis,
+  parseDaysFilesOrm,
+  parsePlaceFilesOrm,
 } from "../src/local/ExcelParser";
 
 import {
   mergeDataDentWeb,
   mergeDataEgis,
-  mergeDataEuisarang
+  mergeDataEuisarang,
+  mergeDataOrm,
 } from "../src/local/dataMerge";
 import { processDataLocally } from "../src/local/locationProcessing";
 
@@ -31,8 +34,8 @@ const createMainWindow = () => {
       contextIsolation: true, // 보안을 위해 true로 설정
       preload: path.join(__dirname, "preload.js"), // Preload 파일 경로 설정
       webSecurity: false, // 외부 맵 스크립트 등의 보안 문제 해결
-      allowRunningInsecureContent: true // HTTPS 관련 문제 해결
-    }
+      allowRunningInsecureContent: true, // HTTPS 관련 문제 해결
+    },
   });
 
   if (isDev) {
@@ -67,6 +70,25 @@ app.whenReady().then(() => {
   ipcMain.handle("parse-place-files-euisarang", async (event, fileBuffers) => {
     try {
       return await parsePlaceFilesEuisarang(fileBuffers);
+    } catch (error) {
+      console.error("Error parsing place files:", error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle("parse-days-files-orm", async (event, fileBuffers) => {
+    try {
+      return await parseDaysFilesOrm(fileBuffers);
+    } catch (error) {
+      console.error("Error parsing days files:", error);
+      throw error;
+    }
+  });
+
+  // In main.ts, add this inside your app.whenReady().then() block:
+  ipcMain.handle("parse-place-files-orm", async (event, fileBuffers) => {
+    try {
+      return await parsePlaceFilesOrm(fileBuffers);
     } catch (error) {
       console.error("Error parsing place files:", error);
       throw error;
@@ -133,6 +155,15 @@ app.whenReady().then(() => {
       return mergeDataEgis(dailyIncome, patientList);
     } catch (error) {
       console.error("Error merging Egis data:", error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle("merge-data-orm", async (event, visits, patients) => {
+    try {
+      return mergeDataOrm(visits, patients);
+    } catch (error) {
+      console.error("Error merging Euisarang data:", error);
       throw error;
     }
   });

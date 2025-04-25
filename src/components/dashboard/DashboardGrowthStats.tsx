@@ -190,7 +190,6 @@ export default function DashboardGrowthStats({
         <StatList>
           {data.top_age_growth.map((ageGroup: TopAgeGrowth) => {
             if (ageGroup.change_percent === 0) return null;
-            console.log(ageGroup);
             const message = getGrowthAgeMessage(
               ageGroup.age,
               ageGroup.change_percent
@@ -311,8 +310,8 @@ const StrongText = styled.div<{ alert?: string }>`
     props?.alert === "none"
       ? props.theme.colors.black01
       : props?.alert === "bad"
-      ? props.theme.colors.red
-      : props.theme.colors.macGreen};
+        ? props.theme.colors.red
+        : props.theme.colors.macGreen};
 `;
 
 const StrategyText = styled.div`

@@ -44,7 +44,7 @@ export async function uploadDataToBackend(
   processedData: ProcessDataPayload
 ): Promise<ProcessDataResponse> {
   try {
-    const baseURL = "http://3.39.10.210:3001/api";
+    const baseURL = "http://localhost:3001/api";
 
     // Prepare the request payload
     const payload = {
@@ -82,7 +82,7 @@ export async function uploadDataToBackend(
 }
 
 const UpdateDataPage = () => {
-  const [dataType, setDataType] = useState<"euisarang" | "egis" | "dentweb">(
+  const [dataType, setDataType] = useState<"euisarang" | "egis" | "dentweb" | "orm">(
     "euisarang"
   ); // Track data type
   const [daysFiles, setDaysFiles] = useState<FileList | null>(null); // Euisarang
@@ -108,7 +108,7 @@ const UpdateDataPage = () => {
   // ✅ Load Naver Maps Script on Component Mount
   useEffect(() => {
     loadNaverMapsScript(import.meta.env.VITE_NAVER_MAPS_CLIENT_ID)
-      .then(() => {})
+      .then(() => { })
       .catch((error) =>
         console.error("❌ Failed to load Naver Maps script:", error)
       );
@@ -121,7 +121,8 @@ const UpdateDataPage = () => {
         if (
           emrType === "euisarang" ||
           emrType === "egis" ||
-          emrType === "dentweb"
+          emrType === "dentweb" ||
+          emrType === "orm"
         ) {
           setDataType(emrType);
         }
@@ -355,6 +356,124 @@ const UpdateDataPage = () => {
     }
   };
 
+
+
+
+  const handleProcessDataOrm = async (): Promise<void> => {
+    if (!placeFiles || !daysFiles) {
+      openNotification("warning", "파일 누락", "모든 파일을 업로드해주세요.");
+      return;
+    }
+
+    setProgress(1); // Start progress
+
+    const removeProgressListener = window.electron.onGeocodingProgress(
+      ({ current, total }) => {
+        // Calculate overall progress (giving geocoding 60% of the total weight)
+        // First 20% for file processing and merging, last 20% for final processing and upload prep
+        const geocodingProgress = (current / total) * 80;
+        setProgress(10 + geocodingProgress);
+      }
+    );
+
+    try {
+      // Step 1: Convert files to ArrayBuffers for local processing
+      const daysBuffers = await Promise.all(
+        Array.from(daysFiles).map((file) => file.arrayBuffer())
+      );
+
+      const placeBuffers = await Promise.all(
+        Array.from(placeFiles).map((file) => file.arrayBuffer())
+      );
+
+      // Step 2: Parse files locally via Electron
+      const visits = await window.electron.parseDaysFilesOrm(daysBuffers);
+
+      const patients = await window.electron.parsePlaceFilesOrm(
+        placeBuffers
+      );
+
+      console.log(visits);
+      console.log(patients);
+
+      // Step 3: Merge data locally
+      const mergedData = await window.electron.mergeDataOrm(
+        visits,
+        patients
+      );
+
+      setProgress(10);
+
+      // Step 4: Process the merged data (geocoding, region assignment, etc.)
+      const processedData = await window.electron.processDataLocally(
+        mergedData,
+        getCookie("accessToken")
+      );
+
+      console.log("Processed data:", processedData);
+
+      removeProgressListener();
+
+      setProgress(90);
+
+      // Step 5: Send only the processed data to the backend
+      // Start the upload but don't await it
+      const uploadPromise = uploadDataToBackend(
+        getCookie("accessToken"),
+        processedData
+      );
+
+      setProgress(95);
+
+      // Inform the user that data is being processed in the background
+      openNotification(
+        "success",
+        "데이터 업로드 중",
+        "데이터가 처리되어 업로드 중입니다. 업로드가 완료되면 알려드립니다. 프로그램을 종료하지 마세요."
+      );
+
+      // Set progress to 100% since from the user's perspective, the task is complete
+      setProgress(100);
+
+      uploadPromise
+        .then((backendResponse) => {
+          fetchUploadedDates();
+          // Handle successful upload (when it eventually completes)
+          openNotification(
+            "success",
+            "데이터 업로드 완료",
+            "모든 데이터가 성공적으로 처리되었습니다."
+          );
+
+          // Update any UI components that should reflect the successful upload
+          // updateDataCount(backendResponse);
+        })
+        .catch((error) => {
+          // Handle error in the background
+          console.error("❌ Background upload error:", error);
+          openNotification(
+            "error",
+            "업로드 실패",
+            error instanceof Error
+              ? error.message
+              : "알 수 없는 오류가 발생했습니다."
+          );
+        });
+    } catch (error) {
+      // This catch block handles errors in the processing phase
+      console.error("❌ Error processing data:", error);
+      openNotification(
+        "error",
+        "데이터 처리 실패",
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다."
+      );
+      setProgress(0); // Reset progress on error
+    }
+  };
+
+
   const handleProcessDataEgis = async (): Promise<void> => {
     if (!placeFiles || !dailyIncome) {
       openNotification("warning", "파일 누락", "모든 파일을 업로드해주세요.");
@@ -465,13 +584,16 @@ const UpdateDataPage = () => {
       handleProcessDataEuisarang();
     } else if (dataType === "egis") {
       handleProcessDataEgis();
-    } else {
+    } else if (dataType === "dentweb") {
       handleProcessDataDentweb();
+    } else {
+      handleProcessDataOrm();
     }
-  };
+  }
+
 
   const isButtonDisabled = () => {
-    if (dataType === "euisarang" || dataType === "dentweb") {
+    if (dataType === "euisarang" || dataType === "dentweb" || dataType === "orm") {
       return !daysFiles || !placeFiles || progress > 0;
     }
     return !dailyIncome || !placeFiles || progress > 0;
@@ -529,6 +651,19 @@ const UpdateDataPage = () => {
               />
               <FileUpload
                 title="환자 목록 업로드"
+                onFilesUploaded={(files) => setPlaceFiles(files)}
+              />
+            </>
+          )}
+
+          {dataType === "orm" && (
+            <>
+              <FileUpload
+                title="일일 수입 데이터 업로드 (환자 집계)"
+                onFilesUploaded={(files) => setDaysFiles(files)}
+              />
+              <FileUpload
+                title="장소별 환자 데이터 업로드 (환자 정보 자료 생성)"
                 onFilesUploaded={(files) => setPlaceFiles(files)}
               />
             </>

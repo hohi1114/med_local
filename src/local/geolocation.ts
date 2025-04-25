@@ -53,7 +53,6 @@ export const getLatLonForAddresses = async (
 ): Promise<
   { chartNumber: number; latitude: number | null; longitude: number | null }[]
 > => {
-  console.log("addresses " + addresses);
   const results = [];
   const total = addresses.length;
 
