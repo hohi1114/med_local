@@ -55,8 +55,8 @@ export default function DashboardGrowthStats({
   costRank?: number;
 }) {
   const { lastedUpdatedDate } = userStore();
-  const ageMessage = data.top_age_growth
-    ? getGrowthAgeMessage(data.top_age_growth)
+  const ageMessage = data?.top_age_growth
+    ? getGrowthAgeMessage(data?.top_age_growth)
     : null;
 
   if (!data?.data_available || !data) {

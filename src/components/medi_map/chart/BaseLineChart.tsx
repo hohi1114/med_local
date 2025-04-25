@@ -85,6 +85,7 @@ const BaseLineChart = ({
 
   const config = {
     data: lineData,
+    seriesField: "type",
     xField,
     yField,
     smooth: true,

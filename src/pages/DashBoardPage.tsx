@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import ContentHeader from "../components/common/layout/ContentHeader";
 import BaseButton from "../components/common/button/BaseButton";
@@ -6,7 +6,6 @@ import DurationDatePicker from "../components/common/datepicker/DurationDatePick
 import useDashBoard from "../hooks/useDashBoard";
 import BarChart from "../components/medi_map/chart/BarChart";
 import dayjs from "dayjs";
-import BaseLineChart from "../components/medi_map/chart/BaseLineChart";
 import DashboardStats from "../components/dashboard/DashboardStats";
 import Loading from "../components/common/Loading";
 import Error from "../components/common/Error";
@@ -26,9 +25,20 @@ import { DashboardSteps } from "../components/tutorial/TutorialData";
 import { RangeDateMapKey } from "../types/dashboard";
 import DashboardGrowthStats from "../components/dashboard/DashboardGrowthStats";
 import useDashboardStore from "../store/useDashboardStore";
+import { Radio } from "antd";
+import { RadioChangeEvent } from "antd/lib";
+import BaseMultipleLineChart from "../components/medi_map/chart/BaseMultipleLineChart";
 
 const LOADING_CONTENT = "데이터를 불러오는 중입니다.";
-
+enum ChartType {
+  REVENUE = 1,
+  PATIENT_COUNT = 2
+}
+interface ChartDataPoint {
+  date: string;
+  value: number;
+  category: string;
+}
 export default function DashBoardPage() {
   const {
     dateRange,
@@ -45,6 +55,7 @@ export default function DashBoardPage() {
   } = useDashBoard();
 
   const { selectedDateRange, setSelectedDateRange } = useDashboardStore();
+  const [chartType, setChartType] = useState<ChartType>(ChartType.REVENUE);
   const {
     fetchingUserLoading,
     lastedUpdatedDate,
@@ -76,16 +87,71 @@ export default function DashBoardPage() {
 
   const formatBarData = () => {
     if (!dashboardInfoData) return [];
+
     return Object.entries(dashboardInfoData.patient_count_by_age_group).map(
       ([age, value]) => ({ age, value })
     );
   };
 
-  const formatChartData = () => {
+  const formatBarData2 = () => {
     if (!dashboardInfoData) return [];
-    return Object.entries(dashboardInfoData?.cost_by_date).map(
-      ([date, value]) => ({ date, 매출액: value })
+
+    return Object.entries(dashboardInfoData.total_cost_by_day_of_week).map(
+      ([day, value]) => ({ day, value })
     );
+  };
+
+  const formatChartData = (chartType: ChartType): ChartDataPoint[] => {
+    if (!dashboardInfo) return [];
+
+    const dataConfig =
+      chartType === ChartType.REVENUE
+        ? [
+            { source: "cost_by_date", category: "전체 매출액" },
+            { source: "sinhwan_cost_by_date", category: "신규환자 별 매출액" },
+            {
+              source: "chojin_rejin_cost_by_date",
+              category: "재방문 환자 별 매출액"
+            }
+          ]
+        : [
+            { source: "visit_count_by_date", category: "전체 환자 수" },
+            { source: "sinhwan_visit_count_by_date", category: "신규환자 수" },
+            {
+              source: "chojin_rejin_visit_count_by_date",
+              category: "재방문 환자 수"
+            }
+          ];
+
+    const result: ChartDataPoint[] = [];
+    dataConfig.forEach((config) => {
+      const sourceData = dashboardInfo[config.source];
+
+      Object.entries(sourceData).forEach(([date, value]) => {
+        result.push({
+          date,
+          value,
+          category: config.category
+        });
+      });
+    });
+
+    return result;
+  };
+
+  const formatMonthlyData = (rawData) => {
+    const result = [];
+    for (let i = 0; i < rawData.length; i++) {
+      result.push({
+        month: rawData.month
+      });
+    }
+  };
+
+  const formatYAxisLabel = (value: number): string => {
+    return chartType === ChartType.REVENUE
+      ? `${value / 1000}K`
+      : value.toString() + "명";
   };
 
   useEffect(() => {
@@ -110,11 +176,49 @@ export default function DashBoardPage() {
     };
   }, []);
 
+  const handleChartRadioChange = (e: RadioChangeEvent) => {
+    setChartType(e.target.value);
+  };
+
   if (isError) {
     return (
       <Error status={error?.status ?? "Unknown"} message={error?.message} />
     );
   }
+
+  const formatWeeklyData = () => {
+    const result = [];
+    if (!dashboardInfo) return [];
+    console.log(dashboardInfo);
+
+    const daysOfWeek = [
+      "월요일",
+      "화요일",
+      "수요일",
+      "목요일",
+      "금요일",
+      "토요일",
+      "일요일"
+    ];
+
+    daysOfWeek.forEach((day) => {
+      result.push({
+        day,
+        type: "신규 환자 수",
+        value: dashboardInfo.sinhwan_visit_count_by_day_of_week[day] || 0
+      });
+
+      result.push({
+        day,
+        type: "재방문 환자 수",
+        value: dashboardInfo.chojin_rejin_visit_count_by_day_of_week[day] || 0
+      });
+    });
+    console.log(result);
+    return result;
+  };
+
+  formatWeeklyData();
 
   const renderGuideDescription = (step: number) => {
     if (startTutorial && tutorialStep === step) {
@@ -240,15 +344,31 @@ export default function DashBoardPage() {
               }
             >
               <Card>
-                <ChartTitle>일자별 매출 통계</ChartTitle>
-                <BaseLineChart
-                  data={dashboardInfoData.cost_by_date}
+                <div style={{ display: "flex", gap: "3rem" }}>
+                  <ChartTitle>일자별 매출 통계</ChartTitle>
+                  <Radio.Group
+                    onChange={handleChartRadioChange}
+                    value={chartType}
+                    options={[
+                      {
+                        value: 1,
+                        label: <div style={{ color: "#52555A" }}>매출</div>
+                      },
+                      {
+                        value: 2,
+                        label: <div style={{ color: "#52555A" }}>환자 수</div>
+                      }
+                    ]}
+                  />
+                </div>
+
+                <BaseMultipleLineChart
+                  data={formatChartData(chartType)}
                   xField="date"
-                  yField="매출액"
-                  labelFormatterY={(v) => `${v / 1000}K`}
-                  formatData={formatChartData}
-                  height={350}
-                  limitDateXLength={30}
+                  yField="value"
+                  colorField="category"
+                  labelFormatterY={formatYAxisLabel}
+                  height={500}
                 />
               </Card>
             </CardGrid>
@@ -265,6 +385,7 @@ export default function DashBoardPage() {
             >
               <Card>
                 <ChartTitle>최근 3개월 월평균 성장률</ChartTitle>
+
                 <DashboardGrowthStats
                   data={dashboardInfoData?.average_growths}
                   isDashboard
@@ -278,6 +399,48 @@ export default function DashBoardPage() {
                   yField="value"
                   formatData={formatBarData}
                   height={380}
+                />
+              </Card>
+            </CardGrid>
+          </SectionContainer>
+          <SectionContainer>
+            <CardGrid
+              ref={tutorialRefs.tutorialRef4}
+              className={
+                tutorialStep === 3 && startTutorial ? "tutorial-highlight" : ""
+              }
+            >
+              <Card>
+                <ChartTitle>요일별 매출 통계</ChartTitle>
+
+                <BarChart
+                  data={dashboardInfoData.total_cost_by_day_of_week}
+                  xField="day"
+                  yField="value"
+                  formatData={formatBarData2}
+                  height={380}
+                  colors={["#EF7E32"]}
+                />
+              </Card>
+              <Card>
+                <ChartTitle>요일별 신규/재방문 환자 비율</ChartTitle>
+                <BarChart
+                  data={formatWeeklyData()}
+                  xField="day"
+                  yField="value"
+                  height={380}
+                  isGrouped={true}
+                  seriesField="type"
+                  legend={true}
+                  colors={[
+                    "#0077C0",
+                    "#96E2D6",
+                    "#000000",
+                    "#92BFFF",
+                    "#AEC7ED",
+                    "#94E9B8",
+                    "#E4A9FF"
+                  ]}
                 />
               </Card>
             </CardGrid>

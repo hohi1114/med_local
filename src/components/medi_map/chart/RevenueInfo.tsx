@@ -9,8 +9,9 @@ import {
 } from "../StatisticsDrawer";
 import StatsBox, { STATSTYPE } from "../StatsBox";
 import BarChart from "./BarChart";
-import BaseLineChart from "./BaseLineChart";
+
 import mapStore from "../../../store/mapStore";
+import BaseMultipleLineChart from "./BaseMultipleLineChart";
 
 interface RegionStatisticsProps {
   statsData: { [key: number]: { data: string; diffRate: number | null } };
@@ -62,7 +63,7 @@ const RevenuInfo: React.FC<RegionStatisticsProps> = ({
       <GraphContainer>
         <GrapWrapper>
           <ChartTitleStyle>매출액 변화 추이</ChartTitleStyle>
-          <BaseLineChart
+          <BaseMultipleLineChart
             height={330}
             width={390}
             data={revenueTrend}
@@ -85,7 +86,7 @@ const RevenuInfo: React.FC<RegionStatisticsProps> = ({
         </GrapWrapper>
         <GrapWrapper>
           <ChartTitleStyle>1인당 평균 매출액</ChartTitleStyle>
-          <BaseLineChart
+          <BaseMultipleLineChart
             data={dailyRevenue}
             xField="date"
             yField="매출액"

@@ -12,6 +12,7 @@ import {
 } from "./StatisticsDrawer";
 import { RegionData } from "../../types/naver-maps";
 import BaseToggle from "../common/toggle/BaseToggle";
+import BaseMultipleLineChart from "./chart/BaseMultipleLineChart";
 
 const STATS_BOXES = [
   { id: 1, title: "월 평균 소득" },
@@ -138,7 +139,7 @@ const RegionInfo = ({ data, region }: RegionInfoProps) => {
       {renderGraphWrapper(
         "시간대별/요일 유동인구 수",
         footTrafficToggle === "시간대" ? (
-          <BaseLineChart
+          <BaseMultipleLineChart
             width={390}
             height={280}
             data={data.population_by_time}
