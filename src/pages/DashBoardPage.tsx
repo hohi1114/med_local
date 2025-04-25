@@ -419,7 +419,7 @@ export default function DashBoardPage() {
                   yField="value"
                   formatData={formatBarData2}
                   height={380}
-                  colors={["#EF7E32"]}
+                  colors={["#96E2D6"]}
                 />
               </Card>
               <Card>
@@ -432,7 +432,7 @@ export default function DashBoardPage() {
                   isGrouped={true}
                   seriesField="type"
                   legend={true}
-                  colors={["#92BFFF", "#96E2D6"]}
+                  colors={["#FFB6C1", "#92BFFF"]}
                 />
               </Card>
             </CardGrid>
