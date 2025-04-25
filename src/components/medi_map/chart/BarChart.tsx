@@ -66,7 +66,7 @@ const BarChart = <T,>({
     legend: legend,
     style: {
       radius: 8,
-      maxWidth: 40
+      maxWidth: 60
     },
     axis: {
       x: {
