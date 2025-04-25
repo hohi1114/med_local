@@ -1,5 +1,5 @@
 import { getDataFromRegionDB } from "../../../store/indexded_db/RegionDB";
-import { AverageGrowth } from "../../../types/dashboard";
+import { AverageGrowth, TopAgeGrowth } from "../../../types/dashboard";
 import { RegionData } from "../../../types/naver-maps";
 
 // ✅ `smallPolygon`을 포함하는 `dong` 찾기
@@ -131,25 +131,54 @@ const strategyMap: Record<string, { increase: string; decrease: string }> = {
 };
 
 export const getGrowthAgeMessage = (
-  age: number,
-  change_percent: number
+  ageGroup: TopAgeGrowth[]
 ): {
   age: string;
   summaryMessage: string;
   strategyMessage: string;
-} => {
-  const range = getAgeRange(age);
-  const summaryMessage = getSummaryMessage(age, change_percent);
+  change_percent: number;
+}[] => {
+  const seen: Record<string, boolean> = {};
+  let result: {
+    age: string;
+    summaryMessage: string;
+    strategyMessage: string;
+    change_percent: number;
+  }[] = [];
 
-  let strategyMessage = "";
-  if (change_percent >= 10) strategyMessage = strategyMap[range].increase;
-  else if (change_percent <= -10) strategyMessage = strategyMap[range].decrease;
+  ageGroup.forEach((ageGroup) => {
+    if (ageGroup.change_percent === 0) return;
 
-  return {
-    age: `${age}대`,
-    summaryMessage,
-    strategyMessage
-  };
+    const range = getAgeRange(ageGroup.age);
+    const summaryMessage = getSummaryMessage(
+      ageGroup.age,
+      ageGroup.change_percent
+    );
+
+    let strategyMessage = "";
+    if (ageGroup.change_percent >= 10) {
+      strategyMessage = strategyMap[range].increase;
+    } else if (ageGroup.change_percent <= -10) {
+      strategyMessage = strategyMap[range].decrease;
+    }
+
+    if (strategyMessage) {
+      if (seen[strategyMessage]) {
+        strategyMessage = ""; // 중복이면 비움
+      } else {
+        seen[strategyMessage] = true; // 처음이면 기록
+      }
+    }
+
+    result.push({
+      age: `${ageGroup.age}대`,
+      change_percent: ageGroup.change_percent,
+      summaryMessage,
+      strategyMessage
+    });
+  });
+
+  return result;
 };
 
 //top 20개 지역에대해 진료비, 신환, 재방문 환자수 감소 한개라도 -20% 이라면 Red 표시
