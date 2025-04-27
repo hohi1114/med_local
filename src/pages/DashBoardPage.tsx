@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import styled from "styled-components";
 import ContentHeader from "../components/common/layout/ContentHeader";
 import BaseButton from "../components/common/button/BaseButton";
@@ -26,20 +26,15 @@ import { RangeDateMapKey } from "../types/dashboard";
 import DashboardGrowthStats from "../components/dashboard/DashboardGrowthStats";
 import useDashboardStore from "../store/useDashboardStore";
 import { Radio } from "antd";
-import { RadioChangeEvent } from "antd/lib";
 import BaseMultipleLineChart from "../components/medi_map/chart/BaseMultipleLineChart";
+import { useDashBoardChart } from "../hooks/useDashBoardChart";
 
 const LOADING_CONTENT = "데이터를 불러오는 중입니다.";
-enum ChartType {
-  REVENUE = 1,
-  PATIENT_COUNT = 2
-}
-interface ChartDataPoint {
-  date: string;
-  value: number;
-  category: string;
-}
+
 export default function DashBoardPage() {
+  const navigate = useNavigate();
+  const { selectedDateRange, setSelectedDateRange } = useDashboardStore();
+
   const {
     dateRange,
     handleDateFilterButton,
@@ -54,8 +49,6 @@ export default function DashBoardPage() {
     latestDateRangeRef
   } = useDashBoard();
 
-  const { selectedDateRange, setSelectedDateRange } = useDashboardStore();
-  const [chartType, setChartType] = useState<ChartType>(ChartType.REVENUE);
   const {
     fetchingUserLoading,
     lastedUpdatedDate,
@@ -64,8 +57,21 @@ export default function DashBoardPage() {
     needFreeTrial
   } = userStore();
 
-  const navigate = useNavigate();
+  const dashboardInfoData = startTutorial
+    ? mockDashboard
+    : dashboardInfo ?? mockDashboard;
 
+  const {
+    chartType,
+    formatPatientCountBarData,
+    formatTotalCostBarData,
+    formatLineChartData,
+    formatYAxisLabelForLineChart,
+    formatWeeklyDataForBarChart,
+    handleChartRadioChange
+  } = useDashBoardChart(dashboardInfoData);
+
+  //Tutorial
   const tutorialRefs = {
     tutorialRef1: useRef(null),
     tutorialRef2: useRef(null),
@@ -81,85 +87,12 @@ export default function DashBoardPage() {
     onComplate: () => navigate("/compare-avenue")
   });
 
-  const dashboardInfoData = startTutorial
-    ? mockDashboard
-    : dashboardInfo ?? mockDashboard;
-
-  const formatBarData = () => {
-    if (!dashboardInfoData) return [];
-
-    return Object.entries(dashboardInfoData.patient_count_by_age_group).map(
-      ([age, value]) => ({ age, value })
-    );
-  };
-
-  const formatBarData2 = () => {
-    if (!dashboardInfoData) return [];
-
-    return Object.entries(dashboardInfoData.total_cost_by_day_of_week).map(
-      ([day, value]) => ({ day, value })
-    );
-  };
-
-  const formatChartData = (chartType: ChartType): ChartDataPoint[] => {
-    if (!dashboardInfo) return [];
-
-    const dataConfig =
-      chartType === ChartType.REVENUE
-        ? [
-            { source: "cost_by_date", category: "전체 매출액" },
-            { source: "sinhwan_cost_by_date", category: "신규환자 별 매출액" },
-            {
-              source: "chojin_rejin_cost_by_date",
-              category: "재방문 환자 별 매출액"
-            }
-          ]
-        : [
-            { source: "visit_count_by_date", category: "전체 환자 수" },
-            { source: "sinhwan_visit_count_by_date", category: "신규환자 수" },
-            {
-              source: "chojin_rejin_visit_count_by_date",
-              category: "재방문 환자 수"
-            }
-          ];
-
-    const result: ChartDataPoint[] = [];
-    dataConfig.forEach((config) => {
-      const sourceData = dashboardInfo[config.source];
-
-      Object.entries(sourceData).forEach(([date, value]) => {
-        result.push({
-          date,
-          value,
-          category: config.category
-        });
-      });
-    });
-
-    return result;
-  };
-
-  const formatMonthlyData = (rawData) => {
-    const result = [];
-    for (let i = 0; i < rawData.length; i++) {
-      result.push({
-        month: rawData.month
-      });
-    }
-  };
-
-  const formatYAxisLabel = (value: number): string => {
-    return chartType === ChartType.REVENUE
-      ? `${value / 1000}K`
-      : value.toString() + "명";
-  };
-
   useEffect(() => {
-    //만약 사용자가 처음 대시보드에 접근했을때
+    //처음 접근인가
     if (selectedDateRange) {
-      //사용자가 업데이트한 날짜가 있다면
       handleDateRangeChange(selectedDateRange);
     } else {
+      //데이터를 업데이트 한 적이 있는가
       if (lastedUpdatedDate && lastedUpdatedDate.length > 0) {
         const start = dayjs(lastedUpdatedDate)
           .subtract(1, "month")
@@ -170,56 +103,14 @@ export default function DashBoardPage() {
     }
   }, [lastedUpdatedDate]);
 
+  //다른 페이지 이동시 -> 날짜 저장
   useEffect(() => {
     return () => {
       setSelectedDateRange(latestDateRangeRef.current);
     };
   }, []);
 
-  const handleChartRadioChange = (e: RadioChangeEvent) => {
-    setChartType(e.target.value);
-  };
-
-  if (isError) {
-    return (
-      <Error status={error?.status ?? "Unknown"} message={error?.message} />
-    );
-  }
-
-  const formatWeeklyData = () => {
-    const result = [];
-    if (!dashboardInfo) return [];
-    console.log(dashboardInfo);
-
-    const daysOfWeek = [
-      "월요일",
-      "화요일",
-      "수요일",
-      "목요일",
-      "금요일",
-      "토요일",
-      "일요일"
-    ];
-
-    daysOfWeek.forEach((day) => {
-      result.push({
-        day,
-        type: "신규 환자 수",
-        value: dashboardInfo.sinhwan_visit_count_by_day_of_week[day] || 0
-      });
-
-      result.push({
-        day,
-        type: "재방문 환자 수",
-        value: dashboardInfo.chojin_rejin_visit_count_by_day_of_week[day] || 0
-      });
-    });
-    console.log(result);
-    return result;
-  };
-
-  formatWeeklyData();
-
+  //Tutorial
   const renderGuideDescription = (step: number) => {
     if (startTutorial && tutorialStep === step) {
       return (
@@ -233,7 +124,15 @@ export default function DashBoardPage() {
     return null;
   };
 
+  if (isError) {
+    return (
+      <Error status={error?.status ?? "Unknown"} message={error?.message} />
+    );
+  }
+
+  //이미 Tutorial와 무관하고 DashboardInfo가 로드중일때
   if (!startTutorial && hasGuided && !dashboardInfo) return <Loading />;
+
   return (
     <>
       {(startTutorial || !hasGuided) && <FullDimOverlay />}
@@ -363,11 +262,11 @@ export default function DashBoardPage() {
                 </div>
 
                 <BaseMultipleLineChart
-                  data={formatChartData(chartType)}
+                  data={formatLineChartData(chartType)}
                   xField="date"
                   yField="value"
                   colorField="category"
-                  labelFormatterY={formatYAxisLabel}
+                  labelFormatterY={formatYAxisLabelForLineChart}
                   height={500}
                 />
               </Card>
@@ -394,10 +293,9 @@ export default function DashBoardPage() {
               <Card>
                 <ChartTitle>연령 별 환자 분포</ChartTitle>
                 <BarChart
-                  data={dashboardInfoData.patient_count_by_age_group}
                   xField="age"
                   yField="value"
-                  formatData={formatBarData}
+                  data={formatPatientCountBarData()}
                   height={380}
                 />
               </Card>
@@ -412,12 +310,10 @@ export default function DashBoardPage() {
             >
               <Card>
                 <ChartTitle>요일별 매출 통계</ChartTitle>
-
                 <BarChart
-                  data={dashboardInfoData.total_cost_by_day_of_week}
                   xField="day"
                   yField="value"
-                  formatData={formatBarData2}
+                  data={formatTotalCostBarData()}
                   height={380}
                   colors={["#96E2D6"]}
                 />
@@ -425,7 +321,7 @@ export default function DashBoardPage() {
               <Card>
                 <ChartTitle>요일별 신규/재방문 환자 비율</ChartTitle>
                 <BarChart
-                  data={formatWeeklyData()}
+                  data={formatWeeklyDataForBarChart()}
                   xField="day"
                   yField="value"
                   height={380}

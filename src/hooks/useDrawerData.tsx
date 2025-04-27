@@ -348,10 +348,11 @@ export const useDrawerData = (twoType: boolean) => {
   };
 
   const barFormatData = (data: RegionPrivateData) => {
+    if (!data?.patient_count_by_age_group) return [];
     return Object.entries(data?.patient_count_by_age_group).map(
       ([age, value]) => ({
-        연령: age,
-        세: value
+        age,
+        value
       })
     );
   };

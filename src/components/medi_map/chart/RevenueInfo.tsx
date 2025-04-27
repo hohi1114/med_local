@@ -29,7 +29,6 @@ const RevenuInfo: React.FC<RegionStatisticsProps> = ({
   statsData,
   revenueTrend,
   dailyRevenue,
-  ageGroups,
   formatDataForRevenueTrend,
   formatDataForAverageRevenue,
   barFormatData,
@@ -78,10 +77,9 @@ const RevenuInfo: React.FC<RegionStatisticsProps> = ({
           <BarChart
             height={280}
             width={390}
-            data={ageGroups}
-            xField="연령"
-            yField="세"
-            formatData={barFormatData}
+            xField="age"
+            yField="value"
+            data={barFormatData()}
           />
         </GrapWrapper>
         <GrapWrapper>

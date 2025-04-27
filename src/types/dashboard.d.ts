@@ -64,7 +64,6 @@ export interface DashBoard {
   sinhwan_visit_count_by_day_of_week: AverageCostPerVisitByDate;
   chojin_rejin_visit_count_by_day_of_week: AverageCostPerVisitByDate;
   diff_rates: DiffRates;
-  topRegions: TopRegion;
-  top_age_growth: AverageGrowth;
+  average_growths: AverageGrowth;
 }
 export type RangeDateMapKey = "1주일" | "1개월" | "3개월" | "1년";

@@ -71,7 +71,7 @@ const BaseMultipleLineChart = ({
 
     // 시리즈 필드가 없으면 전체를 하나의 그룹으로 처리
     const groupedData: Record<string, LineDataItem[]> = {};
-
+    console.log(data);
     if (seriesField) {
       data.forEach((item) => {
         const key = item[seriesField] as string;

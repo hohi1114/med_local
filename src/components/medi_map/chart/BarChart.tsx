@@ -46,15 +46,8 @@ const BarChart = <T,>({
   const [barData, setBarData] = useState<ChartDataItem[]>([]);
 
   useEffect(() => {
-    if (!formatData) {
-      setBarData(data);
-      return;
-    }
-    if (data) {
-      const formattedData = formatData(data);
-      setBarData(formattedData);
-    }
-  }, [data, formatData]);
+    setBarData(data as ChartDataItem[]);
+  }, [data]);
 
   // 기본 설정
   const baseConfig = {
@@ -90,7 +83,6 @@ const BarChart = <T,>({
   // 그룹화된 바 차트 설정
   const groupedBarConfig = {
     ...baseConfig,
-    // colorField: xField,
     yField: Array.isArray(yField) ? yField[0] : yField,
     seriesField: seriesField || "type",
     isGroup: true,

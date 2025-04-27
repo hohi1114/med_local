@@ -52,12 +52,14 @@ const RegionInfo = ({ data, region }: RegionInfoProps) => {
     { type: "여성", value: data.female_avg_age }
   ];
 
-  const ageGroupData = Object.entries(data.age_group_population || {}).map(
-    ([age, value]) => ({
-      연령: age,
-      세: value
-    })
-  );
+  const ageGroupData = () => {
+    return Object.entries(data.age_group_population || {}).map(
+      ([age, value]) => ({
+        연령: age,
+        세: value
+      })
+    );
+  };
 
   const timePopulationData = data.population_by_time
     ? Object.entries(data.population_by_time || {}).map(([key, value]) => ({
@@ -66,12 +68,14 @@ const RegionInfo = ({ data, region }: RegionInfoProps) => {
       }))
     : [];
 
-  const dayPopulationData = data.population_by_day
-    ? data.population_by_day.map((item) => ({
-        day: item.day,
-        value: item.value
-      }))
-    : [];
+  const dayPopulationData = () => {
+    return data.population_by_day
+      ? data.population_by_day.map((item) => ({
+          day: item.day,
+          value: item.value
+        }))
+      : [];
+  };
 
   const renderGraphWrapper = (title: string, chart: JSX.Element) => (
     <GraphContainer>
@@ -129,10 +133,9 @@ const RegionInfo = ({ data, region }: RegionInfoProps) => {
         <BarChart
           height={280}
           width={390}
-          data={data.age_group_population}
+          data={ageGroupData()}
           xField="연령"
           yField="세"
-          formatData={() => ageGroupData}
         />
       )}
 
@@ -152,10 +155,9 @@ const RegionInfo = ({ data, region }: RegionInfoProps) => {
           <BarChart
             width={400}
             height={280}
-            data={data.population_by_day}
+            data={dayPopulationData()}
             xField="day"
             yField="value"
-            formatData={() => dayPopulationData}
           />
         )
       )}
