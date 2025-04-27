@@ -65,11 +65,9 @@ const RevenuInfo: React.FC<RegionStatisticsProps> = ({
           <BaseMultipleLineChart
             height={330}
             width={390}
-            data={revenueTrend}
             xField="date"
             yField="매출액"
-            labelFormatterY={(v: number) => `${v / 1000}K`}
-            formatData={formatDataForRevenueTrend}
+            data={formatDataForRevenueTrend()}
           />
         </GrapWrapper>
         <GrapWrapper>
@@ -85,11 +83,9 @@ const RevenuInfo: React.FC<RegionStatisticsProps> = ({
         <GrapWrapper>
           <ChartTitleStyle>1인당 평균 매출액</ChartTitleStyle>
           <BaseMultipleLineChart
-            data={dailyRevenue}
             xField="date"
             yField="매출액"
-            labelFormatterY={(v: number) => `${v / 1000}K`}
-            formatData={formatDataForAverageRevenue}
+            data={formatDataForAverageRevenue()}
             height={350}
             width={390}
           />

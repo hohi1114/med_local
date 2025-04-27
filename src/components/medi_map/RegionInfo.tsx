@@ -2,7 +2,6 @@ import { JSX, useState } from "react";
 import BarChart from "./chart/BarChart";
 import SexHorizantalBar from "./chart/SexHorizantalBar";
 import SexPieChart from "./chart/SexPieChart";
-import BaseLineChart from "./chart/BaseLineChart";
 import StatsBox from "./StatsBox";
 import {
   ChartTitleStyle,
@@ -61,12 +60,14 @@ const RegionInfo = ({ data, region }: RegionInfoProps) => {
     );
   };
 
-  const timePopulationData = data.population_by_time
-    ? Object.entries(data.population_by_time || {}).map(([key, value]) => ({
-        time: `${key}시`,
-        "유동 인구 수": value // 올바른 문자열 키 사용
-      }))
-    : [];
+  const timePopulationData = () => {
+    return data.population_by_time
+      ? Object.entries(data.population_by_time || {}).map(([key, value]) => ({
+          time: `${key}시`,
+          "유동 인구 수": value // 올바른 문자열 키 사용
+        }))
+      : [];
+  };
 
   const dayPopulationData = () => {
     return data.population_by_day
@@ -145,11 +146,10 @@ const RegionInfo = ({ data, region }: RegionInfoProps) => {
           <BaseMultipleLineChart
             width={390}
             height={280}
-            data={data.population_by_time}
+            data={timePopulationData()}
             xField="time"
             yField="유동 인구 수"
             valueXSymbol={"명"}
-            formatData={() => timePopulationData}
           />
         ) : (
           <BarChart

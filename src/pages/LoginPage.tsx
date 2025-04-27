@@ -56,7 +56,7 @@ const LoginPage = () => {
     onError: (err: AxiosError) =>
       alert(
         (err.response?.data as { error?: string })?.error ||
-        "License activation failed"
+          "License activation failed"
       )
   });
 

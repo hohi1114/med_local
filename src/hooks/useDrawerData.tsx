@@ -332,6 +332,7 @@ export const useDrawerData = (twoType: boolean) => {
 
   // Format data for charts
   const formatDataForAverageRevenue = (data: RegionPrivateData) => {
+    if (!data?.average_cost_per_visit_by_date) return [];
     return Object.entries(data?.average_cost_per_visit_by_date).map(
       ([date, value]) => ({
         date,
@@ -341,6 +342,7 @@ export const useDrawerData = (twoType: boolean) => {
   };
 
   const formatDataForRevenueTrend = (data: RegionPrivateData) => {
+    if (!data?.cost_by_date) return [];
     return Object.entries(data?.cost_by_date).map(([date, value]) => ({
       date,
       매출액: value

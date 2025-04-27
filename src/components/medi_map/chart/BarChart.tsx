@@ -17,6 +17,7 @@ interface BarChartProps<T> {
   seriesField?: string;
   legend?: boolean;
   colors?: string[];
+  valueXSymbol?: string;
 }
 
 const BarChart = <T,>({
@@ -25,7 +26,7 @@ const BarChart = <T,>({
   yField,
   height,
   width,
-  formatData,
+  valueXSymbol,
   isGrouped = false,
   seriesField,
   legend = false,
@@ -65,6 +66,15 @@ const BarChart = <T,>({
       x: {
         labelFormatter: (v: string) => (xField === "age" ? `${v}세` : v)
       }
+    },
+    tooltip: {
+      items: [
+        {
+          channel: "y",
+          valueFormatter: (value: number) =>
+            Math.ceil(value).toLocaleString() + (valueXSymbol || "")
+        }
+      ]
     },
     scale: {
       color: {

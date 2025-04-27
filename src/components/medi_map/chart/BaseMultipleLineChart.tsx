@@ -42,7 +42,7 @@ const BaseMultipleLineChart = ({
   labelFormatterY,
   valueXSymbol = " ₩",
   formatData,
-  colorField = "category",
+  colorField,
   seriesField,
   preFormatted = false
 }: UnifiedLineChartProps) => {
@@ -57,7 +57,7 @@ const BaseMultipleLineChart = ({
 
   //단순이동평균
   const applySMAForData = (
-    data: LineDataItem[],
+    data: LineDataItem[] | Record<string, number>,
     valueField: string,
     options?: {
       seriesField?: string;
@@ -71,7 +71,7 @@ const BaseMultipleLineChart = ({
 
     // 시리즈 필드가 없으면 전체를 하나의 그룹으로 처리
     const groupedData: Record<string, LineDataItem[]> = {};
-    console.log(data);
+
     if (seriesField) {
       data.forEach((item) => {
         const key = item[seriesField] as string;
@@ -81,6 +81,7 @@ const BaseMultipleLineChart = ({
     } else {
       groupedData["__single__"] = data.map((d) => ({ ...d }));
     }
+
     const result: LineDataItem[] = [];
 
     Object.entries(groupedData).forEach(([key, group]) => {
@@ -120,22 +121,17 @@ const BaseMultipleLineChart = ({
       return;
     }
     //Multiple Line
-    if (preFormatted || Array.isArray(data)) {
-      const multiLineData = applySMAForData(data, "value", {
-        seriesField: "category"
+    if (colorField) {
+      const multiLineData = applySMAForData(data, yField, {
+        seriesField: colorField
       });
       setChartData(multiLineData);
       return;
-    }
-
-    const rawData = data as Record<string, number>;
-
-    if (formatData) {
+    } else {
       if (xField !== "time") {
-        const test = formatData(rawData);
-        setChartData(applySMAForData(test, yField));
+        setChartData(applySMAForData(data, yField));
       } else {
-        setChartData(formatData(rawData));
+        setChartData(data);
       }
     }
   }, [data, formatData, xField, yField, preFormatted]);

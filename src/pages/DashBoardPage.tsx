@@ -268,6 +268,7 @@ export default function DashBoardPage() {
                   colorField="category"
                   labelFormatterY={formatYAxisLabelForLineChart}
                   height={500}
+                  valueXSymbol=" ₩"
                 />
               </Card>
             </CardGrid>
@@ -316,6 +317,7 @@ export default function DashBoardPage() {
                   data={formatTotalCostBarData()}
                   height={380}
                   colors={["#96E2D6"]}
+                  valueXSymbol=" ₩"
                 />
               </Card>
               <Card>
