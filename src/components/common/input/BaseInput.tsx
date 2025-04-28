@@ -1,4 +1,4 @@
-import React, { forwardRef, InputHTMLAttributes } from "react";
+import { forwardRef, InputHTMLAttributes } from "react";
 import styled, { css } from "styled-components";
 import { FieldError } from "react-hook-form";
 

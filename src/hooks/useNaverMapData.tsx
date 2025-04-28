@@ -334,8 +334,7 @@ const useNaverMapData = (twoType: boolean) => {
 
   const getBoundAreas = (
     areas: RegionData[],
-    bounds: naver.maps.LatLngBounds,
-    patientLocations?: { lat: number; lng: number }[]
+    bounds: naver.maps.LatLngBounds
   ) => {
     const boundAreas = areas.filter((area) => {
       const polygonLatLngs = area.polygon.map(
@@ -343,17 +342,9 @@ const useNaverMapData = (twoType: boolean) => {
       );
       return polygonLatLngs.some((latlng) => bounds.hasLatLng(latlng));
     });
-    let boundPatientLocations: Point[] = [];
-
-    if (patientLocations) {
-      boundPatientLocations = patientLocations.filter((loc) =>
-        bounds.hasLatLng(new naver.maps.LatLng(loc.lat, loc.lng))
-      );
-    }
 
     return {
-      boundAreas,
-      boundPatientLocations
+      boundAreas
     };
   };
 
@@ -408,6 +399,7 @@ const useNaverMapData = (twoType: boolean) => {
 
     return clusters;
   };
+
   return {
     smallRegions: regionData.small,
     dongRegions: regionData.dong,
