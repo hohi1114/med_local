@@ -21,6 +21,7 @@ const ChangeIndicator = ({ value }: { value: number }) => {
         alt={isPositive ? "increase" : "decrease"}
       />
       <ChangeValue isPositive={isPositive}>{value}%</ChangeValue>
+      {isPositive ? "증가" : "감소"}
     </ChangeWrapper>
   );
 };
@@ -54,6 +55,9 @@ export default function DashboardGrowthStats({
   costRank?: number;
 }) {
   const { lastedUpdatedDate } = userStore();
+  const ageMessage = data?.top_age_growth
+    ? getGrowthAgeMessage(data?.top_age_growth)
+    : null;
 
   if (!data?.data_available || !data) {
     return <NoDataContainer>불러올 데이터가 없습니다.</NoDataContainer>;
@@ -61,7 +65,7 @@ export default function DashboardGrowthStats({
 
   const startDate = dayjs(lastedUpdatedDate)
     .subtract(3, "month")
-    .subtract(1, "day")
+    .subtract(2, "day")
     .format("YYYY.MM.DD");
   const endDate = dayjs(lastedUpdatedDate).format("YYYY.MM.DD");
 
@@ -113,17 +117,17 @@ export default function DashboardGrowthStats({
                 <ListItem>{getGrowthMessage(data)}</ListItem>
                 <StatText>
                   총 진료비는 평균적으로{" "}
-                  <ChangeIndicator value={data?.avg_growth_total_cost ?? 0} />
+                  <ChangeIndicator value={data?.avg_growth_total_cost ?? 0} />{" "}
                   했어요.
                 </StatText>
                 <StatText>
-                  신환 유입은{" "}
-                  <ChangeIndicator value={data?.avg_growth_sinhwan ?? 0} />
+                  신규 환자 유입은{" "}
+                  <ChangeIndicator value={data?.avg_growth_sinhwan ?? 0} />{" "}
                   했어요.
                 </StatText>
                 <StatText>
                   재방문 환자는{" "}
-                  <ChangeIndicator value={data?.avg_growth_revisit ?? 0} />
+                  <ChangeIndicator value={data?.avg_growth_revisit ?? 0} />{" "}
                   하였습니다.
                 </StatText>
               </div>
@@ -135,27 +139,25 @@ export default function DashboardGrowthStats({
           <StatComment>
             [ 변화율 TOP 2 연령대 ]
             <StatList2>
-              {data.top_age_growth.map((ageGroup) => {
-                if (ageGroup.change_percent === 0) return null;
-                const message = getGrowthAgeMessage(
-                  ageGroup.age,
-                  ageGroup.change_percent
-                );
-                return (
-                  <div key={ageGroup.age}>
-                    <StrongText alert="none">
-                      {message.strategyMessage}
-                    </StrongText>
-                    <StatText>
-                      <strong>
-                        {ageGroup.age === 0 ? "0~10" : ageGroup.age}대
-                      </strong>{" "}
-                      이며 <ChangeIndicator value={ageGroup.change_percent} />
-                      했어요.
-                    </StatText>
-                  </div>
-                );
-              })}
+              {ageMessage &&
+                ageMessage.length >= 1 &&
+                ageMessage.map((message) => {
+                  return (
+                    <>
+                      <StrongText alert="none">
+                        {message.strategyMessage}
+                      </StrongText>
+                      <StatText>
+                        <strong>
+                          {message.age === 0 ? "0~10" : message.age}
+                        </strong>{" "}
+                        비율이{" "}
+                        <ChangeIndicator value={message.change_percent} />{" "}
+                        했어요.
+                      </StatText>
+                    </>
+                  );
+                })}
             </StatList2>
           </StatComment>
         </GrowthCard>
@@ -189,19 +191,22 @@ export default function DashboardGrowthStats({
         </HeaderRow>
 
         <StatList>
-          {data.top_age_growth.map((ageGroup: TopAgeGrowth) => {
-            if (ageGroup.change_percent === 0) return null;
-            const message = getGrowthAgeMessage(
-              ageGroup.age,
-              ageGroup.change_percent
-            );
-            return (
-              <StatItem key={ageGroup.age}>
-                <StrongText alert="none">{message.strategyMessage}</StrongText>
-                <StatText>{message.summaryMessage}</StatText>
-              </StatItem>
-            );
-          })}
+          {ageMessage &&
+            ageMessage.length >= 1 &&
+            ageMessage.map((message) => {
+              return (
+                <>
+                  <StrongText alert="none">
+                    {message.strategyMessage}
+                  </StrongText>
+                  <StatText>
+                    <strong>{message.age === 0 ? "0~10" : message.age}</strong>{" "}
+                    비율이 <ChangeIndicator value={message.change_percent} />{" "}
+                    했어요.
+                  </StatText>
+                </>
+              );
+            })}
         </StatList>
       </CardContent>
     </Container>
@@ -272,7 +277,7 @@ const StatList = styled.div`
   margin-top: 1.2rem;
   display: flex;
   flex-direction: column;
-  gap: 1.2rem;
+  gap: 0.8rem;
 `;
 
 const StatList2 = styled.ul`
@@ -283,7 +288,7 @@ const StatList2 = styled.ul`
   color: ${(props) => props.theme.colors.black01};
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.5rem;
 
   div {
     display: flex;

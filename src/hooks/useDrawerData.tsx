@@ -202,7 +202,7 @@ export const useDrawerData = (twoType: boolean) => {
                 ).toFixed(3)
               : 0
           } %`,
-          diffRate: regionPrivate?.diff_rates?.total_patient_count
+          diffRate: regionPrivate?.diff_rates?.total_visit_count
         }
       });
     }
@@ -310,8 +310,8 @@ export const useDrawerData = (twoType: boolean) => {
               : 0
           } %`,
           diffRate: calculateDiff(
-            secondRegionPrivate?.total_patient_count,
-            firstRegionPrivate?.total_patient_count
+            secondRegionPrivate?.total_visit_count,
+            firstRegionPrivate?.total_visit_count
           )
         }
       };
@@ -332,6 +332,7 @@ export const useDrawerData = (twoType: boolean) => {
 
   // Format data for charts
   const formatDataForAverageRevenue = (data: RegionPrivateData) => {
+    if (!data?.average_cost_per_visit_by_date) return [];
     return Object.entries(data?.average_cost_per_visit_by_date).map(
       ([date, value]) => ({
         date,
@@ -341,6 +342,7 @@ export const useDrawerData = (twoType: boolean) => {
   };
 
   const formatDataForRevenueTrend = (data: RegionPrivateData) => {
+    if (!data?.cost_by_date) return [];
     return Object.entries(data?.cost_by_date).map(([date, value]) => ({
       date,
       매출액: value
@@ -348,10 +350,11 @@ export const useDrawerData = (twoType: boolean) => {
   };
 
   const barFormatData = (data: RegionPrivateData) => {
+    if (!data?.patient_count_by_age_group) return [];
     return Object.entries(data?.patient_count_by_age_group).map(
       ([age, value]) => ({
-        연령: age,
-        세: value
+        age,
+        value
       })
     );
   };

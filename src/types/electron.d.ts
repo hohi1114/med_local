@@ -16,10 +16,15 @@ declare global {
       parseDailyIncomeEgis: (fileBuffers: ArrayBuffer[]) => Promise<any>;
       parsePatientListEgis: (fileBuffers: ArrayBuffer[]) => Promise<any>;
 
+      //File processing -Orum
+      parseDaysFilesOrm: (fileBuffers: ArrayBuffer[]) => Promise<any>;
+      parsePlaceFilesOrm: (fileBuffers: ArrayBuffer[]) => Promise<any>;
+
       // Data merging
       mergeDataEuisarang: (visits: any[], patients: any[]) => Promise<any>;
       mergeDataDentWeb: (visits: any[], patients: any[]) => Promise<any>;
       mergeDataEgis: (dailyIncome: any[], patientList: any[]) => Promise<any>;
+      mergeDataOrm: (visits: any[], patients: any[]) => Promise<any>;
 
       // Final data processing
       processDataLocally: (

@@ -53,9 +53,17 @@ export interface DashBoard {
   average_cost_per_patient: number;
   cost_by_date: CostByDate;
   average_cost_per_visit_by_date: AverageCostPerVisitByDate;
+  sinhwan_cost_by_date: AverageCostPerVisitByDate;
+  chojin_rejin_cost_by_date: AverageCostPerVisitByDate;
+
   patient_count_by_age_group: PatientCountByAgeGroup;
+  visit_count_by_date: AverageCostPerVisitByDate;
+  sinhwan_visit_count_by_date: AverageCostPerVisitByDate;
+  chojin_rejin_visit_count_by_date: AverageCostPerVisitByDate;
+  total_cost_by_day_of_week: AverageCostPerVisitByDate;
+  sinhwan_visit_count_by_day_of_week: AverageCostPerVisitByDate;
+  chojin_rejin_visit_count_by_day_of_week: AverageCostPerVisitByDate;
   diff_rates: DiffRates;
-  topRegions: TopRegion;
-  top_age_growth: AverageGrowth;
+  average_growths: AverageGrowth;
 }
 export type RangeDateMapKey = "1주일" | "1개월" | "3개월" | "1년";

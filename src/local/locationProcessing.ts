@@ -1,11 +1,6 @@
-// src/services/dataProcessing.ts
-
 import { getLatLonForAddresses } from "./geolocation"; // Your geocoding function
 import { findMatchingRegion, parsePolygon } from "./geometry"; // Your region helpers
 import axios from "axios";
-import fs from "fs";
-import path from "path";
-import * as XLSX from "xlsx";
 
 // Types
 interface MergedData {

@@ -9,8 +9,9 @@ import {
 } from "../StatisticsDrawer";
 import StatsBox, { STATSTYPE } from "../StatsBox";
 import BarChart from "./BarChart";
-import BaseLineChart from "./BaseLineChart";
+
 import mapStore from "../../../store/mapStore";
+import BaseMultipleLineChart from "./BaseMultipleLineChart";
 
 interface RegionStatisticsProps {
   statsData: { [key: number]: { data: string; diffRate: number | null } };
@@ -28,7 +29,6 @@ const RevenuInfo: React.FC<RegionStatisticsProps> = ({
   statsData,
   revenueTrend,
   dailyRevenue,
-  ageGroups,
   formatDataForRevenueTrend,
   formatDataForAverageRevenue,
   barFormatData,
@@ -37,6 +37,7 @@ const RevenuInfo: React.FC<RegionStatisticsProps> = ({
   costRank
 }) => {
   const { isChangedDateRange } = mapStore();
+
   return (
     <>
       <GridWrapper>
@@ -61,14 +62,12 @@ const RevenuInfo: React.FC<RegionStatisticsProps> = ({
       <GraphContainer>
         <GrapWrapper>
           <ChartTitleStyle>매출액 변화 추이</ChartTitleStyle>
-          <BaseLineChart
+          <BaseMultipleLineChart
             height={330}
             width={390}
-            data={revenueTrend}
             xField="date"
             yField="매출액"
-            labelFormatterY={(v: number) => `${v / 1000}K`}
-            formatData={formatDataForRevenueTrend}
+            data={formatDataForRevenueTrend()}
           />
         </GrapWrapper>
         <GrapWrapper>
@@ -76,20 +75,17 @@ const RevenuInfo: React.FC<RegionStatisticsProps> = ({
           <BarChart
             height={280}
             width={390}
-            data={ageGroups}
-            xField="연령"
-            yField="세"
-            formatData={barFormatData}
+            xField="age"
+            yField="value"
+            data={barFormatData()}
           />
         </GrapWrapper>
         <GrapWrapper>
           <ChartTitleStyle>1인당 평균 매출액</ChartTitleStyle>
-          <BaseLineChart
-            data={dailyRevenue}
+          <BaseMultipleLineChart
             xField="date"
             yField="매출액"
-            labelFormatterY={(v: number) => `${v / 1000}K`}
-            formatData={formatDataForAverageRevenue}
+            data={formatDataForAverageRevenue()}
             height={350}
             width={390}
           />

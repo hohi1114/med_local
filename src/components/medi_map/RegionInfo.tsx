@@ -2,7 +2,6 @@ import { JSX, useState } from "react";
 import BarChart from "./chart/BarChart";
 import SexHorizantalBar from "./chart/SexHorizantalBar";
 import SexPieChart from "./chart/SexPieChart";
-import BaseLineChart from "./chart/BaseLineChart";
 import StatsBox from "./StatsBox";
 import {
   ChartTitleStyle,
@@ -12,6 +11,7 @@ import {
 } from "./StatisticsDrawer";
 import { RegionData } from "../../types/naver-maps";
 import BaseToggle from "../common/toggle/BaseToggle";
+import BaseMultipleLineChart from "./chart/BaseMultipleLineChart";
 
 const STATS_BOXES = [
   { id: 1, title: "월 평균 소득" },
@@ -51,26 +51,32 @@ const RegionInfo = ({ data, region }: RegionInfoProps) => {
     { type: "여성", value: data.female_avg_age }
   ];
 
-  const ageGroupData = Object.entries(data.age_group_population || {}).map(
-    ([age, value]) => ({
-      연령: age,
-      세: value
-    })
-  );
+  const ageGroupData = () => {
+    return Object.entries(data.age_group_population || {}).map(
+      ([age, value]) => ({
+        연령: age,
+        세: value
+      })
+    );
+  };
 
-  const timePopulationData = data.population_by_time
-    ? Object.entries(data.population_by_time || {}).map(([key, value]) => ({
-        time: `${key}시`,
-        "유동 인구 수": value // 올바른 문자열 키 사용
-      }))
-    : [];
+  const timePopulationData = () => {
+    return data.population_by_time
+      ? Object.entries(data.population_by_time || {}).map(([key, value]) => ({
+          time: `${key}시`,
+          "유동 인구 수": value // 올바른 문자열 키 사용
+        }))
+      : [];
+  };
 
-  const dayPopulationData = data.population_by_day
-    ? data.population_by_day.map((item) => ({
-        day: item.day,
-        value: item.value
-      }))
-    : [];
+  const dayPopulationData = () => {
+    return data.population_by_day
+      ? data.population_by_day.map((item) => ({
+          day: item.day,
+          value: item.value
+        }))
+      : [];
+  };
 
   const renderGraphWrapper = (title: string, chart: JSX.Element) => (
     <GraphContainer>
@@ -128,33 +134,30 @@ const RegionInfo = ({ data, region }: RegionInfoProps) => {
         <BarChart
           height={280}
           width={390}
-          data={data.age_group_population}
+          data={ageGroupData()}
           xField="연령"
           yField="세"
-          formatData={() => ageGroupData}
         />
       )}
 
       {renderGraphWrapper(
         "시간대별/요일 유동인구 수",
         footTrafficToggle === "시간대" ? (
-          <BaseLineChart
+          <BaseMultipleLineChart
             width={390}
             height={280}
-            data={data.population_by_time}
+            data={timePopulationData()}
             xField="time"
             yField="유동 인구 수"
             valueXSymbol={"명"}
-            formatData={() => timePopulationData}
           />
         ) : (
           <BarChart
             width={400}
             height={280}
-            data={data.population_by_day}
+            data={dayPopulationData()}
             xField="day"
             yField="value"
-            formatData={() => dayPopulationData}
           />
         )
       )}

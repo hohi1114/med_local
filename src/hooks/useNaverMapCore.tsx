@@ -8,6 +8,7 @@ import { PatientData } from "../utils/ExcelParser";
 import { RegionData, RegionLevel } from "../types/naver-maps";
 import userStore from "../store/userStore";
 import { needNotify } from "../components/medi_map/util/mapUtil";
+import { isPointInPolygon } from "../utils/geometry";
 
 export interface UseNaverMapCoreOptions {
   isComparison?: boolean;
@@ -60,7 +61,6 @@ export function useNaverMapCore({
     expandBounds,
     getBoundAreas,
     getPolygonColorOpacity,
-    groupPatientsByProximity,
     smallRegionEtc,
     dongRegionEtc,
     guRegionEtc,
@@ -68,7 +68,9 @@ export function useNaverMapCore({
     dongRegions,
     guRegions,
     isFetching,
-    patientLocations
+    patientLocations,
+    groupPatientsByProximity,
+    getAreaPatients
   } = useNaverMapData(isComparison);
 
   // Default highlight colors
@@ -149,11 +151,7 @@ export function useNaverMapCore({
     );
     const polygonsToRender = regionData.data;
 
-    let { boundAreas, boundPatientLocations } = getBoundAreas(
-      polygonsToRender,
-      mapBounds,
-      patientLocations.length > 0 ? patientLocations : undefined
-    );
+    let { boundAreas } = getBoundAreas(polygonsToRender, mapBounds);
 
     if (boundAreas.length === 0) {
       regionData = getRegionName(map.getZoom(), boundAreas);
@@ -191,11 +189,19 @@ export function useNaverMapCore({
         const fillColor = getPolygonFillColor
           ? getPolygonFillColor(area)
           : isComparison
-          ? (area?.total_costA ?? 0) === (area?.total_costB ?? 0)
-            ? "rgba(211, 212, 213, 0.3)"
-            : (area?.total_costA ?? 0) < (area?.total_costB ?? 0)
-            ? "rgba(120, 180, 230, 0.3)"
-            : "rgba(240, 180, 180, 0.3)"
+          ? (() => {
+              const a = area?.total_costA ?? 0;
+              const b = area?.total_costB ?? 0;
+              const diffRate = Math.abs(a - b) / (Math.max(a, b) || 1);
+
+              if (diffRate < 0.05) {
+                return "rgba(211, 212, 213, 0.3)";
+              } else if (a < b) {
+                return "rgba(120, 180, 230, 0.3)";
+              } else {
+                return "rgba(240, 180, 180, 0.3)";
+              }
+            })()
           : `${getPolygonColorOpacity(
               area.total_cost ?? 0,
               regionData.name as RegionLevel
@@ -241,14 +247,23 @@ export function useNaverMapCore({
           regionMarkers.push(marker);
         }
 
-        // Create patient markers for non-comparison mode at high zoom levels
-        // if (!isComparison && currentZoom >= 17) {
-        //   const groupPatients = groupPatientsByProximity(
-        //     boundPatientLocations,
-        //     300
-        //   );
-        //   createPatientGroupMarkers(groupPatients, patientGroupsMarkers);
-        // }
+        if (!isComparison && currentZoom > 17) {
+          const patientsInAreas = boundAreas.flatMap((area) => {
+            const { polygon } = area;
+
+            return patientLocations.filter((patient) =>
+              isPointInPolygon(patient.lat, patient.lng, polygon)
+            );
+          });
+
+          if (patientsInAreas.length > 0) {
+            const patientGroups = groupPatientsByProximity(
+              patientsInAreas,
+              300
+            );
+            createPatientGroupMarkers(patientGroups, patientGroupsMarkers);
+          }
+        }
       }
     });
 
@@ -447,20 +462,14 @@ export function useNaverMapCore({
       }
     });
   };
-
   const createMarkerCluster = (
     markers: naver.maps.Marker[],
     ref: React.RefObject<any>
   ) => {
     const cluster = new MarkerClustering({
       minClusterSize: 2,
-      maxZoom: 30,
-      minZoom: 0,
       map,
-      markers,
-      icon: {
-        content: `<div></div>`
-      }
+      markers
     });
 
     ref.current = cluster;
@@ -474,7 +483,7 @@ export function useNaverMapCore({
     alert?: "bad" | "good" | "none"
   ) => {
     const alertBadge =
-      alert && alert !== "none"
+      alert && alert !== "none" && region !== "small"
         ? `<div style="
               position: absolute;
               top: -0.4rem;

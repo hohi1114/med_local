@@ -236,7 +236,6 @@ export async function parsePatientListEgis(
       // Calculate age from resident registration number
       let age = 0;
       const idNumber = row[2] ? String(row[2]).trim() : "";
-      console.log(idNumber);
 
       if (idNumber && idNumber.length >= 8) {
         // Extract birth year (first two digits)

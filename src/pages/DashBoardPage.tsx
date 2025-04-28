@@ -6,7 +6,6 @@ import DurationDatePicker from "../components/common/datepicker/DurationDatePick
 import useDashBoard from "../hooks/useDashBoard";
 import BarChart from "../components/medi_map/chart/BarChart";
 import dayjs from "dayjs";
-import BaseLineChart from "../components/medi_map/chart/BaseLineChart";
 import DashboardStats from "../components/dashboard/DashboardStats";
 import Loading from "../components/common/Loading";
 import Error from "../components/common/Error";
@@ -26,10 +25,16 @@ import { DashboardSteps } from "../components/tutorial/TutorialData";
 import { RangeDateMapKey } from "../types/dashboard";
 import DashboardGrowthStats from "../components/dashboard/DashboardGrowthStats";
 import useDashboardStore from "../store/useDashboardStore";
+import { Radio } from "antd";
+import BaseMultipleLineChart from "../components/medi_map/chart/BaseMultipleLineChart";
+import { useDashBoardChart } from "../hooks/useDashBoardChart";
 
 const LOADING_CONTENT = "데이터를 불러오는 중입니다.";
 
 export default function DashBoardPage() {
+  const navigate = useNavigate();
+  const { selectedDateRange, setSelectedDateRange } = useDashboardStore();
+
   const {
     dateRange,
     handleDateFilterButton,
@@ -44,7 +49,6 @@ export default function DashBoardPage() {
     latestDateRangeRef
   } = useDashBoard();
 
-  const { selectedDateRange, setSelectedDateRange } = useDashboardStore();
   const {
     fetchingUserLoading,
     lastedUpdatedDate,
@@ -53,8 +57,21 @@ export default function DashBoardPage() {
     needFreeTrial
   } = userStore();
 
-  const navigate = useNavigate();
+  const dashboardInfoData = startTutorial
+    ? mockDashboard
+    : dashboardInfo ?? mockDashboard;
 
+  const {
+    chartType,
+    formatPatientCountBarData,
+    formatTotalCostBarData,
+    formatLineChartData,
+    formatYAxisLabelForLineChart,
+    formatWeeklyDataForBarChart,
+    handleChartRadioChange
+  } = useDashBoardChart(dashboardInfoData);
+
+  //Tutorial
   const tutorialRefs = {
     tutorialRef1: useRef(null),
     tutorialRef2: useRef(null),
@@ -70,30 +87,12 @@ export default function DashBoardPage() {
     onComplate: () => navigate("/compare-avenue")
   });
 
-  const dashboardInfoData = startTutorial
-    ? mockDashboard
-    : dashboardInfo ?? mockDashboard;
-
-  const formatBarData = () => {
-    if (!dashboardInfoData) return [];
-    return Object.entries(dashboardInfoData.patient_count_by_age_group).map(
-      ([age, value]) => ({ age, value })
-    );
-  };
-
-  const formatChartData = () => {
-    if (!dashboardInfoData) return [];
-    return Object.entries(dashboardInfoData?.cost_by_date).map(
-      ([date, value]) => ({ date, 매출액: value })
-    );
-  };
-
   useEffect(() => {
-    //만약 사용자가 처음 대시보드에 접근했을때
+    //처음 접근인가
     if (selectedDateRange) {
-      //사용자가 업데이트한 날짜가 있다면
       handleDateRangeChange(selectedDateRange);
     } else {
+      //데이터를 업데이트 한 적이 있는가
       if (lastedUpdatedDate && lastedUpdatedDate.length > 0) {
         const start = dayjs(lastedUpdatedDate)
           .subtract(1, "month")
@@ -104,18 +103,14 @@ export default function DashBoardPage() {
     }
   }, [lastedUpdatedDate]);
 
+  //다른 페이지 이동시 -> 날짜 저장
   useEffect(() => {
     return () => {
       setSelectedDateRange(latestDateRangeRef.current);
     };
   }, []);
 
-  if (isError) {
-    return (
-      <Error status={error?.status ?? "Unknown"} message={error?.message} />
-    );
-  }
-
+  //Tutorial
   const renderGuideDescription = (step: number) => {
     if (startTutorial && tutorialStep === step) {
       return (
@@ -129,7 +124,15 @@ export default function DashBoardPage() {
     return null;
   };
 
+  if (isError) {
+    return (
+      <Error status={error?.status ?? "Unknown"} message={error?.message} />
+    );
+  }
+
+  //이미 Tutorial와 무관하고 DashboardInfo가 로드중일때
   if (!startTutorial && hasGuided && !dashboardInfo) return <Loading />;
+
   return (
     <>
       {(startTutorial || !hasGuided) && <FullDimOverlay />}
@@ -240,15 +243,32 @@ export default function DashBoardPage() {
               }
             >
               <Card>
-                <ChartTitle>일자별 매출 통계</ChartTitle>
-                <BaseLineChart
-                  data={dashboardInfoData.cost_by_date}
+                <div style={{ display: "flex", gap: "3rem" }}>
+                  <ChartTitle>일자별 매출 통계</ChartTitle>
+                  <Radio.Group
+                    onChange={handleChartRadioChange}
+                    value={chartType}
+                    options={[
+                      {
+                        value: 1,
+                        label: <div style={{ color: "#52555A" }}>매출</div>
+                      },
+                      {
+                        value: 2,
+                        label: <div style={{ color: "#52555A" }}>환자 수</div>
+                      }
+                    ]}
+                  />
+                </div>
+
+                <BaseMultipleLineChart
+                  data={formatLineChartData(chartType)}
                   xField="date"
-                  yField="매출액"
-                  labelFormatterY={(v) => `${v / 1000}K`}
-                  formatData={formatChartData}
-                  height={350}
-                  limitDateXLength={30}
+                  yField="value"
+                  colorField="category"
+                  labelFormatterY={formatYAxisLabelForLineChart}
+                  height={500}
+                  valueXSymbol=" ₩"
                 />
               </Card>
             </CardGrid>
@@ -265,6 +285,7 @@ export default function DashBoardPage() {
             >
               <Card>
                 <ChartTitle>최근 3개월 월평균 성장률</ChartTitle>
+
                 <DashboardGrowthStats
                   data={dashboardInfoData?.average_growths}
                   isDashboard
@@ -273,11 +294,43 @@ export default function DashBoardPage() {
               <Card>
                 <ChartTitle>연령 별 환자 분포</ChartTitle>
                 <BarChart
-                  data={dashboardInfoData.patient_count_by_age_group}
                   xField="age"
                   yField="value"
-                  formatData={formatBarData}
+                  data={formatPatientCountBarData()}
                   height={380}
+                />
+              </Card>
+            </CardGrid>
+          </SectionContainer>
+          <SectionContainer>
+            <CardGrid
+              ref={tutorialRefs.tutorialRef4}
+              className={
+                tutorialStep === 3 && startTutorial ? "tutorial-highlight" : ""
+              }
+            >
+              <Card>
+                <ChartTitle>요일별 매출 통계</ChartTitle>
+                <BarChart
+                  xField="day"
+                  yField="value"
+                  data={formatTotalCostBarData()}
+                  height={380}
+                  colors={["#96E2D6"]}
+                  valueXSymbol=" ₩"
+                />
+              </Card>
+              <Card>
+                <ChartTitle>요일별 신규/재방문 환자 비율</ChartTitle>
+                <BarChart
+                  data={formatWeeklyDataForBarChart()}
+                  xField="day"
+                  yField="value"
+                  height={380}
+                  isGrouped={true}
+                  seriesField="type"
+                  legend={true}
+                  colors={["#FFB6C1", "#92BFFF"]}
                 />
               </Card>
             </CardGrid>
