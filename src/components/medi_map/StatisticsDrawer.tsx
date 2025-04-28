@@ -22,17 +22,10 @@ interface StatisticsDrawerProps {
   showTutorial: boolean;
 }
 const StatisticsDrawer = ({ showTutorial }: StatisticsDrawerProps) => {
-  const { region, isOpenDrawer, handleIsDrawerOpen } = mapStore();
-  const {
-    regionInfo,
-    statsData,
-    regionPrivate,
-    isPending,
-    areaName,
-    formatDataForAverageRevenue,
-    formatDataForRevenueTrend,
-    barFormatData
-  } = useDrawerData(false);
+  const { isAnalyzeMultiRegion, region, isOpenDrawer, handleIsDrawerOpen } =
+    mapStore();
+  const { regionInfo, statsData, regionPrivate, isPending, areaName } =
+    useDrawerData(false);
 
   const areaNamDate = showTutorial ? mockRegionInfo.name : areaName;
   const regionInfoData = showTutorial ? mockRegionInfo : regionInfo;
@@ -61,7 +54,15 @@ const StatisticsDrawer = ({ showTutorial }: StatisticsDrawerProps) => {
   }, [isOpenDrawer, toggleValue, showTutorial]);
 
   const renderContent = () => {
-    if (!regionInfo && !showTutorial) return null;
+    if (!regionInfo && !isAnalyzeMultiRegion && !showTutorial) return null;
+    if (isAnalyzeMultiRegion)
+      return (
+        <RevenuInfo
+          statsData={statsDataData}
+          costRank={regionInfoData?.cost_rank}
+          data={regionPrivateData}
+        />
+      );
     if (toggleValue === "지역")
       return <RegionInfo data={regionInfoData} region={region} />;
     if (toggleValue === "매출") {
@@ -69,19 +70,9 @@ const StatisticsDrawer = ({ showTutorial }: StatisticsDrawerProps) => {
         <Loading />
       ) : (
         <RevenuInfo
+          data={regionPrivateData}
           statsData={statsDataData}
-          costRank={regionInfoData.cost_rank}
-          avgGrowth={regionPrivateData?.growth_metrics}
-          revenueTrend={regionPrivateData?.cost_by_date}
-          dailyRevenue={regionPrivateData?.average_cost_per_visit_by_date}
-          ageGroups={regionPrivateData?.patient_count_by_age_group}
-          formatDataForRevenueTrend={() =>
-            formatDataForRevenueTrend(regionPrivateData)
-          }
-          formatDataForAverageRevenue={() =>
-            formatDataForAverageRevenue(regionPrivateData)
-          }
-          barFormatData={() => barFormatData(regionPrivateData)}
+          costRank={regionInfoData?.cost_rank}
         />
       );
     }
@@ -127,19 +118,9 @@ const StatisticsDrawer = ({ showTutorial }: StatisticsDrawerProps) => {
             <SectionTitle>매출 데이터</SectionTitle>
           </Tooltip>
           <RevenuInfo
-            costRank={regionInfoData.cost_rank}
+            data={regionPrivateData}
             statsData={statsDataData}
-            revenueTrend={regionPrivateData?.cost_by_date}
-            dailyRevenue={regionPrivateData?.average_cost_per_visit_by_date}
-            ageGroups={regionPrivateData?.patient_count_by_age_group}
-            avgGrowth={regionPrivateData?.growth_metrics}
-            formatDataForRevenueTrend={() =>
-              formatDataForRevenueTrend(regionPrivateData)
-            }
-            formatDataForAverageRevenue={() =>
-              formatDataForAverageRevenue(regionPrivateData)
-            }
-            barFormatData={() => barFormatData(regionPrivateData)}
+            costRank={regionInfoData.cost_rank}
           />
         </div>
       </div>
@@ -148,7 +129,7 @@ const StatisticsDrawer = ({ showTutorial }: StatisticsDrawerProps) => {
 
   return (
     <Drawer
-      width={toggleValue === "전체" ? "70rem" : "39rem"}
+      width={toggleValue === "전체" ? "100rem" : "50rem"}
       placement="right"
       onClose={() => handleIsDrawerOpen(false)}
       styles={{
@@ -165,16 +146,21 @@ const StatisticsDrawer = ({ showTutorial }: StatisticsDrawerProps) => {
       }}
       open={isOpenDrawer}
     >
-      <ToggleContainer>
-        <BaseToggle
-          options={TOGGLEOPTION}
-          selected={toggleValue}
-          onChange={(val) => setToggleValue(val)}
-        />
-      </ToggleContainer>
+      {/** Toggle - 지역 통계 종합 보기 아닐때만 */}
+      {!isAnalyzeMultiRegion && (
+        <ToggleContainer>
+          <BaseToggle
+            options={TOGGLEOPTION}
+            selected={toggleValue}
+            onChange={(val) => setToggleValue(val)}
+          />
+        </ToggleContainer>
+      )}
 
       <div style={{ padding: "0.8rem 0rem" }}>
-        <AddressTitleStyle>{areaNamDate}</AddressTitleStyle>
+        <AddressTitleStyle>
+          {isAnalyzeMultiRegion ? "선택 지역 통계 리포트" : areaNamDate}
+        </AddressTitleStyle>
       </div>
       {renderContent()}
     </Drawer>

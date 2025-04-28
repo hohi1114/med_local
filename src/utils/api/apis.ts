@@ -9,7 +9,8 @@ import {
   RegionPrivateParams,
   regionAnalysisParams,
   RegisterCardParams,
-  StartSubscriptionParams
+  StartSubscriptionParams,
+  MultiRegionPrivateParams
 } from "../../types/params";
 import {
   VisitData,
@@ -158,6 +159,19 @@ export const getRegionPrivateData = async (
     regionprivateParams
   );
 
+  return data;
+};
+
+export const postMultiRegionPrivateData = async (
+  multiRegionPrivateParams: MultiRegionPrivateParams
+) => {
+  console.log(multiRegionPrivateParams);
+  const data = await apiRequest(
+    "post",
+    "/fetch/multi_region_date_patient_info",
+    multiRegionPrivateParams
+  );
+  console.log(data);
   return data;
 };
 

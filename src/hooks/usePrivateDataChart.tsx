@@ -1,36 +1,37 @@
 import { useState } from "react";
 import { DashBoard } from "../types/dashboard";
 import { RadioChangeEvent } from "antd";
+import { RegionPrivateData } from "../types/naver-maps";
 
 enum ChartType {
   REVENUE = 1,
   PATIENT_COUNT = 2
 }
 
-export const useDashBoardChart = (dashboardInfo: DashBoard) => {
+export const usePrivateDataChart = (data: DashBoard | RegionPrivateData) => {
   const [chartType, setChartType] = useState<ChartType>(ChartType.REVENUE);
 
   //연령 별 환자 분포
   const formatPatientCountBarData = () => {
-    if (!dashboardInfo) return [];
+    if (!data) return [];
 
-    return Object.entries(dashboardInfo.patient_count_by_age_group).map(
+    return Object.entries(data.patient_count_by_age_group).map(
       ([age, value]) => ({ age, value })
     );
   };
 
   //요일별 매출 통계
   const formatTotalCostBarData = () => {
-    if (!dashboardInfo) return [];
+    if (!data) return [];
 
-    return Object.entries(dashboardInfo.total_cost_by_day_of_week).map(
+    return Object.entries(data.total_cost_by_day_of_week).map(
       ([day, value]) => ({ day, value })
     );
   };
 
   //일자별 매출 통계
   const formatLineChartData = (type: ChartType) => {
-    if (!dashboardInfo) return [];
+    if (!data) return [];
 
     const configs =
       type === ChartType.REVENUE
@@ -46,7 +47,7 @@ export const useDashBoardChart = (dashboardInfo: DashBoard) => {
           ];
 
     return configs.flatMap(({ key, label }) =>
-      Object.entries(dashboardInfo[key as keyof DashBoard] || {}).map(
+      Object.entries(data[key as keyof DashBoard] || {}).map(
         ([date, value]) => ({
           date,
           value,
@@ -65,7 +66,7 @@ export const useDashBoardChart = (dashboardInfo: DashBoard) => {
 
   //요일별 신규/재방문 환자 비율
   const formatWeeklyDataForBarChart = () => {
-    if (!dashboardInfo) return [];
+    if (!data) return [];
     const days = [
       "월요일",
       "화요일",
@@ -79,14 +80,34 @@ export const useDashBoardChart = (dashboardInfo: DashBoard) => {
       {
         day,
         type: "신규 환자 수",
-        value: dashboardInfo.sinhwan_visit_count_by_day_of_week[day] || 0
+        value: data.sinhwan_visit_count_by_day_of_week[day] || 0
       },
       {
         day,
         type: "재방문 환자 수",
-        value: dashboardInfo.chojin_rejin_visit_count_by_day_of_week[day] || 0
+        value: data.chojin_rejin_visit_count_by_day_of_week[day] || 0
       }
     ]);
+  };
+
+  //매출액 변화 추이
+  const formatDataForRevenueTrend = () => {
+    if (!data?.cost_by_date) return [];
+    return Object.entries(data?.cost_by_date).map(([date, value]) => ({
+      date,
+      매출액: value
+    }));
+  };
+
+  //1인당 평균 매출액
+  const formatDataForAverageRevenue = () => {
+    if (!data?.average_cost_per_visit_by_date) return [];
+    return Object.entries(data?.average_cost_per_visit_by_date).map(
+      ([date, value]) => ({
+        date,
+        매출액: value
+      })
+    );
   };
 
   const handleChartRadioChange = (e: RadioChangeEvent) => {
@@ -100,6 +121,8 @@ export const useDashBoardChart = (dashboardInfo: DashBoard) => {
     formatYAxisLabelForLineChart,
     formatWeeklyDataForBarChart,
     handleChartRadioChange,
+    formatDataForRevenueTrend,
+    formatDataForAverageRevenue,
     chartType
   };
 };

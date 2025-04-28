@@ -67,20 +67,16 @@ const BarChart = <T,>({
         labelFormatter: (v: string) => (xField === "age" ? `${v}세` : v)
       }
     },
-    tooltip: {
-      items: [
-        {
-          channel: "y",
-          valueFormatter: (value: number) =>
-            Math.ceil(value).toLocaleString() + (valueXSymbol || "")
-        }
-      ]
-    },
     scale: {
       color: {
         range: colors
       }
-    }
+    },
+    interactions: [
+      {
+        type: "element-active"
+      }
+    ]
   };
 
   // 일반 바 차트 설정

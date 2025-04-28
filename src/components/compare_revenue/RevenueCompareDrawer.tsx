@@ -27,9 +27,6 @@ const RevenueCompareDrawer = ({ showTutorial }: RevenueCompareDrawerProps) => {
     secondRegionPrivate,
     isPending,
     areaName,
-    formatDataForAverageRevenue,
-    formatDataForRevenueTrend,
-    barFormatData,
     comparisonStatsData
   } = useDrawerData(true);
 
@@ -88,18 +85,7 @@ const RevenueCompareDrawer = ({ showTutorial }: RevenueCompareDrawerProps) => {
           </div>
           <RevenuInfo
             statsData={comparisonStatsDataData?.first}
-            revenueTrend={firstRegionPrivateData?.cost_by_date}
-            dailyRevenue={
-              firstRegionPrivateData?.average_cost_per_visit_by_date
-            }
-            ageGroups={firstRegionPrivateData?.patient_count_by_age_group}
-            formatDataForRevenueTrend={() =>
-              formatDataForRevenueTrend(firstRegionPrivateData)
-            }
-            formatDataForAverageRevenue={() =>
-              formatDataForAverageRevenue(firstRegionPrivateData)
-            }
-            barFormatData={() => barFormatData(firstRegionPrivateData)}
+            data={firstRegionPrivateData}
           />
         </div>
         <div
@@ -137,18 +123,7 @@ const RevenueCompareDrawer = ({ showTutorial }: RevenueCompareDrawerProps) => {
           <RevenuInfo
             disabledCompare={true}
             statsData={comparisonStatsDataData?.second}
-            revenueTrend={secondRegionPrivateData?.cost_by_date}
-            dailyRevenue={
-              secondRegionPrivateData?.average_cost_per_visit_by_date
-            }
-            ageGroups={secondRegionPrivateData?.patient_count_by_age_group}
-            formatDataForRevenueTrend={() =>
-              formatDataForRevenueTrend(secondRegionPrivateData)
-            }
-            formatDataForAverageRevenue={() =>
-              formatDataForAverageRevenue(secondRegionPrivateData)
-            }
-            barFormatData={() => barFormatData(secondRegionPrivateData)}
+            data={secondRegionPrivateData}
           />
         </div>
       </div>
@@ -157,7 +132,7 @@ const RevenueCompareDrawer = ({ showTutorial }: RevenueCompareDrawerProps) => {
 
   return (
     <Drawer
-      width={"70rem"}
+      width={"100rem"}
       placement="right"
       onClose={() => handleIsDrawerOpen(false)}
       styles={{

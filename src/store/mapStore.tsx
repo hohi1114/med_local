@@ -20,6 +20,9 @@ interface IMapStore {
   loading: boolean;
   patients: { areaName: string; patients: PatientData[] }[];
   isChangedDateRange: boolean;
+  //지역 통계 종합 보기
+  isAnalyzeMultiRegion: boolean;
+  selectedMultiRegion: string[];
 
   setSelectedDateRange: (dateRange: DateRange) => void;
   setSelectedDateRangeForCompare1: (dateRange: DateRange) => void;
@@ -40,9 +43,17 @@ interface IMapStore {
   ) => void;
   clearMap: () => void;
   setIsChangedDateRange: (isChangedDateRange: boolean) => void;
+
+  //지역 통계 종합 보기
+  handleIsAnalyzeMultiRegion: () => void;
+  addSelectedMultiRegion: (selectedMultiRegion: string) => void;
+  removeSelectedMultiRegion: (selectedMultiRegion: string) => void;
+  initSelectedMultiRegion: () => void;
 }
 
 const mapStore = create<IMapStore>((set) => ({
+  isAnalyzeMultiRegion: false,
+  selectedMultiRegion: [],
   isChangedDateRange: false,
   selectedDateRange: null,
   selectedDateRangeForCompare1: null,
@@ -93,7 +104,27 @@ const mapStore = create<IMapStore>((set) => ({
       patients: []
     }),
   setIsChangedDateRange: (isChangedDateRange: boolean) =>
-    set({ isChangedDateRange })
+    set({ isChangedDateRange }),
+
+  handleIsAnalyzeMultiRegion() {
+    set((state) => ({ isAnalyzeMultiRegion: !state.isAnalyzeMultiRegion }));
+  },
+  addSelectedMultiRegion: (region) => {
+    set((state) => {
+      console.log(region);
+      return { selectedMultiRegion: [...state.selectedMultiRegion, region] };
+    });
+  },
+  removeSelectedMultiRegion: (region) => {
+    set((state) => {
+      return {
+        selectedMultiRegion: state.selectedMultiRegion.filter(
+          (item) => item !== region
+        )
+      };
+    });
+  },
+  initSelectedMultiRegion: () => set({ selectedMultiRegion: [] })
 }));
 
 export default mapStore;

@@ -111,7 +111,6 @@ export default function DashboardGrowthStats({
       <DashboardContainer>
         <GrowthCard>
           <StatComment>
-            [ {startDate} ~ {endDate} ]
             <StatList2>
               <div>
                 <ListItem>{getGrowthMessage(data)}</ListItem>
@@ -283,7 +282,7 @@ const StatList = styled.div`
 const StatList2 = styled.ul`
   list-style-type: none;
   margin: 0;
-  margin-top: 1rem;
+  margin-top: 0.5rem;
   padding: 0;
   color: ${(props) => props.theme.colors.black01};
   display: flex;

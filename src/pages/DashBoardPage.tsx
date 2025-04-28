@@ -27,7 +27,7 @@ import DashboardGrowthStats from "../components/dashboard/DashboardGrowthStats";
 import useDashboardStore from "../store/useDashboardStore";
 import { Radio } from "antd";
 import BaseMultipleLineChart from "../components/medi_map/chart/BaseMultipleLineChart";
-import { useDashBoardChart } from "../hooks/useDashBoardChart";
+import { usePrivateDataChart } from "../hooks/usePrivateDataChart";
 
 const LOADING_CONTENT = "데이터를 불러오는 중입니다.";
 
@@ -69,7 +69,7 @@ export default function DashBoardPage() {
     formatYAxisLabelForLineChart,
     formatWeeklyDataForBarChart,
     handleChartRadioChange
-  } = useDashBoardChart(dashboardInfoData);
+  } = usePrivateDataChart(dashboardInfoData);
 
   //Tutorial
   const tutorialRefs = {
@@ -316,7 +316,15 @@ export default function DashBoardPage() {
                   yField="value"
                   data={formatTotalCostBarData()}
                   height={380}
-                  colors={["#96E2D6"]}
+                  colors={[
+                    "#96E2D6",
+                    "#96E2D6",
+                    "#96E2D6",
+                    "#96E2D6",
+                    "#96E2D6",
+                    "#96E2D6",
+                    "#96E2D6"
+                  ]}
                   valueXSymbol=" ₩"
                 />
               </Card>
@@ -351,7 +359,7 @@ const DashBoardContainer = styled.div`
 
 const SectionContainer = styled.div`
   position: relative;
-  margin-bottom: 24px;
+  margin-bottom: 10px;
 `;
 
 const ButtonWrapper = styled.div`
