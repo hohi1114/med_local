@@ -11,7 +11,6 @@ interface BarChartProps<T> {
   xField: string;
   yField: string | string[];
   height: number;
-  width?: number;
   formatData?: (data: T) => ChartDataItem[];
   isGrouped?: boolean;
   seriesField?: string;
@@ -25,7 +24,6 @@ const BarChart = <T,>({
   xField,
   yField,
   height,
-  width,
   valueXSymbol,
   isGrouped = false,
   seriesField,
@@ -69,7 +67,6 @@ const BarChart = <T,>({
     data: barData,
     xField: xField,
     height: height,
-    width: width || undefined,
     autoFit: true,
     legend: legend,
     style: getStyle(),
@@ -117,8 +114,6 @@ const BarChart = <T,>({
 };
 
 const BarChartContainer = styled.div`
-  display: flex;
-  flex: 1;
   width: 100%;
   height: 100%;
 `;

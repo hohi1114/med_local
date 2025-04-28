@@ -1,4 +1,4 @@
-import { Drawer, Tooltip } from "antd";
+import { Tooltip } from "antd";
 import styled from "styled-components";
 import mapStore from "../../store/mapStore";
 import isBetween from "dayjs/plugin/isBetween";
@@ -14,6 +14,7 @@ import {
   mockMapByRegionStats,
   mockMapByRegionRegionPrivate
 } from "../../utils/tutorial-mock";
+import ResizableDrawer from "../common/drawer/ResizableDrawer";
 
 dayjs.extend(isBetween);
 
@@ -40,6 +41,7 @@ const StatisticsDrawer = ({ showTutorial }: StatisticsDrawerProps) => {
   );
 
   const [showTooltip, setShowTooltip] = useState(false);
+  const [width, setWidth] = useState<number>(450);
 
   useEffect(() => {
     if (isOpenDrawer && toggleValue === "전체" && showTutorial) {
@@ -52,6 +54,14 @@ const StatisticsDrawer = ({ showTutorial }: StatisticsDrawerProps) => {
       setShowTooltip(false);
     }
   }, [isOpenDrawer, toggleValue, showTutorial]);
+
+  useEffect(() => {
+    if (toggleValue === "전체") {
+      setWidth(900);
+    } else {
+      setWidth(450);
+    }
+  }, [toggleValue]);
 
   const renderContent = () => {
     if (!regionInfo && !isAnalyzeMultiRegion && !showTutorial) return null;
@@ -128,23 +138,13 @@ const StatisticsDrawer = ({ showTutorial }: StatisticsDrawerProps) => {
   };
 
   return (
-    <Drawer
-      width={toggleValue === "전체" ? "100rem" : "50rem"}
-      placement="right"
-      onClose={() => handleIsDrawerOpen(false)}
-      styles={{
-        header: {
-          padding: "0.8rem 1rem"
-        },
-        mask: { backgroundColor: "rgba(0, 0, 0, 0)", pointerEvents: "none" },
-        body: {
-          display: "flex",
-          flexDirection: "column",
-          gap: "1rem",
-          backgroundColor: "#FFFFFF"
-        }
-      }}
-      open={isOpenDrawer}
+    <ResizableDrawer
+      minWidth={toggleValue === "전체" ? 900 : 450}
+      maxWidth={900}
+      width={width}
+      handleWidth={setWidth}
+      isOpenDrawer={isOpenDrawer}
+      handleIsDrawerOpen={handleIsDrawerOpen}
     >
       {/** Toggle - 지역 통계 종합 보기 아닐때만 */}
       {!isAnalyzeMultiRegion && (
@@ -163,7 +163,7 @@ const StatisticsDrawer = ({ showTutorial }: StatisticsDrawerProps) => {
         </AddressTitleStyle>
       </div>
       {renderContent()}
-    </Drawer>
+    </ResizableDrawer>
   );
 };
 

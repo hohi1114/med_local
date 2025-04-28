@@ -20,12 +20,14 @@ interface RevenuInfoProps {
   disabledCompare?: boolean;
   costRank?: number;
   data: RegionPrivateData;
+  drawerWidth?: number;
 }
 const RevenuInfo: React.FC<RevenuInfoProps> = ({
   statsData,
   disabledCompare = false,
   costRank,
-  data
+  data,
+  drawerWidth
 }) => {
   const { isChangedDateRange } = mapStore();
   const {
@@ -94,7 +96,6 @@ const RevenuInfo: React.FC<RevenuInfoProps> = ({
             colorField="category"
             labelFormatterY={formatYAxisLabelForLineChart}
             height={500}
-            width={500}
             valueXSymbol=" ₩"
             data={formatLineChartData(chartType)}
           />
@@ -103,7 +104,6 @@ const RevenuInfo: React.FC<RevenuInfoProps> = ({
           <ChartTitleStyle>연령대 별 환자 분포</ChartTitleStyle>
           <BarChart
             height={280}
-            width={500}
             xField="age"
             yField="value"
             data={formatPatientCountBarData()}
@@ -116,7 +116,7 @@ const RevenuInfo: React.FC<RevenuInfoProps> = ({
             yField="매출액"
             data={formatDataForAverageRevenue()}
             height={350}
-            width={500}
+            width={drawerWidth}
           />
         </GrapWrapper>
         <GrapWrapper>
@@ -127,7 +127,6 @@ const RevenuInfo: React.FC<RevenuInfoProps> = ({
             data={formatTotalCostBarData()}
             height={380}
             colors={"#96E2D6"}
-            width={500}
             valueXSymbol=" ₩"
           />
         </GrapWrapper>
@@ -138,7 +137,6 @@ const RevenuInfo: React.FC<RevenuInfoProps> = ({
             xField="day"
             yField="value"
             height={380}
-            width={500}
             isGrouped={true}
             seriesField="type"
             legend={true}

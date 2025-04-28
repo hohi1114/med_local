@@ -12,6 +12,7 @@ import {
   mockComparisonStatsData
 } from "../../utils/tutorial-mock";
 import { useEffect, useState } from "react";
+import ResizableDrawer from "../common/drawer/ResizableDrawer";
 
 dayjs.extend(isBetween);
 
@@ -61,8 +62,8 @@ const RevenueCompareDrawer = ({ showTutorial }: RevenueCompareDrawerProps) => {
       <div style={{ display: "flex", gap: "1rem" }}>
         <div
           style={{
-            flex: 1,
-            display: "flex",
+            // flex: 1,
+            // display: "flex",
             flexDirection: "column",
             gap: "1rem"
           }}
@@ -90,8 +91,8 @@ const RevenueCompareDrawer = ({ showTutorial }: RevenueCompareDrawerProps) => {
         </div>
         <div
           style={{
-            flex: 1,
-            display: "flex",
+            // flex: 1,
+            // display: "flex",
             flexDirection: "column",
             gap: "1rem"
           }}
@@ -130,30 +131,21 @@ const RevenueCompareDrawer = ({ showTutorial }: RevenueCompareDrawerProps) => {
     );
   };
 
+  const [width, setWidth] = useState(800);
   return (
-    <Drawer
-      width={"100rem"}
-      placement="right"
-      onClose={() => handleIsDrawerOpen(false)}
-      styles={{
-        header: {
-          padding: "0.8rem 1rem"
-        },
-        mask: { backgroundColor: "rgba(0, 0, 0, 0)", pointerEvents: "none" },
-        body: {
-          display: "flex",
-          flexDirection: "column",
-          gap: "1rem",
-          backgroundColor: "#FFFFFF"
-        }
-      }}
-      open={isOpenDrawer}
+    <ResizableDrawer
+      minWidth={800}
+      maxWidth={1100}
+      width={width}
+      handleWidth={setWidth}
+      isOpenDrawer={isOpenDrawer}
+      handleIsDrawerOpen={handleIsDrawerOpen}
     >
       <div style={{ padding: "0.8rem 0rem" }}>
         <AddressTitleStyle>{areaNamDate}</AddressTitleStyle>
       </div>
       {renderContent()}
-    </Drawer>
+    </ResizableDrawer>
   );
 };
 

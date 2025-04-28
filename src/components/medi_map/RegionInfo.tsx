@@ -133,7 +133,6 @@ const RegionInfo = ({ data, region }: RegionInfoProps) => {
         "연령대별 인구 수",
         <BarChart
           height={280}
-          width={390}
           data={ageGroupData()}
           xField="연령"
           yField="세"
@@ -144,7 +143,6 @@ const RegionInfo = ({ data, region }: RegionInfoProps) => {
         "시간대별/요일 유동인구 수",
         footTrafficToggle === "시간대" ? (
           <BaseMultipleLineChart
-            width={390}
             height={280}
             data={timePopulationData()}
             xField="time"
@@ -153,7 +151,6 @@ const RegionInfo = ({ data, region }: RegionInfoProps) => {
           />
         ) : (
           <BarChart
-            width={400}
             height={280}
             data={dayPopulationData()}
             xField="day"

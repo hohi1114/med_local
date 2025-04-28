@@ -18,17 +18,13 @@ interface UnifiedLineChartProps {
   xField: string;
   yField: string;
   height: number;
-  width?: number;
-
   labelFormatterX?: (value: string) => string;
   labelFormatterY?: (value: number) => string;
   valueXSymbol?: string;
-
   formatData?: (data: Record<string, number>) => LineDataItem[];
   colorField?: string;
   limitDateXLength?: number;
   seriesField?: string;
-
   preFormatted?: boolean;
 }
 
@@ -37,7 +33,6 @@ const BaseMultipleLineChart = ({
   xField,
   yField,
   height,
-  width,
   labelFormatterX,
   labelFormatterY,
   valueXSymbol = " ₩",
@@ -151,7 +146,6 @@ const BaseMultipleLineChart = ({
     seriesField: seriesField || colorField,
     smooth: true,
     height,
-    width: width || undefined,
     autoFit: true,
     forceFit: true,
     tooltip: {
@@ -188,8 +182,6 @@ const BaseMultipleLineChart = ({
 };
 
 const ChartContainer = styled.div`
-  display: flex;
-  flex: 1;
   width: 100%;
   height: 100%;
 `;
