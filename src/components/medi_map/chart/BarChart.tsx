@@ -16,7 +16,7 @@ interface BarChartProps<T> {
   isGrouped?: boolean;
   seriesField?: string;
   legend?: boolean;
-  colors?: string[];
+  colors?: string[] | string;
   valueXSymbol?: string;
 }
 
@@ -50,6 +50,20 @@ const BarChart = <T,>({
     setBarData(data as ChartDataItem[]);
   }, [data]);
 
+  const getStyle = () => ({
+    radius: 8,
+    maxWidth: 50,
+    //Colors === 색깔하나
+    ...(Array.isArray(colors) ? {} : { fill: colors })
+  });
+
+  //Colors === 여러색
+  const getScale = () => ({
+    color: Array.isArray(colors) ? { range: colors } : undefined
+  });
+
+  const getColorField = () => (Array.isArray(colors) ? xField : undefined);
+
   // 기본 설정
   const baseConfig = {
     data: barData,
@@ -58,32 +72,26 @@ const BarChart = <T,>({
     width: width || undefined,
     autoFit: true,
     legend: legend,
-    style: {
-      radius: 8,
-      maxWidth: 60
-    },
+    style: getStyle(),
     axis: {
       x: {
         labelFormatter: (v: string) => (xField === "age" ? `${v}세` : v)
       }
     },
-    scale: {
-      color: {
-        range: colors
-      }
+    tooltip: {
+      channel: "y",
+      name: "매출",
+      valueFormatter: (v: number) =>
+        `${v.toLocaleString() + (valueXSymbol || "")}`
     },
-    interactions: [
-      {
-        type: "element-active"
-      }
-    ]
+    scale: getScale(),
+    colorField: getColorField()
   };
 
   // 일반 바 차트 설정
   const singleBarConfig = {
     ...baseConfig,
-    yField: Array.isArray(yField) ? yField[0] : yField,
-    colorField: xField
+    yField: Array.isArray(yField) ? yField[0] : yField
   };
 
   // 그룹화된 바 차트 설정

@@ -10,14 +10,14 @@ import {
   parseDaysFilesEuisarang,
   parsePatientListEgis,
   parseDaysFilesOrm,
-  parsePlaceFilesOrm,
+  parsePlaceFilesOrm
 } from "../src/local/ExcelParser";
 
 import {
   mergeDataDentWeb,
   mergeDataEgis,
   mergeDataEuisarang,
-  mergeDataOrm,
+  mergeDataOrm
 } from "../src/local/dataMerge";
 import { processDataLocally } from "../src/local/locationProcessing";
 
@@ -27,15 +27,15 @@ let mainWindow: BrowserWindow | null = null;
 
 const createMainWindow = () => {
   mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
+    width: 1500,
+    height: 1000,
     webPreferences: {
       nodeIntegration: false, // 보안을 위해 false로 설정
       contextIsolation: true, // 보안을 위해 true로 설정
       preload: path.join(__dirname, "preload.js"), // Preload 파일 경로 설정
       webSecurity: false, // 외부 맵 스크립트 등의 보안 문제 해결
-      allowRunningInsecureContent: true, // HTTPS 관련 문제 해결
-    },
+      allowRunningInsecureContent: true // HTTPS 관련 문제 해결
+    }
   });
 
   if (isDev) {

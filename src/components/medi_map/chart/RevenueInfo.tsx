@@ -126,15 +126,7 @@ const RevenuInfo: React.FC<RevenuInfoProps> = ({
             yField="value"
             data={formatTotalCostBarData()}
             height={380}
-            colors={[
-              "#96E2D6",
-              "#96E2D6",
-              "#96E2D6",
-              "#96E2D6",
-              "#96E2D6",
-              "#96E2D6",
-              "#96E2D6"
-            ]}
+            colors={"#96E2D6"}
             width={500}
             valueXSymbol=" ₩"
           />

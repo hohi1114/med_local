@@ -316,15 +316,7 @@ export default function DashBoardPage() {
                   yField="value"
                   data={formatTotalCostBarData()}
                   height={380}
-                  colors={[
-                    "#96E2D6",
-                    "#96E2D6",
-                    "#96E2D6",
-                    "#96E2D6",
-                    "#96E2D6",
-                    "#96E2D6",
-                    "#96E2D6"
-                  ]}
+                  colors={"#96E2D6"}
                   valueXSymbol=" ₩"
                 />
               </Card>
