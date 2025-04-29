@@ -39,8 +39,6 @@ const RevenuInfo: React.FC<RevenuInfoProps> = ({
     formatLineChartData
   } = usePrivateDataChart(data);
 
-  console.log(data);
-
   return (
     <>
       <GridWrapper>
