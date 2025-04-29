@@ -27,7 +27,7 @@ const RevenuInfo: React.FC<RevenuInfoProps> = ({
   costRank,
   data
 }) => {
-  const { isChangedDateRange } = mapStore();
+  const { isChangedDateRange, isAnalyzeMultiRegion } = mapStore();
   const {
     formatPatientCountBarData,
     formatWeeklyDataForBarChart,
@@ -54,14 +54,17 @@ const RevenuInfo: React.FC<RevenuInfoProps> = ({
           );
         })}
       </GridWrapper>
-      {!disabledCompare && costRank && !isChangedDateRange && (
-        <GrowthCommentContainer>
-          <DashboardGrowthStats
-            data={data?.growth_metrics}
-            costRank={costRank}
-          />
-        </GrowthCommentContainer>
-      )}
+      {!disabledCompare &&
+        costRank &&
+        !isChangedDateRange &&
+        !isAnalyzeMultiRegion && (
+          <GrowthCommentContainer>
+            <DashboardGrowthStats
+              data={data?.growth_metrics}
+              costRank={costRank}
+            />
+          </GrowthCommentContainer>
+        )}
 
       <GraphContainer>
         <GrapWrapper>

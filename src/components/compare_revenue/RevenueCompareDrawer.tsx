@@ -43,6 +43,8 @@ const RevenueCompareDrawer = ({ showTutorial }: RevenueCompareDrawerProps) => {
     : comparisonStatsData;
 
   const [showTooltip, setShowTooltip] = useState(false);
+  const [width, setWidth] = useState(900);
+
   useEffect(() => {
     if (isOpenDrawer && showTutorial) {
       const timeout = setTimeout(() => {
@@ -85,6 +87,7 @@ const RevenueCompareDrawer = ({ showTutorial }: RevenueCompareDrawerProps) => {
             </TitleContainer>
           </div>
           <RevenuInfo
+            disabledCompare={true}
             statsData={comparisonStatsDataData?.first}
             data={firstRegionPrivateData}
           />
@@ -122,7 +125,6 @@ const RevenueCompareDrawer = ({ showTutorial }: RevenueCompareDrawerProps) => {
           </Tooltip>
 
           <RevenuInfo
-            disabledCompare={true}
             statsData={comparisonStatsDataData?.second}
             data={secondRegionPrivateData}
           />
@@ -131,7 +133,6 @@ const RevenueCompareDrawer = ({ showTutorial }: RevenueCompareDrawerProps) => {
     );
   };
 
-  const [width, setWidth] = useState(900);
   return (
     <ResizableDrawer
       minWidth={900}

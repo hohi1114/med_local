@@ -172,10 +172,21 @@ export const useDrawerData = (twoType: boolean) => {
 
   useEffect(() => {
     if (boundArea && boundArea.length > 0) {
-      const selectedArea = boundArea.filter((area) => area.name === areaName);
-      setPopulation(selectedArea[0]?.population ?? 0);
+      if (isAnalyzeMultiRegion) {
+        let population = 0;
+        selectedMultiRegion.forEach((areaName) => {
+          const selectedArea = boundArea.filter(
+            (area) => area.name === areaName
+          );
+          population += selectedArea[0]?.population ?? 0;
+        });
+        setPopulation(population);
+      } else {
+        const selectedArea = boundArea.filter((area) => area.name === areaName);
+        setPopulation(selectedArea[0]?.population ?? 0);
+      }
     }
-  }, [boundArea]);
+  }, [boundArea, selectedMultiRegion, isAnalyzeMultiRegion, areaName]);
 
   // small 지역 데이터 = dong 데이터와 매치
   useEffect(() => {
@@ -290,7 +301,7 @@ export const useDrawerData = (twoType: boolean) => {
         },
         6: {
           data: `${multiRegionPrivate?.sinhwan_visit_count || 0}명`,
-          diffRate: regionPrivate?.diff_rates?.sinhwan_visit_count
+          diffRate: multiRegionPrivate?.diff_rates?.sinhwan_visit_count
         },
         7: { data: `준비중`, diffRate: null },
         8: {
