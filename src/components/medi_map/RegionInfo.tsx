@@ -37,7 +37,7 @@ const RegionInfo = ({ data, region }: RegionInfoProps) => {
         (3 *
           (region === "small" ? data?.dong_population ?? 1 : data?.population))
     ).toLocaleString()} ₩`,
-    3: `${data.total_avg_age}세`,
+    3: `${data.total_avg_age}대`,
     4: `${Math.ceil(data.population)?.toLocaleString()}명`
   };
 
@@ -55,7 +55,7 @@ const RegionInfo = ({ data, region }: RegionInfoProps) => {
     return Object.entries(data.age_group_population || {}).map(
       ([age, value]) => ({
         연령: age,
-        세: value
+        대: value
       })
     );
   };
@@ -134,12 +134,13 @@ const RegionInfo = ({ data, region }: RegionInfoProps) => {
       )}
 
       {renderGraphWrapper(
-        "연령대별 인구 수",
+        "연령대 별 인구 수",
         <BarChart
           height={280}
           data={ageGroupData()}
           xField="연령"
-          yField="세"
+          yField="대"
+          valueXSymbol={" 명"}
         />
       )}
 
@@ -151,7 +152,7 @@ const RegionInfo = ({ data, region }: RegionInfoProps) => {
             data={timePopulationData()}
             xField="time"
             yField="유동 인구 수"
-            valueXSymbol={"명"}
+            valueXSymbol={" 명"}
           />
         ) : (
           <BarChart

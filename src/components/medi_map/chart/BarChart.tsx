@@ -50,7 +50,7 @@ const BarChart = <T,>({
 
   const getStyle = () => ({
     radius: 8,
-    maxWidth: 50,
+    maxWidth: 70,
     //Colors === 색깔하나
     ...(Array.isArray(colors) ? {} : { fill: colors })
   });
@@ -72,7 +72,7 @@ const BarChart = <T,>({
     style: getStyle(),
     axis: {
       x: {
-        labelFormatter: (v: string) => (xField === "age" ? `${v}세` : v)
+        labelFormatter: (v: string) => (xField === "age" ? `${v}대` : v)
       }
     },
     tooltip: {

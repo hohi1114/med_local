@@ -121,7 +121,7 @@ export const statisticsColumn: ColumnType<RegionStatistics>[] = [
     dataIndex: "average_patient_age",
     key: "average_patient_age",
     align: "center",
-    render: (value: number) => `${value} 세`,
+    render: (value: number) => `${value} 대`,
     sorter: {
       compare: (
         a: { average_patient_age: number },

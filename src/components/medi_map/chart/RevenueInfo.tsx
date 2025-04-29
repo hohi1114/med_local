@@ -108,6 +108,7 @@ const RevenuInfo: React.FC<RevenuInfoProps> = ({
             xField="age"
             yField="value"
             data={formatPatientCountBarData()}
+            valueXSymbol=" 명"
           />
         </GrapWrapper>
         <GrapWrapper>
@@ -141,6 +142,7 @@ const RevenuInfo: React.FC<RevenuInfoProps> = ({
             seriesField="type"
             legend={true}
             colors={["#FFB6C1", "#92BFFF"]}
+            valueXSymbol=" 명"
           />
         </GrapWrapper>
       </GraphContainer>

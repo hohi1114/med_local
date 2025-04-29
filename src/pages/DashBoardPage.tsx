@@ -291,12 +291,13 @@ export default function DashBoardPage() {
                 />
               </Card>
               <Card>
-                <ChartTitle>연령 별 환자 분포</ChartTitle>
+                <ChartTitle>연령대 별 환자 분포</ChartTitle>
                 <BarChart
                   xField="age"
                   yField="value"
                   data={formatPatientCountBarData()}
                   height={380}
+                  valueXSymbol=" 명"
                 />
               </Card>
             </CardGrid>
@@ -329,6 +330,7 @@ export default function DashBoardPage() {
                   isGrouped={true}
                   seriesField="type"
                   legend={true}
+                  valueXSymbol=" 명"
                   colors={["#FFB6C1", "#92BFFF"]}
                 />
               </Card>
@@ -345,12 +347,10 @@ const DashBoardContainer = styled.div`
   display: flex;
   flex-direction: column;
   position: relative;
-  padding-bottom: 2rem;
 `;
 
 const SectionContainer = styled.div`
   position: relative;
-  margin-bottom: 10px;
 `;
 
 const ButtonWrapper = styled.div`
@@ -376,8 +376,8 @@ const FilterContainer = styled.div`
 const CardGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1rem;
-  padding: 1rem;
+  column-gap: 1rem;
+  padding: 0.5rem;
   position: relative;
   z-index: ${(props) => props.theme.zIndex.rank4};
 

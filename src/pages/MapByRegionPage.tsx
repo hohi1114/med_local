@@ -173,10 +173,10 @@ function MapByRegionPage() {
                   <BaseButton
                     type="button"
                     textcolor={"#ffffff"}
-                    color={"#D3D4D5"}
+                    color={"#2b2b2b"}
                     onClick={handleGobackToOriginal}
                   >
-                    되돌아가기
+                    취소하기
                   </BaseButton>
                   {selectedMultiRegion.length > 0 && (
                     <BaseButton

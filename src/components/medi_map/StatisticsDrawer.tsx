@@ -18,6 +18,9 @@ import ResizableDrawer from "../common/drawer/ResizableDrawer";
 
 dayjs.extend(isBetween);
 
+const ORIGNAL_DEFAULT_WIDTH = 480;
+const MULTIREGION_DEFAULT_WIDTH = 530;
+const MAX_WIDTH = 1000;
 const TOGGLEOPTION = ["지역", "매출", "전체"];
 interface StatisticsDrawerProps {
   showTutorial: boolean;
@@ -28,6 +31,7 @@ const StatisticsDrawer = ({ showTutorial }: StatisticsDrawerProps) => {
     region,
     isOpenDrawer,
     handleIsDrawerOpen,
+    selectedMultiRegion,
     setIsRequested
   } = mapStore();
   const { regionInfo, statsData, regionPrivate, isPending, areaName } =
@@ -46,8 +50,9 @@ const StatisticsDrawer = ({ showTutorial }: StatisticsDrawerProps) => {
   );
 
   const [showTooltip, setShowTooltip] = useState(false);
-  const [width, setWidth] = useState<number>(480);
+  const [width, setWidth] = useState<number>(ORIGNAL_DEFAULT_WIDTH);
 
+  /**For Tutorial **/
   useEffect(() => {
     if (isOpenDrawer && toggleValue === "전체" && showTutorial) {
       const timeout = setTimeout(() => {
@@ -60,13 +65,24 @@ const StatisticsDrawer = ({ showTutorial }: StatisticsDrawerProps) => {
     }
   }, [isOpenDrawer, toggleValue, showTutorial]);
 
+  /**Adjust Drawer Width **/
   useEffect(() => {
-    if (toggleValue === "전체") {
-      setWidth(900);
-    } else {
-      setWidth(480);
+    if (!isAnalyzeMultiRegion) {
+      if (toggleValue === "전체") {
+        setWidth(900);
+      } else {
+        setWidth(ORIGNAL_DEFAULT_WIDTH);
+      }
     }
-  }, [toggleValue]);
+  }, [toggleValue, isAnalyzeMultiRegion]);
+
+  useEffect(() => {
+    if (isAnalyzeMultiRegion) {
+      setWidth(MULTIREGION_DEFAULT_WIDTH);
+    } else {
+      setWidth(ORIGNAL_DEFAULT_WIDTH);
+    }
+  }, [isAnalyzeMultiRegion]);
 
   useEffect(() => {
     if (regionPrivate && isAnalyzeMultiRegion) {
@@ -75,6 +91,16 @@ const StatisticsDrawer = ({ showTutorial }: StatisticsDrawerProps) => {
       setIsRequested(false);
     }
   }, [regionPrivate, isAnalyzeMultiRegion]);
+
+  useEffect(() => {
+    if (
+      isAnalyzeMultiRegion &&
+      selectedMultiRegion.length === 0 &&
+      isOpenDrawer
+    ) {
+      handleIsDrawerOpen(false);
+    }
+  }, [isAnalyzeMultiRegion, selectedMultiRegion, isOpenDrawer]);
 
   const renderContent = () => {
     if (!regionInfo && !isAnalyzeMultiRegion && !showTutorial) return null;
@@ -154,7 +180,13 @@ const StatisticsDrawer = ({ showTutorial }: StatisticsDrawerProps) => {
 
   return (
     <ResizableDrawer
-      minWidth={toggleValue === "전체" ? 900 : 480}
+      minWidth={
+        isAnalyzeMultiRegion
+          ? MULTIREGION_DEFAULT_WIDTH
+          : toggleValue === "전체"
+          ? MAX_WIDTH
+          : ORIGNAL_DEFAULT_WIDTH
+      }
       maxWidth={1200}
       width={width}
       handleWidth={setWidth}

@@ -169,6 +169,7 @@ export const postMultiRegionPrivateData = async (
     "/fetch/multi_region_date_patient_info",
     multiRegionPrivateParams
   );
+
   return data;
 };
 
