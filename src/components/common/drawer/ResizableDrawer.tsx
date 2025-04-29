@@ -81,34 +81,7 @@ const ResizableDrawer = ({
           cursor: "ew-resize"
         }}
         onMouseDown={onMouseDown}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            height: "100%",
-            width: "100%"
-          }}
-        >
-          <div
-            style={{
-              padding: 10,
-              backgroundColor: "#F0F0F0",
-              borderRadius: "1rem"
-            }}
-          >
-            <img
-              src={"/images/resizeWidth.svg"}
-              style={{
-                width: 20,
-                height: 20,
-                display: "block"
-              }}
-            />
-          </div>
-        </div>
-      </div>
+      ></div>
       {children}
     </Drawer>
   );

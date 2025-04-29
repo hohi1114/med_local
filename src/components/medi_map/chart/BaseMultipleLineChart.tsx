@@ -25,7 +25,6 @@ interface UnifiedLineChartProps {
   colorField?: string;
   limitDateXLength?: number;
   seriesField?: string;
-  preFormatted?: boolean;
 }
 
 const BaseMultipleLineChart = ({
@@ -38,8 +37,7 @@ const BaseMultipleLineChart = ({
   valueXSymbol = " ₩",
   formatData,
   colorField,
-  seriesField,
-  preFormatted = false
+  seriesField
 }: UnifiedLineChartProps) => {
   const [chartData, setChartData] = useState<LineDataItem[]>([]);
 
@@ -129,7 +127,7 @@ const BaseMultipleLineChart = ({
         setChartData(data);
       }
     }
-  }, [data, formatData, xField, yField, preFormatted]);
+  }, [data, formatData, xField, yField]);
 
   const formatXLabel = (value: string) => {
     if (xField === "time") return value;
@@ -151,7 +149,7 @@ const BaseMultipleLineChart = ({
     tooltip: {
       channel: "y",
       valueFormatter: (value: number) =>
-        Math.ceil(value).toLocaleString() + valueXSymbol
+        Math.ceil(value).toLocaleString() + (valueXSymbol || "")
     },
     axis: {
       y: {

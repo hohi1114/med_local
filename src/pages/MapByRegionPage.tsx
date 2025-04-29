@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import dayjs from "dayjs";
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
@@ -29,19 +29,19 @@ function MapByRegionPage() {
   const dateChangeCountRef = useRef(0);
 
   const {
-    drawerDate,
-    region,
     selectedDateRange,
-    setIsChangedDateRange,
-    handleIsAnalyzeMultiRegion,
     isAnalyzeMultiRegion,
-    initSelectedMultiRegion,
     selectedMultiRegion,
     isChangedDateRange,
-
+    isRequested,
+    setIsChangedDateRange,
+    handleIsAnalyzeMultiRegion,
+    initSelectedMultiRegion,
     setSelectedDateRange,
     setDrawerDate,
-    handleIsDrawerOpen
+    handleIsDrawerOpen,
+    setIsAnalyzeMultiRegion,
+    setIsRequested
   } = mapStore();
 
   const { dateRange, handleDateRangeChange, latestDateRangeRef } =
@@ -57,17 +57,24 @@ function MapByRegionPage() {
     return () => {
       handleIsDrawerOpen(false);
       setSelectedDateRange(latestDateRangeRef.current);
+      //만약 다른 페이지로 갈시 multiRegion 초기화 + Ref도 초기화 시켜줘야함
+      initSelectedMultiRegion();
+      setIsAnalyzeMultiRegion(false);
     };
   }, []);
 
   useEffect(() => {
     if (selectedDateRange) {
       handleDateRangeChange(selectedDateRange);
-    } else if (lastedUpdatedDate) {
-      const start = dayjs(lastedUpdatedDate)
-        .subtract(1, "month")
-        .format("YYYY-MM-DD");
-      const end = dayjs(lastedUpdatedDate).format("YYYY-MM-DD");
+    } else {
+      const start =
+        lastedUpdatedDate && lastedUpdatedDate.length > 0
+          ? dayjs(lastedUpdatedDate).subtract(1, "month").format("YYYY-MM-DD")
+          : dayjs().subtract(1, "month").format("YYYY-MM-DD");
+      const end =
+        lastedUpdatedDate && lastedUpdatedDate.length > 0
+          ? dayjs(lastedUpdatedDate).format("YYYY-MM-DD")
+          : dayjs().format("YYYY-MM-DD");
       handleDateRangeChange({ startDate: start, endDate: end });
     }
   }, [lastedUpdatedDate]);
@@ -87,6 +94,22 @@ function MapByRegionPage() {
       handleIsDrawerOpen(true);
     }
   }, [tutorialStep]);
+
+  const handleAnalyzeMultiRegion = () => {
+    if (isRequested) {
+      initSelectedMultiRegion();
+      handleIsDrawerOpen(false);
+    } else {
+      handleIsDrawerOpen(true);
+    }
+  };
+
+  const handleGobackToOriginal = () => {
+    handleIsDrawerOpen(false);
+    handleIsAnalyzeMultiRegion();
+    initSelectedMultiRegion();
+    setIsRequested(false);
+  };
 
   const getTutorialImage = () => {
     const images = {
@@ -149,22 +172,18 @@ function MapByRegionPage() {
                 <ButtonGroup>
                   <BaseButton
                     type="button"
-                    onClick={() => {
-                      handleIsDrawerOpen(false);
-                      handleIsAnalyzeMultiRegion();
-                      initSelectedMultiRegion();
-                    }}
+                    textcolor={"#ffffff"}
+                    color={"#D3D4D5"}
+                    onClick={handleGobackToOriginal}
                   >
-                    취소하기
+                    되돌아가기
                   </BaseButton>
                   {selectedMultiRegion.length > 0 && (
                     <BaseButton
                       type="button"
-                      onClick={() => {
-                        handleIsDrawerOpen(true);
-                      }}
+                      onClick={handleAnalyzeMultiRegion}
                     >
-                      분석하기
+                      {isRequested ? "초기화" : "분석하기"}
                     </BaseButton>
                   )}
                 </ButtonGroup>
@@ -267,8 +286,9 @@ const EmptyRegionNotice = styled.div`
   justify-content: center;
   align-items: center;
   height: 100%;
+  font-weight: bold;
   font-size: 1.2rem;
-  color: ${(props) => props.theme.colors.red};
+  color: ${(props) => props.theme.colors.primary};
 `;
 
 const ButtonGroup = styled.div`

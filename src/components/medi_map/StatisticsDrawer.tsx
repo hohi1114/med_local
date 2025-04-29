@@ -23,8 +23,13 @@ interface StatisticsDrawerProps {
   showTutorial: boolean;
 }
 const StatisticsDrawer = ({ showTutorial }: StatisticsDrawerProps) => {
-  const { isAnalyzeMultiRegion, region, isOpenDrawer, handleIsDrawerOpen } =
-    mapStore();
+  const {
+    isAnalyzeMultiRegion,
+    region,
+    isOpenDrawer,
+    handleIsDrawerOpen,
+    setIsRequested
+  } = mapStore();
   const { regionInfo, statsData, regionPrivate, isPending, areaName } =
     useDrawerData(false);
 
@@ -41,7 +46,7 @@ const StatisticsDrawer = ({ showTutorial }: StatisticsDrawerProps) => {
   );
 
   const [showTooltip, setShowTooltip] = useState(false);
-  const [width, setWidth] = useState<number>(450);
+  const [width, setWidth] = useState<number>(480);
 
   useEffect(() => {
     if (isOpenDrawer && toggleValue === "전체" && showTutorial) {
@@ -59,9 +64,17 @@ const StatisticsDrawer = ({ showTutorial }: StatisticsDrawerProps) => {
     if (toggleValue === "전체") {
       setWidth(900);
     } else {
-      setWidth(450);
+      setWidth(480);
     }
   }, [toggleValue]);
+
+  useEffect(() => {
+    if (regionPrivate && isAnalyzeMultiRegion) {
+      setIsRequested(true);
+    } else {
+      setIsRequested(false);
+    }
+  }, [regionPrivate, isAnalyzeMultiRegion]);
 
   const renderContent = () => {
     if (!regionInfo && !isAnalyzeMultiRegion && !showTutorial) return null;
@@ -139,8 +152,8 @@ const StatisticsDrawer = ({ showTutorial }: StatisticsDrawerProps) => {
 
   return (
     <ResizableDrawer
-      minWidth={toggleValue === "전체" ? 900 : 450}
-      maxWidth={900}
+      minWidth={toggleValue === "전체" ? 900 : 480}
+      maxWidth={1200}
       width={width}
       handleWidth={setWidth}
       isOpenDrawer={isOpenDrawer}

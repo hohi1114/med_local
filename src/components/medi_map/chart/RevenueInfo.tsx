@@ -20,14 +20,12 @@ interface RevenuInfoProps {
   disabledCompare?: boolean;
   costRank?: number;
   data: RegionPrivateData;
-  drawerWidth?: number;
 }
 const RevenuInfo: React.FC<RevenuInfoProps> = ({
   statsData,
   disabledCompare = false,
   costRank,
-  data,
-  drawerWidth
+  data
 }) => {
   const { isChangedDateRange } = mapStore();
   const {
@@ -40,6 +38,8 @@ const RevenuInfo: React.FC<RevenuInfoProps> = ({
     handleChartRadioChange,
     formatLineChartData
   } = usePrivateDataChart(data);
+
+  console.log(data);
 
   return (
     <>
@@ -59,7 +59,7 @@ const RevenuInfo: React.FC<RevenuInfoProps> = ({
       {!disabledCompare && costRank && !isChangedDateRange && (
         <GrowthCommentContainer>
           <DashboardGrowthStats
-            data={data.growth_metrics}
+            data={data?.growth_metrics}
             costRank={costRank}
           />
         </GrowthCommentContainer>
@@ -74,7 +74,7 @@ const RevenuInfo: React.FC<RevenuInfoProps> = ({
               alignItems: "center"
             }}
           >
-            <ChartTitleStyle>일자별 매출 통계</ChartTitleStyle>
+            <ChartTitleStyle>일자별 매출/환자 수 통계</ChartTitleStyle>
             <Radio.Group
               onChange={handleChartRadioChange}
               value={chartType}
@@ -96,8 +96,8 @@ const RevenuInfo: React.FC<RevenuInfoProps> = ({
             colorField="category"
             labelFormatterY={formatYAxisLabelForLineChart}
             height={500}
-            valueXSymbol=" ₩"
             data={formatLineChartData(chartType)}
+            valueXSymbol={chartType === 1 ? " ₩" : " 명"}
           />
         </GrapWrapper>
         <GrapWrapper>
@@ -116,7 +116,6 @@ const RevenuInfo: React.FC<RevenuInfoProps> = ({
             yField="매출액"
             data={formatDataForAverageRevenue()}
             height={350}
-            width={drawerWidth}
           />
         </GrapWrapper>
         <GrapWrapper>

@@ -62,8 +62,8 @@ const RevenueCompareDrawer = ({ showTutorial }: RevenueCompareDrawerProps) => {
       <div style={{ display: "flex", gap: "1rem" }}>
         <div
           style={{
-            // flex: 1,
-            // display: "flex",
+            flex: 1,
+            display: "flex",
             flexDirection: "column",
             gap: "1rem"
           }}
@@ -91,8 +91,8 @@ const RevenueCompareDrawer = ({ showTutorial }: RevenueCompareDrawerProps) => {
         </div>
         <div
           style={{
-            // flex: 1,
-            // display: "flex",
+            flex: 1,
+            display: "flex",
             flexDirection: "column",
             gap: "1rem"
           }}
@@ -131,11 +131,11 @@ const RevenueCompareDrawer = ({ showTutorial }: RevenueCompareDrawerProps) => {
     );
   };
 
-  const [width, setWidth] = useState(800);
+  const [width, setWidth] = useState(900);
   return (
     <ResizableDrawer
-      minWidth={800}
-      maxWidth={1100}
+      minWidth={900}
+      maxWidth={900}
       width={width}
       handleWidth={setWidth}
       isOpenDrawer={isOpenDrawer}

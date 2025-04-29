@@ -244,7 +244,7 @@ export default function DashBoardPage() {
             >
               <Card>
                 <div style={{ display: "flex", gap: "3rem" }}>
-                  <ChartTitle>일자별 매출 통계</ChartTitle>
+                  <ChartTitle>일자별 매출/환자 수 통계</ChartTitle>
                   <Radio.Group
                     onChange={handleChartRadioChange}
                     value={chartType}
@@ -268,7 +268,7 @@ export default function DashBoardPage() {
                   colorField="category"
                   labelFormatterY={formatYAxisLabelForLineChart}
                   height={500}
-                  valueXSymbol=" ₩"
+                  valueXSymbol={chartType === 1 ? " ₩" : " 명"}
                 />
               </Card>
             </CardGrid>
@@ -285,7 +285,6 @@ export default function DashBoardPage() {
             >
               <Card>
                 <ChartTitle>최근 3개월 월평균 성장률</ChartTitle>
-
                 <DashboardGrowthStats
                   data={dashboardInfoData?.average_growths}
                   isDashboard

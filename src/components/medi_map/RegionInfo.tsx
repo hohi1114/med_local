@@ -110,23 +110,27 @@ const RegionInfo = ({ data, region }: RegionInfoProps) => {
   return (
     <>
       <GridWrapper>
-        {STATS_BOXES.map((content) => (
-          <StatsBox
-            key={content.id}
-            title={content.title}
-            data={statsData[content.id]}
-          />
-        ))}
+        {/**월 평균 소득과 월 평균 1인당 의료비 지출액은 데이터가 없다면 숨기기 */}
+        {STATS_BOXES.map((content) =>
+          (content.id === 1 || content.id === 2) &&
+          statsData[content.id] === "0 ₩" ? null : (
+            <StatsBox
+              key={content.id}
+              title={content.title}
+              data={statsData[content.id]}
+            />
+          )
+        )}
       </GridWrapper>
 
       {renderGraphWrapper(
         "성별 인구 수",
-        <SexHorizantalBar data={horizontalBarData} />
+        <SexHorizantalBar data={horizontalBarData} height={200} />
       )}
 
       {renderGraphWrapper(
         "성별 평균 연령",
-        <SexPieChart data={pieChartData} />
+        <SexPieChart data={pieChartData} height={250} />
       )}
 
       {renderGraphWrapper(

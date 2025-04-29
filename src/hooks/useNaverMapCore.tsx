@@ -41,6 +41,7 @@ export function useNaverMapCore({
     clearMap,
     isChangedDateRange,
     isAnalyzeMultiRegion,
+    selectedMultiRegion,
     addSelectedMultiRegion,
     removeSelectedMultiRegion
   } = mapStore();
@@ -57,7 +58,9 @@ export function useNaverMapCore({
   const patientGroupsMarkerClusterRef = useRef<any | null>(null);
   const [currentZoom, setCurrentZoom] = useState<number>(15);
   const clickedAreaRef = useRef<string>(null);
-  const selectedMultiRegionRef = useRef<string[]>([]);
+  const selectedMultiRegionRef = useRef<Map<string, naver.maps.Polygon>>(
+    new Map()
+  );
 
   // Map Logic
   const {
@@ -310,12 +313,12 @@ export function useNaverMapCore({
 
     handleZoomChange(true);
 
-    window.naver.maps.Event.addListener(map, "zoom_changed", () => {
-      setLoading(true);
+    window.naver.maps.Event.addListener(map, "idle", () => {
       handleZoomChange(false);
     });
 
-    window.naver.maps.Event.addListener(map, "idle", () => {
+    window.naver.maps.Event.addListener(map, "zoom_changed", () => {
+      setLoading(true);
       handleZoomChange(false);
     });
 
@@ -337,11 +340,46 @@ export function useNaverMapCore({
     isAnalyzeMultiRegion
   ]);
 
+  //지역 통계 종합 보기 일때는 zoom 안되게 하기
   useEffect(() => {
-    if (!isAnalyzeMultiRegion) {
-      selectedMultiRegionRef.current = [];
+    if (!map) return;
+    if (isAnalyzeMultiRegion && selectedMultiRegion.length > 0) {
+      map.setOptions({
+        zoomControl: false,
+        scrollWheel: false,
+        pinchZoom: false,
+        keyboardShortcuts: false,
+        disableDoubleTapZoom: true,
+        disableDoubleClickZoom: true
+      });
+    } else {
+      map.setOptions({
+        zoomControl: true,
+        scrollWheel: true,
+        pinchZoom: true,
+        keyboardShortcuts: true,
+        disableDoubleTapZoom: false,
+        disableDoubleClickZoom: false
+      });
     }
-  }, [isAnalyzeMultiRegion]);
+  }, [isAnalyzeMultiRegion, selectedMultiRegion, map]);
+
+  //지역 통계 종합 보기에서 나갈때 or 초기화
+  useEffect(() => {
+    if (!isAnalyzeMultiRegion || selectedMultiRegion.length === 0) {
+      selectedMultiRegionRef.current.forEach((polygon, areaName) => {
+        if (polygon instanceof naver.maps.Polygon) {
+          polygon.setOptions({
+            paths: polygon.getPaths(),
+            strokeColor: defaultColor,
+            strokeWeight: 1.5
+          });
+        }
+      });
+
+      selectedMultiRegionRef.current = new Map();
+    }
+  }, [isAnalyzeMultiRegion, selectedMultiRegion]);
 
   const setPolygonClickListener = (
     polygon: naver.maps.Polygon,
@@ -379,10 +417,8 @@ export function useNaverMapCore({
   }) => {
     // 지역 통계 종합 보기
     if (isAnalyzeMultiRegion) {
-      if (selectedMultiRegionRef.current.includes(area.name)) {
-        selectedMultiRegionRef.current = selectedMultiRegionRef.current.filter(
-          (name) => name !== area.name
-        );
+      if (selectedMultiRegionRef.current.has(area.name)) {
+        selectedMultiRegionRef.current.delete(area.name);
         removeSelectedMultiRegion(area.name);
 
         if (polygon instanceof naver.maps.Polygon) {
@@ -394,7 +430,7 @@ export function useNaverMapCore({
         }
       } else {
         addSelectedMultiRegion(area.name);
-        selectedMultiRegionRef.current.push(area.name);
+        selectedMultiRegionRef.current.set(area.name, polygon);
         if (polygon instanceof naver.maps.Polygon) {
           polygon.setOptions({
             paths: polygon.getPaths(),
@@ -472,7 +508,7 @@ export function useNaverMapCore({
   };
   const createMarkerCluster = (
     markers: naver.maps.Marker[],
-    ref: React.Refpolygon<any>
+    ref: React.RefObject<any>
   ) => {
     const cluster = new MarkerClustering({
       minClusterSize: 2,
@@ -538,7 +574,7 @@ export function useNaverMapCore({
     });
   };
 
-  const clearClusters = (ref: React.Refpolygon<any>) => {
+  const clearClusters = (ref: React.RefObject<any>) => {
     if (ref.current) {
       ref.current.getMarkers().forEach((marker: naver.maps.Marker) => {
         marker.setMap(null);

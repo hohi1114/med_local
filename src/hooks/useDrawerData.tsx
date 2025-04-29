@@ -45,7 +45,13 @@ export const useDrawerData = (twoType: boolean) => {
 
   // 단일 날짜 파라미터
   const singleDateParams = useMemo(() => {
-    if (!drawerDate || loading) return null;
+    if (
+      !drawerDate ||
+      loading ||
+      (isAnalyzeMultiRegion && selectedMultiRegion.length === 0) ||
+      (!isAnalyzeMultiRegion && !areaName)
+    )
+      return null;
 
     const baseParams = {
       regionType: region,
@@ -124,10 +130,7 @@ export const useDrawerData = (twoType: boolean) => {
   //지역 통계 종합 보기
   const { mutate: multiRegionPrivateMutation, data: multiRegionPrivate } =
     useMutation({
-      mutationFn: postMultiRegionPrivateData,
-      onSuccess: (data) => {
-        console.log(data);
-      }
+      mutationFn: postMultiRegionPrivateData
     });
 
   // 첫번째 날짜 요청
@@ -430,7 +433,11 @@ export const useDrawerData = (twoType: boolean) => {
   return {
     regionInfo,
     statsData,
-    regionPrivate: regionPrivate || multiRegionPrivate,
+    regionPrivate: !isOpenDrawer
+      ? null
+      : isAnalyzeMultiRegion
+      ? multiRegionPrivate
+      : regionPrivate,
     firstRegionPrivate,
     secondRegionPrivate,
     isPending: isPending || firstDatePending || secondDatePending,

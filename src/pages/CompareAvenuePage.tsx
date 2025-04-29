@@ -74,24 +74,26 @@ function CompareAvenuePage() {
       handleDateRangeChange1(selectedDateRangeForCompare1);
       handleDateRangeChange2(selectedDateRangeForCompare2);
     } else {
-      if (lastedUpdatedDate && lastedUpdatedDate.length > 0) {
-        const start1 = lastedUpdatedDate
+      const start1 =
+        lastedUpdatedDate && lastedUpdatedDate.length > 0
           ? dayjs(lastedUpdatedDate).subtract(30, "day").format("YYYY-MM-DD")
           : dayjs().subtract(30, "day").format("YYYY-MM-DD");
-        const end1 = lastedUpdatedDate
+      const end1 =
+        lastedUpdatedDate && lastedUpdatedDate.length > 0
           ? dayjs(lastedUpdatedDate).subtract(15, "day").format("YYYY-MM-DD")
           : dayjs().subtract(15, "day").format("YYYY-MM-DD");
 
-        const start2 = lastedUpdatedDate
+      const start2 =
+        lastedUpdatedDate && lastedUpdatedDate.length > 0
           ? dayjs(lastedUpdatedDate).subtract(14, "day").format("YYYY-MM-DD")
           : dayjs().subtract(14, "day").format("YYYY-MM-DD");
-        const end2 = lastedUpdatedDate
+      const end2 =
+        lastedUpdatedDate && lastedUpdatedDate.length > 0
           ? dayjs(lastedUpdatedDate).format("YYYY-MM-DD")
           : dayjs().format("YYYY-MM-DD");
 
-        handleDateRangeChange1({ startDate: start1, endDate: end1 });
-        handleDateRangeChange2({ startDate: start2, endDate: end2 });
-      }
+      handleDateRangeChange1({ startDate: start1, endDate: end1 });
+      handleDateRangeChange2({ startDate: start2, endDate: end2 });
     }
   }, [lastedUpdatedDate]);
 

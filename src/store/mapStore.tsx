@@ -23,6 +23,7 @@ interface IMapStore {
   //지역 통계 종합 보기
   isAnalyzeMultiRegion: boolean;
   selectedMultiRegion: string[];
+  isRequested: boolean;
 
   setSelectedDateRange: (dateRange: DateRange) => void;
   setSelectedDateRangeForCompare1: (dateRange: DateRange) => void;
@@ -46,9 +47,11 @@ interface IMapStore {
 
   //지역 통계 종합 보기
   handleIsAnalyzeMultiRegion: () => void;
+  setIsAnalyzeMultiRegion: (isAnalyzeMultiRegion: boolean) => void;
   addSelectedMultiRegion: (selectedMultiRegion: string) => void;
   removeSelectedMultiRegion: (selectedMultiRegion: string) => void;
   initSelectedMultiRegion: () => void;
+  setIsRequested: (isRequested: boolean) => void;
 }
 
 const mapStore = create<IMapStore>((set) => ({
@@ -70,6 +73,7 @@ const mapStore = create<IMapStore>((set) => ({
   boundArea: null,
   loading: false,
   patients: [],
+  isRequested: false,
 
   setSelectedDateRange: (dateRange: DateRange) =>
     set({ selectedDateRange: dateRange }),
@@ -109,9 +113,11 @@ const mapStore = create<IMapStore>((set) => ({
   handleIsAnalyzeMultiRegion() {
     set((state) => ({ isAnalyzeMultiRegion: !state.isAnalyzeMultiRegion }));
   },
+  setIsAnalyzeMultiRegion(isAnalyzeMultiRegion) {
+    set({ isAnalyzeMultiRegion });
+  },
   addSelectedMultiRegion: (region) => {
     set((state) => {
-      console.log(region);
       return { selectedMultiRegion: [...state.selectedMultiRegion, region] };
     });
   },
@@ -124,7 +130,8 @@ const mapStore = create<IMapStore>((set) => ({
       };
     });
   },
-  initSelectedMultiRegion: () => set({ selectedMultiRegion: [] })
+  initSelectedMultiRegion: () => set({ selectedMultiRegion: [] }),
+  setIsRequested: (isRequested) => set({ isRequested })
 }));
 
 export default mapStore;
