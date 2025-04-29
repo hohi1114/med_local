@@ -27,7 +27,7 @@ import DashboardGrowthStats from "../components/dashboard/DashboardGrowthStats";
 import useDashboardStore from "../store/useDashboardStore";
 import { Radio } from "antd";
 import BaseMultipleLineChart from "../components/medi_map/chart/BaseMultipleLineChart";
-import { useDashBoardChart } from "../hooks/useDashBoardChart";
+import { usePrivateDataChart } from "../hooks/usePrivateDataChart";
 
 const LOADING_CONTENT = "데이터를 불러오는 중입니다.";
 
@@ -69,7 +69,7 @@ export default function DashBoardPage() {
     formatYAxisLabelForLineChart,
     formatWeeklyDataForBarChart,
     handleChartRadioChange
-  } = useDashBoardChart(dashboardInfoData);
+  } = usePrivateDataChart(dashboardInfoData);
 
   //Tutorial
   const tutorialRefs = {
@@ -244,7 +244,7 @@ export default function DashBoardPage() {
             >
               <Card>
                 <div style={{ display: "flex", gap: "3rem" }}>
-                  <ChartTitle>일자별 매출 통계</ChartTitle>
+                  <ChartTitle>일자별 매출/환자 수 통계</ChartTitle>
                   <Radio.Group
                     onChange={handleChartRadioChange}
                     value={chartType}
@@ -268,7 +268,7 @@ export default function DashBoardPage() {
                   colorField="category"
                   labelFormatterY={formatYAxisLabelForLineChart}
                   height={500}
-                  valueXSymbol=" ₩"
+                  valueXSymbol={chartType === 1 ? " ₩" : " 명"}
                 />
               </Card>
             </CardGrid>
@@ -285,7 +285,6 @@ export default function DashBoardPage() {
             >
               <Card>
                 <ChartTitle>최근 3개월 월평균 성장률</ChartTitle>
-
                 <DashboardGrowthStats
                   data={dashboardInfoData?.average_growths}
                   isDashboard
@@ -316,7 +315,7 @@ export default function DashBoardPage() {
                   yField="value"
                   data={formatTotalCostBarData()}
                   height={380}
-                  colors={["#96E2D6"]}
+                  colors={"#96E2D6"}
                   valueXSymbol=" ₩"
                 />
               </Card>
@@ -351,7 +350,7 @@ const DashBoardContainer = styled.div`
 
 const SectionContainer = styled.div`
   position: relative;
-  margin-bottom: 24px;
+  margin-bottom: 10px;
 `;
 
 const ButtonWrapper = styled.div`

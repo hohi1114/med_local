@@ -20,6 +20,10 @@ interface IMapStore {
   loading: boolean;
   patients: { areaName: string; patients: PatientData[] }[];
   isChangedDateRange: boolean;
+  //지역 통계 종합 보기
+  isAnalyzeMultiRegion: boolean;
+  selectedMultiRegion: string[];
+  isRequested: boolean;
 
   setSelectedDateRange: (dateRange: DateRange) => void;
   setSelectedDateRangeForCompare1: (dateRange: DateRange) => void;
@@ -40,9 +44,19 @@ interface IMapStore {
   ) => void;
   clearMap: () => void;
   setIsChangedDateRange: (isChangedDateRange: boolean) => void;
+
+  //지역 통계 종합 보기
+  handleIsAnalyzeMultiRegion: () => void;
+  setIsAnalyzeMultiRegion: (isAnalyzeMultiRegion: boolean) => void;
+  addSelectedMultiRegion: (selectedMultiRegion: string) => void;
+  removeSelectedMultiRegion: (selectedMultiRegion: string) => void;
+  initSelectedMultiRegion: () => void;
+  setIsRequested: (isRequested: boolean) => void;
 }
 
 const mapStore = create<IMapStore>((set) => ({
+  isAnalyzeMultiRegion: false,
+  selectedMultiRegion: [],
   isChangedDateRange: false,
   selectedDateRange: null,
   selectedDateRangeForCompare1: null,
@@ -59,6 +73,7 @@ const mapStore = create<IMapStore>((set) => ({
   boundArea: null,
   loading: false,
   patients: [],
+  isRequested: false,
 
   setSelectedDateRange: (dateRange: DateRange) =>
     set({ selectedDateRange: dateRange }),
@@ -93,7 +108,30 @@ const mapStore = create<IMapStore>((set) => ({
       patients: []
     }),
   setIsChangedDateRange: (isChangedDateRange: boolean) =>
-    set({ isChangedDateRange })
+    set({ isChangedDateRange }),
+
+  handleIsAnalyzeMultiRegion() {
+    set((state) => ({ isAnalyzeMultiRegion: !state.isAnalyzeMultiRegion }));
+  },
+  setIsAnalyzeMultiRegion(isAnalyzeMultiRegion) {
+    set({ isAnalyzeMultiRegion });
+  },
+  addSelectedMultiRegion: (region) => {
+    set((state) => {
+      return { selectedMultiRegion: [...state.selectedMultiRegion, region] };
+    });
+  },
+  removeSelectedMultiRegion: (region) => {
+    set((state) => {
+      return {
+        selectedMultiRegion: state.selectedMultiRegion.filter(
+          (item) => item !== region
+        )
+      };
+    });
+  },
+  initSelectedMultiRegion: () => set({ selectedMultiRegion: [] }),
+  setIsRequested: (isRequested) => set({ isRequested })
 }));
 
 export default mapStore;

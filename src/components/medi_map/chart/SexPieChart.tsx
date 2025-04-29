@@ -8,17 +8,22 @@ interface SexPieChartProps {
 
 interface SexPieChartComponentProps {
   data: SexPieChartProps[];
+  height: number;
 }
 
-const SexPieChart = ({ data }: SexPieChartComponentProps) => {
+const SexPieChart = ({ data, height }: SexPieChartComponentProps) => {
   const config = {
-    height: 200,
-    width: 390,
+    height: height,
     data: data,
     angleField: "value",
     colorField: "type",
     autoFit: true,
-    tooltip: false,
+    legend: {
+      position: "top"
+    },
+    tooltip: ({ type, value }) => {
+      return { type, value };
+    },
     label: {
       text: "value",
       style: {
@@ -27,14 +32,7 @@ const SexPieChart = ({ data }: SexPieChartComponentProps) => {
     },
     scale: {
       color: {
-        range: ["#3897f0", "#F4A7B9"]
-      }
-    },
-    legend: {
-      color: {
-        title: false,
-        position: "right",
-        rowPadding: 5
+        range: ["#92BFFF", "#FFB6C1"]
       }
     }
   };
@@ -48,8 +46,9 @@ const SexPieChart = ({ data }: SexPieChartComponentProps) => {
 export default SexPieChart;
 
 const PieContainer = styled.div`
-  display: flex;
-  flex: 1;
   width: 100%;
   height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 `;

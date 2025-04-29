@@ -11,12 +11,11 @@ interface BarChartProps<T> {
   xField: string;
   yField: string | string[];
   height: number;
-  width?: number;
   formatData?: (data: T) => ChartDataItem[];
   isGrouped?: boolean;
   seriesField?: string;
   legend?: boolean;
-  colors?: string[];
+  colors?: string[] | string;
   valueXSymbol?: string;
 }
 
@@ -25,7 +24,6 @@ const BarChart = <T,>({
   xField,
   yField,
   height,
-  width,
   valueXSymbol,
   isGrouped = false,
   seriesField,
@@ -50,44 +48,47 @@ const BarChart = <T,>({
     setBarData(data as ChartDataItem[]);
   }, [data]);
 
+  const getStyle = () => ({
+    radius: 8,
+    maxWidth: 50,
+    //Colors === 색깔하나
+    ...(Array.isArray(colors) ? {} : { fill: colors })
+  });
+
+  //Colors === 여러색
+  const getScale = () => ({
+    color: Array.isArray(colors) ? { range: colors } : undefined
+  });
+
+  const getColorField = () => (Array.isArray(colors) ? xField : undefined);
+
   // 기본 설정
   const baseConfig = {
     data: barData,
     xField: xField,
     height: height,
-    width: width || undefined,
     autoFit: true,
     legend: legend,
-    style: {
-      radius: 8,
-      maxWidth: 60
-    },
+    style: getStyle(),
     axis: {
       x: {
         labelFormatter: (v: string) => (xField === "age" ? `${v}세` : v)
       }
     },
     tooltip: {
-      items: [
-        {
-          channel: "y",
-          valueFormatter: (value: number) =>
-            Math.ceil(value).toLocaleString() + (valueXSymbol || "")
-        }
-      ]
+      channel: "y",
+      name: "매출",
+      valueFormatter: (v: number) =>
+        `${v.toLocaleString() + (valueXSymbol || "")}`
     },
-    scale: {
-      color: {
-        range: colors
-      }
-    }
+    scale: getScale(),
+    colorField: getColorField()
   };
 
   // 일반 바 차트 설정
   const singleBarConfig = {
     ...baseConfig,
-    yField: Array.isArray(yField) ? yField[0] : yField,
-    colorField: xField
+    yField: Array.isArray(yField) ? yField[0] : yField
   };
 
   // 그룹화된 바 차트 설정
@@ -113,8 +114,6 @@ const BarChart = <T,>({
 };
 
 const BarChartContainer = styled.div`
-  display: flex;
-  flex: 1;
   width: 100%;
   height: 100%;
 `;

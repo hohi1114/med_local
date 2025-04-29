@@ -12,6 +12,7 @@ import {
   mockComparisonStatsData
 } from "../../utils/tutorial-mock";
 import { useEffect, useState } from "react";
+import ResizableDrawer from "../common/drawer/ResizableDrawer";
 
 dayjs.extend(isBetween);
 
@@ -27,9 +28,6 @@ const RevenueCompareDrawer = ({ showTutorial }: RevenueCompareDrawerProps) => {
     secondRegionPrivate,
     isPending,
     areaName,
-    formatDataForAverageRevenue,
-    formatDataForRevenueTrend,
-    barFormatData,
     comparisonStatsData
   } = useDrawerData(true);
 
@@ -88,18 +86,7 @@ const RevenueCompareDrawer = ({ showTutorial }: RevenueCompareDrawerProps) => {
           </div>
           <RevenuInfo
             statsData={comparisonStatsDataData?.first}
-            revenueTrend={firstRegionPrivateData?.cost_by_date}
-            dailyRevenue={
-              firstRegionPrivateData?.average_cost_per_visit_by_date
-            }
-            ageGroups={firstRegionPrivateData?.patient_count_by_age_group}
-            formatDataForRevenueTrend={() =>
-              formatDataForRevenueTrend(firstRegionPrivateData)
-            }
-            formatDataForAverageRevenue={() =>
-              formatDataForAverageRevenue(firstRegionPrivateData)
-            }
-            barFormatData={() => barFormatData(firstRegionPrivateData)}
+            data={firstRegionPrivateData}
           />
         </div>
         <div
@@ -137,48 +124,28 @@ const RevenueCompareDrawer = ({ showTutorial }: RevenueCompareDrawerProps) => {
           <RevenuInfo
             disabledCompare={true}
             statsData={comparisonStatsDataData?.second}
-            revenueTrend={secondRegionPrivateData?.cost_by_date}
-            dailyRevenue={
-              secondRegionPrivateData?.average_cost_per_visit_by_date
-            }
-            ageGroups={secondRegionPrivateData?.patient_count_by_age_group}
-            formatDataForRevenueTrend={() =>
-              formatDataForRevenueTrend(secondRegionPrivateData)
-            }
-            formatDataForAverageRevenue={() =>
-              formatDataForAverageRevenue(secondRegionPrivateData)
-            }
-            barFormatData={() => barFormatData(secondRegionPrivateData)}
+            data={secondRegionPrivateData}
           />
         </div>
       </div>
     );
   };
 
+  const [width, setWidth] = useState(900);
   return (
-    <Drawer
-      width={"70rem"}
-      placement="right"
-      onClose={() => handleIsDrawerOpen(false)}
-      styles={{
-        header: {
-          padding: "0.8rem 1rem"
-        },
-        mask: { backgroundColor: "rgba(0, 0, 0, 0)", pointerEvents: "none" },
-        body: {
-          display: "flex",
-          flexDirection: "column",
-          gap: "1rem",
-          backgroundColor: "#FFFFFF"
-        }
-      }}
-      open={isOpenDrawer}
+    <ResizableDrawer
+      minWidth={900}
+      maxWidth={900}
+      width={width}
+      handleWidth={setWidth}
+      isOpenDrawer={isOpenDrawer}
+      handleIsDrawerOpen={handleIsDrawerOpen}
     >
       <div style={{ padding: "0.8rem 0rem" }}>
         <AddressTitleStyle>{areaNamDate}</AddressTitleStyle>
       </div>
       {renderContent()}
-    </Drawer>
+    </ResizableDrawer>
   );
 };
 
