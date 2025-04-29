@@ -128,10 +128,13 @@ export const useDrawerData = (twoType: boolean) => {
   });
 
   //지역 통계 종합 보기
-  const { mutate: multiRegionPrivateMutation, data: multiRegionPrivate } =
-    useMutation({
-      mutationFn: postMultiRegionPrivateData
-    });
+  const {
+    mutate: multiRegionPrivateMutation,
+    data: multiRegionPrivate,
+    isPending: multiRegionPending
+  } = useMutation({
+    mutationFn: postMultiRegionPrivateData
+  });
 
   // 첫번째 날짜 요청
   useEffect(() => {
@@ -451,7 +454,8 @@ export const useDrawerData = (twoType: boolean) => {
       : regionPrivate,
     firstRegionPrivate,
     secondRegionPrivate,
-    isPending: isPending || firstDatePending || secondDatePending,
+    isPending:
+      isPending || firstDatePending || secondDatePending || multiRegionPending,
     areaName,
     comparisonStatsData
   };

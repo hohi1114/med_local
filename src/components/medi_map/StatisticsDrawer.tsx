@@ -79,7 +79,9 @@ const StatisticsDrawer = ({ showTutorial }: StatisticsDrawerProps) => {
   const renderContent = () => {
     if (!regionInfo && !isAnalyzeMultiRegion && !showTutorial) return null;
     if (isAnalyzeMultiRegion)
-      return (
+      return isPending ? (
+        <Loading />
+      ) : (
         <RevenuInfo
           statsData={statsDataData}
           costRank={regionInfoData?.cost_rank}
