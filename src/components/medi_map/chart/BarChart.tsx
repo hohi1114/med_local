@@ -49,7 +49,7 @@ const BarChart = <T,>({
   }, [data]);
 
   const getStyle = () => ({
-    radius: 8,
+    radius: 5,
     maxWidth: 70,
     //Colors === 색깔하나
     ...(Array.isArray(colors) ? {} : { fill: colors })

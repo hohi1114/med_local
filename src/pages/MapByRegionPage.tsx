@@ -151,7 +151,7 @@ function MapByRegionPage() {
                   handleIsDrawerOpen(false);
                 }}
               >
-                지역 통계 종합 보기
+                여러 지역 분석하기
               </BaseButton>
             ) : (
               <>
@@ -258,7 +258,7 @@ const SubText = styled.span`
 `;
 
 const ActionSection = styled.div`
-  margin-top: 0.5rem;
+  margin-top: 1.4rem;
 `;
 
 const SelectedRegionBox = styled.div`
