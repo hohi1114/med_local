@@ -37,7 +37,7 @@ const RegionInfo = ({ data, region }: RegionInfoProps) => {
         (3 *
           (region === "small" ? data?.dong_population ?? 1 : data?.population))
     ).toLocaleString()} ₩`,
-    3: `${data.total_avg_age}세`,
+    3: `${data.total_avg_age}대`,
     4: `${Math.ceil(data.population)?.toLocaleString()}명`
   };
 
@@ -55,7 +55,7 @@ const RegionInfo = ({ data, region }: RegionInfoProps) => {
     return Object.entries(data.age_group_population || {}).map(
       ([age, value]) => ({
         연령: age,
-        세: value
+        대: value
       })
     );
   };
@@ -110,33 +110,37 @@ const RegionInfo = ({ data, region }: RegionInfoProps) => {
   return (
     <>
       <GridWrapper>
-        {STATS_BOXES.map((content) => (
-          <StatsBox
-            key={content.id}
-            title={content.title}
-            data={statsData[content.id]}
-          />
-        ))}
+        {/**월 평균 소득과 월 평균 1인당 의료비 지출액은 데이터가 없다면 숨기기 */}
+        {STATS_BOXES.map((content) =>
+          (content.id === 1 || content.id === 2) &&
+          statsData[content.id] === "0 ₩" ? null : (
+            <StatsBox
+              key={content.id}
+              title={content.title}
+              data={statsData[content.id]}
+            />
+          )
+        )}
       </GridWrapper>
 
       {renderGraphWrapper(
         "성별 인구 수",
-        <SexHorizantalBar data={horizontalBarData} />
+        <SexHorizantalBar data={horizontalBarData} height={200} />
       )}
 
       {renderGraphWrapper(
         "성별 평균 연령",
-        <SexPieChart data={pieChartData} />
+        <SexPieChart data={pieChartData} height={250} />
       )}
 
       {renderGraphWrapper(
-        "연령대별 인구 수",
+        "연령대 별 인구 수",
         <BarChart
           height={280}
-          width={390}
           data={ageGroupData()}
           xField="연령"
-          yField="세"
+          yField="대"
+          valueXSymbol={" 명"}
         />
       )}
 
@@ -144,16 +148,14 @@ const RegionInfo = ({ data, region }: RegionInfoProps) => {
         "시간대별/요일 유동인구 수",
         footTrafficToggle === "시간대" ? (
           <BaseMultipleLineChart
-            width={390}
             height={280}
             data={timePopulationData()}
             xField="time"
             yField="유동 인구 수"
-            valueXSymbol={"명"}
+            valueXSymbol={" 명"}
           />
         ) : (
           <BarChart
-            width={400}
             height={280}
             data={dayPopulationData()}
             xField="day"

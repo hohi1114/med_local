@@ -1,4 +1,4 @@
-import { Drawer, Tooltip } from "antd";
+import { Tooltip } from "antd";
 import styled from "styled-components";
 import mapStore from "../../store/mapStore";
 import isBetween from "dayjs/plugin/isBetween";
@@ -14,25 +14,28 @@ import {
   mockMapByRegionStats,
   mockMapByRegionRegionPrivate
 } from "../../utils/tutorial-mock";
+import ResizableDrawer from "../common/drawer/ResizableDrawer";
 
 dayjs.extend(isBetween);
 
+const ORIGNAL_DEFAULT_WIDTH = 480;
+const MULTIREGION_DEFAULT_WIDTH = 530;
+const MAX_WIDTH = 1000;
 const TOGGLEOPTION = ["지역", "매출", "전체"];
 interface StatisticsDrawerProps {
   showTutorial: boolean;
 }
 const StatisticsDrawer = ({ showTutorial }: StatisticsDrawerProps) => {
-  const { region, isOpenDrawer, handleIsDrawerOpen } = mapStore();
   const {
-    regionInfo,
-    statsData,
-    regionPrivate,
-    isPending,
-    areaName,
-    formatDataForAverageRevenue,
-    formatDataForRevenueTrend,
-    barFormatData
-  } = useDrawerData(false);
+    isAnalyzeMultiRegion,
+    region,
+    isOpenDrawer,
+    handleIsDrawerOpen,
+    selectedMultiRegion,
+    setIsRequested
+  } = mapStore();
+  const { regionInfo, statsData, regionPrivate, isPending, areaName } =
+    useDrawerData(false);
 
   const areaNamDate = showTutorial ? mockRegionInfo.name : areaName;
   const regionInfoData = showTutorial ? mockRegionInfo : regionInfo;
@@ -47,7 +50,9 @@ const StatisticsDrawer = ({ showTutorial }: StatisticsDrawerProps) => {
   );
 
   const [showTooltip, setShowTooltip] = useState(false);
+  const [width, setWidth] = useState<number>(ORIGNAL_DEFAULT_WIDTH);
 
+  /**For Tutorial **/
   useEffect(() => {
     if (isOpenDrawer && toggleValue === "전체" && showTutorial) {
       const timeout = setTimeout(() => {
@@ -60,8 +65,55 @@ const StatisticsDrawer = ({ showTutorial }: StatisticsDrawerProps) => {
     }
   }, [isOpenDrawer, toggleValue, showTutorial]);
 
+  /**Adjust Drawer Width **/
+  useEffect(() => {
+    if (!isAnalyzeMultiRegion) {
+      if (toggleValue === "전체") {
+        setWidth(900);
+      } else {
+        setWidth(ORIGNAL_DEFAULT_WIDTH);
+      }
+    }
+  }, [toggleValue, isAnalyzeMultiRegion]);
+
+  useEffect(() => {
+    if (isAnalyzeMultiRegion) {
+      setWidth(MULTIREGION_DEFAULT_WIDTH);
+    } else {
+      setWidth(ORIGNAL_DEFAULT_WIDTH);
+    }
+  }, [isAnalyzeMultiRegion]);
+
+  useEffect(() => {
+    if (regionPrivate && isAnalyzeMultiRegion) {
+      setIsRequested(true);
+    } else {
+      setIsRequested(false);
+    }
+  }, [regionPrivate, isAnalyzeMultiRegion]);
+
+  useEffect(() => {
+    if (
+      isAnalyzeMultiRegion &&
+      selectedMultiRegion.length === 0 &&
+      isOpenDrawer
+    ) {
+      handleIsDrawerOpen(false);
+    }
+  }, [isAnalyzeMultiRegion, selectedMultiRegion, isOpenDrawer]);
+
   const renderContent = () => {
-    if (!regionInfo && !showTutorial) return null;
+    if (!regionInfo && !isAnalyzeMultiRegion && !showTutorial) return null;
+    if (isAnalyzeMultiRegion)
+      return isPending ? (
+        <Loading />
+      ) : (
+        <RevenuInfo
+          statsData={statsDataData}
+          costRank={regionInfoData?.cost_rank}
+          data={regionPrivateData}
+        />
+      );
     if (toggleValue === "지역")
       return <RegionInfo data={regionInfoData} region={region} />;
     if (toggleValue === "매출") {
@@ -69,19 +121,9 @@ const StatisticsDrawer = ({ showTutorial }: StatisticsDrawerProps) => {
         <Loading />
       ) : (
         <RevenuInfo
+          data={regionPrivateData}
           statsData={statsDataData}
-          costRank={regionInfoData.cost_rank}
-          avgGrowth={regionPrivateData?.growth_metrics}
-          revenueTrend={regionPrivateData?.cost_by_date}
-          dailyRevenue={regionPrivateData?.average_cost_per_visit_by_date}
-          ageGroups={regionPrivateData?.patient_count_by_age_group}
-          formatDataForRevenueTrend={() =>
-            formatDataForRevenueTrend(regionPrivateData)
-          }
-          formatDataForAverageRevenue={() =>
-            formatDataForAverageRevenue(regionPrivateData)
-          }
-          barFormatData={() => barFormatData(regionPrivateData)}
+          costRank={regionInfoData?.cost_rank}
         />
       );
     }
@@ -127,19 +169,9 @@ const StatisticsDrawer = ({ showTutorial }: StatisticsDrawerProps) => {
             <SectionTitle>매출 데이터</SectionTitle>
           </Tooltip>
           <RevenuInfo
-            costRank={regionInfoData.cost_rank}
+            data={regionPrivateData}
             statsData={statsDataData}
-            revenueTrend={regionPrivateData?.cost_by_date}
-            dailyRevenue={regionPrivateData?.average_cost_per_visit_by_date}
-            ageGroups={regionPrivateData?.patient_count_by_age_group}
-            avgGrowth={regionPrivateData?.growth_metrics}
-            formatDataForRevenueTrend={() =>
-              formatDataForRevenueTrend(regionPrivateData)
-            }
-            formatDataForAverageRevenue={() =>
-              formatDataForAverageRevenue(regionPrivateData)
-            }
-            barFormatData={() => barFormatData(regionPrivateData)}
+            costRank={regionInfoData.cost_rank}
           />
         </div>
       </div>
@@ -147,37 +179,38 @@ const StatisticsDrawer = ({ showTutorial }: StatisticsDrawerProps) => {
   };
 
   return (
-    <Drawer
-      width={toggleValue === "전체" ? "70rem" : "39rem"}
-      placement="right"
-      onClose={() => handleIsDrawerOpen(false)}
-      styles={{
-        header: {
-          padding: "0.8rem 1rem"
-        },
-        mask: { backgroundColor: "rgba(0, 0, 0, 0)", pointerEvents: "none" },
-        body: {
-          display: "flex",
-          flexDirection: "column",
-          gap: "1rem",
-          backgroundColor: "#FFFFFF"
-        }
-      }}
-      open={isOpenDrawer}
+    <ResizableDrawer
+      minWidth={
+        isAnalyzeMultiRegion
+          ? MULTIREGION_DEFAULT_WIDTH
+          : toggleValue === "전체"
+          ? MAX_WIDTH
+          : ORIGNAL_DEFAULT_WIDTH
+      }
+      maxWidth={1200}
+      width={width}
+      handleWidth={setWidth}
+      isOpenDrawer={isOpenDrawer}
+      handleIsDrawerOpen={handleIsDrawerOpen}
     >
-      <ToggleContainer>
-        <BaseToggle
-          options={TOGGLEOPTION}
-          selected={toggleValue}
-          onChange={(val) => setToggleValue(val)}
-        />
-      </ToggleContainer>
+      {/** Toggle - 지역 통계 종합 보기 아닐때만 */}
+      {!isAnalyzeMultiRegion && (
+        <ToggleContainer>
+          <BaseToggle
+            options={TOGGLEOPTION}
+            selected={toggleValue}
+            onChange={(val) => setToggleValue(val)}
+          />
+        </ToggleContainer>
+      )}
 
       <div style={{ padding: "0.8rem 0rem" }}>
-        <AddressTitleStyle>{areaNamDate}</AddressTitleStyle>
+        <AddressTitleStyle>
+          {isAnalyzeMultiRegion ? "선택 지역 통계 리포트" : areaNamDate}
+        </AddressTitleStyle>
       </div>
       {renderContent()}
-    </Drawer>
+    </ResizableDrawer>
   );
 };
 

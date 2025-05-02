@@ -18,18 +18,13 @@ interface UnifiedLineChartProps {
   xField: string;
   yField: string;
   height: number;
-  width?: number;
-
   labelFormatterX?: (value: string) => string;
   labelFormatterY?: (value: number) => string;
   valueXSymbol?: string;
-
   formatData?: (data: Record<string, number>) => LineDataItem[];
   colorField?: string;
   limitDateXLength?: number;
   seriesField?: string;
-
-  preFormatted?: boolean;
 }
 
 const BaseMultipleLineChart = ({
@@ -37,14 +32,12 @@ const BaseMultipleLineChart = ({
   xField,
   yField,
   height,
-  width,
   labelFormatterX,
   labelFormatterY,
   valueXSymbol = " ₩",
   formatData,
   colorField,
-  seriesField,
-  preFormatted = false
+  seriesField
 }: UnifiedLineChartProps) => {
   const [chartData, setChartData] = useState<LineDataItem[]>([]);
 
@@ -134,7 +127,7 @@ const BaseMultipleLineChart = ({
         setChartData(data);
       }
     }
-  }, [data, formatData, xField, yField, preFormatted]);
+  }, [data, formatData, xField, yField]);
 
   const formatXLabel = (value: string) => {
     if (xField === "time") return value;
@@ -151,13 +144,12 @@ const BaseMultipleLineChart = ({
     seriesField: seriesField || colorField,
     smooth: true,
     height,
-    width: width || undefined,
     autoFit: true,
     forceFit: true,
     tooltip: {
       channel: "y",
       valueFormatter: (value: number) =>
-        Math.ceil(value).toLocaleString() + valueXSymbol
+        Math.ceil(value).toLocaleString() + (valueXSymbol || "")
     },
     axis: {
       y: {
@@ -188,8 +180,6 @@ const BaseMultipleLineChart = ({
 };
 
 const ChartContainer = styled.div`
-  display: flex;
-  flex: 1;
   width: 100%;
   height: 100%;
 `;

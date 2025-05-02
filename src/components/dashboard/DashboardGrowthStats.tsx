@@ -111,7 +111,6 @@ export default function DashboardGrowthStats({
       <DashboardContainer>
         <GrowthCard>
           <StatComment>
-            [ {startDate} ~ {endDate} ]
             <StatList2>
               <div>
                 <ListItem>{getGrowthMessage(data)}</ListItem>
@@ -141,9 +140,9 @@ export default function DashboardGrowthStats({
             <StatList2>
               {ageMessage &&
                 ageMessage.length >= 1 &&
-                ageMessage.map((message) => {
+                ageMessage.map((message, index) => {
                   return (
-                    <>
+                    <div key={index}>
                       <StrongText alert="none">
                         {message.strategyMessage}
                       </StrongText>
@@ -155,7 +154,7 @@ export default function DashboardGrowthStats({
                         <ChangeIndicator value={message.change_percent} />{" "}
                         했어요.
                       </StatText>
-                    </>
+                    </div>
                   );
                 })}
             </StatList2>
@@ -283,7 +282,7 @@ const StatList = styled.div`
 const StatList2 = styled.ul`
   list-style-type: none;
   margin: 0;
-  margin-top: 1rem;
+  margin-top: 0.5rem;
   padding: 0;
   color: ${(props) => props.theme.colors.black01};
   display: flex;

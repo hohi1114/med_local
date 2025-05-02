@@ -27,7 +27,7 @@ import DashboardGrowthStats from "../components/dashboard/DashboardGrowthStats";
 import useDashboardStore from "../store/useDashboardStore";
 import { Radio } from "antd";
 import BaseMultipleLineChart from "../components/medi_map/chart/BaseMultipleLineChart";
-import { useDashBoardChart } from "../hooks/useDashBoardChart";
+import { usePrivateDataChart } from "../hooks/usePrivateDataChart";
 
 const LOADING_CONTENT = "데이터를 불러오는 중입니다.";
 
@@ -69,7 +69,7 @@ export default function DashBoardPage() {
     formatYAxisLabelForLineChart,
     formatWeeklyDataForBarChart,
     handleChartRadioChange
-  } = useDashBoardChart(dashboardInfoData);
+  } = usePrivateDataChart(dashboardInfoData);
 
   //Tutorial
   const tutorialRefs = {
@@ -244,7 +244,7 @@ export default function DashBoardPage() {
             >
               <Card>
                 <div style={{ display: "flex", gap: "3rem" }}>
-                  <ChartTitle>일자별 매출 통계</ChartTitle>
+                  <ChartTitle>일자별 매출/환자 수 통계</ChartTitle>
                   <Radio.Group
                     onChange={handleChartRadioChange}
                     value={chartType}
@@ -268,7 +268,7 @@ export default function DashBoardPage() {
                   colorField="category"
                   labelFormatterY={formatYAxisLabelForLineChart}
                   height={500}
-                  valueXSymbol=" ₩"
+                  valueXSymbol={chartType === 1 ? " ₩" : " 명"}
                 />
               </Card>
             </CardGrid>
@@ -285,19 +285,19 @@ export default function DashBoardPage() {
             >
               <Card>
                 <ChartTitle>최근 3개월 월평균 성장률</ChartTitle>
-
                 <DashboardGrowthStats
                   data={dashboardInfoData?.average_growths}
                   isDashboard
                 />
               </Card>
               <Card>
-                <ChartTitle>연령 별 환자 분포</ChartTitle>
+                <ChartTitle>연령대 별 환자 분포</ChartTitle>
                 <BarChart
                   xField="age"
                   yField="value"
                   data={formatPatientCountBarData()}
                   height={380}
+                  valueXSymbol=" 명"
                 />
               </Card>
             </CardGrid>
@@ -316,7 +316,7 @@ export default function DashBoardPage() {
                   yField="value"
                   data={formatTotalCostBarData()}
                   height={380}
-                  colors={["#96E2D6"]}
+                  colors={"#96E2D6"}
                   valueXSymbol=" ₩"
                 />
               </Card>
@@ -330,6 +330,7 @@ export default function DashBoardPage() {
                   isGrouped={true}
                   seriesField="type"
                   legend={true}
+                  valueXSymbol=" 명"
                   colors={["#FFB6C1", "#92BFFF"]}
                 />
               </Card>
@@ -346,12 +347,10 @@ const DashBoardContainer = styled.div`
   display: flex;
   flex-direction: column;
   position: relative;
-  padding-bottom: 2rem;
 `;
 
 const SectionContainer = styled.div`
   position: relative;
-  margin-bottom: 24px;
 `;
 
 const ButtonWrapper = styled.div`
@@ -377,8 +376,8 @@ const FilterContainer = styled.div`
 const CardGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1rem;
-  padding: 1rem;
+  column-gap: 1rem;
+  padding: 0.5rem;
   position: relative;
   z-index: ${(props) => props.theme.zIndex.rank4};
 

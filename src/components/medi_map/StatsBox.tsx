@@ -25,6 +25,7 @@ const StatsBox = ({
   disabledCompare
 }: StatsBoxProps) => {
   const fontSize = data?.length >= 15 ? 1.3 : 1.5;
+
   return (
     <StatsBoxContainer
       isDecreased={diffRateData ? diffRateData < 0 : false}
@@ -82,7 +83,6 @@ const StatsBoxContainer = styled.div.withConfig({
   flex-direction: column;
   gap: 1rem;
   width: 100%;
-  max-width: 25rem;
   box-sizing: border-box;
 `;
 

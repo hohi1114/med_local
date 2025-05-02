@@ -8,8 +8,8 @@ let mainWindow: BrowserWindow | null = null;
 
 const createMainWindow = () => {
   mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
+    width: 1500,
+    height: 1000,
     webPreferences: {
       nodeIntegration: false, // 보안을 위해 false로 설정
       contextIsolation: true, // 보안을 위해 true로 설정
