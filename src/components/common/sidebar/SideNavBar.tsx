@@ -57,7 +57,7 @@ const SideNavBar = () => {
           onClick={() => setCollapsed((prev) => !prev)}
           alt="menu icon"
         />
-        {!collapsed && <LogoText>ORBIS</LogoText>}
+        {!collapsed && <LogoText>HTRACKER</LogoText>}
       </LogoContainer>
 
       <Menu

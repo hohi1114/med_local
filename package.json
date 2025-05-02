@@ -1,7 +1,7 @@
 {
   "name": "med_local",
   "private": true,
-  "version": "0.0.2",
+  "version": "0.0.1",
   "main": "dist-electron/electron/main.js",
   "scripts": {
     "dev": "cross-env NODE_ENV=development concurrently \"vite --mode development\" \"wait-on http://localhost:5173 && tsc -p tsconfig.electron.json && electron .\"",
@@ -15,7 +15,7 @@
   },
   "build": {
     "appId": "com.example.myapp",
-    "productName": "Orbis",
+    "productName": "HTRACKER",
     "directories": {
       "output": "release"
     },
