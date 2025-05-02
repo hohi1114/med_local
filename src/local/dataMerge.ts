@@ -65,7 +65,7 @@ export function mergeDataEuisarang(
   // Fill in patient data
   df_merged.forEach((record) => {
     const patient = patientMap.get(record.chartNumber);
-    record.age = patient?.age || null;
+    record.age = patient?.age ?? null;
     record.address = patient?.address || "N/D";
   });
 
@@ -86,7 +86,6 @@ export function mergeDataOrm(
     address: "N/D", // Will be filled in later
   }));
 
-  console.log(df_merged);
 
   // Create patient map for quick lookup
   const patientMap = new Map<number, PatientData>(
@@ -101,7 +100,7 @@ export function mergeDataOrm(
   // Fill in patient data
   df_merged.forEach((record) => {
     const patient = patientMap.get(record.chartNumber);
-    record.age = patient?.age || null;
+    record.age = patient?.age ?? null;
     record.address = patient?.address || "N/D";
   });
 
@@ -134,7 +133,7 @@ export function mergeDataDentWeb(
   // Fill in patient data
   df_merged.forEach((record) => {
     const patient = patientMap.get(record.chartNumber);
-    record.age = patient?.age || null;
+    record.age = patient?.age ?? null;
     record.address = patient?.address || "N/D";
   });
 
@@ -168,7 +167,7 @@ export function mergeDataEgis(
   // Fill age and address from patientList
   for (const pat of patientList) {
     patientMap.set(pat.chartNumber, {
-      age: pat?.age || null,
+      age: pat?.age ?? null,
       address: pat.address,
     });
   }

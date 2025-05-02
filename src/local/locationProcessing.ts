@@ -56,8 +56,8 @@ export async function fetchRegionData(token: string): Promise<RegionResponse> {
       {
         headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
+          "Content-Type": "application/json",
+        },
       }
     );
 
@@ -77,8 +77,8 @@ export async function getMappingData(token: string): Promise<MappingResponse> {
       {
         headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
+          "Content-Type": "application/json",
+        },
       }
     );
 
@@ -108,14 +108,14 @@ export async function processDataLocally(
       return {
         ...record,
         chartNumber:
-          Number(chartNumberMapping[record.chartNumber]) ?? record.chartNumber
+          Number(chartNumberMapping[record.chartNumber]) ?? record.chartNumber,
       };
     });
 
     // Step 1: Add location_true field to all records (false by default)
     const recordsWithLocationFlag = mappedData.map((record) => ({
       ...record,
-      location_true: record.address !== "N/D"
+      location_true: record.address !== "N/D",
     }));
 
     // Step 2: Extract records with valid addresses for geocoding
@@ -123,7 +123,7 @@ export async function processDataLocally(
       .filter((record) => record.location_true)
       .map((record) => ({
         chartNumber: record.chartNumber,
-        address: String(record.address)
+        address: String(record.address),
       }));
 
     // Step 3: Geocode addresses
@@ -139,8 +139,8 @@ export async function processDataLocally(
         {
           latitude: g.latitude,
           longitude: g.longitude,
-          geocoded: g.latitude !== null && g.longitude !== null
-        }
+          geocoded: g.latitude !== null && g.longitude !== null,
+        },
       ])
     );
 
@@ -152,7 +152,7 @@ export async function processDataLocally(
         ...record,
         latitude: geoData?.latitude ?? null,
         longitude: geoData?.longitude ?? null,
-        location_true: geoData?.geocoded ?? false
+        location_true: geoData?.geocoded ?? false,
       };
     });
 
@@ -162,19 +162,19 @@ export async function processDataLocally(
     const smallRegions = regionData.smallRegions.map((region) => ({
       id: region.id, // Use name as id if id is not available
       name: region.name,
-      coords: parsePolygon(region.polygon)
+      coords: parsePolygon(region.polygon),
     }));
 
     const dongRegions = regionData.dongRegions.map((region) => ({
       id: region.id, // Use name as id if id is not available
       name: region.name,
-      coords: parsePolygon(region.polygon)
+      coords: parsePolygon(region.polygon),
     }));
 
     const guRegions = regionData.guRegions.map((region) => ({
       id: region.id, // Use name as id if id is not available
       name: region.name,
-      coords: parsePolygon(region.polygon)
+      coords: parsePolygon(region.polygon),
     }));
 
     const processedRecords: ProcessedPatientData[] = recordsWithGeodata.map(
@@ -205,7 +205,7 @@ export async function processDataLocally(
           location_true: record.location_true,
           small_region_id,
           dong_region_id,
-          gu_region_id
+          gu_region_id,
         };
       }
     );
@@ -233,7 +233,7 @@ export async function processDataLocally(
       // Add the location to the array for this date
       dateLocationMap.get(dateStr)!.push({
         lat: latitude,
-        lng: longitude
+        lng: longitude,
       });
     });
 
@@ -242,16 +242,84 @@ export async function processDataLocally(
       dateLocationMap.entries()
     ).map(([date, locations]) => ({
       date,
-      patient_locations: locations
+      patient_locations: locations,
     }));
 
     // Return both data structures
     return {
       patient_records: processedRecords,
-      date_location_groups: dateLocationGroups
+      date_location_groups: dateLocationGroups,
     };
   } catch (error) {
     console.error("Error processing data locally:", error);
     throw error;
   }
+}
+
+
+export async function mockProcessDataLocally(
+  mergedData: MergedData[]
+): Promise<{
+  patient_records: ProcessedPatientData[];
+  date_location_groups: DateLocationGroup[];
+}> {
+  // Call progress callback to simulate progress
+
+  // Create mock processed records based on a subset of real data
+  const mockProcessedRecords: ProcessedPatientData[] = mergedData
+    .slice(0, Math.min(50, mergedData.length))
+    .map((record) => {
+      // Determine if record should have location data (make ~70% have locations)
+      const hasLocation = Math.random() < 0.7;
+
+      return {
+        chart_number: record.chartNumber,
+        age: record.age, // Preserve original age
+        total_cost: record.totalCost,
+        visit_date: record.visitDate,
+        location_true: hasLocation,
+        // Random region IDs for records with locations
+        small_region_id: hasLocation
+          ? Math.floor(Math.random() * 10) + 1
+          : null,
+        dong_region_id: hasLocation ? Math.floor(Math.random() * 20) + 1 : null,
+        gu_region_id: hasLocation ? Math.floor(Math.random() * 5) + 1 : null,
+      };
+    });
+
+  // Create mock date-location groups
+  // Get unique dates from the records
+  const uniqueDates = [
+    ...new Set(
+      mockProcessedRecords
+        .filter((r) => r.location_true)
+        .map((r) => new Date(r.visit_date).toISOString().split("T")[0])
+    ),
+  ];
+
+  const mockDateLocationGroups: DateLocationGroup[] = uniqueDates.map(
+    (date) => {
+      // Generate 1-10 random locations per date
+      const locationCount = Math.floor(Math.random() * 10) + 1;
+      const locations: LocationPoint[] = [];
+
+      for (let i = 0; i < locationCount; i++) {
+        // Generate locations around Seoul (approximate coordinates)
+        locations.push({
+          lat: 37.5 + Math.random() * 0.1, // 37.5 ± 0.1 degrees
+          lng: 127.0 + Math.random() * 0.1, // 127.0 ± 0.1 degrees
+        });
+      }
+
+      return {
+        date,
+        patient_locations: locations,
+      };
+    }
+  );
+
+  return {
+    patient_records: mockProcessedRecords,
+    date_location_groups: mockDateLocationGroups,
+  };
 }

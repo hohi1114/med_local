@@ -13,10 +13,12 @@ import RequireSubscribe from "../components/common/RequireSubscribe.tsx";
 import { getCookie } from "../utils/api/cookie.ts";
 import {
   ProcessedPatientData,
-  DateLocationGroup
+  DateLocationGroup,
+  mockProcessDataLocally
 } from "../local/locationProcessing.ts";
 import axios from "axios";
 import useUpdateUserInfo from "../hooks/useUpdateUserInfo.tsx";
+import { access } from "fs";
 
 interface ProcessDataResponse {
   status: string;
@@ -168,6 +170,8 @@ const UpdateDataPage = () => {
         placeBuffers
       );
 
+      console.log(visits);
+      console.log(patients);
       // Step 3: Merge data locally
       const mergedData = await window.electron.mergeDataDentWeb(
         visits,
@@ -278,6 +282,10 @@ const UpdateDataPage = () => {
       const patients = await window.electron.parsePlaceFilesEuisarang(
         placeBuffers
       );
+
+
+      console.log(visits);
+      console.log(patients);
 
       // Step 3: Merge data locally
       const mergedData = await window.electron.mergeDataEuisarang(
@@ -393,14 +401,13 @@ const UpdateDataPage = () => {
         placeBuffers
       );
 
-      console.log(visits);
-      console.log(patients);
 
       // Step 3: Merge data locally
       const mergedData = await window.electron.mergeDataOrm(
         visits,
         patients
       );
+
 
       setProgress(10);
 
@@ -503,7 +510,11 @@ const UpdateDataPage = () => {
       // Step 2: Parse files locally via Electron
       const visits = await window.electron.parseDailyIncomeEgis(daysBuffers);
 
+      console.log(visits);
       const patients = await window.electron.parsePatientListEgis(placeBuffers);
+
+
+
 
       // Step 3: Merge data locally
       const mergedData = await window.electron.mergeDataEgis(visits, patients);
@@ -515,6 +526,7 @@ const UpdateDataPage = () => {
         mergedData,
         getCookie("accessToken")
       );
+
 
       removeProgressListener();
 

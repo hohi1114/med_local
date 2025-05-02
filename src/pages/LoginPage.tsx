@@ -56,7 +56,7 @@ const LoginPage = () => {
     onError: (err: AxiosError) =>
       alert(
         (err.response?.data as { error?: string })?.error ||
-          "License activation failed"
+        "License activation failed"
       )
   });
 
@@ -118,25 +118,25 @@ const LoginPage = () => {
         <img
           src="/logo.png"
           alt="default_profile"
-          style={{ width: "5rem", height: "auto" }}
+          style={{ width: "10rem", height: "auto" }}
         />
-        <TitleStyle>Login</TitleStyle>
+        <TitleStyle>로그인</TitleStyle>
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           <BaseInput
             type="email"
-            placeholder="Email"
+            placeholder="이메일 주소"
             {...register("email", { required: "ID를 입력해주세요" })}
           />
           <BaseInput
             type="password"
-            placeholder="Password"
+            placeholder="비밀번호"
             {...register("password", { required: "비밀번호를 입력해주세요." })}
           />
         </div>
 
         <div style={{ minWidth: "20rem" }}>
           <StyledButton type="submit" isLoading={isLoading}>
-            Sign in
+            로그인 하기
           </StyledButton>
         </div>
         {/**Error Messages */}
@@ -184,7 +184,7 @@ const LoginWrapper = styled.form`
 
 const TitleStyle = styled.div`
   font-size: 1.5rem;
-  font-weight: bold;
+  font-weight: bold
 `;
 const ErrorMessage = styled.div`
   color: ${(props) => props.theme.colors.red};
