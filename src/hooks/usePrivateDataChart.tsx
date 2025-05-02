@@ -66,7 +66,7 @@ export const usePrivateDataChart = (data: DashBoard | RegionPrivateData) => {
 
   //요일별 신규/재방문 환자 비율
   const formatWeeklyDataForBarChart = () => {
-    if (!data.sinhwan_visit_count_by_day_of_week) return [];
+    if (!data?.sinhwan_visit_count_by_day_of_week) return [];
     const days = [
       "월요일",
       "화요일",
