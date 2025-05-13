@@ -1,4 +1,9 @@
 import { contextBridge, ipcRenderer } from "electron";
+import {
+  parseDailyIncomeVegas,
+  parsePatientListVegas,
+} from "../src/local/ExcelParser";
+import { mergeDataVegas } from "../src/local/dataMerge";
 
 contextBridge.exposeInMainWorld("electron", {
   ping: () => "pong",
@@ -27,6 +32,12 @@ contextBridge.exposeInMainWorld("electron", {
   parsePatientListEgis: (fileBuffers: ArrayBuffer[]) =>
     ipcRenderer.invoke("parse-patient-list-egis", fileBuffers),
 
+  // File processing - Egis
+  parseDailyIncomeVegas: (fileBuffers: ArrayBuffer[]) =>
+    ipcRenderer.invoke("parse-daily-income-vegas", fileBuffers),
+  parsePatientListVegas: (fileBuffers: ArrayBuffer[]) =>
+    ipcRenderer.invoke("parse-patient-list-vegas", fileBuffers),
+
   // Data merging
   mergeDataEuisarang: (visits: any[], patients: any[]) =>
     ipcRenderer.invoke("merge-data-euisarang", visits, patients),
@@ -36,6 +47,8 @@ contextBridge.exposeInMainWorld("electron", {
     ipcRenderer.invoke("merge-data-egis", dailyIncome, patientList),
   mergeDataOrm: (visits: any[], patients: any[]) =>
     ipcRenderer.invoke("merge-data-euisarang", visits, patients),
+  mergeDataVegas: (dailyIncome: any[], patientList: any[]) =>
+    ipcRenderer.invoke("merge-data-vegas", dailyIncome, patientList),
 
   // Final data processing
   processDataLocally: (mergedData: any[], accessToken: string) =>

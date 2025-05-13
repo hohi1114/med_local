@@ -3,7 +3,7 @@ import * as XLSX from "xlsx";
 // Interfaces for your data structures
 export interface VisitData {
   chartNumber: number;
-  visitDate: string;
+  visitDate: string | Date;
   totalCost: number;
 }
 
@@ -37,6 +37,18 @@ export interface PatientListEgis {
   chartNumber: number; // 1st column
   address: string; // 8th column
   age: number; //2nd column
+}
+
+export interface DailyIncomeVegas {
+  chartNumber: number;
+  visitDate: string;
+  totalCost: number;
+  age: number;
+}
+
+export interface PatientListVegas {
+  chartNumber: number;
+  address: string;
 }
 
 // In src/services/fileProcessing.ts
@@ -105,51 +117,80 @@ export async function parseDaysFilesEuisarang(
 
     const worksheet = workbook.Sheets[workbook.SheetNames[0]]; // First sheet
 
-    const jsonData = XLSX.utils.sheet_to_json<any>(worksheet, {
+    // Get all data including headers
+    const allData = XLSX.utils.sheet_to_json<any>(worksheet, {
       header: 1,
-      range: 3,
-    }); // Skip first 3 rows
+      range: 0, // Start from the first row to get all data
+    });
 
-    for (let i = 0; i < jsonData.length; i++) {
-      const row = jsonData[i];
+    if (allData.length < 4) {
+      console.error("❌ Insufficient rows in the file");
+      continue;
+    }
 
-      if (!row[0] || !row[2] || !row[3]) {
+    // Get header row (4th row, index 3)
+    const headers = allData[3];
+
+    // Find the index for each required column
+    const chartNumberIndex = headers.findIndex(
+      (col: any) => col === "차트번호"
+    );
+    const visitDateIndex = headers.findIndex(
+      (col: any) => col === "내원/수납일"
+    );
+    const totalCostIndex = headers.findIndex((col: any) => col === "총진료비");
+
+    // Check if all required columns were found
+    if (
+      chartNumberIndex === -1 ||
+      visitDateIndex === -1 ||
+      totalCostIndex === -1
+    ) {
+      console.error("❌ Required columns not found in the file");
+      continue; // Skip this file
+    }
+
+    // Process data rows (starting from row 5, index 4)
+    for (let i = 4; i < allData.length; i++) {
+      const row = allData[i];
+
+      if (
+        !row[chartNumberIndex] ||
+        !row[visitDateIndex] ||
+        !row[totalCostIndex]
+      ) {
         continue;
       }
 
-      if (row.length >= 4) {
-        // Type check for chartNumber
-        const chartNumber = Number(row[0]);
-
-        if (isNaN(chartNumber)) {
-          console.warn(`⚠️ Invalid chart number in row ${i + 4}`); // +4 because we skipped 3 rows
-          continue;
-        }
-
-        // Type check and process visitDate
-        let visitDate = row[2];
-
-        if (!visitDate) {
-          console.warn(`⚠️ Missing visit date in row ${i + 4}`);
-          continue;
-        }
-        // ✅ Convert Excel serial date to string format
-        if (typeof visitDate === "number") {
-          visitDate = excelSerialToDate(visitDate);
-        }
-
-        const totalCost = Number(row[3]);
-        if (isNaN(totalCost)) {
-          console.warn(`⚠️ Invalid total cost in row ${i + 4}`);
-          continue;
-        }
-
-        data.push({
-          chartNumber,
-          visitDate,
-          totalCost,
-        });
+      // Process chartNumber - ensure it's a number
+      const chartNumber = Number(row[chartNumberIndex]);
+      if (isNaN(chartNumber)) {
+        continue;
       }
+
+      // Process visitDate
+      let visitDate = row[visitDateIndex];
+      if (!visitDate) {
+        console.warn(`⚠️ Missing visit date in row ${i + 1}`);
+        continue;
+      }
+
+      // ✅ Convert Excel serial date to string format
+      if (typeof visitDate === "number") {
+        visitDate = excelSerialToDate(visitDate);
+      }
+
+      // Process totalCost
+      const totalCost = Number(row[totalCostIndex]);
+      if (isNaN(totalCost)) {
+        continue;
+      }
+
+      data.push({
+        chartNumber,
+        visitDate,
+        totalCost,
+      });
     }
   }
   return data;
@@ -208,47 +249,66 @@ export async function parsePlaceFilesEuisarang(
 
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
 
-    const jsonData = XLSX.utils.sheet_to_json<any>(worksheet, {
+    // Get all data including headers
+    const allData = XLSX.utils.sheet_to_json<any>(worksheet, {
       header: 1,
-      range: 2,
+      range: 0, // Start from the first row to get headers
     });
 
-    for (let i = 0; i < jsonData.length; i++) {
-      const row = jsonData[i];
+    if (allData.length < 3) {
+      console.error("❌ Insufficient rows in the file");
+      continue;
+    }
 
-      if (!row[4] || !row[8] || !row[1]) {
+    // Get header row (3rd row, index 2)
+    const headers = allData[1];
+
+    // Find the index for each required column
+    const chartNumberIndex = headers.findIndex(
+      (col: any) => col === "차트번호"
+    );
+    const ageIndex = headers.findIndex((col: any) => col === "나이");
+    const addressIndex = headers.findIndex((col: any) => col === "주소");
+
+    // Check if all required columns were found
+    if (chartNumberIndex === -1 || ageIndex === -1 || addressIndex === -1) {
+      console.error("❌ Required columns not found in the file");
+      continue; // Skip this file
+    }
+
+    // Process data rows (starting from row 4, index 3)
+    for (let i = 2; i < allData.length; i++) {
+      const row = allData[i];
+
+      if (!row[chartNumberIndex] || !row[ageIndex] || !row[addressIndex]) {
         continue; // This works in a for loop
       }
 
-      if (row.length >= 9) {
-        // Type check for chartNumber
-        const chartNumber = Number(row[1]);
-        if (isNaN(chartNumber)) {
-          console.warn(`⚠️ Invalid chart number in row ${i + 1}`);
-          continue;
-        }
-
-        // Type check for age
-        const ageString = row[4] || "";
-        const parsedAge = parseAgeEuisarang(ageString);
-        if (isNaN(parsedAge)) {
-          console.warn(`⚠️ Invalid age in row ${i + 1}`);
-          // Continue with default age 0 rather than skipping the row
-        }
-
-        // Normalize age if it's a valid number
-        let normalizedAge = !isNaN(parsedAge) ? normalizeAge(parsedAge) : 0;
-
-        // Type check for address (ensure it's a string)
-        const address = row[8] ? String(row[8]) : "N/D";
-
-        // All checks passed, add to data array
-        data.push({
-          chartNumber,
-          age: normalizedAge,
-          address,
-        });
+      // Type check for chartNumber
+      const chartNumber = Number(row[chartNumberIndex]);
+      if (isNaN(chartNumber)) {
+        continue;
       }
+
+      // Type check for age
+      const ageString = row[ageIndex] || "";
+      const parsedAge = parseAgeEuisarang(ageString);
+      if (isNaN(parsedAge)) {
+        // Continue with default age 0 rather than skipping the row
+      }
+
+      // Normalize age if it's a valid number
+      let normalizedAge = !isNaN(parsedAge) ? normalizeAge(parsedAge) : 0;
+
+      // Type check for address (ensure it's a string)
+      const address = row[addressIndex] ? String(row[addressIndex]) : "N/D";
+
+      // All checks passed, add to data array
+      data.push({
+        chartNumber,
+        age: normalizedAge,
+        address,
+      });
     }
   }
   return data;
@@ -261,6 +321,7 @@ export async function parseDailyIncomeEgis(
 
   for (const buffer of fileBuffers) {
     const workbook = XLSX.read(buffer, { type: "array" });
+
     if (workbook.SheetNames.length === 0) {
       console.error("❌ No worksheets found in file");
       continue;
@@ -268,59 +329,90 @@ export async function parseDailyIncomeEgis(
 
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
 
-    const rows = XLSX.utils.sheet_to_json<any[]>(worksheet, {
+    // Get all data including headers
+    const allData = XLSX.utils.sheet_to_json<any[]>(worksheet, {
       header: 1,
-      range: 1,
+      range: 0, // Start from the first row to get all data
     });
 
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i];
+    if (allData.length < 2) {
+      console.error("❌ Insufficient rows in the file");
+      continue;
+    }
 
-      if (!row[2] || !row[0] || !row[7]) {
+    const headers = allData[0];
+
+    // Find the index for each required column
+    const patientNumberIndex = headers.findIndex(
+      (col: any) => col === "환자번호"
+    );
+    const dateIndex = headers.findIndex((col: any) => col === "날짜");
+    const totalCostIndex = headers.findIndex((col: any) => col === "총진료비");
+
+    if (
+      patientNumberIndex === -1 ||
+      dateIndex === -1 ||
+      totalCostIndex === -1
+    ) {
+      console.error("❌ Required columns not found in the file");
+      console.error("Available headers:", headers);
+      continue;
+    }
+
+    // Process data rows (starting from row 2, index 1)
+    for (let i = 1; i < allData.length; i++) {
+      const row = allData[i];
+
+      // Skip empty rows
+      if (!row || row.length === 0) {
         continue;
       }
 
-      if (row.length >= 8) {
-        // Type check for chartNumber
-        const chartNumber = Number(row[0]);
-        if (isNaN(chartNumber)) {
-          console.warn(`⚠️ Invalid chart number in row ${i + 2}`); // +2 because we skipped 1 row
-          continue;
-        }
-
-        const totalCost = Number(row[7]); // 8th column
-        if (isNaN(totalCost)) {
-          console.warn(`⚠️ Invalid total cost in row ${i + 2}`);
-          continue;
-        }
-
-        let visitDate = row[2]; // 3rd column
-
-        // Format the date - now handling string format "YYYY/MM/DD"
-        if (
-          typeof visitDate === "string" &&
-          visitDate.match(/^\d{4}\/\d{2}\/\d{2}$/)
-        ) {
-          // Replace slashes with hyphens to standardize to YYYY-MM-DD
-          visitDate = visitDate.replace(/\//g, "-");
-        }
-        // Still handle Excel serial dates in case they appear
-        else if (typeof visitDate === "number") {
-          visitDate = excelSerialToDate(visitDate);
-        }
-
-        data.push({
-          chartNumber,
-          visitDate: String(visitDate), // 3rd column
-          totalCost,
-        });
+      // Check if required fields exist
+      if (!row[patientNumberIndex] || !row[dateIndex] || !row[totalCostIndex]) {
+        console.log(`Skipping row ${i}: missing required fields`);
+        continue;
       }
+
+      // Process patient number (chart number)
+      const chartNumber = Number(row[patientNumberIndex]);
+      if (isNaN(chartNumber)) {
+        console.log(`Skipping row ${i}: invalid patient number`);
+        continue;
+      }
+
+      // Process total cost
+      const totalCost = Number(row[totalCostIndex]);
+      if (isNaN(totalCost)) {
+        console.log(`Skipping row ${i}: invalid total cost`);
+        continue;
+      }
+
+      // Process visit date
+      let visitDate = row[dateIndex];
+      // Format the date - now handling string format "YYYY/MM/DD"
+      if (
+        typeof visitDate === "string" &&
+        visitDate.match(/^\d{4}\/\d{2}\/\d{2}$/)
+      ) {
+        // Replace slashes with hyphens to standardize to YYYY-MM-DD
+        visitDate = visitDate.replace(/\//g, "-");
+      }
+      // Still handle Excel serial dates in case they appear
+      else if (typeof visitDate === "number") {
+        visitDate = excelSerialToDate(visitDate);
+      }
+
+      data.push({
+        chartNumber,
+        visitDate: String(visitDate), // 3rd column
+        totalCost,
+      });
     }
   }
   return data;
 }
 
-// Second function
 export async function parsePatientListEgis(
   fileBuffers: ArrayBuffer[]
 ): Promise<PatientListEgis[]> {
@@ -329,74 +421,106 @@ export async function parsePatientListEgis(
 
   for (const buffer of fileBuffers) {
     const workbook = XLSX.read(buffer, { type: "array" });
+
     if (workbook.SheetNames.length === 0) {
       console.error("❌ No worksheets found in file");
       continue;
     }
 
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json<any[]>(worksheet, {
+
+    // Get all data including headers
+    const allData = XLSX.utils.sheet_to_json<any[]>(worksheet, {
       header: 1,
-      range: 1,
+      range: 0, // Start from the first row to get all data
     });
 
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i];
+    if (allData.length < 2) {
+      console.error("❌ Insufficient rows in the file");
+      continue;
+    }
 
-      if (!row[2] || !row[0] || !row[7]) {
+    // Get header row (first row, index 0)
+    const headers = allData[0];
+
+    // Find the index for each required column
+    const patientNumberIndex = headers.findIndex(
+      (col: any) => col === "환자번호"
+    );
+    const residentNumberIndex = headers.findIndex(
+      (col: any) => col === "주민번호"
+    );
+    const addressIndex = headers.findIndex((col: any) => col === "주소");
+
+    if (
+      patientNumberIndex === -1 ||
+      residentNumberIndex === -1 ||
+      addressIndex === -1
+    ) {
+      console.error("❌ Required columns not found in the file");
+      console.error("Available headers:", headers);
+      continue;
+    }
+
+    // Process data rows (starting from row 2, index 1)
+    for (let i = 1; i < allData.length; i++) {
+      const row = allData[i];
+
+      // Skip empty rows
+      if (!row || row.length === 0) {
         continue;
       }
 
-      if (row.length < 8) {
-        // Calculate age from resident registration number
-        let age = 0;
-        const idNumber = row[2] ? String(row[2]).trim() : "";
-
-        if (idNumber && idNumber.length >= 8) {
-          // Extract birth year (first two digits)
-          const yearPrefix = idNumber.substring(0, 2);
-          // Extract gender/century code (first digit after hyphen or 7th character)
-          const genderCode = idNumber.includes("-")
-            ? idNumber.split("-")[1]?.charAt(0)
-            : idNumber.charAt(6);
-
-          if (yearPrefix && genderCode) {
-            let birthYear: number;
-
-            // Determine century based on gender code
-            if (genderCode === "1" || genderCode === "2") {
-              // Born in 1900s
-              birthYear = 1900 + parseInt(yearPrefix);
-            } else if (genderCode === "3" || genderCode === "4") {
-              // Born in 2000s
-              birthYear = 2000 + parseInt(yearPrefix);
-            } else {
-              // Default to 1900s if gender code is invalid
-              birthYear = 1900 + parseInt(yearPrefix);
-            }
-
-            age = currentYear - birthYear;
-          }
-        }
-
-        // Normalize age if it's a valid number
-        let normalizedAge = !isNaN(age) ? normalizeAge(age) : 0;
-
-        const chartNumber = Number(row[0]);
-        if (isNaN(chartNumber)) {
-          console.warn(`⚠️ Invalid chart number in row ${i + 2}`); // +2 because we skipped 1 row
-          continue;
-        }
-
-        data.push({
-          chartNumber,
-          address: row[7] ? String(row[7]) : "N/A", // 8th column
-          age: normalizedAge,
-        });
+      // Check if required fields exist
+      if (!row[patientNumberIndex] || !row[residentNumberIndex]) {
+        console.log(`Skipping row ${i}: missing required fields`);
+        continue;
       }
+
+      // Process patient number (chart number)
+      const chartNumber = Number(row[patientNumberIndex]);
+      if (isNaN(chartNumber)) {
+        console.log(`Skipping row ${i}: invalid patient number`);
+        continue;
+      }
+
+      // Process resident registration number for age calculation
+      const idNumber = String(row[residentNumberIndex]).trim();
+      let age = 0;
+
+      if (idNumber && idNumber.length >= 8) {
+        const yearPrefix = idNumber.substring(0, 2);
+        const genderCode = idNumber.includes("-")
+          ? idNumber.split("-")[1]?.charAt(0)
+          : idNumber.charAt(6);
+
+        if (yearPrefix && genderCode) {
+          let birthYear: number;
+
+          if (genderCode === "1" || genderCode === "2") {
+            birthYear = 1900 + parseInt(yearPrefix);
+          } else if (genderCode === "3" || genderCode === "4") {
+            birthYear = 2000 + parseInt(yearPrefix);
+          } else {
+            birthYear = 1900 + parseInt(yearPrefix);
+          }
+
+          age = currentYear - birthYear;
+        }
+      }
+
+      const normalizedAge = !isNaN(age) ? normalizeAge(age) : 0;
+
+      // Get address
+      const address = String(row[addressIndex]).trim();
+
+      data.push({
+        chartNumber,
+        address: address || "N/A",
+        age: normalizedAge,
+      });
     }
   }
-
   return data;
 }
 
@@ -480,9 +604,6 @@ export async function parseDaysFilesDentweb(
         // Process chartNumber - ensure it's a number
         const chartNumber = Number(row[chartNumberIndex]);
         if (isNaN(chartNumber)) {
-          console.warn(
-            `⚠️ Invalid chart number in row ${i + 1}, sheet ${sheetName}`
-          );
           continue;
         }
 
@@ -495,9 +616,6 @@ export async function parseDaysFilesDentweb(
 
         const totalCost = Number(row[totalCostIndex]);
         if (isNaN(totalCost)) {
-          console.warn(
-            `⚠️ Invalid total cost in row ${i + 1}, sheet ${sheetName}`
-          );
           continue;
         }
 
@@ -573,11 +691,6 @@ export async function parsePlaceFilesDentWeb(
 
       const chartNumber = Number(row[chartNumberIndex]);
       if (isNaN(chartNumber)) {
-        console.warn(
-          `⚠️ Invalid chart number in row ${i + 1}, sheet ${
-            workbook.SheetNames[1]
-          }`
-        );
         continue;
       }
 
@@ -640,16 +753,10 @@ export async function parseDaysFilesOrm(
           let totalCost = Number(row[11]);
 
           if (isNaN(chartNumber)) {
-            console.warn(
-              `⚠️ Invalid chart number in sheet ${sheetName}, row ${j + 2}`
-            );
             continue;
           }
 
           if (isNaN(totalCost)) {
-            console.warn(
-              `⚠️ Invalid total cost in sheet ${sheetName}, row ${j + 2}`
-            );
             continue;
           }
 
@@ -704,7 +811,6 @@ export async function parsePlaceFilesOrm(
 
         const chartNumber = Number(row[1]);
         if (isNaN(chartNumber)) {
-          console.warn(`⚠️ Invalid chart number in row ${i + 5}`); // +5 because we skipped 4 rows
           continue;
         }
 
@@ -719,6 +825,207 @@ export async function parsePlaceFilesOrm(
     }
   }
   return data.filter((item) => !isNaN(item.chartNumber));
+}
+
+export async function parseDailyIncomeVegas(
+  fileBuffers: ArrayBuffer[]
+): Promise<DailyIncomeVegas[]> {
+  const data: DailyIncomeVegas[] = [];
+
+  for (const buffer of fileBuffers) {
+    const workbook = XLSX.read(buffer, { type: "array" });
+
+    if (workbook.SheetNames.length === 0) {
+      console.error("❌ No worksheets found in file");
+      continue;
+    }
+
+    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+
+    // Get all data including headers
+    const allData = XLSX.utils.sheet_to_json<any[]>(worksheet, {
+      header: 1,
+      range: 0, // Start from the first row to get all data
+    });
+
+    if (allData.length < 2) {
+      console.error("❌ Insufficient rows in the file");
+      continue;
+    }
+
+    const headers = allData[0];
+
+    // Find the index for each required column
+    const chartNumberIndex = headers.findIndex(
+      (col: any) => col === "차트번호"
+    );
+    const paymentDateIndex = headers.findIndex((col: any) => col === "수납일");
+    const nonInsuranceCostIndex = headers.findIndex(
+      (col: any) => col === "비급여(과세총금액)"
+    );
+
+    const genderAgeIndex = headers.findIndex((col: any) => col === "성별/나이");
+
+    if (
+      chartNumberIndex === -1 ||
+      paymentDateIndex === -1 ||
+      nonInsuranceCostIndex === -1 ||
+      genderAgeIndex === -1
+    ) {
+      console.error("❌ Required columns not found in the file");
+      console.error("Available headers:", headers);
+      continue;
+    }
+
+    // Process data rows (starting from row 2, index 1)
+    for (let i = 1; i < allData.length; i++) {
+      const row = allData[i];
+
+      // Skip empty rows
+      if (!row || row.length === 0) {
+        continue;
+      }
+
+      // Check if required fields exist
+      if (
+        !row[chartNumberIndex] ||
+        !row[paymentDateIndex] ||
+        !row[nonInsuranceCostIndex]
+      ) {
+        console.log(`Skipping row ${i}: missing required fields`);
+        continue;
+      }
+
+      // Process chart number
+      const chartNumber = Number(row[chartNumberIndex]);
+      if (isNaN(chartNumber)) {
+        console.log(`Skipping row ${i}: invalid chart number`);
+        continue;
+      }
+
+      // Process non-insurance cost
+      const totalCost = Number(row[nonInsuranceCostIndex]);
+      if (isNaN(totalCost)) {
+        console.log(`Skipping row ${i}: invalid non-insurance cost`);
+        continue;
+      }
+
+      // Process payment date
+      let visitDate = row[paymentDateIndex];
+
+      // Handle date format like "2025-05-03(토)"
+      if (typeof visitDate === "string") {
+        // Remove the day of week in parentheses, e.g., "(토)"
+        visitDate = visitDate.replace(/\([^)]*\)$/, "").trim();
+
+        // If it's already in YYYY-MM-DD format after removing day, keep it
+        if (visitDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+          // Already in correct format
+        }
+      }
+
+      let age = 0;
+      const genderAgeStr = String(row[genderAgeIndex]).trim();
+
+      // Parse format like "여/33" or "남/45"
+      if (genderAgeStr && genderAgeStr.includes("/")) {
+        const parts = genderAgeStr.split("/");
+        if (parts.length === 2) {
+          const ageStr = parts[1].trim();
+          const parsedAge = Number(ageStr);
+          if (!isNaN(parsedAge)) {
+            age = parsedAge;
+          }
+        }
+      }
+
+      const normalizedAge = !isNaN(age) ? normalizeAge(age) : 0;
+
+      data.push({
+        chartNumber,
+        age: normalizedAge,
+        visitDate: String(visitDate),
+        totalCost,
+      });
+    }
+  }
+  return data;
+}
+
+export async function parsePatientListVegas(
+  fileBuffers: ArrayBuffer[]
+): Promise<PatientListVegas[]> {
+  const data: PatientListVegas[] = [];
+
+  for (const buffer of fileBuffers) {
+    const workbook = XLSX.read(buffer, { type: "array" });
+
+    if (workbook.SheetNames.length === 0) {
+      console.error("❌ No worksheets found in file");
+      continue;
+    }
+
+    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+
+    // Get all data including headers
+    const allData = XLSX.utils.sheet_to_json<any[]>(worksheet, {
+      header: 1,
+      range: 0, // Start from the first row to get all data
+    });
+
+    if (allData.length < 2) {
+      console.error("❌ Insufficient rows in the file");
+      continue;
+    }
+
+    // Get header row (first row, index 0)
+    const headers = allData[0];
+    console.log("Headers found:", headers);
+
+    // Find the index for each required column
+    const chartNumberIndex = headers.findIndex(
+      (col: any) => col === "차트번호"
+    );
+
+    const addressIndex = headers.findIndex((col: any) => col === "주소");
+
+    if (chartNumberIndex === -1 || addressIndex === -1) {
+      console.error("❌ Required columns not found in the file");
+      console.error("Available headers:", headers);
+      continue;
+    }
+
+    // Process data rows (starting from row 2, index 1)
+    for (let i = 1; i < allData.length; i++) {
+      const row = allData[i];
+
+      // Skip empty rows
+      if (!row || row.length === 0) {
+        continue;
+      }
+
+      // Check if required fields exist (주소는 필수가 아님)
+      if (!row[chartNumberIndex]) {
+        console.log(`Skipping row ${i}: missing required fields`);
+        continue;
+      }
+
+      // Process chart number
+      const chartNumber = Number(row[chartNumberIndex]);
+      if (isNaN(chartNumber)) {
+        console.log(`Skipping row ${i}: invalid chart number`);
+        continue;
+      }
+
+      const address = row[addressIndex] ? String(row[addressIndex]).trim() : "";
+
+      data.push({
+        chartNumber,
+        address: address || "N/A",
+      });
+    }
+  }
+  return data;
 }
 
 function calculateAge(birthDateStr: string): number {

@@ -1,35 +1,3 @@
-// Types
-interface VisitData {
-  chartNumber: number;
-  visitDate: string | Date;
-  totalCost: number;
-  visitType?: string;
-}
-
-interface PatientData {
-  chartNumber: number;
-  age: number | null;
-  address: string;
-}
-
-interface PatientDataDentWeb {
-  chartNumber: number;
-  age: number | null;
-  address: string;
-}
-
-interface DailyIncomeEgis {
-  chartNumber: number;
-  visitDate: string;
-  totalCost: number;
-}
-
-interface PatientListEgis {
-  chartNumber: number;
-  age: number | null;
-  address: string;
-}
-
 interface MergedData {
   chartNumber: number;
   visitDate: string | Date;
@@ -37,6 +5,23 @@ interface MergedData {
   age: number | null;
   address: string;
 }
+
+interface VisitDataVegas {
+  chartNumber: number;
+  visitDate: string | Date;
+  totalCost: number;
+  age: number;
+}
+
+import {
+  DailyIncomeEgis,
+  PatientListEgis,
+  DailyIncomeVegas,
+  PatientListVegas,
+  PatientDataDentWeb,
+  PatientData,
+  VisitData,
+} from "./ExcelParser";
 
 // For Euisarang data
 export function mergeDataEuisarang(
@@ -85,7 +70,6 @@ export function mergeDataOrm(
     age: null as number | null, // Will be filled in later
     address: "N/D", // Will be filled in later
   }));
-
 
   // Create patient map for quick lookup
   const patientMap = new Map<number, PatientData>(
@@ -181,6 +165,49 @@ export function mergeDataEgis(
     const pat = patientMap.get(record.chartNumber);
     record.age = pat?.age || 0;
     record.address = pat?.address || "N/D";
+  });
+
+  return df_merged;
+}
+// For Vegas data
+export function mergeDataVegas(
+  dailyIncome: DailyIncomeVegas[],
+  patientList: PatientListVegas[]
+): MergedData[] {
+  // Build "visits" array from dailyIncome (Vegas includes age in daily income)
+  const visits: VisitDataVegas[] = dailyIncome.map((inc) => ({
+    chartNumber: inc.chartNumber,
+    visitDate: inc.visitDate,
+    totalCost: inc.totalCost,
+    age: inc.age, // Vegas has age in daily income
+  }));
+
+  // Create merged data from visits
+  const df_merged = visits.map((visit) => ({
+    chartNumber: visit.chartNumber,
+    visitDate: visit.visitDate,
+    totalCost: visit.totalCost,
+    age: visit.age || 0, // Age from daily income
+    address: "N/D", // Will be filled in from patient list
+  }));
+
+  // Build a Map<chartNumber, address> from patientList
+  const patientMap = new Map<number, string>();
+
+  // Fill address from patientList (Vegas patient list only has chartNumber and address)
+  for (const pat of patientList) {
+    patientMap.set(pat.chartNumber, pat.address || "N/D");
+  }
+
+  // Convert visitDate to Date objects
+  df_merged.forEach((record) => {
+    record.visitDate = new Date(record.visitDate);
+  });
+
+  // Fill address data into df_merged
+  df_merged.forEach((record) => {
+    const address = patientMap.get(record.chartNumber);
+    record.address = address || "N/D";
   });
 
   return df_merged;

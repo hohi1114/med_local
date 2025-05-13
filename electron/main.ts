@@ -10,14 +10,17 @@ import {
   parseDaysFilesEuisarang,
   parsePatientListEgis,
   parseDaysFilesOrm,
-  parsePlaceFilesOrm
+  parsePlaceFilesOrm,
+  parseDailyIncomeVegas,
+  parsePatientListVegas,
 } from "../src/local/ExcelParser";
 
 import {
   mergeDataDentWeb,
   mergeDataEgis,
   mergeDataEuisarang,
-  mergeDataOrm
+  mergeDataOrm,
+  mergeDataVegas,
 } from "../src/local/dataMerge";
 import { processDataLocally } from "../src/local/locationProcessing";
 
@@ -34,8 +37,8 @@ const createMainWindow = () => {
       contextIsolation: true, // 보안을 위해 true로 설정
       preload: path.join(__dirname, "preload.js"), // Preload 파일 경로 설정
       webSecurity: false, // 외부 맵 스크립트 등의 보안 문제 해결
-      allowRunningInsecureContent: true // HTTPS 관련 문제 해결
-    }
+      allowRunningInsecureContent: true, // HTTPS 관련 문제 해결
+    },
   });
 
   if (isDev) {
@@ -131,6 +134,24 @@ app.whenReady().then(() => {
     }
   });
 
+  ipcMain.handle("parse-daily-income-vegas", async (event, fileBuffers) => {
+    try {
+      return await parseDailyIncomeVegas(fileBuffers);
+    } catch (error) {
+      console.error("Error parsing daily income:", error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle("parse-patient-list-vegas", async (event, fileBuffers) => {
+    try {
+      return await parsePatientListVegas(fileBuffers);
+    } catch (error) {
+      console.error("Error parsing patient list:", error);
+      throw error;
+    }
+  });
+
   // Add these handlers
   ipcMain.handle("merge-data-euisarang", async (event, visits, patients) => {
     try {
@@ -162,6 +183,15 @@ app.whenReady().then(() => {
   ipcMain.handle("merge-data-orm", async (event, visits, patients) => {
     try {
       return mergeDataOrm(visits, patients);
+    } catch (error) {
+      console.error("Error merging Euisarang data:", error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle("merge-data-vegas", async (event, visits, patients) => {
+    try {
+      return mergeDataVegas(visits, patients);
     } catch (error) {
       console.error("Error merging Euisarang data:", error);
       throw error;
