@@ -14,7 +14,7 @@ interface LineDataItem {
 
 interface UnifiedLineChartProps {
   // Core properties
-  data: LineDataItem[] | Record<string, number>;
+  data: LineDataItem[];
   xField: string;
   yField: string;
   height: number;
@@ -25,6 +25,9 @@ interface UnifiedLineChartProps {
   colorField?: string;
   limitDateXLength?: number;
   seriesField?: string;
+  smaThresholdDays?: number;
+  smaWindowSize?: number;
+  checkEachSeriesSeparately?: boolean;
 }
 
 const BaseMultipleLineChart = ({
@@ -37,20 +40,38 @@ const BaseMultipleLineChart = ({
   valueXSymbol = " ₩",
   formatData,
   colorField,
-  seriesField
+  seriesField,
+  smaThresholdDays = 60,
+  smaWindowSize = 7,
+  checkEachSeriesSeparately = false
 }: UnifiedLineChartProps) => {
   const [chartData, setChartData] = useState<LineDataItem[]>([]);
 
+  // Calculate date range of the data
+  const getDateRange = (dataArray: LineDataItem[]) => {
+    if (!dataArray || dataArray.length === 0) return 0;
+
+    const dates = dataArray.map(d => new Date(d[xField] as string));
+    const minDate = Math.min(...dates.map(d => d.getTime()));
+    const maxDate = Math.max(...dates.map(d => d.getTime()));
+
+    // Calculate the difference in days
+    const diffInMs = maxDate - minDate;
+    const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
+
+    return diffInDays;
+  };
+
   // Check if all dates have the same year
-  const allSameYear = (data: LineDataItem[]) => {
-    if (!data || data.length === 0) return true;
-    const years = data.map((d) => dayjs(d.date).year());
+  const allSameYear = (dataArray: LineDataItem[]) => {
+    if (!dataArray || dataArray.length === 0) return true;
+    const years = dataArray.map((d) => dayjs(d.date).year());
     return new Set(years).size === 1;
   };
 
-  //단순이동평균
+  // Simple Moving Average
   const applySMAForData = (
-    data: LineDataItem[] | Record<string, number>,
+    dataArray: LineDataItem[],
     valueField: string,
     options?: {
       seriesField?: string;
@@ -58,26 +79,26 @@ const BaseMultipleLineChart = ({
       windowSize?: number;
     }
   ): LineDataItem[] => {
-    if (!data || data.length === 0) return [];
+    if (!dataArray || dataArray.length === 0) return [];
 
-    const { seriesField, dateField = "date", windowSize = 7 } = options || {};
+    const { seriesField: series, dateField = "date", windowSize = 7 } = options || {};
 
-    // 시리즈 필드가 없으면 전체를 하나의 그룹으로 처리
+    // Group data by series if seriesField is provided
     const groupedData: Record<string, LineDataItem[]> = {};
 
-    if (seriesField) {
-      data.forEach((item) => {
-        const key = item[seriesField] as string;
+    if (series) {
+      dataArray.forEach((item) => {
+        const key = item[series] as string;
         if (!groupedData[key]) groupedData[key] = [];
         groupedData[key].push({ ...item });
       });
     } else {
-      groupedData["__single__"] = data.map((d) => ({ ...d }));
+      groupedData["__single__"] = dataArray.map((d) => ({ ...d }));
     }
 
     const result: LineDataItem[] = [];
 
-    Object.entries(groupedData).forEach(([key, group]) => {
+    Object.entries(groupedData).forEach(([_, group]) => {
       const sortedGroup = group.sort(
         (a, b) =>
           new Date(a[dateField] as string).getTime() -
@@ -113,21 +134,29 @@ const BaseMultipleLineChart = ({
       setChartData([]);
       return;
     }
-    //Multiple Line
+
+    const dateRangeInDays = getDateRange(data);
+    const shouldApplySMA = dateRangeInDays > smaThresholdDays;
+
+    console.log(`Date range: ${dateRangeInDays} days, Apply SMA: ${shouldApplySMA}`);
+
     if (colorField) {
-      const multiLineData = applySMAForData(data, yField, {
-        seriesField: colorField
-      });
+      const multiLineData = shouldApplySMA
+        ? applySMAForData(data, yField, {
+          seriesField: colorField,
+          windowSize: smaWindowSize
+        })
+        : data;
       setChartData(multiLineData);
-      return;
     } else {
-      if (xField !== "time") {
-        setChartData(applySMAForData(data, yField));
+      // Single line
+      if (xField !== "time" && shouldApplySMA) {
+        setChartData(applySMAForData(data, yField, { windowSize: smaWindowSize }));
       } else {
         setChartData(data);
       }
     }
-  }, [data, formatData, xField, yField]);
+  }, [data, xField, yField, colorField, smaThresholdDays, smaWindowSize]);
 
   const formatXLabel = (value: string) => {
     if (xField === "time") return value;

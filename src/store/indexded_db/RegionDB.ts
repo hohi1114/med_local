@@ -28,7 +28,7 @@ const createDatabase = async (
             db.createObjectStore(store, { keyPath: "id", autoIncrement: true });
           }
         });
-      }
+      },
     });
 
     return db;
@@ -60,10 +60,10 @@ const createDatabase = async (
           if (!db.objectStoreNames.contains("small_regions")) {
             db.createObjectStore("small_regions", {
               keyPath: "id",
-              autoIncrement: true
+              autoIncrement: true,
             });
           }
-        }
+        },
       });
     }
 
@@ -145,7 +145,7 @@ export const saveDataToIndexDB = async (
       await tx.objectStore("metadata").put({
         id: "version",
         value: newVersion,
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       });
       await tx.done;
     }

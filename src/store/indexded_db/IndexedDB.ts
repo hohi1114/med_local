@@ -7,7 +7,7 @@ export interface Area {
 }
 
 const DB_NAME = "MedicalDB";
-const DB_VERSION = 3; // Increment version to ensure upgrade
+const DB_VERSION = 4; // Increment version to ensure upgrade
 const MERGED_STORE = "df_merged";
 const FILTERED_STORE = "df_filtered";
 const DATE_STORE = "df_date";
@@ -26,13 +26,13 @@ export const initIndexedDB = async () => {
           DATE_STORE,
           SMALL_AREA_STORE,
           DONG_AREA_STORE,
-          GU_AREA_STORE
+          GU_AREA_STORE,
         ].forEach((store) => {
           if (!db.objectStoreNames.contains(store)) {
             db.createObjectStore(store, { keyPath: "id", autoIncrement: true }); // "name" is the unique key for each area
           }
         });
-      }
+      },
     });
     // Verify stores exist
     const storeNames = Array.from(db.objectStoreNames);
