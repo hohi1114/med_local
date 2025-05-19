@@ -13,12 +13,16 @@ import {
   parsePlaceFilesOrm,
   parseDailyIncomeVegas,
   parsePatientListVegas,
+  parseDailyIncomeHanChart,
+  parsePatientListHanChart,
+  parseDailyIncomeHanChartNew,
 } from "../src/local/ExcelParser";
 
 import {
   mergeDataDentWeb,
   mergeDataEgis,
   mergeDataEuisarang,
+  mergeDataHanChart,
   mergeDataOrm,
   mergeDataVegas,
 } from "../src/local/dataMerge";
@@ -152,6 +156,33 @@ app.whenReady().then(() => {
     }
   });
 
+  ipcMain.handle("parse-daily-income-hanchart", async (event, fileBuffers) => {
+    try {
+      return await parseDailyIncomeHanChart(fileBuffers);
+    } catch (error) {
+      console.error("Error parsing daily income:", error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle("parse-daily-income-hanchart1", async (event, fileBuffers) => {
+    try {
+      return await parseDailyIncomeHanChartNew(fileBuffers);
+    } catch (error) {
+      console.error("Error parsing daily income:", error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle("parse-patient-list-hanchart", async (event, fileBuffers) => {
+    try {
+      return await parsePatientListHanChart(fileBuffers);
+    } catch (error) {
+      console.error("Error parsing patient list:", error);
+      throw error;
+    }
+  });
+
   // Add these handlers
   ipcMain.handle("merge-data-euisarang", async (event, visits, patients) => {
     try {
@@ -192,6 +223,15 @@ app.whenReady().then(() => {
   ipcMain.handle("merge-data-vegas", async (event, visits, patients) => {
     try {
       return mergeDataVegas(visits, patients);
+    } catch (error) {
+      console.error("Error merging Euisarang data:", error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle("merge-data-hanchart", async (event, visits, patients) => {
+    try {
+      return mergeDataHanChart(visits, patients);
     } catch (error) {
       console.error("Error merging Euisarang data:", error);
       throw error;

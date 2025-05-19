@@ -24,12 +24,22 @@ declare global {
       parseDailyIncomeVegas: (fileBuffers: ArrayBuffer[]) => Promise<any>;
       parsePatientListVegas: (fileBuffers: ArrayBuffer[]) => Promise<any>;
 
+
+      parseDailyIncomeHanChart: (fileBuffers: ArrayBuffer[]) => Promise<any>;
+      parsePatientListHanChart: (fileBuffers: ArrayBuffer[]) => Promise<any>;
+
+
+
+      parseDailyIncomeHanChartNew: (fileBuffers: ArrayBuffer[]) => Promise<any>;
+
       // Data merging
       mergeDataEuisarang: (visits: any[], patients: any[]) => Promise<any>;
       mergeDataDentWeb: (visits: any[], patients: any[]) => Promise<any>;
       mergeDataEgis: (dailyIncome: any[], patientList: any[]) => Promise<any>;
       mergeDataOrm: (visits: any[], patients: any[]) => Promise<any>;
       mergeDataVegas: (dailyIncome: any[], patientList: any[]) => Promise<any>;
+      mergeDataHanChart: (dailyIncome: any[], patientList: any[]) => Promise<any>;
+
 
       // Final data processing
       processDataLocally: (

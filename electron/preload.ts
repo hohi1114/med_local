@@ -1,9 +1,12 @@
 import { contextBridge, ipcRenderer } from "electron";
 import {
+  parseDailyIncomeHanChart,
+  parseDailyIncomeHanChartNew,
   parseDailyIncomeVegas,
+  parsePatientListHanChart,
   parsePatientListVegas,
 } from "../src/local/ExcelParser";
-import { mergeDataVegas } from "../src/local/dataMerge";
+import { mergeDataHanChart, mergeDataVegas } from "../src/local/dataMerge";
 
 contextBridge.exposeInMainWorld("electron", {
   ping: () => "pong",
@@ -38,6 +41,16 @@ contextBridge.exposeInMainWorld("electron", {
   parsePatientListVegas: (fileBuffers: ArrayBuffer[]) =>
     ipcRenderer.invoke("parse-patient-list-vegas", fileBuffers),
 
+
+  parseDailyIncomeHanChart: (fileBuffers: ArrayBuffer[]) =>
+    ipcRenderer.invoke("parse-daily-income-hanchart", fileBuffers),
+  parsePatientListHanChart: (fileBuffers: ArrayBuffer[]) =>
+    ipcRenderer.invoke("parse-patient-list-hanchart", fileBuffers),
+  parseDailyIncomeHanChartNew: (fileBuffers: ArrayBuffer[]) =>
+    ipcRenderer.invoke("parse-daily-income-hanchart", fileBuffers),
+
+
+
   // Data merging
   mergeDataEuisarang: (visits: any[], patients: any[]) =>
     ipcRenderer.invoke("merge-data-euisarang", visits, patients),
@@ -49,6 +62,8 @@ contextBridge.exposeInMainWorld("electron", {
     ipcRenderer.invoke("merge-data-euisarang", visits, patients),
   mergeDataVegas: (dailyIncome: any[], patientList: any[]) =>
     ipcRenderer.invoke("merge-data-vegas", dailyIncome, patientList),
+  mergeDataHanChart: (dailyIncome: any[], patientList: any[]) =>
+    ipcRenderer.invoke("merge-data-hanchart", dailyIncome, patientList),
 
   // Final data processing
   processDataLocally: (mergedData: any[], accessToken: string) =>

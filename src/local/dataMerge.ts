@@ -13,11 +13,21 @@ interface VisitDataVegas {
   age: number;
 }
 
+interface VisitDataHanChart{
+  chartNumber: number;
+  visitDate: string | Date;
+  totalCost: number;
+  age: number;
+}
+
+
 import {
   DailyIncomeEgis,
   PatientListEgis,
   DailyIncomeVegas,
   PatientListVegas,
+  DailyIncomeHanChart,
+  PatientListHanChart,
   PatientDataDentWeb,
   PatientData,
   VisitData,
@@ -176,6 +186,52 @@ export function mergeDataVegas(
 ): MergedData[] {
   // Build "visits" array from dailyIncome (Vegas includes age in daily income)
   const visits: VisitDataVegas[] = dailyIncome.map((inc) => ({
+    chartNumber: inc.chartNumber,
+    visitDate: inc.visitDate,
+    totalCost: inc.totalCost,
+    age: inc.age, // Vegas has age in daily income
+  }));
+
+  // Create merged data from visits
+  const df_merged = visits.map((visit) => ({
+    chartNumber: visit.chartNumber,
+    visitDate: visit.visitDate,
+    totalCost: visit.totalCost,
+    age: visit.age || 0, // Age from daily income
+    address: "N/D", // Will be filled in from patient list
+  }));
+
+  // Build a Map<chartNumber, address> from patientList
+  const patientMap = new Map<number, string>();
+
+  // Fill address from patientList (Vegas patient list only has chartNumber and address)
+  for (const pat of patientList) {
+    patientMap.set(pat.chartNumber, pat.address || "N/D");
+  }
+
+  // Convert visitDate to Date objects
+  df_merged.forEach((record) => {
+    record.visitDate = new Date(record.visitDate);
+  });
+
+  // Fill address data into df_merged
+  df_merged.forEach((record) => {
+    const address = patientMap.get(record.chartNumber);
+    record.address = address || "N/D";
+  });
+
+  return df_merged;
+}
+
+
+
+
+export function mergeDataHanChart(
+  dailyIncome: DailyIncomeHanChart[],
+  patientList: PatientListHanChart[]
+): MergedData[] {
+  // Build "visits" array from dailyIncome (Vegas includes age in daily income)
+  const visits: VisitDataHanChart[] = dailyIncome.map((inc) => ({
     chartNumber: inc.chartNumber,
     visitDate: inc.visitDate,
     totalCost: inc.totalCost,
