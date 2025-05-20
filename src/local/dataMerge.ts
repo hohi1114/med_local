@@ -10,14 +10,14 @@ interface VisitDataVegas {
   chartNumber: number;
   visitDate: string | Date;
   totalCost: number;
-  age: number;
+  age: number | null;
 }
 
 interface VisitDataHanChart{
   chartNumber: number;
   visitDate: string | Date;
   totalCost: number;
-  age: number;
+  age: number | null;
 }
 
 
@@ -173,7 +173,7 @@ export function mergeDataEgis(
   // Fill patient data into df_merged
   df_merged.forEach((record) => {
     const pat = patientMap.get(record.chartNumber);
-    record.age = pat?.age || 0;
+    record.age = pat?.age ?? null;
     record.address = pat?.address || "N/D";
   });
 
@@ -197,7 +197,7 @@ export function mergeDataVegas(
     chartNumber: visit.chartNumber,
     visitDate: visit.visitDate,
     totalCost: visit.totalCost,
-    age: visit.age || 0, // Age from daily income
+    age: visit?.age ?? null, // Age from daily income
     address: "N/D", // Will be filled in from patient list
   }));
 
@@ -235,15 +235,16 @@ export function mergeDataHanChart(
     chartNumber: inc.chartNumber,
     visitDate: inc.visitDate,
     totalCost: inc.totalCost,
-    age: inc.age, // Vegas has age in daily income
+    age: inc?.age ?? null, // Vegas has age in daily income
   }));
 
+  
   // Create merged data from visits
   const df_merged = visits.map((visit) => ({
     chartNumber: visit.chartNumber,
     visitDate: visit.visitDate,
     totalCost: visit.totalCost,
-    age: visit.age || 0, // Age from daily income
+    age: visit?.age ?? null, // Age from daily income
     address: "N/D", // Will be filled in from patient list
   }));
 

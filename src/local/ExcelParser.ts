@@ -15,13 +15,13 @@ export interface BackendResponse {
 
 export interface PatientData {
   chartNumber: number;
-  age: number;
+  age: number | null;
   address: string;
 }
 
 export interface PatientDataDentWeb {
   chartNumber: number;
-  age: number;
+  age: number | null;
   address: string;
 }
 
@@ -36,14 +36,14 @@ export interface DailyIncomeEgis {
 export interface PatientListEgis {
   chartNumber: number; // 1st column
   address: string; // 8th column
-  age: number; //2nd column
+  age: number | null; //2nd column
 }
 
 export interface DailyIncomeVegas {
   chartNumber: number;
   visitDate: string;
   totalCost: number;
-  age: number;
+  age: number | null;
 }
 
 export interface PatientListVegas {
@@ -56,7 +56,7 @@ export interface DailyIncomeHanChart {
   chartNumber: number;
   visitDate: string;
   totalCost: number;
-  age: number;
+  age: number | null;
 }
 
 export interface PatientListHanChart {
@@ -219,7 +219,7 @@ export async function parsePlaceFilesEuisarang(
   let data: PatientData[] = [];
 
   // Helper function for age parsing
-  const parseAgeEuisarang = (ageString: string | number): number => {
+  const parseAgeEuisarang = (ageString: string | number): number | null => {
     // If it's already a number, just return it
     if (typeof ageString === "number") {
       return ageString;
@@ -253,7 +253,7 @@ export async function parsePlaceFilesEuisarang(
       return parsed;
     }
 
-    return 0; // Default value if parsing fails
+    return null; // Default value if parsing fails
   };
 
   for (const buffer of fileBuffers) {
@@ -310,12 +310,10 @@ export async function parsePlaceFilesEuisarang(
       // Type check for age
       const ageString = row[ageIndex] || "";
       const parsedAge = parseAgeEuisarang(ageString);
-      if (isNaN(parsedAge)) {
-        // Continue with default age 0 rather than skipping the row
-      }
+      
 
       // Normalize age if it's a valid number
-      let normalizedAge = !isNaN(parsedAge) ? normalizeAge(parsedAge) : 0;
+      let normalizedAge = parsedAge ? normalizeAge(parsedAge) : null;
 
       // Type check for address (ensure it's a string)
       const address = row[addressIndex] ? String(row[addressIndex]) : "N/D";
@@ -336,7 +334,6 @@ export async function parseDailyIncomeEgis(
 ): Promise<DailyIncomeEgis[]> {
   const data: DailyIncomeEgis[] = [];
 
-  console.log("in function");
 
   for (const buffer of fileBuffers) {
     const workbook = XLSX.read(buffer, { type: "array" });
@@ -536,7 +533,7 @@ export async function parsePatientListEgis(
         }
       }
 
-      const normalizedAge = !isNaN(age) ? normalizeAge(age) : 0;
+      const normalizedAge = !isNaN(age) ? normalizeAge(age) : null;
 
       // Get address
       const address = String(row[addressIndex]).trim();
