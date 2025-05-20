@@ -4,11 +4,12 @@ import styled from "styled-components";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
 import userStore from "../../../store/userStore";
+import { isDemo } from "../../../App";
 
 const SideNavBar = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, hasGuided } = userStore();
+  const { user } = userStore();
 
   const [collapsed, setCollapsed] = useState<boolean>(window.innerWidth <= 768);
   const [selectedKeys, setSelectedKeys] = useState<string[]>([
@@ -30,8 +31,18 @@ const SideNavBar = () => {
   const filteredMenuItems = useMemo<MenuItem[]>(() => {
     if (!user.free) return MENUITEMS;
 
+    if (isDemo)
+      return MENUITEMS.filter(
+        (menu) => menu && menu.key !== "update_data" && menu.key !== "setting"
+      );
+
     return MENUITEMS.map((menu) => {
-      if (menu.key === "setting" && menu.children) {
+      if (
+        menu &&
+        menu.key === "setting" &&
+        "children" in menu &&
+        menu.children
+      ) {
         return { ...menu, children: [{ key: "account", label: "계정" }] };
       }
       return menu;
