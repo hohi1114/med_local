@@ -81,8 +81,94 @@ export async function uploadDataToBackend(
   }
 }
 
+
+export async function uploadDataToBackendVegas(
+  token: string,
+  processedData: ProcessDataPayload
+): Promise<ProcessDataResponse> {
+  try {
+    const baseURL = "http://3.39.10.210:3001/api";
+
+    // Prepare the request payload
+    const payload = {
+      processedRecords: processedData.patient_records,
+      date_location_groups: processedData.date_location_groups
+    };
+
+    // Send the request to the backend
+    const response = await axios.post<ProcessDataResponse>(
+      `${baseURL}/data/vegas`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+
+    console.log("✅ Patient data processed successfully:", response.data);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      console.error("❌ Error processing patient data:", error.response.data);
+      throw new Error(
+        error.response.data.error || "Failed to process patient data"
+      );
+    } else {
+      console.error("❌ Unexpected error processing patient data:", error);
+      throw new Error(
+        "An unexpected error occurred while processing patient data"
+      );
+    }
+  }
+}
+
+
+export async function uploadDataToBackendHanChart(
+  token: string,
+  processedData: ProcessDataPayload
+): Promise<ProcessDataResponse> {
+  try {
+    const baseURL = "http://3.39.10.210:3001/api";
+
+    // Prepare the request payload
+    const payload = {
+      processedRecords: processedData.patient_records,
+      date_location_groups: processedData.date_location_groups
+    };
+
+    // Send the request to the backend
+    const response = await axios.post<ProcessDataResponse>(
+      `${baseURL}/data/hanchart`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+
+    console.log("✅ Patient data processed successfully:", response.data);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      console.error("❌ Error processing patient data:", error.response.data);
+      throw new Error(
+        error.response.data.error || "Failed to process patient data"
+      );
+    } else {
+      console.error("❌ Unexpected error processing patient data:", error);
+      throw new Error(
+        "An unexpected error occurred while processing patient data"
+      );
+    }
+  }
+}
+
 const UpdateDataPage = () => {
-  const [dataType, setDataType] = useState<"euisarang" | "egis" | "dentweb" | "orm" | "vegas"| "hanchart"| "hanchartnew">(
+  const [dataType, setDataType] = useState<"euisarang" | "egis" | "dentweb" | "orm" | "vegas" | "hanchart">(
     "euisarang"
   ); // Track data type
   const [daysFiles, setDaysFiles] = useState<FileList | null>(null); // Euisarang
@@ -124,8 +210,7 @@ const UpdateDataPage = () => {
           emrType === "dentweb" ||
           emrType === "orm" ||
           emrType === "vegas" ||
-          emrType === "hanchart" ||
-          emrType === "hanchartnew"
+          emrType === "hanchart"
         ) {
           setDataType(emrType);
         }
@@ -283,10 +368,6 @@ const UpdateDataPage = () => {
       const patients = await window.electron.parsePlaceFilesEuisarang(
         placeBuffers
       );
-
-
-      console.log(visits);
-      console.log(patients);
 
       // Step 3: Merge data locally
       const mergedData = await window.electron.mergeDataEuisarang(
@@ -634,7 +715,7 @@ const UpdateDataPage = () => {
       setProgress(10);
 
       // Step 4: Process the merged data (geocoding, region assignment, etc.)
-      const processedData = await window.electron.processDataLocally(
+      const processedData = await window.electron.processDataLocallyVegas(
         mergedData,
         getCookie("accessToken")
       );
@@ -648,7 +729,7 @@ const UpdateDataPage = () => {
 
       // Step 5: Send only the processed data to the backend
       // Start the upload but don't await it
-      const uploadPromise = uploadDataToBackend(
+      const uploadPromise = uploadDataToBackendVegas(
         getCookie("accessToken"),
         processedData
       );
@@ -745,7 +826,7 @@ const UpdateDataPage = () => {
       setProgress(10);
 
       // Step 4: Process the merged data (geocoding, region assignment, etc.)
-      const processedData = await window.electron.processDataLocally(
+      const processedData = await window.electron.processDataLocallyHanChart(
         mergedData,
         getCookie("accessToken")
       );
@@ -759,7 +840,7 @@ const UpdateDataPage = () => {
 
       // Step 5: Send only the processed data to the backend
       // Start the upload but don't await it
-      const uploadPromise = uploadDataToBackend(
+      const uploadPromise = uploadDataToBackendHanChart(
         getCookie("accessToken"),
         processedData
       );
@@ -815,115 +896,6 @@ const UpdateDataPage = () => {
   };
 
 
-  
-  const handleProcessDataHanChartNew = async (): Promise<void> => {
-    if (!placeFiles || !dailyIncome) {
-      openNotification("warning", "파일 누락", "모든 파일을 업로드해주세요.");
-      return;
-    }
-
-    setProgress(1); // Start progress
-
-    const removeProgressListener = window.electron.onGeocodingProgress(
-      ({ current, total }) => {
-        // Calculate overall progress (giving geocoding 60% of the total weight)
-        // First 20% for file processing and merging, last 20% for final processing and upload prep
-        const geocodingProgress = (current / total) * 80;
-        setProgress(10 + geocodingProgress);
-      }
-    );
-
-    try {
-      const daysBuffers = await Promise.all(
-        Array.from(dailyIncome).map((file) => file.arrayBuffer())
-      );
-
-      const placeBuffers = await Promise.all(
-        Array.from(placeFiles).map((file) => file.arrayBuffer())
-      );
-
-      // Step 2: Parse files locally via Electron
-      const visits = await window.electron.parseDailyIncomeHanChartNew(daysBuffers);
-
-      console.log(visits);
-      const patients = await window.electron.parsePatientListHanChart(placeBuffers);
-      console.log(patients);
-
-
-      // Step 3: Merge data locally
-      const mergedData = await window.electron.mergeDataHanChart(visits, patients);
-
-      setProgress(10);
-
-      // Step 4: Process the merged data (geocoding, region assignment, etc.)
-      const processedData = await window.electron.processDataLocally(
-        mergedData,
-        getCookie("accessToken")
-      );
-
-
-      removeProgressListener();
-
-      setProgress(90);
-
-      console.log("Processed data:", processedData);
-
-      // Step 5: Send only the processed data to the backend
-      // Start the upload but don't await it
-      const uploadPromise = uploadDataToBackend(
-        getCookie("accessToken"),
-        processedData
-      );
-
-      setProgress(95);
-
-      // Inform the user that data is being processed in the background
-      openNotification(
-        "success",
-        "데이터 업로드 중",
-        "데이터가 처리되어 업로드 중입니다. 업로드가 완료되면 알려드립니다. 프로그램을 종료하지 마세요."
-      );
-
-      // Set progress to 100% since from the user's perspective, the task is complete
-      setProgress(100);
-
-      uploadPromise
-        .then((backendResponse) => {
-          fetchUploadedDates();
-          // Handle successful upload (when it eventually completes)
-          openNotification(
-            "success",
-            "데이터 업로드 완료",
-            "모든 데이터가 성공적으로 처리되었습니다."
-          );
-
-          // Update any UI components that should reflect the successful upload
-          // updateDataCount(backendResponse);
-        })
-        .catch((error) => {
-          // Handle error in the background
-          console.error("❌ Background upload error:", error);
-          openNotification(
-            "error",
-            "업로드 실패",
-            error instanceof Error
-              ? error.message
-              : "알 수 없는 오류가 발생했습니다."
-          );
-        });
-    } catch (error) {
-      // This catch block handles errors in the processing phase
-      console.error("❌ Error processing data:", error);
-      openNotification(
-        "error",
-        "데이터 처리 실패",
-        error instanceof Error
-          ? error.message
-          : "알 수 없는 오류가 발생했습니다."
-      );
-      setProgress(0); // Reset progress on error
-    }
-  };
 
   const handleProcessData = () => {
     if (dataType === "euisarang") {
@@ -934,15 +906,13 @@ const UpdateDataPage = () => {
       handleProcessDataDentweb();
     } else if (dataType === "orm") {
       handleProcessDataOrm();
-    } else if (dataType === "hanchart"){
+    } else if (dataType === "hanchart") {
       handleProcessDataHanChart();
-    } else if(dataType === "hanchartnew"){
-        handleProcessDataHanChartNew();
-    } else{
+    } else {
       handleProcessDataVegas();
     }
-    }
-  
+  }
+
 
   const isButtonDisabled = () => {
     if (dataType === "euisarang" || dataType === "dentweb" || dataType === "orm") {
@@ -1034,7 +1004,7 @@ const UpdateDataPage = () => {
             </>
           )}
 
-        {dataType === "hanchart" && (
+          {dataType === "hanchart" && (
             <>
               <FileUpload
                 title="한차트 (일일 수입 현황)"
@@ -1047,7 +1017,7 @@ const UpdateDataPage = () => {
             </>
           )}
 
-      {dataType === "hanchartnew" && (
+          {dataType === "hanchartnew" && (
             <>
               <FileUpload
                 title="한차트 (일일 수입 현황)"

@@ -1,12 +1,8 @@
 import { contextBridge, ipcRenderer } from "electron";
 import {
-  parseDailyIncomeHanChart,
-  parseDailyIncomeHanChartNew,
-  parseDailyIncomeVegas,
-  parsePatientListHanChart,
-  parsePatientListVegas,
-} from "../src/local/ExcelParser";
-import { mergeDataHanChart, mergeDataVegas } from "../src/local/dataMerge";
+  processDataLocallyHanChart,
+  processDataLocallyVegas,
+} from "../src/local/locationProcessing";
 
 contextBridge.exposeInMainWorld("electron", {
   ping: () => "pong",
@@ -41,15 +37,12 @@ contextBridge.exposeInMainWorld("electron", {
   parsePatientListVegas: (fileBuffers: ArrayBuffer[]) =>
     ipcRenderer.invoke("parse-patient-list-vegas", fileBuffers),
 
-
   parseDailyIncomeHanChart: (fileBuffers: ArrayBuffer[]) =>
     ipcRenderer.invoke("parse-daily-income-hanchart", fileBuffers),
   parsePatientListHanChart: (fileBuffers: ArrayBuffer[]) =>
     ipcRenderer.invoke("parse-patient-list-hanchart", fileBuffers),
   parseDailyIncomeHanChartNew: (fileBuffers: ArrayBuffer[]) =>
     ipcRenderer.invoke("parse-daily-income-hanchart", fileBuffers),
-
-
 
   // Data merging
   mergeDataEuisarang: (visits: any[], patients: any[]) =>
@@ -68,6 +61,17 @@ contextBridge.exposeInMainWorld("electron", {
   // Final data processing
   processDataLocally: (mergedData: any[], accessToken: string) =>
     ipcRenderer.invoke("process-data-locally", mergedData, accessToken),
+
+  // Final data processing
+  processDataLocallyVegas: (mergedData: any[], accessToken: string) =>
+    ipcRenderer.invoke("process-data-locally-vegas", mergedData, accessToken),
+
+  processDataLocallyHanChart: (mergedData: any[], accessToken: string) =>
+    ipcRenderer.invoke(
+      "process-data-locally-hanchart",
+      mergedData,
+      accessToken
+    ),
 
   onGeocodingProgress: (
     callback: (data: { current: number; total: number }) => void

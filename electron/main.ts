@@ -11,12 +11,17 @@ import {
   parsePatientListEgis,
   parseDaysFilesOrm,
   parsePlaceFilesOrm,
-  parseDailyIncomeVegas,
-  parsePatientListVegas,
+} from "../src/local/ExcelParser";
+
+import {
   parseDailyIncomeHanChart,
   parsePatientListHanChart,
-  parseDailyIncomeHanChartNew,
-} from "../src/local/ExcelParser";
+} from "../src/local/excel/hanchartExcel";
+
+import {
+  parseDailyIncomeVegas,
+  parsePatientListVegas,
+} from "../src/local/excel/vegasExcel";
 
 import {
   mergeDataDentWeb,
@@ -26,7 +31,11 @@ import {
   mergeDataOrm,
   mergeDataVegas,
 } from "../src/local/dataMerge";
-import { processDataLocally } from "../src/local/locationProcessing";
+import {
+  processDataLocally,
+  processDataLocallyVegas,
+  processDataLocallyHanChart,
+} from "../src/local/locationProcessing";
 
 const isDev = process.env.NODE_ENV === "development";
 
@@ -165,15 +174,6 @@ app.whenReady().then(() => {
     }
   });
 
-  ipcMain.handle("parse-daily-income-hanchart1", async (event, fileBuffers) => {
-    try {
-      return await parseDailyIncomeHanChartNew(fileBuffers);
-    } catch (error) {
-      console.error("Error parsing daily income:", error);
-      throw error;
-    }
-  });
-
   ipcMain.handle("parse-patient-list-hanchart", async (event, fileBuffers) => {
     try {
       return await parsePatientListHanChart(fileBuffers);
@@ -244,6 +244,42 @@ app.whenReady().then(() => {
     async (event, mergedData, accessToken) => {
       try {
         return await processDataLocally(
+          mergedData,
+          accessToken,
+          (current, total) => {
+            event.sender.send("geocoding-progress", { current, total });
+          }
+        );
+      } catch (error) {
+        console.error("Error processing data:", error);
+        throw error;
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "process-data-locally-vegas",
+    async (event, mergedData, accessToken) => {
+      try {
+        return await processDataLocallyVegas(
+          mergedData,
+          accessToken,
+          (current, total) => {
+            event.sender.send("geocoding-progress", { current, total });
+          }
+        );
+      } catch (error) {
+        console.error("Error processing data:", error);
+        throw error;
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "process-data-locally-hanchart",
+    async (event, mergedData, accessToken) => {
+      try {
+        return await processDataLocallyHanChart(
           mergedData,
           accessToken,
           (current, total) => {

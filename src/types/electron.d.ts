@@ -24,11 +24,8 @@ declare global {
       parseDailyIncomeVegas: (fileBuffers: ArrayBuffer[]) => Promise<any>;
       parsePatientListVegas: (fileBuffers: ArrayBuffer[]) => Promise<any>;
 
-
       parseDailyIncomeHanChart: (fileBuffers: ArrayBuffer[]) => Promise<any>;
       parsePatientListHanChart: (fileBuffers: ArrayBuffer[]) => Promise<any>;
-
-
 
       parseDailyIncomeHanChartNew: (fileBuffers: ArrayBuffer[]) => Promise<any>;
 
@@ -38,14 +35,27 @@ declare global {
       mergeDataEgis: (dailyIncome: any[], patientList: any[]) => Promise<any>;
       mergeDataOrm: (visits: any[], patients: any[]) => Promise<any>;
       mergeDataVegas: (dailyIncome: any[], patientList: any[]) => Promise<any>;
-      mergeDataHanChart: (dailyIncome: any[], patientList: any[]) => Promise<any>;
-
+      mergeDataHanChart: (
+        dailyIncome: any[],
+        patientList: any[]
+      ) => Promise<any>;
 
       // Final data processing
       processDataLocally: (
         mergedData: any[],
         accessToken: string
       ) => Promise<any>;
+
+      processDataLocallyVegas: (
+        mergedData: any[],
+        accessToken: string
+      ) => Promise<any>;
+
+      processDataLocallyHanChart: (
+        mergedData: any[],
+        accessToken: string
+      ) => Promise<any>;
+
       onGeocodingProgress: (
         callback: (data: { current: number; total: number }) => void
       ) => () => void;
