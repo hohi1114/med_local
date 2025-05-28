@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from "electron";
 import {
+  processDataLocallyDentWeb,
   processDataLocallyHanChart,
   processDataLocallyVegas,
 } from "../src/local/locationProcessing";
@@ -41,14 +42,12 @@ contextBridge.exposeInMainWorld("electron", {
     ipcRenderer.invoke("parse-daily-income-hanchart", fileBuffers),
   parsePatientListHanChart: (fileBuffers: ArrayBuffer[]) =>
     ipcRenderer.invoke("parse-patient-list-hanchart", fileBuffers),
-  parseDailyIncomeHanChartNew: (fileBuffers: ArrayBuffer[]) =>
-    ipcRenderer.invoke("parse-daily-income-hanchart", fileBuffers),
 
   // Data merging
   mergeDataEuisarang: (visits: any[], patients: any[]) =>
     ipcRenderer.invoke("merge-data-euisarang", visits, patients),
-  mergeDataDentWeb: (visits: any[], patients: any[]) =>
-    ipcRenderer.invoke("merge-data-dentweb", visits, patients),
+  mergeDataDentWeb: (dailyIncome: any[], patients: any[]) =>
+    ipcRenderer.invoke("merge-data-dentweb", dailyIncome, patients),
   mergeDataEgis: (dailyIncome: any[], patientList: any[]) =>
     ipcRenderer.invoke("merge-data-egis", dailyIncome, patientList),
   mergeDataOrm: (visits: any[], patients: any[]) =>
@@ -72,6 +71,9 @@ contextBridge.exposeInMainWorld("electron", {
       mergedData,
       accessToken
     ),
+
+  processDataLocallyDentWeb: (mergedData: any[], accessToken: string) =>
+    ipcRenderer.invoke("process-data-locally-dentweb", mergedData, accessToken),
 
   onGeocodingProgress: (
     callback: (data: { current: number; total: number }) => void

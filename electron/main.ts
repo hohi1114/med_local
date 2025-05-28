@@ -3,10 +3,8 @@ import path from "path";
 import si from "systeminformation";
 
 import {
-  parsePlaceFilesDentWeb,
   parsePlaceFilesEuisarang,
   parseDailyIncomeEgis,
-  parseDaysFilesDentweb,
   parseDaysFilesEuisarang,
   parsePatientListEgis,
   parseDaysFilesOrm,
@@ -24,6 +22,11 @@ import {
 } from "../src/local/excel/vegasExcel";
 
 import {
+  parseDaysFilesDentweb,
+  parsePlaceFilesDentWeb,
+} from "../src/local/excel/dentwebExcel";
+
+import {
   mergeDataDentWeb,
   mergeDataEgis,
   mergeDataEuisarang,
@@ -35,6 +38,7 @@ import {
   processDataLocally,
   processDataLocallyVegas,
   processDataLocallyHanChart,
+  processDataLocallyDentWeb,
 } from "../src/local/locationProcessing";
 
 const isDev = process.env.NODE_ENV === "development";
@@ -280,6 +284,24 @@ app.whenReady().then(() => {
     async (event, mergedData, accessToken) => {
       try {
         return await processDataLocallyHanChart(
+          mergedData,
+          accessToken,
+          (current, total) => {
+            event.sender.send("geocoding-progress", { current, total });
+          }
+        );
+      } catch (error) {
+        console.error("Error processing data:", error);
+        throw error;
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "process-data-locally-dentweb",
+    async (event, mergedData, accessToken) => {
+      try {
+        return await processDataLocallyDentWeb(
           mergedData,
           accessToken,
           (current, total) => {

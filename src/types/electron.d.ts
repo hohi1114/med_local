@@ -39,6 +39,7 @@ declare global {
         dailyIncome: any[],
         patientList: any[]
       ) => Promise<any>;
+      mergeDataDentWeb: (dailyIncome: any[], patients: any[]) => Promise<any>;
 
       // Final data processing
       processDataLocally: (
@@ -52,6 +53,11 @@ declare global {
       ) => Promise<any>;
 
       processDataLocallyHanChart: (
+        mergedData: any[],
+        accessToken: string
+      ) => Promise<any>;
+
+      processDataLocallyDentWeb: (
         mergedData: any[],
         accessToken: string
       ) => Promise<any>;

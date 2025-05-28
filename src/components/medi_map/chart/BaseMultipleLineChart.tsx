@@ -138,7 +138,7 @@ const BaseMultipleLineChart = ({
     const dateRangeInDays = getDateRange(data);
     const shouldApplySMA = dateRangeInDays > smaThresholdDays;
 
-    console.log(`Date range: ${dateRangeInDays} days, Apply SMA: ${shouldApplySMA}`);
+
 
     if (colorField) {
       const multiLineData = shouldApplySMA

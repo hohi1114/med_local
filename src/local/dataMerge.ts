@@ -27,7 +27,6 @@ export interface MergedDataVegas {
   procedure: string; // 시술
   doctor: string; //담당의
   staff: string; //담당직원
-
   route: string; // 경로
   nationality: string; //국적
   visitType: string; //type
@@ -53,10 +52,31 @@ export interface MergedDataHanChart {
   visitType: string; //type
 }
 
+export interface MergedDataDentWeb {
+  chartNumber: number;
+  visitDate: string | Date;
+  totalCost: number;
+  age: number | null;
+  address: string;
+  area: string;
+  doctor: string; //담당의
+  route: string; // 경로
+  firstVisit: string;
+}
+
+interface VisitDataDentWeb {
+  chartNumber: number;
+  visitDate: string | Date;
+  totalCost: number;
+  area: string;
+  route: string;
+  doctor: string;
+  firstVisit: string;
+}
+
 import {
   DailyIncomeEgis,
   PatientListEgis,
-  PatientDataDentWeb,
   PatientData,
   VisitData,
 } from "./ExcelParser";
@@ -66,6 +86,7 @@ import {
   DailyIncomeHanChart,
   PatientListHanChart,
 } from "./excel/hanchartExcel";
+import { DailyIncomeDentweb, PatientDataDentWeb } from "./excel/dentwebExcel";
 
 // For Euisarang data
 export function mergeDataEuisarang(
@@ -121,39 +142,6 @@ export function mergeDataOrm(
   );
 
   // Ensure visitDate is a Date object and standardize to ISO string
-  df_merged.forEach((record) => {
-    record.visitDate = new Date(record.visitDate); // ✅ Ensure it's a Date object
-  });
-
-  // Fill in patient data
-  df_merged.forEach((record) => {
-    const patient = patientMap.get(record.chartNumber);
-    record.age = patient?.age ?? null;
-    record.address = patient?.address || "N/D";
-  });
-
-  return df_merged;
-}
-
-// For DentWeb data
-export function mergeDataDentWeb(
-  visits: VisitData[],
-  patients: PatientDataDentWeb[]
-): MergedData[] {
-  // Create merged data from visits
-  const df_merged = visits.map((visit) => ({
-    chartNumber: visit.chartNumber,
-    visitDate: visit.visitDate,
-    totalCost: visit.totalCost,
-    age: null as number | null, // Will be filled in later
-    address: "N/D", // Will be filled in later
-  }));
-
-  // Create patient map for quick lookup
-  const patientMap = new Map<number, PatientDataDentWeb>(
-    patients.map((p) => [p.chartNumber, p])
-  );
-
   df_merged.forEach((record) => {
     record.visitDate = new Date(record.visitDate); // ✅ Ensure it's a Date object
   });
@@ -294,7 +282,6 @@ export function mergeDataHanChart(
   dailyIncome: DailyIncomeHanChart[],
   patientList: PatientListHanChart[]
 ): MergedDataHanChart[] {
-  // Build "visits" array from dailyIncome (Vegas includes age in daily income)
   const visits: VisitDataHanChart[] = dailyIncome.map((inc) => ({
     chartNumber: inc.chartNumber,
     visitDate: inc.visitDate,
@@ -343,6 +330,56 @@ export function mergeDataHanChart(
         record.visitType = "재진"; // Follow-up visit
       }
     }
+  });
+
+  // NOW convert visitDate strings to Date objects
+  df_merged.forEach((record) => {
+    record.visitDate = new Date(record.visitDate as string);
+  });
+
+  return df_merged;
+}
+
+export function mergeDataDentWeb(
+  dailyIncome: DailyIncomeDentweb[],
+  patients: PatientDataDentWeb[]
+): MergedDataDentWeb[] {
+  // Build "visits" array from dailyIncome (Vegas includes age in daily income)
+
+  const visits: VisitDataDentWeb[] = dailyIncome.map((inc) => ({
+    chartNumber: inc.chartNumber,
+    visitDate: inc.visitDate,
+    totalCost: inc.totalCost,
+    route: inc.route,
+    area: inc.area,
+    firstVisit: inc.firstVisit,
+    doctor: inc.doctor,
+  }));
+
+  // Create merged data from visits
+  const df_merged = visits.map((visit) => ({
+    chartNumber: visit.chartNumber,
+    visitDate: visit.visitDate,
+    totalCost: visit.totalCost,
+    area: visit.area,
+    doctor: visit.doctor,
+    route: visit.route,
+    firstVisit: visit.firstVisit,
+    address: "N/D", // Will be filled in from patient list
+    age: null as number | null, // Will be filled in later
+  }));
+
+  // Build a Map
+  // Create patient map for quick lookup
+  const patientMap = new Map<number, PatientDataDentWeb>(
+    patients.map((p) => [p.chartNumber, p])
+  );
+
+  // Fill in patient data
+  df_merged.forEach((record) => {
+    const patient = patientMap.get(record.chartNumber);
+    record.age = patient?.age ?? null;
+    record.address = patient?.address || "N/D";
   });
 
   // NOW convert visitDate strings to Date objects

@@ -55,7 +55,7 @@ export function normalizeAge(age: number): number {
  * 엑셀 date 저장 오류 해결
  */
 
-function excelSerialToDate(serial: number): string {
+export function excelSerialToDate(serial: number): string {
   // Input validation
   if (serial < 0) {
     throw new Error("Invalid Excel serial date: cannot be negative");
@@ -1028,7 +1028,7 @@ export async function parsePatientListHanChart(
 }
 */
 
-function calculateAge(birthDateStr: string): number {
+export function calculateAge(birthDateStr: string): number {
   const today = new Date();
   const birthDate = new Date(birthDateStr);
 
