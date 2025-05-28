@@ -602,6 +602,7 @@ export async function processDataLocallyDentWeb(
         latitude,
         longitude,
         location_true,
+        visitType,
         totalCost,
         route,
       } = record;
@@ -625,7 +626,7 @@ export async function processDataLocallyDentWeb(
         lat: latitude,
         lng: longitude,
         total_cost: totalCost,
-        visit_type: "",
+        visit_type: visitType,
         route: route,
       });
     });
