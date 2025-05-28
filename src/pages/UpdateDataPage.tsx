@@ -131,7 +131,7 @@ export async function uploadDataToBackendHanChart(
   processedData: ProcessDataPayload
 ): Promise<ProcessDataResponse> {
   try {
-    const baseURL = "http://3.39.10.210:3001/api";
+    const baseURL = "http://localhost:3001/api";
 
     // Prepare the request payload
     const payload = {
@@ -174,7 +174,7 @@ export async function uploadDataToBackendDentWeb(
   processedData: ProcessDataPayload
 ): Promise<ProcessDataResponse> {
   try {
-    const baseURL = "http://3.39.10.210:3001/api";
+    const baseURL = "http://localhost:3001/api";
 
     // Prepare the request payload
     const payload = {
@@ -1049,19 +1049,6 @@ const UpdateDataPage = () => {
           )}
 
           {dataType === "hanchart" && (
-            <>
-              <FileUpload
-                title="한차트 (일일 수입 현황)"
-                onFilesUploaded={(files) => setDailyIncome(files)}
-              />
-              <FileUpload
-                title="DM 주소록"
-                onFilesUploaded={(files) => setPlaceFiles(files)}
-              />
-            </>
-          )}
-
-          {dataType === "hanchartnew" && (
             <>
               <FileUpload
                 title="한차트 (일일 수입 현황)"

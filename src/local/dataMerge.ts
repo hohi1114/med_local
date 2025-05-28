@@ -61,7 +61,7 @@ export interface MergedDataDentWeb {
   area: string;
   doctor: string; //담당의
   route: string; // 경로
-  firstVisit: string;
+  visitType: string;
 }
 
 interface VisitDataDentWeb {
@@ -71,7 +71,7 @@ interface VisitDataDentWeb {
   area: string;
   route: string;
   doctor: string;
-  firstVisit: string;
+  firstDate: string;
 }
 
 import {
@@ -352,8 +352,8 @@ export function mergeDataDentWeb(
     totalCost: inc.totalCost,
     route: inc.route,
     area: inc.area,
-    firstVisit: inc.firstVisit,
     doctor: inc.doctor,
+    firstDate: inc.firstDate,
   }));
 
   // Create merged data from visits
@@ -364,22 +364,41 @@ export function mergeDataDentWeb(
     area: visit.area,
     doctor: visit.doctor,
     route: visit.route,
-    firstVisit: visit.firstVisit,
+    firstDate: visit.firstDate,
     address: "N/D", // Will be filled in from patient list
     age: null as number | null, // Will be filled in later
+    visitType: "재진", //default
   }));
 
   // Build a Map
   // Create patient map for quick lookup
-  const patientMap = new Map<number, PatientDataDentWeb>(
-    patients.map((p) => [p.chartNumber, p])
-  );
+  const patientMap = new Map<
+    number,
+    {
+      address: string;
+      age: number | null;
+    }
+  >();
 
-  // Fill in patient data
+  // Fill address from patientList (Vegas patient list only has chartNumber and address)
+  for (const pat of patients) {
+    patientMap.set(pat.chartNumber, {
+      address: pat.address || "N/D",
+      age: pat.age || null,
+    });
+  }
+
   df_merged.forEach((record) => {
-    const patient = patientMap.get(record.chartNumber);
-    record.age = patient?.age ?? null;
-    record.address = patient?.address || "N/D";
+    const patientData = patientMap.get(record.chartNumber);
+    if (patientData) {
+      record.address = patientData.address;
+      record.age = patientData.age;
+      if (record.visitDate === record.firstDate) {
+        record.visitType = "신환"; // New patient
+      } else {
+        record.visitType = "재진"; // Follow-up visit
+      }
+    }
   });
 
   // NOW convert visitDate strings to Date objects

@@ -9,7 +9,7 @@ export interface DailyIncomeDentweb {
   route: string; //내원경로
   area: string; //진료내역
   doctor: string; // 담당의사
-  firstVisit: string; //최초내원
+  firstDate: string; //최초내원
 }
 
 export interface PatientDataDentWeb {
@@ -74,7 +74,7 @@ export async function parseDaysFilesDentweb(
 
       const routeIndex = headers.findIndex((col: any) => col === "내원경로");
 
-      const firstVisitIndex = headers.findIndex(
+      const firstDateIndex = headers.findIndex(
         (col: any) => col === "최초내원"
       );
 
@@ -142,10 +142,24 @@ export async function parseDaysFilesDentweb(
             ? String(row[routeIndex]).trim()
             : ""; //내원경로
 
-        const firstVisit =
-          firstVisitIndex !== -1 && row[firstVisitIndex]
-            ? String(row[firstVisitIndex]).trim()
-            : ""; //최초내원
+        let firstDate = "";
+
+        if (row[firstDateIndex]) {
+          let dateValue = row[firstDateIndex];
+
+          if (typeof dateValue === "number") {
+            // Use XLSX's built-in date conversion
+            const excelDate = XLSX.SSF.parse_date_code(dateValue);
+            firstDate = `${excelDate.y}-${String(excelDate.m).padStart(
+              2,
+              "0"
+            )}-${String(excelDate.d).padStart(2, "0")}`;
+          }
+
+          if (typeof dateValue === "string") {
+            firstDate = dateValue.replace(/\([^)]*\)$/, "").trim();
+          }
+        }
 
         data.push({
           chartNumber,
@@ -154,7 +168,7 @@ export async function parseDaysFilesDentweb(
           area,
           doctor,
           route,
-          firstVisit,
+          firstDate,
         });
       }
     }

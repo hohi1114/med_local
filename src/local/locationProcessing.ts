@@ -45,7 +45,7 @@ interface ProcessedPatientDataDentWeb extends ProcessedPatientData {
   area: string;
   route: string;
   doctor: string;
-  firstVisit: string;
+  visitType: string;
 }
 
 interface LocationPoint {
@@ -486,7 +486,9 @@ export async function processDataLocallyDentWeb(
       return {
         ...record,
         chartNumber:
-          Number(chartNumberMapping[record.chartNumber]) ?? record.chartNumber,
+          chartNumberMapping[record.chartNumber] != null
+            ? Number(chartNumberMapping[record.chartNumber])
+            : record.chartNumber,
       };
     });
 
@@ -582,7 +584,7 @@ export async function processDataLocallyDentWeb(
           visit_date: record.visitDate,
           doctor: record.doctor,
           route: record.route,
-          firstVisit: record.firstVisit,
+          visitType: record.visitType,
           area: record.area,
           location_true: record.location_true,
           small_region_id,
