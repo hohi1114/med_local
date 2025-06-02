@@ -13,7 +13,7 @@ export const usePrivateDataChart = (data: DashBoard | RegionPrivateData) => {
 
   //연령 별 환자 분포
   const formatPatientCountBarData = () => {
-    if (!data?.total_cost_by_day_of_week) return [];
+    if (!data?.patient_count_by_age_group) return [];
 
     return Object.entries(data.patient_count_by_age_group).map(
       ([age, value]) => ({ age, value })
@@ -36,15 +36,15 @@ export const usePrivateDataChart = (data: DashBoard | RegionPrivateData) => {
     const configs =
       type === ChartType.REVENUE
         ? [
-            { key: "cost_by_date", label: "전체 매출액" },
-            { key: "sinhwan_cost_by_date", label: "신규환자 매출" },
-            { key: "chojin_rejin_cost_by_date", label: "재방문 환자 매출" }
-          ]
+          { key: "cost_by_date", label: "전체 매출액" },
+          { key: "sinhwan_cost_by_date", label: "신규환자 매출" },
+          { key: "chojin_rejin_cost_by_date", label: "재방문 환자 매출" }
+        ]
         : [
-            { key: "visit_count_by_date", label: "전체 환자 수" },
-            { key: "sinhwan_visit_count_by_date", label: "신규 환자 수" },
-            { key: "chojin_rejin_visit_count_by_date", label: "재방문 환자 수" }
-          ];
+          { key: "visit_count_by_date", label: "전체 환자 수" },
+          { key: "sinhwan_visit_count_by_date", label: "신규 환자 수" },
+          { key: "chojin_rejin_visit_count_by_date", label: "재방문 환자 수" }
+        ];
 
     return configs.flatMap(({ key, label }) =>
       Object.entries(data[key as keyof DashBoard] || {}).map(
