@@ -74,13 +74,18 @@ interface VisitDataDentWeb {
   firstDate: string;
 }
 
-import {
-  DailyIncomeEgis,
-  PatientListEgis,
-  PatientData,
-  VisitData,
-} from "./ExcelParser";
+export interface MergedDataEgis {
+  chartNumber: number;
+  visitDate: string | Date;
+  totalCost: number;
+  age: number | null;
+  address: string;
+  visitType: string;
+}
 
+import { PatientData, VisitData } from "./ExcelParser";
+
+import { DailyIncomeEgis, PatientListEgis } from "./excel/egisExcel";
 import { DailyIncomeVegas, PatientListVegas } from "./excel/vegasExcel";
 import {
   DailyIncomeHanChart,
@@ -157,15 +162,18 @@ export function mergeDataOrm(
 }
 
 // For Egis data
+
+// For Vegas data
 export function mergeDataEgis(
   dailyIncome: DailyIncomeEgis[],
   patientList: PatientListEgis[]
-): MergedData[] {
-  // Build "visits" array from dailyIncome
-  const visits: VisitData[] = dailyIncome.map((inc) => ({
+): MergedDataEgis[] {
+  // Build "visits" array from dailyIncome (Vegas includes age in daily income)
+  const visits: DailyIncomeEgis[] = dailyIncome.map((inc) => ({
     chartNumber: inc.chartNumber,
     visitDate: inc.visitDate,
     totalCost: inc.totalCost,
+    visitType: inc.visitType,
   }));
 
   // Create merged data from visits
@@ -173,34 +181,44 @@ export function mergeDataEgis(
     chartNumber: visit.chartNumber,
     visitDate: visit.visitDate,
     totalCost: visit.totalCost,
-    age: null as number | null, // Will be filled in later
-    address: "N/D", // Will be filled in later
+    visitType: visit.visitType,
+    age: null as number | null, //Will be filled in later
+    address: "N/D", // Will be filled in from patient list
   }));
 
-  // Build a Map<chartNumber, PatientData> from patientList
-  const patientMap = new Map<number, { age: number | null; address: string }>();
+  // Build a Map
+  const patientMap = new Map<
+    number,
+    {
+      address: string;
+      age: number | null;
+    }
+  >();
 
-  // Fill age and address from patientList
   for (const pat of patientList) {
     patientMap.set(pat.chartNumber, {
-      age: pat?.age ?? null,
-      address: pat.address,
+      address: pat.address || "N/D",
+      age: pat.age || null,
     });
   }
 
+  // Fill address data into df_merged
   df_merged.forEach((record) => {
-    record.visitDate = new Date(record.visitDate); // ✅ Ensure it's a Date object
+    const patientData = patientMap.get(record.chartNumber);
+    if (patientData) {
+      record.address = patientData.address;
+      record.age = patientData.age;
+    }
   });
 
-  // Fill patient data into df_merged
+  // NOW convert visitDate strings to Date objects
   df_merged.forEach((record) => {
-    const pat = patientMap.get(record.chartNumber);
-    record.age = pat?.age ?? null;
-    record.address = pat?.address || "N/D";
+    record.visitDate = new Date(record.visitDate as string);
   });
 
   return df_merged;
 }
+
 // For Vegas data
 export function mergeDataVegas(
   dailyIncome: DailyIncomeVegas[],

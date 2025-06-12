@@ -75,6 +75,9 @@ contextBridge.exposeInMainWorld("electron", {
   processDataLocallyDentWeb: (mergedData: any[], accessToken: string) =>
     ipcRenderer.invoke("process-data-locally-dentweb", mergedData, accessToken),
 
+  processDataLocallyEgis: (mergedData: any[], accessToken: string) =>
+    ipcRenderer.invoke("process-data-locally-dentweb", mergedData, accessToken),
+
   onGeocodingProgress: (
     callback: (data: { current: number; total: number }) => void
   ) => {

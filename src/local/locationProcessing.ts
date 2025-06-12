@@ -4,6 +4,7 @@ import axios from "axios";
 import {
   MergedData,
   MergedDataDentWeb,
+  MergedDataEgis,
   MergedDataHanChart,
   MergedDataVegas,
 } from "./dataMerge";
@@ -48,6 +49,9 @@ interface ProcessedPatientDataDentWeb extends ProcessedPatientData {
   visitType: string;
 }
 
+interface ProcessedPatientDataEgis extends ProcessedPatientData {
+  visitType: string;
+}
 interface LocationPoint {
   lat: number;
   lng: number;
@@ -808,6 +812,184 @@ export async function processDataLocallyHanChart(
         total_cost: totalCost,
         visit_type: visitType,
         route: route,
+      });
+    });
+
+    // Convert the map to the desired format
+    const dateLocationGroups: DateLocationGroup[] = Array.from(
+      dateLocationMap.entries()
+    ).map(([date, locations]) => ({
+      date,
+      patient_locations: locations,
+    }));
+
+    // Return both data structures
+    return {
+      patient_records: processedRecords,
+      date_location_groups: dateLocationGroups,
+    };
+  } catch (error) {
+    console.error("Error processing data locally:", error);
+    throw error;
+  }
+}
+
+export async function processDataLocallyEgis(
+  mergedData: MergedDataEgis[],
+  accessToken: string,
+  progressCallback?: (current: number, total: number) => void
+) {
+  try {
+    // Step 0: Load chart number mapping and update chartNumber- 중요한 익명화 작업
+    const chartNumberMapping = await getMappingData(accessToken);
+
+    // Step 1: Update chartNumber using the fetched mapping
+    const mappedData: MergedDataEgis[] = mergedData.map((record, index) => {
+      // Call progress callback if provided
+      if (progressCallback) {
+        progressCallback(index + 1, mergedData.length);
+      }
+
+      return {
+        ...record,
+        chartNumber:
+          Number(chartNumberMapping[record.chartNumber]) ?? record.chartNumber,
+      };
+    });
+
+    // Step 1: Add location_true field to all records (false by default)
+    const recordsWithLocationFlag = mappedData.map((record) => ({
+      ...record,
+      location_true: record.address !== "N/D",
+    }));
+
+    // Step 2: Extract records with valid addresses for geocoding
+    const addressesToGeocode = recordsWithLocationFlag
+      .filter((record) => record.location_true)
+      .map((record) => ({
+        chartNumber: record.chartNumber,
+        address: String(record.address),
+      }));
+
+    // Step 3: Geocode addresses
+    const geoLocations = await getLatLonForAddresses(
+      addressesToGeocode,
+      progressCallback
+    );
+
+    // Create a map for quick lookup
+    const geoMap = new Map(
+      geoLocations.map((g) => [
+        g.chartNumber,
+        {
+          latitude: g.latitude,
+          longitude: g.longitude,
+          geocoded: g.latitude !== null && g.longitude !== null,
+        },
+      ])
+    );
+
+    // Step 4: Update location_true based on geocoding results
+    const recordsWithGeodata = recordsWithLocationFlag.map((record) => {
+      const geoData = geoMap.get(record.chartNumber);
+
+      return {
+        ...record,
+        latitude: geoData?.latitude ?? null,
+        longitude: geoData?.longitude ?? null,
+        location_true: geoData?.geocoded ?? false,
+      };
+    });
+
+    const regionData = await fetchRegionData(accessToken);
+
+    // Parse the polygon data
+    const smallRegions = regionData.smallRegions.map((region) => ({
+      id: region.id, // Use name as id if id is not available
+      name: region.name,
+      coords: parsePolygon(region.polygon),
+    }));
+
+    const dongRegions = regionData.dongRegions.map((region) => ({
+      id: region.id, // Use name as id if id is not available
+      name: region.name,
+      coords: parsePolygon(region.polygon),
+    }));
+
+    const guRegions = regionData.guRegions.map((region) => ({
+      id: region.id, // Use name as id if id is not available
+      name: region.name,
+      coords: parsePolygon(region.polygon),
+    }));
+
+    const processedRecords: ProcessedPatientDataEgis[] = recordsWithGeodata.map(
+      (record) => {
+        const latitude = record.latitude;
+        const longitude = record.longitude;
+
+        let small_region_id = null;
+        let dong_region_id = null;
+        let gu_region_id = null;
+
+        if (record.location_true && latitude !== null && longitude !== null) {
+          small_region_id = findMatchingRegion(
+            latitude,
+            longitude,
+            smallRegions
+          );
+          dong_region_id = findMatchingRegion(latitude, longitude, dongRegions);
+          gu_region_id = findMatchingRegion(latitude, longitude, guRegions);
+        }
+
+        // Return the processed record without lat/lng coordinates
+        return {
+          chart_number: record.chartNumber,
+          age: record.age,
+          total_cost: record.totalCost,
+          visit_date: record.visitDate,
+          visitType: record.visitType,
+          location_true: record.location_true,
+          small_region_id,
+          dong_region_id,
+          gu_region_id,
+        };
+      }
+    );
+
+    // Step 7: Create date-grouped location data
+    const dateLocationMap = new Map<string, LocationPoint[]>();
+
+    recordsWithGeodata.forEach((record) => {
+      const {
+        visitDate,
+        latitude,
+        longitude,
+        location_true,
+        totalCost,
+        visitType,
+      } = record;
+
+      // Skip records without valid locations
+      if (!location_true || latitude === null || longitude === null) return;
+
+      // Format date as a consistent string
+      const dateStr =
+        typeof visitDate === "string"
+          ? visitDate
+          : new Date(visitDate).toISOString().split("T")[0];
+
+      // Initialize the array for this date if it doesn't exist
+      if (!dateLocationMap.has(dateStr)) {
+        dateLocationMap.set(dateStr, []);
+      }
+
+      // Add the location to the array for this date
+      dateLocationMap.get(dateStr)!.push({
+        lat: latitude,
+        lng: longitude,
+        total_cost: totalCost,
+        visit_type: visitType,
+        route: "",
       });
     });
 

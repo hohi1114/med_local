@@ -62,6 +62,11 @@ declare global {
         accessToken: string
       ) => Promise<any>;
 
+      processDataLocallyEgis: (
+        mergedData: any[],
+        accessToken: string
+      ) => Promise<any>;
+
       onGeocodingProgress: (
         callback: (data: { current: number; total: number }) => void
       ) => () => void;

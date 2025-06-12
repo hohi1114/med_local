@@ -211,6 +211,51 @@ export async function uploadDataToBackendDentWeb(
   }
 }
 
+
+
+
+export async function uploadDataToBackendEgis(
+  token: string,
+  processedData: ProcessDataPayload
+): Promise<ProcessDataResponse> {
+  try {
+    const baseURL = "http://localhost:3001/api";
+
+    // Prepare the request payload
+    const payload = {
+      processedRecords: processedData.patient_records,
+      date_location_groups: processedData.date_location_groups
+    };
+
+    // Send the request to the backend
+    const response = await axios.post<ProcessDataResponse>(
+      `${baseURL}/data/egis`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+
+    console.log("✅ Patient data processed successfully:", response.data);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      console.error("❌ Error processing patient data:", error.response.data);
+      throw new Error(
+        error.response.data.error || "Failed to process patient data"
+      );
+    } else {
+      console.error("❌ Unexpected error processing patient data:", error);
+      throw new Error(
+        "An unexpected error occurred while processing patient data"
+      );
+    }
+  }
+}
+
 const UpdateDataPage = () => {
   const [dataType, setDataType] = useState<"euisarang" | "egis" | "dentweb" | "orm" | "vegas" | "hanchart">(
     "euisarang"
@@ -648,7 +693,7 @@ const UpdateDataPage = () => {
       setProgress(10);
 
       // Step 4: Process the merged data (geocoding, region assignment, etc.)
-      const processedData = await window.electron.processDataLocally(
+      const processedData = await window.electron.processDataLocallyEgis(
         mergedData,
         getCookie("accessToken")
       );
@@ -662,7 +707,7 @@ const UpdateDataPage = () => {
 
       // Step 5: Send only the processed data to the backend
       // Start the upload but don't await it
-      const uploadPromise = uploadDataToBackend(
+      const uploadPromise = uploadDataToBackendEgis(
         getCookie("accessToken"),
         processedData
       );
