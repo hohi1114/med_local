@@ -304,6 +304,7 @@ export async function parsePlaceFilesEuisarang(
   return data;
 }
 
+/*
 export async function parseDailyIncomeEgis(
   fileBuffers: ArrayBuffer[]
 ): Promise<DailyIncomeEgis[]> {
@@ -442,9 +443,11 @@ export async function parsePatientListEgis(
     const patientNumberIndex = headers.findIndex(
       (col: any) => col === "환자번호"
     );
+
     const residentNumberIndex = headers.findIndex(
       (col: any) => col === "주민번호"
     );
+
     const addressIndex = headers.findIndex((col: any) => col === "주소");
 
     if (
@@ -517,6 +520,7 @@ export async function parsePatientListEgis(
   }
   return data;
 }
+*/
 
 // In src/services/fileProcessing.ts
 export async function parseDaysFilesDentweb(

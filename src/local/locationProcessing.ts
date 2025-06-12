@@ -58,6 +58,7 @@ interface LocationPoint {
   total_cost: number;
   visit_type: string;
   route: string;
+  age: string;
 }
 
 export interface DateLocationGroup {
@@ -241,7 +242,7 @@ export async function processDataLocally(
     const dateLocationMap = new Map<string, LocationPoint[]>();
 
     recordsWithGeodata.forEach((record) => {
-      const { visitDate, latitude, longitude, location_true, totalCost } =
+      const { visitDate, latitude, longitude, location_true, totalCost, age } =
         record;
 
       // Skip records without valid locations
@@ -263,6 +264,7 @@ export async function processDataLocally(
         lat: latitude,
         lng: longitude,
         total_cost: totalCost,
+        age: String(age),
         visit_type: "",
         route: "",
       });
@@ -426,6 +428,7 @@ export async function processDataLocallyVegas(
         totalCost,
         visitType,
         route,
+        age,
       } = record;
 
       // Skip records without valid locations
@@ -449,6 +452,7 @@ export async function processDataLocallyVegas(
         total_cost: totalCost,
         visit_type: visitType,
         route: route,
+        age: String(age),
       });
     });
 
@@ -609,6 +613,7 @@ export async function processDataLocallyDentWeb(
         visitType,
         totalCost,
         route,
+        age,
       } = record;
 
       // Skip records without valid locations
@@ -632,6 +637,7 @@ export async function processDataLocallyDentWeb(
         total_cost: totalCost,
         visit_type: visitType,
         route: route,
+        age: String(age),
       });
     });
 
@@ -789,6 +795,7 @@ export async function processDataLocallyHanChart(
         totalCost,
         visitType,
         route,
+        age,
       } = record;
 
       // Skip records without valid locations
@@ -812,6 +819,7 @@ export async function processDataLocallyHanChart(
         total_cost: totalCost,
         visit_type: visitType,
         route: route,
+        age: String(age),
       });
     });
 
@@ -967,6 +975,7 @@ export async function processDataLocallyEgis(
         location_true,
         totalCost,
         visitType,
+        age,
       } = record;
 
       // Skip records without valid locations
@@ -990,6 +999,7 @@ export async function processDataLocallyEgis(
         total_cost: totalCost,
         visit_type: visitType,
         route: "",
+        age: String(age),
       });
     });
 

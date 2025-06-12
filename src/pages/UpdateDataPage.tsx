@@ -689,6 +689,7 @@ const UpdateDataPage = () => {
 
       // Step 3: Merge data locally
       const mergedData = await window.electron.mergeDataEgis(visits, patients);
+      console.log(mergedData);
 
       setProgress(10);
 

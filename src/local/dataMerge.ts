@@ -198,7 +198,7 @@ export function mergeDataEgis(
   for (const pat of patientList) {
     patientMap.set(pat.chartNumber, {
       address: pat.address || "N/D",
-      age: pat.age || null,
+      age: pat?.age ?? null,
     });
   }
 
@@ -229,7 +229,7 @@ export function mergeDataVegas(
     chartNumber: inc.chartNumber,
     visitDate: inc.visitDate,
     totalCost: inc.totalCost,
-    age: inc.age, // Vegas has age in daily income
+    age: inc?.age ?? null, // Vegas has age in daily income
     area: inc.area,
     procedure: inc.procedure,
     doctor: inc.doctor,
@@ -402,7 +402,7 @@ export function mergeDataDentWeb(
   for (const pat of patients) {
     patientMap.set(pat.chartNumber, {
       address: pat.address || "N/D",
-      age: pat.age || null,
+      age: pat?.age ?? null,
     });
   }
 
