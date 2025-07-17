@@ -56,9 +56,16 @@ export async function parseDailyIncomeVegas(
       (col: any) => col === "차트번호"
     );
     const paymentDateIndex = headers.findIndex((col: any) => col === "수납일");
-    const nonInsuranceCostIndex = headers.findIndex(
+    let nonInsuranceCostIndex = headers.findIndex(
       (col: any) => col === "비급여(과세총금액)"
     );
+
+    // If the first variant is not found, try the second one
+    if (nonInsuranceCostIndex === -1) {
+      nonInsuranceCostIndex = headers.findIndex(
+        (col: any) => col === "과세총금액"
+      );
+    }
 
     const genderAgeIndex = headers.findIndex((col: any) => col === "성별/나이");
 
@@ -201,7 +208,7 @@ export async function parsePatientListVegas(
 
     // Get header row (first row, index 0)
     const headers = allData[0];
-    console.log("Headers found:", headers);
+    console.log("vegas:", headers);
 
     // Find the index for each required column
     const chartNumberIndex = headers.findIndex(

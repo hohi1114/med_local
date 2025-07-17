@@ -187,7 +187,7 @@ export async function parsePatientListHanChart(
 
     // Get header row (first row, index 0)
     const headers = allData[0];
-    console.log("Headers found:", headers);
+    console.log("hanchart:", headers);
 
     // Find the index for each required column
     const chartNumberIndex = headers.findIndex(

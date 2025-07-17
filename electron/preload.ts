@@ -1,9 +1,11 @@
 import { contextBridge, ipcRenderer } from "electron";
 import {
+  processDataLocallycChart,
   processDataLocallyDentWeb,
   processDataLocallyHanChart,
   processDataLocallyVegas,
 } from "../src/local/locationProcessing";
+import { MergedDataDoctorP } from "../src/local/dataMerge";
 
 contextBridge.exposeInMainWorld("electron", {
   ping: () => "pong",
@@ -43,6 +45,16 @@ contextBridge.exposeInMainWorld("electron", {
   parsePatientListHanChart: (fileBuffers: ArrayBuffer[]) =>
     ipcRenderer.invoke("parse-patient-list-hanchart", fileBuffers),
 
+  parseDaysFilesDoctorP: (fileBuffers: ArrayBuffer[]) =>
+    ipcRenderer.invoke("parse-daily-income-doctorp", fileBuffers),
+  parsePatientListDoctorP: (fileBuffers: ArrayBuffer[]) =>
+    ipcRenderer.invoke("parse-patient-list-doctorp", fileBuffers),
+
+  parseDailyIncomecChart: (fileBuffers: ArrayBuffer[]) =>
+    ipcRenderer.invoke("parse-daily-income-cChart", fileBuffers),
+  parsePatientListcChart: (fileBuffers: ArrayBuffer[]) =>
+    ipcRenderer.invoke("parse-patient-list-cChart", fileBuffers),
+
   // Data merging
   mergeDataEuisarang: (visits: any[], patients: any[]) =>
     ipcRenderer.invoke("merge-data-euisarang", visits, patients),
@@ -56,6 +68,11 @@ contextBridge.exposeInMainWorld("electron", {
     ipcRenderer.invoke("merge-data-vegas", dailyIncome, patientList),
   mergeDataHanChart: (dailyIncome: any[], patientList: any[]) =>
     ipcRenderer.invoke("merge-data-hanchart", dailyIncome, patientList),
+  mergeDataDoctorP: (dailyIncome: any[], patientList: any[]) =>
+    ipcRenderer.invoke("merge-data-doctorp", dailyIncome, patientList),
+
+  mergeDatacChart: (dailyIncome: any[], patientList: any[]) =>
+    ipcRenderer.invoke("merge-data-cChart", dailyIncome, patientList),
 
   // Final data processing
   processDataLocally: (mergedData: any[], accessToken: string) =>
@@ -76,7 +93,13 @@ contextBridge.exposeInMainWorld("electron", {
     ipcRenderer.invoke("process-data-locally-dentweb", mergedData, accessToken),
 
   processDataLocallyEgis: (mergedData: any[], accessToken: string) =>
-    ipcRenderer.invoke("process-data-locally-dentweb", mergedData, accessToken),
+    ipcRenderer.invoke("process-data-locally-egis", mergedData, accessToken),
+
+  processDataLocallyDoctorP: (mergedData: any[], accessToken: string) =>
+    ipcRenderer.invoke("process-data-locally-doctorp", mergedData, accessToken),
+
+  processDataLocallycChart: (mergedData: any[], accessToken: string) =>
+    ipcRenderer.invoke("process-data-locally-cChart", mergedData, accessToken),
 
   onGeocodingProgress: (
     callback: (data: { current: number; total: number }) => void

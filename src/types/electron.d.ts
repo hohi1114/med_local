@@ -29,6 +29,12 @@ declare global {
 
       parseDailyIncomeHanChartNew: (fileBuffers: ArrayBuffer[]) => Promise<any>;
 
+      parseDaysFilesDoctorP: (fileBuffers: ArrayBuffer[]) => Promise<any>;
+      parsePatientListDoctorP: (fileBuffers: ArrayBuffer[]) => Promise<any>;
+
+      parseDailyIncomecChart: (fileBuffers: ArrayBuffer[]) => Promise<any>;
+      parsePatientListcChart: (fileBuffers: ArrayBuffer[]) => Promise<any>;
+
       // Data merging
       mergeDataEuisarang: (visits: any[], patients: any[]) => Promise<any>;
       mergeDataDentWeb: (visits: any[], patients: any[]) => Promise<any>;
@@ -40,7 +46,12 @@ declare global {
         patientList: any[]
       ) => Promise<any>;
       mergeDataDentWeb: (dailyIncome: any[], patients: any[]) => Promise<any>;
+      mergeDataDoctorP: (
+        dailyIncome: any[],
+        patientList: any[]
+      ) => Promise<any>;
 
+      mergeDatacChart: (dailyIncome: any[], patientList: any[]) => Promise<any>;
       // Final data processing
       processDataLocally: (
         mergedData: any[],
@@ -63,6 +74,16 @@ declare global {
       ) => Promise<any>;
 
       processDataLocallyEgis: (
+        mergedData: any[],
+        accessToken: string
+      ) => Promise<any>;
+
+      processDataLocallyDoctorP: (
+        mergedData: any[],
+        accessToken: string
+      ) => Promise<any>;
+
+      processDataLocallycChart: (
         mergedData: any[],
         accessToken: string
       ) => Promise<any>;
