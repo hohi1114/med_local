@@ -145,7 +145,9 @@ export async function processDataLocally(
       return {
         ...record,
         chartNumber:
-          Number(chartNumberMapping[record.chartNumber]) ?? record.chartNumber,
+          chartNumberMapping[record.chartNumber] != null
+            ? Number(chartNumberMapping[record.chartNumber])
+            : record.chartNumber,
       };
     });
 
@@ -317,7 +319,9 @@ export async function processDataLocallyVegas(
       return {
         ...record,
         chartNumber:
-          Number(chartNumberMapping[record.chartNumber]) ?? record.chartNumber,
+          chartNumberMapping[record.chartNumber] != null
+            ? Number(chartNumberMapping[record.chartNumber])
+            : record.chartNumber,
       };
     });
 
@@ -871,7 +875,9 @@ export async function processDataLocallyHanChart(
       return {
         ...record,
         chartNumber:
-          Number(chartNumberMapping[record.chartNumber]) ?? record.chartNumber,
+          chartNumberMapping[record.chartNumber] != null
+            ? Number(chartNumberMapping[record.chartNumber])
+            : record.chartNumber,
       };
     });
 
@@ -1053,7 +1059,9 @@ export async function processDataLocallyEgis(
       return {
         ...record,
         chartNumber:
-          Number(chartNumberMapping[record.chartNumber]) ?? record.chartNumber,
+          chartNumberMapping[record.chartNumber] != null
+            ? Number(chartNumberMapping[record.chartNumber])
+            : record.chartNumber,
       };
     });
 

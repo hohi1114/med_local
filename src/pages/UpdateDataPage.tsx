@@ -307,7 +307,7 @@ export async function uploadDataToBackendDoctorP(
   processedData: ProcessDataPayload
 ): Promise<ProcessDataResponse> {
   try {
-    const baseURL = "http://localhost:3001/api";
+    const baseURL = "http://3.39.10.210:3001/api";
 
     // Prepare the request payload
     const payload = {
@@ -345,7 +345,7 @@ export async function uploadDataToBackendDoctorP(
 }
 
 const UpdateDataPage = () => {
-  const [dataType, setDataType] = useState<"euisarang" | "egis" | "dentweb" | "orm" | "vegas" | "hanchart" | "doctorp" | "cChart">(
+  const [dataType, setDataType] = useState<"euisarang" | "egis" | "dentweb" | "orm" | "vegas" | "vegas2" | "hanchart" | "doctorp" | "cChart">(
     "euisarang"
   ); // Track data type
   const [daysFiles, setDaysFiles] = useState<FileList | null>(null); // Euisarang
@@ -387,6 +387,7 @@ const UpdateDataPage = () => {
           emrType === "dentweb" ||
           emrType === "orm" ||
           emrType === "vegas" ||
+          emrType === "vegas2" ||
           emrType === "hanchart" ||
           emrType === "doctorp" ||
           emrType === "cChart"
@@ -970,8 +971,6 @@ const UpdateDataPage = () => {
     }
   };
 
-
-
   const handleProcessDataVegas = async (): Promise<void> => {
     if (!placeFiles || !dailyIncome) {
       openNotification("warning", "파일 누락", "모든 파일을 업로드해주세요.");
@@ -1005,6 +1004,114 @@ const UpdateDataPage = () => {
       const patients = await window.electron.parsePatientListVegas(placeBuffers);
       console.log(patients);
 
+
+      // Step 3: Merge data locally
+      const mergedData = await window.electron.mergeDataVegas(visits, patients);
+
+      setProgress(10);
+
+      // Step 4: Process the merged data (geocoding, region assignment, etc.)
+      const processedData = await window.electron.processDataLocallyVegas(
+        mergedData,
+        getCookie("accessToken")
+      );
+
+
+      removeProgressListener();
+
+      setProgress(90);
+
+      console.log("Processed data:", processedData);
+
+      // Step 5: Send only the processed data to the backend
+      // Start the upload but don't await it
+      const uploadPromise = uploadDataToBackendVegas(
+        getCookie("accessToken"),
+        processedData
+      );
+
+      setProgress(95);
+
+      // Inform the user that data is being processed in the background
+      openNotification(
+        "success",
+        "데이터 업로드 중",
+        "데이터가 처리되어 업로드 중입니다. 업로드가 완료되면 알려드립니다. 프로그램을 종료하지 마세요."
+      );
+
+      // Set progress to 100% since from the user's perspective, the task is complete
+      setProgress(100);
+
+      uploadPromise
+        .then((backendResponse) => {
+          fetchUploadedDates();
+          // Handle successful upload (when it eventually completes)
+          openNotification(
+            "success",
+            "데이터 업로드 완료",
+            "모든 데이터가 성공적으로 처리되었습니다."
+          );
+
+          // Update any UI components that should reflect the successful upload
+          // updateDataCount(backendResponse);
+        })
+        .catch((error) => {
+          // Handle error in the background
+          console.error("❌ Background upload error:", error);
+          openNotification(
+            "error",
+            "업로드 실패",
+            error instanceof Error
+              ? error.message
+              : "알 수 없는 오류가 발생했습니다."
+          );
+        });
+    } catch (error) {
+      // This catch block handles errors in the processing phase
+      console.error("❌ Error processing data:", error);
+      openNotification(
+        "error",
+        "데이터 처리 실패",
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다."
+      );
+      setProgress(0); // Reset progress on error
+    }
+  };
+
+  const handleProcessDataVegas2 = async (): Promise<void> => {
+    if (!placeFiles || !dailyIncome) {
+      openNotification("warning", "파일 누락", "모든 파일을 업로드해주세요.");
+      return;
+    }
+
+    setProgress(1); // Start progress
+
+    const removeProgressListener = window.electron.onGeocodingProgress(
+      ({ current, total }) => {
+        // Calculate overall progress (giving geocoding 60% of the total weight)
+        // First 20% for file processing and merging, last 20% for final processing and upload prep
+        const geocodingProgress = (current / total) * 80;
+        setProgress(10 + geocodingProgress);
+      }
+    );
+
+    try {
+      const daysBuffers = await Promise.all(
+        Array.from(dailyIncome).map((file) => file.arrayBuffer())
+      );
+
+      const placeBuffers = await Promise.all(
+        Array.from(placeFiles).map((file) => file.arrayBuffer())
+      );
+
+      // Step 2: Parse files locally via Electron
+      const visits = await window.electron.parseDailyIncomeVegas2(daysBuffers);
+
+      console.log(visits);
+      const patients = await window.electron.parsePatientListVegas2(placeBuffers);
+      console.log(patients);
 
       // Step 3: Merge data locally
       const mergedData = await window.electron.mergeDataVegas(visits, patients);
@@ -1321,6 +1428,8 @@ const UpdateDataPage = () => {
       handleProcessDataHanChart();
     } else if (dataType === "vegas") {
       handleProcessDataVegas();
+    } else if (dataType === "vegas2") {
+      handleProcessDataVegas2();
     } else if (dataType === "cChart") {
       handleProcessDatacChart();
     } else {
@@ -1407,7 +1516,7 @@ const UpdateDataPage = () => {
             </>
           )}
 
-          {dataType === "vegas" && (
+          {(dataType === "vegas" || dataType === "vegas2") && (
             <>
               <FileUpload
                 title="환자별 집계"

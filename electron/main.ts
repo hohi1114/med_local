@@ -29,6 +29,11 @@ import {
 } from "../src/local/excel/vegasExcel";
 
 import {
+  parseDailyIncomeVegas2,
+  parsePatientListVegas2,
+} from "../src/local/excel/vegas2Excel";
+
+import {
   parseDaysFilesDentweb,
   parsePlaceFilesDentWeb,
 } from "../src/local/excel/dentwebExcel";
@@ -200,6 +205,24 @@ app.whenReady().then(() => {
       return await parsePatientListVegas(fileBuffers);
     } catch (error) {
       console.error("Error parsing patient list:", error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle("parse-patient-list-vegas2", async (event, fileBuffers) => {
+    try {
+      return await parsePatientListVegas2(fileBuffers);
+    } catch (error) {
+      console.error("Error parsing patient list:", error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle("parse-daily-income-vegas2", async (event, fileBuffers) => {
+    try {
+      return await parseDailyIncomeVegas2(fileBuffers);
+    } catch (error) {
+      console.error("Error parsing daily income:", error);
       throw error;
     }
   });
