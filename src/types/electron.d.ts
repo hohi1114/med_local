@@ -38,11 +38,15 @@ declare global {
       parseDailyIncomecChart: (fileBuffers: ArrayBuffer[]) => Promise<any>;
       parsePatientListcChart: (fileBuffers: ArrayBuffer[]) => Promise<any>;
 
+      parseDailyIncomeBit: (fileBuffers: ArrayBuffer[]) => Promise<any>;
+      parsePatientListBit: (fileBuffers: ArrayBuffer[]) => Promise<any>;
+
       // Data merging
       mergeDataEuisarang: (visits: any[], patients: any[]) => Promise<any>;
       mergeDataDentWeb: (visits: any[], patients: any[]) => Promise<any>;
       mergeDataEgis: (dailyIncome: any[], patientList: any[]) => Promise<any>;
       mergeDataOrm: (visits: any[], patients: any[]) => Promise<any>;
+      mergeDataBit: (visits: any[], patients: any[]) => Promise<any>;
       mergeDataVegas: (dailyIncome: any[], patientList: any[]) => Promise<any>;
       mergeDataHanChart: (
         dailyIncome: any[],
@@ -62,6 +66,11 @@ declare global {
       ) => Promise<any>;
 
       processDataLocallyVegas: (
+        mergedData: any[],
+        accessToken: string
+      ) => Promise<any>;
+
+      processDataLocallyBit: (
         mergedData: any[],
         accessToken: string
       ) => Promise<any>;

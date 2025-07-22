@@ -44,6 +44,11 @@ import {
 } from "../src/local/excel/doctorpExcel";
 
 import {
+  parseDailyIncomeBit,
+  parsePatientListBit,
+} from "../src/local/excel/bitExcel";
+
+import {
   mergeDataDentWeb,
   mergeDataEgis,
   mergeDataEuisarang,
@@ -52,6 +57,7 @@ import {
   mergeDataVegas,
   MergedDataDoctorP,
   MergedDataCchart,
+  mergeDataBit,
 } from "../src/local/dataMerge";
 import {
   processDataLocally,
@@ -61,6 +67,7 @@ import {
   processDataLocallyEgis,
   processDataLocallyDoctorP,
   processDataLocallycChart,
+  processDataLocallyBit,
 } from "../src/local/locationProcessing";
 
 const isDev = process.env.NODE_ENV === "development";
@@ -245,6 +252,24 @@ app.whenReady().then(() => {
     }
   });
 
+  ipcMain.handle("parse-daily-income-bit", async (event, fileBuffers) => {
+    try {
+      return await parseDailyIncomeBit(fileBuffers);
+    } catch (error) {
+      console.error("Error parsing daily income:", error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle("parse-patient-list-bit", async (event, fileBuffers) => {
+    try {
+      return await parsePatientListBit(fileBuffers);
+    } catch (error) {
+      console.error("Error parsing patient list:", error);
+      throw error;
+    }
+  });
+
   ipcMain.handle("parse-daily-income-doctorp", async (event, fileBuffers) => {
     try {
       return await parseDaysFilesDoctorP(fileBuffers);
@@ -318,6 +343,15 @@ app.whenReady().then(() => {
     }
   });
 
+  ipcMain.handle("merge-data-bit", async (event, visits, patients) => {
+    try {
+      return mergeDataBit(visits, patients);
+    } catch (error) {
+      console.error("Error merging Euisarang data:", error);
+      throw error;
+    }
+  });
+
   ipcMain.handle("merge-data-doctorp", async (event, visits, patients) => {
     try {
       return MergedDataDoctorP(visits, patients);
@@ -360,6 +394,24 @@ app.whenReady().then(() => {
     async (event, mergedData, accessToken) => {
       try {
         return await processDataLocallyVegas(
+          mergedData,
+          accessToken,
+          (current, total) => {
+            event.sender.send("geocoding-progress", { current, total });
+          }
+        );
+      } catch (error) {
+        console.error("Error processing data:", error);
+        throw error;
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "process-data-locally-bit",
+    async (event, mergedData, accessToken) => {
+      try {
+        return await processDataLocallyBit(
           mergedData,
           accessToken,
           (current, total) => {

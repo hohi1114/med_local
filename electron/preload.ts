@@ -40,6 +40,11 @@ contextBridge.exposeInMainWorld("electron", {
   parsePatientListVegas: (fileBuffers: ArrayBuffer[]) =>
     ipcRenderer.invoke("parse-patient-list-vegas", fileBuffers),
 
+  parseDailyIncomeBit: (fileBuffers: ArrayBuffer[]) =>
+    ipcRenderer.invoke("parse-daily-income-bit", fileBuffers),
+  parsePatientListBit: (fileBuffers: ArrayBuffer[]) =>
+    ipcRenderer.invoke("parse-patient-list-bit", fileBuffers),
+
   // File processing - Egis
   parseDailyIncomeVegas2: (fileBuffers: ArrayBuffer[]) =>
     ipcRenderer.invoke("parse-daily-income-vegas2", fileBuffers),
@@ -76,6 +81,8 @@ contextBridge.exposeInMainWorld("electron", {
     ipcRenderer.invoke("merge-data-hanchart", dailyIncome, patientList),
   mergeDataDoctorP: (dailyIncome: any[], patientList: any[]) =>
     ipcRenderer.invoke("merge-data-doctorp", dailyIncome, patientList),
+  mergeDataBit: (dailyIncome: any[], patientList: any[]) =>
+    ipcRenderer.invoke("merge-data-bit", dailyIncome, patientList),
 
   mergeDatacChart: (dailyIncome: any[], patientList: any[]) =>
     ipcRenderer.invoke("merge-data-cChart", dailyIncome, patientList),
@@ -106,6 +113,9 @@ contextBridge.exposeInMainWorld("electron", {
 
   processDataLocallycChart: (mergedData: any[], accessToken: string) =>
     ipcRenderer.invoke("process-data-locally-cChart", mergedData, accessToken),
+
+  processDataLocallyBit: (mergedData: any[], accessToken: string) =>
+    ipcRenderer.invoke("process-data-locally-bit", mergedData, accessToken),
 
   onGeocodingProgress: (
     callback: (data: { current: number; total: number }) => void

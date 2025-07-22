@@ -119,6 +119,23 @@ export interface MergedDataDoctorP {
   visitType: string;
 }
 
+interface VisitDataBit {
+  chartNumber: number;
+  visitDate: string | Date;
+  totalCost: number;
+}
+
+// Final merged data structure
+export interface MergedDataBit {
+  chartNumber: number;
+  visitDate: string | Date;
+  totalCost: number;
+  age: number | null;
+  address: string;
+  visitType: string; // 신환/재진
+  doctor: string; // 담당의
+}
+
 import { PatientData, VisitData } from "./ExcelParser";
 
 import { DailyIncomeEgis, PatientListEgis } from "./excel/egisExcel";
@@ -130,6 +147,11 @@ import {
 import { DailyIncomeDentweb, PatientDataDentWeb } from "./excel/dentwebExcel";
 import { DailyIncomeDoctorP, PatientListDoctorP } from "./excel/doctorpExcel";
 import { DailyIncomeCchart, PatientListCchart } from "./excel/cChartExcel";
+import {
+  DailyIncomeBit,
+  parsePatientListBit,
+  PatientListBit,
+} from "./excel/bitExcel";
 
 // For Euisarang data
 export function mergeDataEuisarang(
@@ -571,6 +593,67 @@ export function MergedDataCchart(
   });
 
   // NOW convert visitDate strings to Date objects
+  df_merged.forEach((record) => {
+    record.visitDate = new Date(record.visitDate as string);
+  });
+
+  return df_merged;
+}
+
+export function mergeDataBit(
+  dailyIncome: DailyIncomeBit[],
+  patientList: PatientListBit[]
+): MergedDataBit[] {
+  // Build "visits" array from dailyIncome
+  const visits: VisitDataBit[] = dailyIncome.map((inc) => ({
+    chartNumber: inc.chartNumber,
+    visitDate: inc.visitDate,
+    totalCost: inc.totalCost,
+  }));
+
+  // Create merged data from visits
+  const df_merged = visits.map((visit) => ({
+    chartNumber: visit.chartNumber,
+    visitDate: visit.visitDate,
+    totalCost: visit.totalCost,
+    age: null as number | null, // Will be filled in later
+    address: "N/D", // Will be filled in from patient list
+    visitType: "재진", // Default to 재진
+    doctor: "", // Will be filled in from patient list
+  }));
+
+  // Build a Map for quick patient lookup
+  const patientMap = new Map<
+    number,
+    {
+      age: number | null;
+      address: string;
+      visitType: string;
+      doctor: string;
+    }
+  >();
+
+  for (const pat of patientList) {
+    patientMap.set(pat.chartNumber, {
+      age: pat.age,
+      address: pat.address || "N/D",
+      visitType: pat.visitType,
+      doctor: pat.doctor || "N/D",
+    });
+  }
+
+  // Fill patient data into df_merged
+  df_merged.forEach((record) => {
+    const patientData = patientMap.get(record.chartNumber);
+    if (patientData) {
+      record.age = patientData.age;
+      record.address = patientData.address;
+      record.visitType = patientData.visitType;
+      record.doctor = patientData.doctor;
+    }
+  });
+
+  // Convert visitDate strings to Date objects
   df_merged.forEach((record) => {
     record.visitDate = new Date(record.visitDate as string);
   });
