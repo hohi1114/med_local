@@ -8,8 +8,8 @@ export interface GeoLocation {
 }
 
 // Configuration (store these in environment variables in production)
-const NAVER_CLIENT_ID = "h7hdp8e16r";
-const NAVER_CLIENT_SECRET = "IoalkdNtYuT4zT4Mb2RdQPqoutPMCBe6Jxb69bgf";
+const NAVER_CLIENT_ID = "z2v9fpyxud";
+const NAVER_CLIENT_SECRET = "GiE8zHBUgWXcKKedSU96rRk0Oc0ay3bq2t6asZRb";
 
 // Function to get latitude and longitude using Naver Maps REST API
 export const getLatLonNaver = async (
