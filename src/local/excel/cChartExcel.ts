@@ -129,22 +129,50 @@ export async function parsePatientListcChart(
   fileBuffers: ArrayBuffer[]
 ): Promise<PatientListCchart[]> {
   const data: PatientListCchart[] = [];
-  const currentYear = new Date().getFullYear();
+  const now = new Date();
+
+  // 주민번호 → 나이 계산 (12자리/13자리 모두 가능)
+  const getAgeFromRRN = (raw: any): number | null => {
+    if (!raw) return null;
+    const digits = String(raw).replace(/[^0-9]/g, ""); // 숫자만 추출
+    if (digits.length < 7) return null;
+
+    const yy = Number(digits.slice(0, 2));
+    const mm = Number(digits.slice(2, 4));
+    const dd = Number(digits.slice(4, 6));
+    const genderCode = Number(digits.charAt(6));
+
+    if (isNaN(yy) || mm < 1 || mm > 12 || dd < 1 || dd > 31) return null;
+
+    let century: number | null = null;
+    if ([1, 2, 5, 6].includes(genderCode)) century = 1900;
+    else if ([3, 4, 7, 8].includes(genderCode)) century = 2000;
+    else return null;
+
+    const birthYear = century + yy;
+    const birth = new Date(birthYear, mm - 1, dd);
+    if (isNaN(birth.getTime())) return null;
+
+    let age = now.getFullYear() - birthYear;
+    const hasHadBirthdayThisYear =
+      now.getMonth() > birth.getMonth() ||
+      (now.getMonth() === birth.getMonth() && now.getDate() >= birth.getDate());
+    if (!hasHadBirthdayThisYear) age -= 1;
+
+    return age >= 0 && age < 130 ? age : null;
+  };
 
   for (const buffer of fileBuffers) {
     const workbook = XLSX.read(buffer, { type: "array" });
-
     if (workbook.SheetNames.length === 0) {
       console.error("❌ No worksheets found in file");
       continue;
     }
 
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-
-    // Get all data including headers
     const allData = XLSX.utils.sheet_to_json<any[]>(worksheet, {
       header: 1,
-      range: 0, // Start from the first row to get all data
+      range: 0,
     });
 
     if (allData.length < 2) {
@@ -153,82 +181,31 @@ export async function parsePatientListcChart(
     }
 
     const headers = allData[0];
+    const patientNumberIndex = headers.findIndex((col) => col === "환자번호");
+    const rrnIndex = headers.findIndex((col) => col === "주민번호");
+    const addressIndex = headers.findIndex((col) => col === "주소");
 
-    // Find the index for each required column
-    const patientNumberIndex = headers.findIndex(
-      (col: any) => col === "환자번호"
-    );
-    const birthYearIndex = headers.findIndex((col: any) => col === "생년");
-    const addressIndex = headers.findIndex((col: any) => col === "주소");
-
-    if (
-      patientNumberIndex === -1 ||
-      birthYearIndex === -1 ||
-      addressIndex === -1
-    ) {
+    if (patientNumberIndex === -1 || rrnIndex === -1 || addressIndex === -1) {
       console.error("❌ Required columns not found in the file");
       console.error("Available headers:", headers);
       continue;
     }
 
-    // Process data rows (starting from row 2, index 1)
     for (let i = 1; i < allData.length; i++) {
       const row = allData[i];
+      if (!row || row.length === 0) continue;
+      if (!row[patientNumberIndex]) continue;
 
-      // Skip empty rows
-      if (!row || row.length === 0) {
-        continue;
-      }
-
-      // Check if required fields exist
-      if (!row[patientNumberIndex]) {
-        continue;
-      }
-
-      // Process patient number (chart number) - remove leading zeros
       const patientNumberStr = String(row[patientNumberIndex]).trim();
       const chartNumber = Number(patientNumberStr.replace(/^0+/, "") || "0");
-
       if (isNaN(chartNumber)) {
         console.log(`Skipping row ${i}: invalid patient number`);
         continue;
       }
 
-      // Process birth year and calculate age
-      let age: number | null = null;
-      const birthYearValue = row[birthYearIndex];
+      const ageRaw = getAgeFromRRN(row[rrnIndex]);
+      const normalizedAge = ageRaw !== null ? normalizeAge(ageRaw) : null;
 
-      if (birthYearValue) {
-        const birthYearStr = String(birthYearValue).trim();
-
-        // Handle different birth year formats
-        let birthYear: number;
-
-        if (birthYearStr.length === 4) {
-          // Full year format: 1990, 2000, etc.
-          birthYear = Number(birthYearStr);
-        } else if (birthYearStr.length === 2) {
-          // Two-digit year format: 90, 00, etc.
-          const twoDigitYear = Number(birthYearStr);
-          // Updated logic for 2-digit years
-          // 00-30 -> 2000-2030, 31-99 -> 1931-1999
-          if (twoDigitYear >= 0 && twoDigitYear <= 30) {
-            birthYear = 2000 + twoDigitYear;
-          } else {
-            birthYear = 1900 + twoDigitYear;
-          }
-        } else {
-          birthYear = Number(birthYearStr);
-        }
-
-        if (!isNaN(birthYear) && birthYear > 1900 && birthYear <= currentYear) {
-          age = currentYear - birthYear;
-        }
-      }
-
-      const normalizedAge = age !== null ? normalizeAge(age) : null;
-
-      // Process address
       const address = row[addressIndex]
         ? String(row[addressIndex]).trim()
         : "N/A";

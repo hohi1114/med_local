@@ -19,7 +19,7 @@ export const getLatLonNaver = async (
 ): Promise<GeoLocation> => {
   try {
     const response = await axios.get(
-      "https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode",
+      "https://maps.apigw.ntruss.com/map-geocode/v2/geocode",
       {
         params: {
           query: address,
