@@ -6,6 +6,7 @@ export interface DailyIncomeHanChart {
   visitDate: string;
   totalCost: number;
   age: number;
+  area: string;
   route: string;
   doctor: string;
 }
@@ -61,6 +62,8 @@ export async function parseDailyIncomeHanChart(
     const doctorIndex = headers.findIndex((col: any) => col === "진료의");
 
     const routeIndex = headers.findIndex((col: any) => col === "내원경로");
+    const gubunIndex = headers.findIndex((col: any) => col === "구분");
+
     if (
       chartNumberIndex === -1 ||
       paymentDateIndex === -1 ||
@@ -145,6 +148,10 @@ export async function parseDailyIncomeHanChart(
         routeIndex !== -1 && row[routeIndex]
           ? String(row[routeIndex]).trim()
           : "";
+      const area =
+        gubunIndex !== -1 && row[gubunIndex]
+          ? String(row[gubunIndex]).trim()
+          : "";
 
       data.push({
         chartNumber,
@@ -153,6 +160,7 @@ export async function parseDailyIncomeHanChart(
         totalCost,
         doctor,
         route,
+        area,
       });
     }
   }

@@ -979,6 +979,7 @@ export async function processDataLocallyHanChart(
           visit_date: record.visitDate,
           doctor: record.doctor,
           route: record.route,
+          area: record.area,
           visitType: record.visitType,
           location_true: record.location_true,
           small_region_id,

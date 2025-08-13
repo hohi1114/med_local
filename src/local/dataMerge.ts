@@ -35,6 +35,7 @@ export interface MergedDataVegas {
 interface VisitDataHanChart {
   chartNumber: number;
   visitDate: string | Date;
+  area:string;
   totalCost: number;
   age: number | null;
   route: string;
@@ -46,6 +47,7 @@ export interface MergedDataHanChart {
   visitDate: string | Date;
   totalCost: number;
   age: number | null;
+  area:string; // 교통사고 환자 구분용
   address: string;
   doctor: string; //담당의
   route: string; // 경로
@@ -367,6 +369,7 @@ export function mergeDataHanChart(
     age: inc?.age ?? null, // Vegas has age in daily income
     doctor: inc.doctor,
     route: inc.route,
+    area: inc.area ?? "" ,
   }));
 
   // Create merged data from visits
@@ -379,6 +382,7 @@ export function mergeDataHanChart(
     route: visit.route,
     visitType: "재진",
     address: "N/D", // Will be filled in from patient list
+    area: visit.area,
   }));
 
   // Build a Map<chartNumber, address> from patientList
