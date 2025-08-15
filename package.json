@@ -10,7 +10,9 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "electron": "electron .",
+    "build:bundle": "vite build && tsc -p tsconfig.electron.json",
     "dist": "vite build && npm run build-electron && electron-builder",
+    "dist:mac": "npm run build:bundle && CSC_IDENTITY_AUTO=false electron-builder --mac dmg zip",
     "build-electron": "tsc -p tsconfig.electron.json"
   },
   "build": {
