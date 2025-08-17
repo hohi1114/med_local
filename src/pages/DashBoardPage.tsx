@@ -28,6 +28,7 @@ import useDashboardStore from "../store/useDashboardStore";
 import { Radio } from "antd";
 import BaseMultipleLineChart from "../components/medi_map/chart/BaseMultipleLineChart";
 import { usePrivateDataChart } from "../hooks/usePrivateDataChart";
+import AgeSummaryStrip from "../components/dashboard/AgeSummaryStrip";
 
 const LOADING_CONTENT = "데이터를 불러오는 중입니다.";
 
@@ -291,14 +292,20 @@ export default function DashBoardPage() {
                 />
               </Card>
               <Card>
-                <ChartTitle>연령대 별 환자 분포</ChartTitle>
-                <BarChart
-                  xField="age"
-                  yField="value"
-                  data={formatPatientCountBarData()}
-                  height={380}
-                  valueXSymbol=" 명"
-                />
+              <ChartTitle>연령대 별 환자 분포</ChartTitle>
+              <BarChart
+                xField="age"
+                yField="value"
+                data={formatPatientCountBarData()} // 기존 그대로
+                height={380}
+                valueXSymbol=" 명"
+              />
+    
+              {/* ▶︎ 차트 아래 가로 표 (대시보드 전용) */}
+            <AgeSummaryStrip
+              counts={(dashboardInfoData as any).sinhwan_patient_count_by_age ?? {}}
+              diffs={(dashboardInfoData as any).sinhwan_patient_count_by_age_diff_rates ?? {}}
+            />
               </Card>
             </CardGrid>
           </SectionContainer>

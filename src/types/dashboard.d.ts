@@ -55,7 +55,8 @@ export interface DashBoard {
   average_cost_per_visit_by_date: AverageCostPerVisitByDate;
   sinhwan_cost_by_date: AverageCostPerVisitByDate;
   chojin_rejin_cost_by_date: AverageCostPerVisitByDate;
-
+  sinhwan_patient_count_by_age?: Record<string, number>;
+  sinhwan_patient_count_by_age_diff_rates?: Record<string, number | null>;
   patient_count_by_age_group: PatientCountByAgeGroup;
   visit_count_by_date: AverageCostPerVisitByDate;
   sinhwan_visit_count_by_date: AverageCostPerVisitByDate;
