@@ -3,23 +3,26 @@ name: Build & Release
 on:
   push:
     tags:
-      - "v*"   # v0.0.2 처럼 v로 시작하는 태그 푸시 시
+      - "v*"   # v0.0.x 형태의 태그 푸시 시 실행
 
-# 👇 이게 핵심: Release 생성/업로드에 필요한 권한
 permissions:
   contents: write
 
 jobs:
   build-mac:
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm ci
+          cache: 'npm'
+      - name: Install deps
+        run: npm ci || npm install --no-audit --no-fund
 
-      # (선택) 먼저 빈 Release 생성: electron-builder가 여기에 업로드함
+      # (옵션) 빈 릴리스 먼저 보장
       - name: Ensure GitHub Release exists
         uses: softprops/action-gh-release@v2
         with:
@@ -30,22 +33,38 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # 배포 빌드 + 자동 업로드
-      - name: Build & publish mac artifacts
+      # Mac 빌드 + GitHub 업로드 시도
+      - name: Build mac with electron-builder (publish)
         run: npm run dist -- --mac dmg zip --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # 🔒 확실히 첨부: outputDir = release/
+      - name: Upload mac artifacts to Release (fallback)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: |
+            release/**/*.dmg
+            release/**/*.zip
+            release/**/*.pkg
+            release/**/*.yml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   build-win:
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm ci
+          cache: 'npm'
+      - name: Install deps
+        run: npm ci || npm install --no-audit --no-fund
 
-      # (선택) 빈 Release 보장 - 여러 job에서 호출해도 안전
       - name: Ensure GitHub Release exists
         uses: softprops/action-gh-release@v2
         with:
@@ -56,7 +75,20 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build & publish win artifacts
+      - name: Build win with electron-builder (publish)
         run: npm run dist -- --win nsis --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # 🔒 확실히 첨부: outputDir = release/
+      - name: Upload win artifacts to Release (fallback)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: |
+            release/**/*.exe
+            release/**/*.msi
+            release/**/*.zip
+            release/**/*.yml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
