@@ -17,8 +17,8 @@ declare global {
       parsePatientListEgis: (fileBuffers: ArrayBuffer[]) => Promise<any>;
 
       //File processing -Orum
-      parseDaysFilesOrm: (fileBuffers: ArrayBuffer[]) => Promise<any>;
-      parsePlaceFilesOrm: (fileBuffers: ArrayBuffer[]) => Promise<any>;
+      parseDailyIncomeOrm: (fileBuffers: ArrayBuffer[]) => Promise<any>;
+      parsePatientListOrm: (fileBuffers: ArrayBuffer[]) => Promise<any>;
 
       //File processing - Vegas
       parseDailyIncomeVegas: (fileBuffers: ArrayBuffer[]) => Promise<any>;
@@ -66,6 +66,11 @@ declare global {
       ) => Promise<any>;
 
       processDataLocallyVegas: (
+        mergedData: any[],
+        accessToken: string
+      ) => Promise<any>;
+
+      processDataLocallyOrm: (
         mergedData: any[],
         accessToken: string
       ) => Promise<any>;

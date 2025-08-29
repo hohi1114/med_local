@@ -5,8 +5,6 @@ import si from "systeminformation";
 import {
   parsePlaceFilesEuisarang,
   parseDaysFilesEuisarang,
-  parseDaysFilesOrm,
-  parsePlaceFilesOrm,
 } from "../src/local/ExcelParser";
 
 import {
@@ -48,6 +46,10 @@ import {
   parsePatientListBit,
 } from "../src/local/excel/bitExcel";
 
+import{
+  parseDailyIncomeOrm, parsePatientListOrm
+} from "../src/local/excel/ormExcel"
+
 import {
   mergeDataDentWeb,
   mergeDataEgis,
@@ -57,7 +59,7 @@ import {
   mergeDataVegas,
   MergedDataDoctorP,
   MergedDataCchart,
-  mergeDataBit,
+  mergeDataBit
 } from "../src/local/dataMerge";
 import {
   processDataLocally,
@@ -68,6 +70,7 @@ import {
   processDataLocallyDoctorP,
   processDataLocallycChart,
   processDataLocallyBit,
+  processDataLocallyOrm
 } from "../src/local/locationProcessing";
 
 const isDev = process.env.NODE_ENV === "development";
@@ -127,7 +130,7 @@ app.whenReady().then(() => {
 
   ipcMain.handle("parse-days-files-orm", async (event, fileBuffers) => {
     try {
-      return await parseDaysFilesOrm(fileBuffers);
+      return await parseDailyIncomeOrm(fileBuffers);
     } catch (error) {
       console.error("Error parsing days files:", error);
       throw error;
@@ -137,7 +140,7 @@ app.whenReady().then(() => {
   // In main.ts, add this inside your app.whenReady().then() block:
   ipcMain.handle("parse-place-files-orm", async (event, fileBuffers) => {
     try {
-      return await parsePlaceFilesOrm(fileBuffers);
+      return await parsePatientListOrm(fileBuffers);
     } catch (error) {
       console.error("Error parsing place files:", error);
       throw error;
@@ -394,6 +397,24 @@ app.whenReady().then(() => {
     async (event, mergedData, accessToken) => {
       try {
         return await processDataLocallyVegas(
+          mergedData,
+          accessToken,
+          (current, total) => {
+            event.sender.send("geocoding-progress", { current, total });
+          }
+        );
+      } catch (error) {
+        console.error("Error processing data:", error);
+        throw error;
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "process-data-locally-orm",
+    async (event, mergedData, accessToken) => {
+      try {
+        return await processDataLocallyOrm(
           mergedData,
           accessToken,
           (current, total) => {

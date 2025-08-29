@@ -138,6 +138,16 @@ export interface MergedDataBit {
   doctor: string; // 담당의
 }
 
+export interface MergedDataOrm {
+  chartNumber: number;
+  visitDate: Date;
+  totalCost: number;
+  visitType: "신환" | "초진" | "재진";
+  doctor: string;
+  age: number | null;
+  address: string;
+}
+
 import { PatientData, VisitData } from "./ExcelParser";
 
 import { DailyIncomeEgis, PatientListEgis } from "./excel/egisExcel";
@@ -148,6 +158,7 @@ import {
 } from "./excel/hanchartExcel";
 import { DailyIncomeDentweb, PatientDataDentWeb } from "./excel/dentwebExcel";
 import { DailyIncomeDoctorP, PatientListDoctorP } from "./excel/doctorpExcel";
+import { DailyIncomeOrm,PatientListOrm } from "./excel/ormExcel";
 import { DailyIncomeCchart, PatientListCchart } from "./excel/cChartExcel";
 import {
   DailyIncomeBit,
@@ -189,43 +200,65 @@ export function mergeDataEuisarang(
   return df_merged;
 }
 
-// For Euisarang data
+
+
+// For Orm
+
+
+
+
+
 export function mergeDataOrm(
-  visits: VisitData[],
-  patients: PatientData[]
-): MergedData[] {
-  // Create merged data from visits
-  const df_merged = visits.map((visit) => ({
-    chartNumber: visit.chartNumber,
-    visitDate: visit.visitDate,
-    totalCost: visit.totalCost,
-    age: null as number | null, // Will be filled in later
-    address: "N/D", // Will be filled in later
+  dailyIncome: DailyIncomeOrm[],
+  patientList: PatientListOrm[]
+): MergedDataOrm[] {
+  // 기본 visits 배열 구성
+  const visits = dailyIncome.map((inc) => ({
+    chartNumber: inc.chartNumber,
+    visitDate: inc.visitDate,
+    totalCost: inc.totalCost,
+    visitType: inc.visitType,
+    doctor: inc.doctor || "",
+    age: inc.age ?? null,
   }));
 
-  // Create patient map for quick lookup
-  const patientMap = new Map<number, PatientData>(
-    patients.map((p) => [p.chartNumber, p])
-  );
+  // df_merged 초기화 (address는 기본 "N/D")
+  const df_merged = visits.map((v) => ({
+    chartNumber: v.chartNumber,
+    visitDate: v.visitDate,
+    totalCost: v.totalCost,
+    visitType: v.visitType,
+    doctor: v.doctor,
+    age: v.age,
+    address: "N/D",
+  }));
 
-  // Ensure visitDate is a Date object and standardize to ISO string
-  df_merged.forEach((record) => {
-    record.visitDate = new Date(record.visitDate); // ✅ Ensure it's a Date object
+  const patientMap = new Map<number, { address: string }>();
+  for (const p of patientList) {
+    patientMap.set(p.chartNumber, {
+      address: p.address || "N/D",
+    });
+  }
+
+  // address만 채워넣기
+  df_merged.forEach((rec) => {
+    const pat = patientMap.get(rec.chartNumber);
+    if (pat) {
+      rec.address = pat.address;
+    }
   });
 
-  // Fill in patient data
-  df_merged.forEach((record) => {
-    const patient = patientMap.get(record.chartNumber);
-    record.age = patient?.age ?? null;
-    record.address = patient?.address || "N/D";
+  // visitDate를 Date 객체로 변환
+  df_merged.forEach((rec) => {
+    rec.visitDate = new Date(String(rec.visitDate));
   });
 
-  return df_merged;
+  return df_merged as MergedDataOrm[];
 }
 
-// For Egis data
 
-// For Vegas data
+
+// For Egis data
 export function mergeDataEgis(
   dailyIncome: DailyIncomeEgis[],
   patientList: PatientListEgis[]

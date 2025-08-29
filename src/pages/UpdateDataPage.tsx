@@ -127,6 +127,50 @@ export async function uploadDataToBackendVegas(
 
 
 
+export async function uploadDataToBackendOrm(
+  token: string,
+  processedData: ProcessDataPayload
+): Promise<ProcessDataResponse> {
+  try {
+    const baseURL = "http://3.39.10.210:3001/api";
+
+    // Prepare the request payload
+    const payload = {
+      processedRecords: processedData.patient_records,
+      date_location_groups: processedData.date_location_groups
+    };
+
+    // Send the request to the backend
+    const response = await axios.post<ProcessDataResponse>(
+      `${baseURL}/data/orm`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+
+    console.log("✅ Patient data processed successfully:", response.data);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      console.error("❌ Error processing patient data:", error.response.data);
+      throw new Error(
+        error.response.data.error || "Failed to process patient data"
+      );
+    } else {
+      console.error("❌ Unexpected error processing patient data:", error);
+      throw new Error(
+        "An unexpected error occurred while processing patient data"
+      );
+    }
+  }
+}
+
+
+
 
 export async function uploadDataToBackendcChart(
   token: string,
@@ -593,6 +637,9 @@ const UpdateDataPage = () => {
         placeBuffers
       );
 
+      console.log(visits);
+      console.log(patients);
+
       // Step 3: Merge data locally
       const mergedData = await window.electron.mergeDataEuisarang(
         visits,
@@ -700,9 +747,9 @@ const UpdateDataPage = () => {
       );
 
       // Step 2: Parse files locally via Electron
-      const visits = await window.electron.parseDaysFilesOrm(daysBuffers);
+      const visits = await window.electron.parseDailyIncomeOrm(daysBuffers);
 
-      const patients = await window.electron.parsePlaceFilesOrm(
+      const patients = await window.electron.parsePatientListOrm(
         placeBuffers
       );
 
@@ -717,7 +764,7 @@ const UpdateDataPage = () => {
       setProgress(10);
 
       // Step 4: Process the merged data (geocoding, region assignment, etc.)
-      const processedData = await window.electron.processDataLocally(
+      const processedData = await window.electron.processDataLocallyOrm(
         mergedData,
         getCookie("accessToken")
       );
@@ -730,7 +777,7 @@ const UpdateDataPage = () => {
 
       // Step 5: Send only the processed data to the backend
       // Start the upload but don't await it
-      const uploadPromise = uploadDataToBackend(
+      const uploadPromise = uploadDataToBackendOrm(
         getCookie("accessToken"),
         processedData
       );

@@ -6,6 +6,7 @@ import {
   processDataLocallyVegas,
 } from "../src/local/locationProcessing";
 import { MergedDataDoctorP } from "../src/local/dataMerge";
+import { parseDailyIncomeOrm, parsePatientListOrm } from "../src/local/excel/ormExcel";
 
 contextBridge.exposeInMainWorld("electron", {
   ping: () => "pong",
@@ -17,9 +18,9 @@ contextBridge.exposeInMainWorld("electron", {
   parsePlaceFilesEuisarang: (fileBuffers: ArrayBuffer[]) =>
     ipcRenderer.invoke("parse-place-files-euisarang", fileBuffers),
 
-  parseDaysFilesOrm: (fileBuffers: ArrayBuffer[]) =>
+  parseDailyIncomeOrm: (fileBuffers: ArrayBuffer[]) =>
     ipcRenderer.invoke("parse-days-files-orm", fileBuffers),
-  parsePlaceFilesOrm: (fileBuffers: ArrayBuffer[]) =>
+  parsePatientListOrm: (fileBuffers: ArrayBuffer[]) =>
     ipcRenderer.invoke("parse-place-files-orm", fileBuffers),
 
   // File processing - DentWeb
@@ -74,7 +75,7 @@ contextBridge.exposeInMainWorld("electron", {
   mergeDataEgis: (dailyIncome: any[], patientList: any[]) =>
     ipcRenderer.invoke("merge-data-egis", dailyIncome, patientList),
   mergeDataOrm: (visits: any[], patients: any[]) =>
-    ipcRenderer.invoke("merge-data-euisarang", visits, patients),
+    ipcRenderer.invoke("merge-data-orm", visits, patients),
   mergeDataVegas: (dailyIncome: any[], patientList: any[]) =>
     ipcRenderer.invoke("merge-data-vegas", dailyIncome, patientList),
   mergeDataHanChart: (dailyIncome: any[], patientList: any[]) =>
@@ -94,6 +95,9 @@ contextBridge.exposeInMainWorld("electron", {
   // Final data processing
   processDataLocallyVegas: (mergedData: any[], accessToken: string) =>
     ipcRenderer.invoke("process-data-locally-vegas", mergedData, accessToken),
+
+  processDataLocallyOrm: (mergedData: any[], accessToken: string) =>
+    ipcRenderer.invoke("process-data-locally-orm", mergedData, accessToken),
 
   processDataLocallyHanChart: (mergedData: any[], accessToken: string) =>
     ipcRenderer.invoke(

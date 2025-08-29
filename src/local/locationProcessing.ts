@@ -10,7 +10,9 @@ import {
   MergedDataEgis,
   MergedDataHanChart,
   MergedDataVegas,
+  MergedDataOrm
 } from "./dataMerge";
+import { StringNullableChain } from "lodash";
 
 interface RawRegion {
   id: number;
@@ -27,6 +29,11 @@ export interface ProcessedPatientData {
   small_region_id: number | null;
   dong_region_id: number | null;
   gu_region_id: number | null;
+}
+
+interface ProcessedPatientDataOrm extends ProcessedPatientData{
+  visitType: string;
+  doctor: string;
 }
 
 interface ProcessedPatientDataDoctorP extends ProcessedPatientData {
@@ -305,6 +312,178 @@ export async function processDataLocally(
     throw error;
   }
 }
+
+
+//for Orm 
+
+export async function processDataLocallyOrm(
+  mergedData: MergedDataOrm[],
+  accessToken: string,
+  progressCallback?: (current: number, total: number) => void
+) {
+  try {
+    // Step 0: 차트번호 익명화 매핑 로드
+    const chartNumberMapping = await getMappingData(accessToken);
+
+    // Step 1: 차트번호 익명화 적용 (progress 콜백 포함)
+    const mappedData: MergedDataOrm[] = mergedData.map((record, index) => {
+      if (progressCallback) {
+        progressCallback(index + 1, mergedData.length);
+      }
+      return {
+        ...record,
+        chartNumber:
+          chartNumberMapping[record.chartNumber] != null
+            ? Number(chartNumberMapping[record.chartNumber])
+            : record.chartNumber,
+      };
+    });
+
+    // Step 1-1: 주소 존재 여부 플래그 추가
+    const recordsWithLocationFlag = mappedData.map((record) => ({
+      ...record,
+      location_true: record.address !== "N/D" && record.address !== "N/A",
+    }));
+
+    // Step 2: 지오코딩 대상 주소만 추출
+    const addressesToGeocode = recordsWithLocationFlag
+      .filter((r) => r.location_true)
+      .map((r) => ({
+        chartNumber: r.chartNumber,
+        address: String(r.address),
+      }));
+
+    // Step 3: 주소 지오코딩
+    const geoLocations = await getLatLonForAddresses(
+      addressesToGeocode,
+      progressCallback
+    );
+
+    // 빠른 조회를 위한 맵 구성
+    const geoMap = new Map<
+      number,
+      { latitude: number | null; longitude: number | null; geocoded: boolean }
+    >(
+      geoLocations.map((g) => [
+        g.chartNumber,
+        {
+          latitude: g.latitude,
+          longitude: g.longitude,
+          geocoded: g.latitude !== null && g.longitude !== null,
+        },
+      ])
+    );
+
+    // Step 4: 지오데이터 결합 및 location_true 보정
+    const recordsWithGeodata = recordsWithLocationFlag.map((record) => {
+      const geoData = geoMap.get(record.chartNumber);
+      return {
+        ...record,
+        latitude: geoData?.latitude ?? null,
+        longitude: geoData?.longitude ?? null,
+        location_true: geoData?.geocoded ?? false,
+      };
+    });
+
+    // Step 5: 행정구역 폴리곤 로드 및 파싱
+    const regionData = await fetchRegionData(accessToken);
+
+    const smallRegions= regionData.smallRegions.map((region) => ({
+      id: region.id,
+      name: region.name,
+      coords: parsePolygon(region.polygon),
+    }));
+
+    const dongRegions = regionData.dongRegions.map((region) => ({
+      id: region.id,
+      name: region.name,
+      coords: parsePolygon(region.polygon),
+    }));
+
+    const guRegions = regionData.guRegions.map((region) => ({
+      id: region.id,
+      name: region.name,
+      coords: parsePolygon(region.polygon),
+    }));
+
+    // Step 6: 최종 가공 레코드 생성 (lat/lng는 제외)
+    const processedRecords: ProcessedPatientDataOrm[] = recordsWithGeodata.map(
+      (record) => {
+        const { latitude, longitude } = record;
+
+        let small_region_id = null;
+        let dong_region_id = null;
+        let gu_region_id  = null;
+
+        if (record.location_true && latitude !== null && longitude !== null) {
+          small_region_id = findMatchingRegion(latitude, longitude, smallRegions);
+          dong_region_id = findMatchingRegion(latitude, longitude, dongRegions);
+          gu_region_id = findMatchingRegion(latitude, longitude, guRegions);
+        }
+
+        return {
+          chart_number: record.chartNumber,
+          age: record.age ?? null,
+          total_cost: record.totalCost,
+          visit_date: record.visitDate, // 원본 타입(Date|string) 유지
+          doctor: record.doctor,
+          visitType: record.visitType,
+          location_true: record.location_true,
+          small_region_id,
+          dong_region_id,
+          gu_region_id,
+        };
+      }
+    );
+
+    // Step 7: 날짜별 위치 그룹 구성 (지도/애니메이션용)
+    const dateLocationMap = new Map<string, LocationPoint[]>();
+
+    recordsWithGeodata.forEach((record) => {
+      const { visitDate, latitude, longitude, location_true, totalCost, visitType, age } =
+        record;
+
+      if (!location_true || latitude === null || longitude === null) return;
+
+      const dateStr =
+        typeof visitDate === "string"
+          ? visitDate
+          : new Date(visitDate).toISOString().split("T")[0];
+
+      if (!dateLocationMap.has(dateStr)) {
+        dateLocationMap.set(dateStr, []);
+      }
+
+      dateLocationMap.get(dateStr)!.push({
+        lat: latitude,
+        lng: longitude,
+        total_cost: totalCost,
+        visit_type: visitType,
+        age: String(age),
+        route:"",
+      });
+    });
+
+    const dateLocationGroups: DateLocationGroup[] = Array.from(
+      dateLocationMap.entries()
+    ).map(([date, patient_locations]) => ({
+      date,
+      patient_locations,
+    }));
+
+    return {
+      patient_records: processedRecords,
+      date_location_groups: dateLocationGroups,
+    };
+  } catch (error) {
+    console.error("Error processing ORM data locally:", error);
+    throw error;
+  }
+}
+
+
+
+
 
 export async function processDataLocallyVegas(
   mergedData: MergedDataVegas[],
