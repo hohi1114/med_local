@@ -50,7 +50,7 @@ export async function parseDailyIncomeBit(
       (col: any) => col === "챠트번호"
     );
     const totalCostIndex = headers.findIndex((col: any) => col === "총진료비");
-    const visitDateIndex = headers.findIndex((col: any) => col === "영수일자");
+    const visitDateIndex = headers.findIndex((col: any) => col === "수납일자");
 
     if (
       chartNumberIndex === -1 ||
@@ -59,13 +59,10 @@ export async function parseDailyIncomeBit(
     ) {
       console.error("❌ Required columns not found in the file");
       console.error("Available headers:", headers);
-      console.error("Looking for: 차트번호, 총진료비, 영수일자");
+      console.error("Looking for: 차트번호, 총진료비, 수납일자");
       continue;
     }
 
-    console.log(
-      `✅ Found columns - 차트번호: ${chartNumberIndex}, 총진료비: ${totalCostIndex}, 영수일자: ${visitDateIndex}`
-    );
 
     // Process data rows starting from row 3 (index 2)
     // Skip every second row since patient data is in pairs but we only use first row
