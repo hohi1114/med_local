@@ -64,9 +64,8 @@ export async function parseDailyIncomeBit(
     }
 
 
-    // Process data rows starting from row 3 (index 2)
-    // Skip every second row since patient data is in pairs but we only use first row
-    for (let i = 2; i < allData.length; i += 2) {
+    // Process data rows starting from row 2 (index 1)
+    for (let i = 1; i < allData.length; i += 1) {
       const row = allData[i];
 
       // Skip empty rows
