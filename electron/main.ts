@@ -46,9 +46,14 @@ import {
   parsePatientListBit,
 } from "../src/local/excel/bitExcel";
 
+
 import{
   parseDailyIncomeOrm, parsePatientListOrm
 } from "../src/local/excel/ormExcel"
+
+import{
+parseDailyIncomeNeo,parsePatientListNeo
+}from "../src/local/excel/neoExcel"
 
 import {
   mergeDataDentWeb,
@@ -59,7 +64,8 @@ import {
   mergeDataVegas,
   MergedDataDoctorP,
   MergedDataCchart,
-  mergeDataBit
+  mergeDataBit,
+  mergeDataNeo
 } from "../src/local/dataMerge";
 import {
   processDataLocally,
@@ -70,7 +76,8 @@ import {
   processDataLocallyDoctorP,
   processDataLocallycChart,
   processDataLocallyBit,
-  processDataLocallyOrm
+  processDataLocallyOrm,
+  processDataLocallyNeo
 } from "../src/local/locationProcessing";
 
 const isDev = process.env.NODE_ENV === "development";
@@ -156,6 +163,7 @@ app.whenReady().then(() => {
     }
   });
 
+
   ipcMain.handle("parse-patient-list-egis", async (event, fileBuffers) => {
     try {
       return await parsePatientListEgis(fileBuffers);
@@ -164,6 +172,26 @@ app.whenReady().then(() => {
       throw error;
     }
   });
+
+  ipcMain.handle("parse-patient-list-neo", async (event, fileBuffers) => {
+    try {
+      return await parsePatientListNeo(fileBuffers);
+    } catch (error) {
+      console.error("Error parsing patient list:", error);
+      throw error;
+    }
+  });
+
+
+   ipcMain.handle("parse-daily-income-neo", async (event, fileBuffers) => {
+    try {
+      return await parseDailyIncomeNeo(fileBuffers);
+    } catch (error) {
+      console.error("Error parsing daily income:", error);
+      throw error;
+    }
+  });
+
 
   ipcMain.handle("parse-days-files-dentweb", async (event, fileBuffers) => {
     try {
@@ -319,6 +347,18 @@ app.whenReady().then(() => {
     }
   });
 
+
+
+  ipcMain.handle("merge-data-neo", async (event, dailyIncome, patientList) => {
+    try {
+      return mergeDataNeo(dailyIncome, patientList);
+    } catch (error) {
+      console.error("Error merging Neo data:", error);
+      throw error;
+    }
+  });
+
+
   ipcMain.handle("merge-data-orm", async (event, visits, patients) => {
     try {
       return mergeDataOrm(visits, patients);
@@ -451,6 +491,26 @@ app.whenReady().then(() => {
     async (event, mergedData, accessToken) => {
       try {
         return await processDataLocallyHanChart(
+          mergedData,
+          accessToken,
+          (current, total) => {
+            event.sender.send("geocoding-progress", { current, total });
+          }
+        );
+      } catch (error) {
+        console.error("Error processing data:", error);
+        throw error;
+      }
+    }
+  );
+
+
+
+  ipcMain.handle(
+    "process-data-locally-neo",
+    async (event, mergedData, accessToken) => {
+      try {
+        return await processDataLocallyNeo(
           mergedData,
           accessToken,
           (current, total) => {

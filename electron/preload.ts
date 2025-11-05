@@ -67,6 +67,12 @@ contextBridge.exposeInMainWorld("electron", {
   parsePatientListcChart: (fileBuffers: ArrayBuffer[]) =>
     ipcRenderer.invoke("parse-patient-list-cChart", fileBuffers),
 
+
+  parseDailyIncomeNeo: (fileBuffers: ArrayBuffer[]) =>
+    ipcRenderer.invoke("parse-daily-income-neo", fileBuffers),
+  parsePatientListNeo: (fileBuffers: ArrayBuffer[]) =>
+    ipcRenderer.invoke("parse-patient-list-neo", fileBuffers),
+
   // Data merging
   mergeDataEuisarang: (visits: any[], patients: any[]) =>
     ipcRenderer.invoke("merge-data-euisarang", visits, patients),
@@ -87,6 +93,9 @@ contextBridge.exposeInMainWorld("electron", {
 
   mergeDatacChart: (dailyIncome: any[], patientList: any[]) =>
     ipcRenderer.invoke("merge-data-cChart", dailyIncome, patientList),
+
+  mergeDataNeo: (dailyIncome: any[], patientList: any[]) =>
+    ipcRenderer.invoke("merge-data-neo", dailyIncome, patientList),
 
   // Final data processing
   processDataLocally: (mergedData: any[], accessToken: string) =>
@@ -120,6 +129,9 @@ contextBridge.exposeInMainWorld("electron", {
 
   processDataLocallyBit: (mergedData: any[], accessToken: string) =>
     ipcRenderer.invoke("process-data-locally-bit", mergedData, accessToken),
+
+  processDataLocallyNeo: (mergedData: any[], accessToken: string) =>
+    ipcRenderer.invoke("process-data-locally-neo", mergedData, accessToken),
 
   onGeocodingProgress: (
     callback: (data: { current: number; total: number }) => void

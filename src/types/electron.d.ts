@@ -41,6 +41,11 @@ declare global {
       parseDailyIncomeBit: (fileBuffers: ArrayBuffer[]) => Promise<any>;
       parsePatientListBit: (fileBuffers: ArrayBuffer[]) => Promise<any>;
 
+
+
+      parseDailyIncomeNeo: (fileBuffers: ArrayBuffer[]) => Promise<any>;
+      parsePatientListNeo: (fileBuffers: ArrayBuffer[]) => Promise<any>;
+
       // Data merging
       mergeDataEuisarang: (visits: any[], patients: any[]) => Promise<any>;
       mergeDataDentWeb: (visits: any[], patients: any[]) => Promise<any>;
@@ -57,6 +62,8 @@ declare global {
         dailyIncome: any[],
         patientList: any[]
       ) => Promise<any>;
+
+      mergeDataNeo: (dailyIncome: any[], patientList: any[]) => Promise<any>;
 
       mergeDatacChart: (dailyIncome: any[], patientList: any[]) => Promise<any>;
       // Final data processing
@@ -101,6 +108,11 @@ declare global {
       ) => Promise<any>;
 
       processDataLocallycChart: (
+        mergedData: any[],
+        accessToken: string
+      ) => Promise<any>;
+
+       processDataLocallyNeo: (
         mergedData: any[],
         accessToken: string
       ) => Promise<any>;

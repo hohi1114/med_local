@@ -1,3 +1,7 @@
+import * as XLSX from "xlsx";
+import { normalizeAge } from "./ExcelParser";
+import { excelSerialToDate, calculateAge } from "./ExcelParser"
+
 export interface MergedData {
   chartNumber: number;
   visitDate: string | Date;
@@ -16,6 +20,16 @@ interface VisitDataVegas {
   doctor: string;
   staff: string;
 }
+
+export interface MergedDataNeo {
+  chartNumber: number;
+  visitDate: Date;
+  totalCost: number;
+  visitType: string;
+  age: number | null;
+  address: string;
+}
+
 
 export interface MergedDataVegas {
   chartNumber: number;
@@ -148,6 +162,17 @@ export interface MergedDataOrm {
   address: string;
 }
 
+
+export interface MergedDataNeo {
+  chartNumber: number;
+  visitDate: Date;
+  totalCost: number;
+  visitType: string;
+  age: number | null;
+  address: string;
+}
+
+
 import { PatientData, VisitData } from "./ExcelParser";
 
 import { DailyIncomeEgis, PatientListEgis } from "./excel/egisExcel";
@@ -165,6 +190,7 @@ import {
   parsePatientListBit,
   PatientListBit,
 } from "./excel/bitExcel";
+import { DailyIncomeNeo,PatientListNeo } from "./excel/neoExcel";
 
 // For Euisarang data
 export function mergeDataEuisarang(
@@ -257,6 +283,185 @@ export function mergeDataOrm(
 }
 
 
+
+
+export async function parseDailyIncomeNeo(
+  fileBuffers: ArrayBuffer[]
+): Promise<DailyIncomeNeo[]> {
+  const data: DailyIncomeNeo[] = [];
+
+  for (const buffer of fileBuffers) {
+    const workbook = XLSX.read(buffer, { type: "array" });
+
+    if (workbook.SheetNames.length === 0) {
+      console.error("❌ No worksheets found in file");
+      continue;
+    }
+
+    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+
+    // Get all data including headers
+    const allData = XLSX.utils.sheet_to_json<any[]>(worksheet, {
+      header: 1,
+      range: 0,
+    });
+
+    if (allData.length < 2) {
+      console.error("❌ Insufficient rows in the file");
+      continue;
+    }
+
+    const headers = allData[0];
+
+    // Find the index for each required column
+    const visitDateIndex = headers.findIndex((col: any) => col === "진료일자");
+    const chartNumberIndex = headers.findIndex((col: any) => col === "챠트번호");
+    const totalCostIndex = headers.findIndex((col: any) => col === "총진료비");
+
+    if (
+      visitDateIndex === -1 ||
+      chartNumberIndex === -1 ||
+      totalCostIndex === -1
+    ) {
+      console.error("❌ Required columns not found in the file");
+      console.error("Available headers:", headers);
+      continue;
+    }
+
+    // Process data rows (starting from row 2, index 1)
+    for (let i = 1; i < allData.length; i++) {
+      const row = allData[i];
+
+      // Skip empty rows
+      if (!row || row.length === 0) {
+        continue;
+      }
+
+      // Check if required fields exist
+      if (
+        !row[visitDateIndex] ||
+        !row[chartNumberIndex] ||
+        !row[totalCostIndex]
+      ) {
+        continue;
+      }
+
+      // Process chart number
+      const chartNumber = Number(row[chartNumberIndex]);
+      if (isNaN(chartNumber)) {
+        console.log(`Skipping row ${i}: invalid chart number`);
+        continue;
+      }
+
+      // Process total cost
+      let totalCostValue = row[totalCostIndex];
+      if (typeof totalCostValue === "string") {
+        totalCostValue = totalCostValue.replace(/,/g, "");
+      }
+
+      const totalCost = Number(totalCostValue);
+      if (isNaN(totalCost)) {
+        console.log(`Skipping row ${i}: invalid total cost`);
+        continue;
+      }
+
+      // Process visit date
+      let visitDate = row[visitDateIndex];
+      if (
+        typeof visitDate === "string" &&
+        visitDate.match(/^\d{4}\/\d{2}\/\d{2}$/)
+      ) {
+        visitDate = visitDate.replace(/\//g, "-");
+      } else if (typeof visitDate === "number") {
+        visitDate = excelSerialToDate(visitDate);
+      }
+
+      data.push({
+        chartNumber,
+        visitDate: String(visitDate),
+        totalCost,
+      });
+    }
+  }
+  return data;
+}
+
+
+// For Neo data - visitType comes from patientList
+export function mergeDataNeo(
+  dailyIncome: DailyIncomeNeo[],
+  patientList: PatientListNeo[]
+): MergedDataNeo[] {
+  // Create a map for patient data: key = "chartNumber:visitDate"
+  const patientVisitMap = new Map<
+    string,
+    {
+      visitType: string;
+      age: number | null;
+      address: string;
+    }
+  >();
+
+  // Also create a map for chart-level data (age/address with values)
+  const patientChartMap = new Map<
+    number,
+    {
+      age: number | null;
+      address: string;
+    }
+  >();
+
+  // First pass: build both maps
+  for (const pat of patientList) {
+    const visitKey = `${pat.chartNumber}:${pat.visitDate}`;
+    
+    // Store visit-specific data
+    patientVisitMap.set(visitKey, {
+      visitType: pat.visitType,
+      age: pat.age,
+      address: pat.address,
+    });
+
+    // Store chart-level data only if age or address has meaningful values
+    if (pat.age !== null || (pat.address && pat.address !== "N/A" && pat.address !== "")) {
+      const existing = patientChartMap.get(pat.chartNumber);
+      
+      // Update if no existing data, or if current row has better data
+      if (!existing) {
+        patientChartMap.set(pat.chartNumber, {
+          age: pat.age,
+          address: pat.address,
+        });
+      } else {
+        // Prefer non-null age and non-empty address
+        patientChartMap.set(pat.chartNumber, {
+          age: pat.age !== null ? pat.age : existing.age,
+          address: pat.address && pat.address !== "N/A" && pat.address !== "" 
+            ? pat.address 
+            : existing.address,
+        });
+      }
+    }
+  }
+
+  // Create merged data from dailyIncome
+  const df_merged: MergedDataNeo[] = dailyIncome.map((inc) => {
+    const visitKey = `${inc.chartNumber}:${inc.visitDate}`;
+    const visitData = patientVisitMap.get(visitKey);
+    const chartData = patientChartMap.get(inc.chartNumber);
+
+    return {
+      chartNumber: inc.chartNumber,
+      visitDate: new Date(inc.visitDate as string), // Convert immediately
+      totalCost: inc.totalCost,
+      visitType: visitData?.visitType || "",
+      age: visitData?.age ?? chartData?.age ?? null,
+      address: visitData?.address || chartData?.address || "N/D",
+    };
+  });
+
+  return df_merged;
+}
 
 // For Egis data
 export function mergeDataEgis(
