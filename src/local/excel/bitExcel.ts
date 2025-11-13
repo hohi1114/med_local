@@ -16,281 +16,225 @@ export interface PatientListBit {
   address: string; // 주소
 }
 
+
+/* 
 export async function parseDailyIncomeBit(
-  fileBuffers: ArrayBuffer[]
+  files: File[]                     // ← File 객체 배열
 ): Promise<DailyIncomeBit[]> {
-  const data: DailyIncomeBit[] = [];
+  const result: DailyIncomeBit[] = [];
 
-  for (const buffer of fileBuffers) {
-    const workbook = XLSX.read(buffer, { type: "array" });
+  for (const file of files) {
+    let workbook: XLSX.WorkBook;
+    try { workbook = await readWorkbook(file); }
+    catch (e) { console.error(`Failed to read ${file.name}`, e); continue; }
 
-    if (workbook.SheetNames.length === 0) {
-      console.error("❌ No worksheets found in file");
-      continue;
-    }
-
-    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-
-    // Get all data including headers
-    const allData = XLSX.utils.sheet_to_json<any[]>(worksheet, {
+    const ws = workbook.Sheets[workbook.SheetNames[0]];
+    const raw = XLSX.utils.sheet_to_json<any[]>(ws, {
       header: 1,
-      range: 0, // Start from the first row to get all data
+      defval: '',
     });
 
-    if (allData.length < 3) {
-      console.error("❌ Insufficient rows in the file");
-      continue;
-    }
+    if (raw.length < 2) continue;
 
-    // Skip first 2 rows (headers) and get column headers from row 2 (index 1)
-    const headers = allData[0];
+    const headers = raw[0];
+    const idx = {
+      chart: headers.findIndex(c => ['챠트번호', '차트번호'].includes(c)),
+      cost : headers.findIndex(c => c === '총진료비'),
+      date : headers.findIndex(c => ['수납일자', '영수일자'].includes(c)),
+    };
+    if (Object.values(idx).some(i => i === -1)) continue;
 
-    // Find the index for each required column
-    const chartNumberIndex = headers.findIndex(
-      (col: any) => col === "챠트번호"
-    );
-    const totalCostIndex = headers.findIndex((col: any) => col === "총진료비");
-    const visitDateIndex = headers.findIndex((col: any) => col === "수납일자");
+    for (let i = 1; i < raw.length; i++) {
+      const row = raw[i];
+      if (!row[idx.chart]) continue;
 
-    if (
-      chartNumberIndex === -1 ||
-      totalCostIndex === -1 ||
-      visitDateIndex === -1
-    ) {
-      console.error("❌ Required columns not found in the file");
-      console.error("Available headers:", headers);
-      console.error("Looking for: 차트번호, 총진료비, 수납일자");
-      continue;
-    }
+      const chartNumber = Number(row[idx.chart]);
+      if (isNaN(chartNumber)) continue;
 
+      let cost = row[idx.cost];
+      if (typeof cost === 'string') cost = cost.replace(/,/g, '');
+      const totalCost = Number(cost);
+      if (isNaN(totalCost)) continue;
 
-    // Process data rows starting from row 2 (index 1)
-    for (let i = 1; i < allData.length; i += 1) {
-      const row = allData[i];
-
-      // Skip empty rows
-      if (!row || row.length === 0) {
-        continue;
-      }
-
-      // Check if required fields exist
-      if (
-        !row[chartNumberIndex] ||
-        row[totalCostIndex] === undefined ||
-        !row[visitDateIndex]
-      ) {
-        console.log(`Skipping row ${i}: missing required data`);
-        continue;
-      }
-
-      // Process chart number
-      const chartNumber = Number(row[chartNumberIndex]);
-      if (isNaN(chartNumber)) {
-        console.log(`Skipping row ${i}: invalid chart number`);
-        continue;
-      }
-
-      // Process total cost
-      let totalCostValue = row[totalCostIndex];
-      if (typeof totalCostValue === "string") {
-        // Remove commas from the string before converting to number
-        totalCostValue = totalCostValue.replace(/,/g, "");
-      }
-
-      const totalCost = Number(totalCostValue);
-      if (isNaN(totalCost)) {
-        console.log(`Skipping row ${i}: invalid total cost`);
-        continue;
-      }
-
-      // Process visit date
-      let visitDate = row[visitDateIndex];
-
-      // Handle different date formats
-      if (typeof visitDate === "string") {
-        // Handle formats like "2025년 06월 19일" or "2025/06/19" or "2025-06-19"
-        if (
-          visitDate.includes("년") &&
-          visitDate.includes("월") &&
-          visitDate.includes("일")
-        ) {
-          // Korean format: "2025년 06월 19일"
-          const match = visitDate.match(
-            /(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일/
-          );
-          if (match) {
-            const [, year, month, day] = match;
-            visitDate = `${year}-${month.padStart(2, "0")}-${day.padStart(
-              2,
-              "0"
-            )}`;
-          }
-        } else if (visitDate.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
-          // Format YYYY/MM/DD → YYYY-MM-DD
-          visitDate = visitDate.replace(/\//g, "-");
+      let visitDate = row[idx.date];
+      if (typeof visitDate === 'string') {
+        visitDate = visitDate.trim();
+        // 한국식 "2025년 06월 19일"
+        const kor = visitDate.match(/(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일/);
+        if (kor) {
+          const [, y, m, d] = kor;
+          visitDate = `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
+        } else if (/^\d{4}[-\/]\d{1,2}[-\/]\d{1,2}$/.test(visitDate)) {
+          visitDate = visitDate.replace(/\//g, '-');
         }
-        // YYYY-MM-DD format is already correct
-      } else if (typeof visitDate === "number") {
-        // Excel serial date
+      } else if (typeof visitDate === 'number') {
         visitDate = excelSerialToDate(visitDate);
       }
 
-      const dailyIncomeData: DailyIncomeBit = {
-        chartNumber,
-        visitDate: String(visitDate),
-        totalCost,
-      };
-
-      data.push(dailyIncomeData);
+      result.push({ chartNumber, visitDate: String(visitDate), totalCost });
     }
-
-    console.log(`✅ Processed ${data.length} records from DailyIncomeBit file`);
   }
-
-  return data;
+  return result;
 }
 
+*/
+
+
+/* ---------- 공통: 워크북 읽기 ---------- */
+async function readWorkbook(buffer: ArrayBuffer, fileName: string): Promise<XLSX.WorkBook> {
+  const isCsv = fileName.toLowerCase().endsWith(".csv");
+
+  if (isCsv) {
+    const text = new TextDecoder("utf-8").decode(buffer).replace(/^\uFEFF/, "");
+    return XLSX.read(text, { type: "string" });
+  } else {
+    return XLSX.read(buffer, { type: "array" });
+  }
+}
+
+/* ---------- DailyIncomeBit ---------- */
+export async function parseDailyIncomeBit(
+  buffers: ArrayBuffer[],
+  fileNames: string[]
+): Promise<DailyIncomeBit[]> {
+  const result: DailyIncomeBit[] = [];
+
+  for (let i = 0; i < buffers.length; i++) {
+    const buffer = buffers[i];
+    const fileName = fileNames[i] || `file_${i}`;
+
+    let workbook: XLSX.WorkBook;
+    try {
+      workbook = await readWorkbook(buffer, fileName);
+    } catch {
+      continue;
+    }
+
+    const ws = workbook.Sheets[workbook.SheetNames[0]];
+    const raw = XLSX.utils.sheet_to_json<any[]>(ws, { header: 1, defval: "" });
+
+    if (raw.length < 2) continue;
+
+    const headers = raw[0];
+    const idx = {
+      chart: headers.findIndex((c) => ["챠트번호", "차트번호"].includes(c)),
+      cost: headers.findIndex((c) => c === "총진료비"),
+      date: headers.findIndex((c) => ["수납일자", "영수일자"].includes(c)),
+    };
+
+    if (Object.values(idx).some((i) => i === -1)) continue;
+
+    for (let rowIdx = 1; rowIdx < raw.length; rowIdx++) {
+      const row = raw[rowIdx];
+
+      if (!row[idx.chart]) continue;
+
+      const chartNumber = Number(row[idx.chart]);
+      if (isNaN(chartNumber)) continue;
+
+      let cost = row[idx.cost];
+      if (typeof cost === "string") cost = cost.replace(/,/g, "");
+      const totalCost = Number(cost);
+      if (isNaN(totalCost)) continue;
+
+      let visitDate = row[idx.date];
+
+      if (typeof visitDate === "string") {
+        visitDate = visitDate.trim();
+        const kor = visitDate.match(/(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일/);
+        if (kor) {
+          const [, y, m, d] = kor;
+          visitDate = `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+        } else if (/^\d{4}[-\/]\d{1,2}[-\/]\d{1,2}$/.test(visitDate)) {
+          visitDate = visitDate.replace(/\//g, "-");
+        }
+      } else if (typeof visitDate === "number") {
+        visitDate = excelSerialToDate(visitDate);
+      }
+
+      result.push({ chartNumber, visitDate: String(visitDate), totalCost });
+    }
+  }
+
+  return result;
+}
+
+/* ---------- PatientListBit ---------- */
 export async function parsePatientListBit(
-  fileBuffers: ArrayBuffer[]
+  buffers: ArrayBuffer[],
+  fileNames: string[]
 ): Promise<PatientListBit[]> {
-  const data: PatientListBit[] = [];
+  const result: PatientListBit[] = [];
 
-  for (const buffer of fileBuffers) {
-    const workbook = XLSX.read(buffer, { type: "array" });
+  for (let i = 0; i < buffers.length; i++) {
+    const buffer = buffers[i];
+    const fileName = fileNames[i] || `file_${i}`;
 
-    if (workbook.SheetNames.length === 0) {
-      console.error("❌ No worksheets found in file");
+    let workbook: XLSX.WorkBook;
+    try {
+      workbook = await readWorkbook(buffer, fileName);
+    } catch {
       continue;
     }
 
-    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+    const ws = workbook.Sheets[workbook.SheetNames[0]];
+    const raw = XLSX.utils.sheet_to_json<any[]>(ws, { header: 1, defval: "" });
 
-    // Get all data including headers
-    const allData = XLSX.utils.sheet_to_json<any[]>(worksheet, {
-      header: 1,
-      range: 0, // Start from the first row to get all data
-    });
+    if (raw.length < 2) continue;
 
-    if (allData.length < 2) {
-      console.error("❌ Insufficient rows in the file");
-      continue;
-    }
+    const headers = raw[0];
+    const idx = {
+      chart: headers.findIndex((c) => ["차트번호", "챠트번호"].includes(c)),
+      age: headers.findIndex((c) => c === "나이"),
+      type: headers.findIndex((c) => c === "초재진구분"),
+      doctor: headers.findIndex((c) => c === "담당의"),
+      addr: headers.findIndex((c) => c === "주소"),
+    };
 
-    // Get header row (first row, index 0)
-    const headers = allData[0];
+    if (Object.values(idx).some((i) => i === -1)) continue;
 
-    // Find the index for each required column
-    const chartNumberIndex = headers.findIndex(
-      (col: any) => col === "차트번호"
-    );
-    const ageIndex = headers.findIndex((col: any) => col === "나이");
-    const visitTypeIndex = headers.findIndex(
-      (col: any) => col === "초재진구분"
-    );
-    const doctorIndex = headers.findIndex((col: any) => col === "담당의");
-    const addressIndex = headers.findIndex((col: any) => col === "주소");
+    for (let rowIdx = 1; rowIdx < raw.length; rowIdx++) {
+      const row = raw[rowIdx];
 
-    if (
-      chartNumberIndex === -1 ||
-      ageIndex === -1 ||
-      visitTypeIndex === -1 ||
-      doctorIndex === -1 ||
-      addressIndex === -1
-    ) {
-      console.error("❌ Required columns not found in the file");
-      console.error("Available headers:", headers);
-      console.error("Looking for: 차트번호, 나이, 초재진구분, 담당의, 주소");
-      continue;
-    }
+      if (!row[idx.chart]) continue;
 
-    console.log(
-      `✅ Found columns - 차트번호: ${chartNumberIndex}, 나이: ${ageIndex}, 초재진구분: ${visitTypeIndex}, 담당의: ${doctorIndex}, 주소: ${addressIndex}`
-    );
+      const chartNumber = Number(row[idx.chart]);
+      if (isNaN(chartNumber)) continue;
 
-    // Process data rows (starting from row 2, index 1)
-    for (let i = 1; i < allData.length; i++) {
-      const row = allData[i];
-
-      // Skip empty rows
-      if (!row || row.length === 0) {
-        continue;
-      }
-
-      // Check if required fields exist (차트번호 is mandatory)
-      if (!row[chartNumberIndex] || !row[ageIndex] || !row[visitTypeIndex]) {
-        continue;
-      }
-
-      // Process chart number
-      const chartNumber = Number(row[chartNumberIndex]);
-      if (isNaN(chartNumber)) {
-        console.log(`Skipping row ${i}: invalid chart number`);
-        continue;
-      }
-
-      // Process age
+      // --- 나이 ---
       let age: number | null = null;
-      if (
-        row[ageIndex] !== undefined &&
-        row[ageIndex] !== null &&
-        row[ageIndex] !== ""
-      ) {
-        const ageString = String(row[ageIndex]).trim();
-        const koreanAgeMatch = ageString.match(/(\d+)세(?:(\d+)개월)?/);
-
-        if (koreanAgeMatch) {
-          const years = parseInt(koreanAgeMatch[1]);
-          const months = koreanAgeMatch[2] ? parseInt(koreanAgeMatch[2]) : 0;
-
-          if (!isNaN(years) && years >= 0) {
-            // Convert to decimal age (years + months/12)
-            const totalAge = years + months / 12;
-            age = normalizeAge(Math.round(totalAge)); // Round to nearest year
-          }
+      if (row[idx.age]) {
+        const txt = String(row[idx.age]).trim();
+        const kor = txt.match(/(\d+)세(?:(\d+)개월)?/);
+        if (kor) {
+          const y = parseInt(kor[1]);
+          const m = kor[2] ? parseInt(kor[2]) : 0;
+          age = normalizeAge(Math.round(y + m / 12));
         } else {
-          // Fallback: try to parse as plain number
-          const ageValue = Number(ageString);
-          if (!isNaN(ageValue) && ageValue >= 0) {
-            age = normalizeAge(ageValue);
-          }
+          const n = Number(txt);
+          if (!isNaN(n) && n >= 0) age = normalizeAge(n);
         }
       }
 
-      // Process visit type
-      // Process visit type
-      let visitType = "재진"; // Default to 재진
-      if (row[visitTypeIndex]) {
-        const rawVisitType = String(row[visitTypeIndex])
-          .trim()
-          .replace(/\s/g, "");
-        // Map 초진 and 신환 -> 신환, everything else -> 재진
-        if (rawVisitType === "초진" || rawVisitType === "신환") {
-          visitType = "신환";
-        }
-        // 재진 or any other value defaults to 재진
-      }
+      const rawType = String(row[idx.type] ?? "").trim().replace(/\s/g, "");
+      const visitType = rawType === "초진" || rawType === "신환" ? "신환" : "재진";
 
-      // Process doctor
-      const doctor = row[doctorIndex] ? String(row[doctorIndex]).trim() : "";
+      const doctor = row[idx.doctor] ? String(row[idx.doctor]).trim() : "";
+      const address = row[idx.addr] ? String(row[idx.addr]).trim() : "N/A";
 
-      // Process address
-      const address = row[addressIndex]
-        ? String(row[addressIndex]).trim()
-        : "N/A";
-
-      const patientData: PatientListBit = {
-        chartNumber,
-        age,
-        visitType,
-        doctor,
-        address,
-      };
-
-      data.push(patientData);
+      result.push({ chartNumber, age, visitType, doctor, address });
     }
-
-    console.log(`✅ Processed ${data.length} records from PatientListBit file`);
   }
 
-  return data;
+  return result;
 }
+
+
+
+
+
+
+
+
+
+

@@ -39,13 +39,13 @@ contextBridge.exposeInMainWorld("electron", {
   parseDailyIncomeVegas: (fileBuffers: ArrayBuffer[]) =>
     ipcRenderer.invoke("parse-daily-income-vegas", fileBuffers),
   parsePatientListVegas: (fileBuffers: ArrayBuffer[]) =>
+    
     ipcRenderer.invoke("parse-patient-list-vegas", fileBuffers),
+  parseDailyIncomeBit: (buffers: ArrayBuffer[], names: string[]) =>
+    ipcRenderer.invoke("parse-daily-income-bit", buffers, names),
 
-  parseDailyIncomeBit: (fileBuffers: ArrayBuffer[]) =>
-    ipcRenderer.invoke("parse-daily-income-bit", fileBuffers),
-  parsePatientListBit: (fileBuffers: ArrayBuffer[]) =>
-    ipcRenderer.invoke("parse-patient-list-bit", fileBuffers),
-
+  parsePatientListBit: (buffers: ArrayBuffer[], names: string[]) =>
+    ipcRenderer.invoke("parse-patient-list-bit", buffers, names),
   // File processing - Egis
   parseDailyIncomeVegas2: (fileBuffers: ArrayBuffer[]) =>
     ipcRenderer.invoke("parse-daily-income-vegas2", fileBuffers),

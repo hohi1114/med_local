@@ -1243,20 +1243,35 @@ const UpdateDataPage = () => {
 
     try {
       // Step 1: Convert files to ArrayBuffers
-      const daysBuffers = await Promise.all(
-        Array.from(dailyIncome).map((file) => file.arrayBuffer())
-      );
+  
+    // 1. File → ArrayBuffer + fileName 추출
+    const dailyBuffers = await Promise.all(
+      Array.from(dailyIncome).map(async (f) => ({
+        buffer: await f.arrayBuffer(),
+        name: f.name,
+      }))
+    );
 
-      const placeBuffers = await Promise.all(
-        Array.from(placeFiles).map((file) => file.arrayBuffer())
-      );
+    const placeBuffers = await Promise.all(
+      Array.from(placeFiles).map(async (f) => ({
+        buffer: await f.arrayBuffer(),
+        name: f.name,
+      }))
+    );
 
-      // Step 2: Parse files locally via Electron
-      const visits = await window.electron.parseDailyIncomeBit(daysBuffers);
-      console.log("Parsed visits:", visits);
+    // 2. IPC로 전달 (ArrayBuffer + name)
+    const visits = await window.electron.parseDailyIncomeBit(
+      dailyBuffers.map((b) => b.buffer),
+      dailyBuffers.map((b) => b.name)
+    );
 
-      const patients = await window.electron.parsePatientListBit(placeBuffers);
-      console.log("Parsed patients:", patients);
+    const patients = await window.electron.parsePatientListBit(
+      placeBuffers.map((b) => b.buffer),
+      placeBuffers.map((b) => b.name)
+    );
+
+    console.log("Parsed visits:", visits);
+    console.log("Parsed patients:", patients);
 
       // Step 3: Merge data locally
       const mergedData = await window.electron.mergeDataBit(visits, patients);
