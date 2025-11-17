@@ -86,11 +86,76 @@ async function readWorkbook(buffer: ArrayBuffer, fileName: string): Promise<XLSX
 
   if (isCsv) {
     const text = new TextDecoder("utf-8").decode(buffer).replace(/^\uFEFF/, "");
-    return XLSX.read(text, { type: "string" });
+    return XLSX.read(text, { type: "string", raw: false });
   } else {
     return XLSX.read(buffer, { type: "array" });
   }
 }
+
+
+
+/* ---------- 날짜 정규화 함수 ---------- */
+function normalizeDate(dateValue: any): string {
+  // 비어있으면 빈 문자열 반환
+  if (!dateValue) return "";
+
+  let dateStr = String(dateValue).trim();
+  
+  // 1. 한글 날짜 형식: 2024년 11월 17일
+  const korPattern = /(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일/;
+  const korMatch = dateStr.match(korPattern);
+  if (korMatch) {
+    const [, y, m, d] = korMatch;
+    return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+  }
+  
+  // 2. 슬래시 구분자: 2024/11/17 또는 11/16/24
+  if (dateStr.includes("/")) {
+    const parts = dateStr.split("/");
+    
+    // 형식: MM/DD/YY 또는 M/D/YY
+    if (parts.length === 3 && parts[2].length === 2) {
+      const [m, d, y] = parts;
+      const fullYear = Number(y) >= 0 && Number(y) <= 50 ? `20${y}` : `19${y}`;
+      return `${fullYear}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+    }
+    
+    // 형식: YYYY/MM/DD
+    if (parts.length === 3 && parts[0].length === 4) {
+      const [y, m, d] = parts;
+      return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+    }
+  }
+  
+  // 3. 하이픈 구분자: 2024-11-17
+  if (dateStr.includes("-")) {
+    const parts = dateStr.split("-");
+    if (parts.length === 3 && parts[0].length === 4) {
+      const [y, m, d] = parts;
+      return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+    }
+  }
+  
+  // 4. 8자리 숫자: 20241117
+  if (/^\d{8}$/.test(dateStr)) {
+    const y = dateStr.slice(0, 4);
+    const m = dateStr.slice(4, 6);
+    const d = dateStr.slice(6, 8);
+    return `${y}-${m}-${d}`;
+  }
+  
+  // 5. 엑셀 시리얼 번호 (1 ~ 99999 범위의 숫자)
+  const numValue = Number(dateStr);
+  if (!isNaN(numValue) && numValue > 0 && numValue < 100000) {
+    return excelSerialToDate(numValue);
+  }
+  
+  // 변환 실패시 원본 반환
+  return dateStr;
+}
+
+
+/* ---------- DailyIncomeBit ---------- */
 
 /* ---------- DailyIncomeBit ---------- */
 export async function parseDailyIncomeBit(
@@ -106,12 +171,18 @@ export async function parseDailyIncomeBit(
     let workbook: XLSX.WorkBook;
     try {
       workbook = await readWorkbook(buffer, fileName);
-    } catch {
+    } catch (err) {
+      console.error(`Failed to read workbook: ${fileName}`, err);
       continue;
     }
 
     const ws = workbook.Sheets[workbook.SheetNames[0]];
-    const raw = XLSX.utils.sheet_to_json<any[]>(ws, { header: 1, defval: "" });
+    // raw: true로 원본 값 그대로 가져오기
+    const raw = XLSX.utils.sheet_to_json<any[]>(ws, { 
+      header: 1, 
+      defval: "", 
+      raw: true 
+    });
 
     if (raw.length < 2) continue;
 
@@ -122,37 +193,31 @@ export async function parseDailyIncomeBit(
       date: headers.findIndex((c) => ["수납일자", "영수일자"].includes(c)),
     };
 
-    if (Object.values(idx).some((i) => i === -1)) continue;
+    if (Object.values(idx).some((i) => i === -1)) {
+      console.warn(`Required columns not found in ${fileName}`);
+      continue;
+    }
 
     for (let rowIdx = 1; rowIdx < raw.length; rowIdx++) {
       const row = raw[rowIdx];
 
+      // 차트번호 파싱
       if (!row[idx.chart]) continue;
-
       const chartNumber = Number(row[idx.chart]);
       if (isNaN(chartNumber)) continue;
 
+      // 총진료비 파싱
       let cost = row[idx.cost];
-      if (typeof cost === "string") cost = cost.replace(/,/g, "");
+      if (typeof cost === "string") {
+        cost = cost.replace(/,/g, "");
+      }
       const totalCost = Number(cost);
       if (isNaN(totalCost)) continue;
 
-      let visitDate = row[idx.date];
-
-      if (typeof visitDate === "string") {
-        visitDate = visitDate.trim();
-        const kor = visitDate.match(/(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일/);
-        if (kor) {
-          const [, y, m, d] = kor;
-          visitDate = `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
-        } else if (/^\d{4}[-\/]\d{1,2}[-\/]\d{1,2}$/.test(visitDate)) {
-          visitDate = visitDate.replace(/\//g, "-");
-        }
-      } else if (typeof visitDate === "number") {
-        visitDate = excelSerialToDate(visitDate);
-      }
-
-      result.push({ chartNumber, visitDate: String(visitDate), totalCost });
+      // 날짜 파싱 및 정규화
+      const visitDate = normalizeDate(row[idx.date]);
+      
+      result.push({ chartNumber, visitDate, totalCost });
     }
   }
 
