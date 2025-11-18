@@ -38,9 +38,12 @@ declare global {
       parseDailyIncomecChart: (fileBuffers: ArrayBuffer[]) => Promise<any>;
       parsePatientListcChart: (fileBuffers: ArrayBuffer[]) => Promise<any>;
 
-      parseDailyIncomeBit: (buffers: ArrayBuffer[], names: string[]) => Promise<any>;
-    parsePatientListBit: (buffers: ArrayBuffer[], names: string[]) => Promise<any>; 
+    parseDailyIncomeBit: (buffers: ArrayBuffer[]) => Promise<any>;
+    parsePatientListBit: (buffers: ArrayBuffer[]) => Promise<any>; 
 
+
+    parseDailyIncomeBit2: (buffers: ArrayBuffer[]) => Promise<any>;
+    parsePatientListBit2: (buffers: ArrayBuffer[]) => Promise<any>; 
 
 
       parseDailyIncomeNeo: (fileBuffers: ArrayBuffer[]) => Promise<any>;

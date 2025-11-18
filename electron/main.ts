@@ -46,6 +46,11 @@ import {
   parsePatientListBit,
 } from "../src/local/excel/bitExcel";
 
+import {
+  parseDailyIncomeBit2,
+  parsePatientListBit2,
+} from "../src/local/excel/bit2Excel";
+
 
 import{
   parseDailyIncomeOrm, parsePatientListOrm
@@ -54,6 +59,7 @@ import{
 import{
 parseDailyIncomeNeo,parsePatientListNeo
 }from "../src/local/excel/neoExcel"
+
 
 import {
   mergeDataDentWeb,
@@ -283,19 +289,32 @@ app.whenReady().then(() => {
     }
   });
 
-ipcMain.handle(
-  "parse-daily-income-bit",
-  async (event, buffers: ArrayBuffer[], names: string[]) => {
-    return await parseDailyIncomeBit(buffers, names);
-  }
-);
 
-ipcMain.handle(
-  "parse-patient-list-bit",
-  async (event, buffers: ArrayBuffer[], names: string[]) => {
-    return await parsePatientListBit(buffers, names);
-  }
-);
+    ipcMain.handle("parse-daily-income-bit", async (event, fileBuffers) => {
+    try {
+      return await parseDailyIncomeBit(fileBuffers);
+    } catch (error) {
+      console.error("Error parsing daily income:", error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle("parse-patient-list-bit", async (event, fileBuffers) => {
+    try {
+      return await parsePatientListBit(fileBuffers);
+    } catch (error) {
+      console.error("Error parsing patient list:", error);
+      throw error;
+    }
+  });
+
+ipcMain.handle("parse-daily-income-bit2", async (event, fileBuffers) => {
+  return await parseDailyIncomeBit2(fileBuffers);
+});
+
+ipcMain.handle("parse-patient-list-bit2", async (event, fileBuffers) => {
+  return await parsePatientListBit2(fileBuffers);
+});
   ipcMain.handle("parse-daily-income-doctorp", async (event, fileBuffers) => {
     try {
       return await parseDaysFilesDoctorP(fileBuffers);

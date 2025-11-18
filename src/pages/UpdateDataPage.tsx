@@ -476,7 +476,7 @@ export async function uploadDataToBackendDoctorP(
 }
 
 const UpdateDataPage = () => {
-  const [dataType, setDataType] = useState<"euisarang" | "egis" | "dentweb" | "orm" | "vegas" | "vegas2" | "hanchart" | "doctorp" | "cChart" | "bit" |"neo">(
+  const [dataType, setDataType] = useState<"euisarang" | "egis" | "dentweb" | "orm" | "vegas" | "vegas2" | "hanchart" | "doctorp" | "cChart" | "bit" | "bit2"|"neo">(
     "euisarang" 
   ); // Track data type
   const [daysFiles, setDaysFiles] = useState<FileList | null>(null); // Euisarang
@@ -523,6 +523,7 @@ const UpdateDataPage = () => {
           emrType === "doctorp" ||
           emrType === "cChart" ||
           emrType === "bit" ||
+          emrType === "bit2"||
           emrType === "neo"
         ) {
           setDataType(emrType);
@@ -1243,39 +1244,138 @@ const UpdateDataPage = () => {
 
     try {
       // Step 1: Convert files to ArrayBuffers
-  
-    // 1. File → ArrayBuffer + fileName 추출
-    const dailyBuffers = await Promise.all(
-      Array.from(dailyIncome).map(async (f) => ({
-        buffer: await f.arrayBuffer(),
-        name: f.name,
-      }))
-    );
+      const daysBuffers = await Promise.all(
+        Array.from(dailyIncome).map((file) => file.arrayBuffer())
+      );
 
-    const placeBuffers = await Promise.all(
-      Array.from(placeFiles).map(async (f) => ({
-        buffer: await f.arrayBuffer(),
-        name: f.name,
-      }))
-    );
+      const placeBuffers = await Promise.all(
+        Array.from(placeFiles).map((file) => file.arrayBuffer())
+      );
 
-    // 2. IPC로 전달 (ArrayBuffer + name)
-    const visits = await window.electron.parseDailyIncomeBit(
-      dailyBuffers.map((b) => b.buffer),
-      dailyBuffers.map((b) => b.name)
-    );
+      // Step 2: Parse files locally via Electron
+      const visits = await window.electron.parseDailyIncomeBit(daysBuffers);
+      console.log("Parsed visits:", visits);
 
-    const patients = await window.electron.parsePatientListBit(
-      placeBuffers.map((b) => b.buffer),
-      placeBuffers.map((b) => b.name)
-    );
-
-    console.log("Parsed visits:", visits);
-    console.log("Parsed patients:", patients);
+      const patients = await window.electron.parsePatientListBit(placeBuffers);
+      console.log("Parsed patients:", patients);
 
       // Step 3: Merge data locally
       const mergedData = await window.electron.mergeDataBit(visits, patients);
       console.log("Merged data:", mergedData);
+
+
+      setProgress(10);
+
+      // Step 4: Process the merged data (geocoding, region assignment, etc.)
+      const processedData = await window.electron.processDataLocallyBit(
+        mergedData,
+        getCookie("accessToken")
+      );
+
+      removeProgressListener();
+
+      setProgress(90);
+
+      console.log("Processed data:", processedData);
+
+      // Step 5: Send only the processed data to the backend
+      // Start the upload but don't await it
+      const uploadPromise = uploadDataToBackendBit(
+        getCookie("accessToken"),
+        processedData
+      );
+
+      setProgress(95);
+
+      // Inform the user that data is being processed in the background
+      openNotification(
+        "success",
+        "데이터 업로드 중",
+        "데이터가 처리되어 업로드 중입니다. 업로드가 완료되면 알려드립니다. 프로그램을 종료하지 마세요."
+      );
+
+      // Set progress to 100% since from the user's perspective, the task is complete
+      setProgress(100);
+
+      // Handle the upload promise in the background
+      uploadPromise
+        .then((backendResponse) => {
+          fetchUploadedDates();
+          // Handle successful upload (when it eventually completes)
+          openNotification(
+            "success",
+            "데이터 업로드 완료",
+            "모든 Bit 시스템 데이터가 성공적으로 처리되었습니다."
+          );
+
+          // Update any UI components that should reflect the successful upload
+          // updateDataCount(backendResponse);
+        })
+        .catch((error) => {
+          // Handle error in the background
+          console.error("❌ Background upload error:", error);
+          openNotification(
+            "error",
+            "업로드 실패",
+            error instanceof Error
+              ? error.message
+              : "알 수 없는 오류가 발생했습니다."
+          );
+        });
+    } catch (error) {
+      // This catch block handles errors in the processing phase
+      console.error("❌ Error processing Bit data:", error);
+      openNotification(
+        "error",
+        "데이터 처리 실패",
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다."
+      );
+      setProgress(0); // Reset progress on error
+    }
+  };
+
+
+
+  const handleProcessDataBit2 = async (): Promise<void> => {
+    if (!placeFiles || !dailyIncome) {
+      openNotification("warning", "파일 누락", "모든 파일을 업로드해주세요.");
+      return;
+    }
+
+    setProgress(1); // Start progress
+
+    const removeProgressListener = window.electron.onGeocodingProgress(
+      ({ current, total }) => {
+        // Calculate overall progress (giving geocoding 60% of the total weight)
+        // First 20% for file processing and merging, last 20% for final processing and upload prep
+        const geocodingProgress = (current / total) * 80;
+        setProgress(10 + geocodingProgress);
+      }
+    );
+
+    try {
+      // Step 1: Convert files to ArrayBuffers
+      const daysBuffers = await Promise.all(
+        Array.from(dailyIncome).map((file) => file.arrayBuffer())
+      );
+
+      const placeBuffers = await Promise.all(
+        Array.from(placeFiles).map((file) => file.arrayBuffer())
+      );
+
+      // Step 2: Parse files locally via Electron
+      const visits = await window.electron.parseDailyIncomeBit2(daysBuffers);
+      console.log("Parsed visits:", visits);
+
+      const patients = await window.electron.parsePatientListBit2(placeBuffers);
+      console.log("Parsed patients:", patients);
+
+      // Step 3: Merge data locally
+      const mergedData = await window.electron.mergeDataBit(visits, patients);
+      console.log("Merged data:", mergedData);
+
 
       setProgress(10);
 
@@ -1813,6 +1913,9 @@ const UpdateDataPage = () => {
     } else if (dataType === "bit") {
       handleProcessDataBit();
     }
+      else if (dataType === "bit2"){
+        handleProcessDataBit2();
+    }
       else if(dataType === "neo"){
         handleProcessDataNeo()
     } else {
@@ -1873,7 +1976,7 @@ const UpdateDataPage = () => {
             </>
           )}
 
-          {(dataType === "egis" || dataType === "bit") && (
+          {(dataType === "egis" || dataType === "bit" || dataType === "bit2") && (
             <>
               <FileUpload
                 title="일자별 수입 현황 업로드"
