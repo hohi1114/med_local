@@ -112,72 +112,148 @@ for (const buffer of fileBuffers) {
   return data;
 }
 
+
 export async function parsePatientListBit2(
   fileBuffers: ArrayBuffer[]
 ): Promise<PatientListBit[]> {
   const data: PatientListBit[] = [];
 
   for (const buffer of fileBuffers) {
-  let text: string;
+    const workbook = XLSX.read(buffer, { type: "array" });
 
-  try {
-    // 첫 번째 시도: 한국 병원 전산 전용 디코더 (이게 정답!)
-    text = decodeKoreanHospitalFile(buffer);
-  } catch (e) {
-    console.warn("UTF-16 실패 → CP949로 재시도");
-    // 만약에 UTF-16이 아니면 CP949 fallback
-    const { default: iconv } = await import("iconv-lite");
-    text = iconv.decode(Buffer.from(buffer), "cp949");
-  }
-
-  // 이제 이 text는 완벽한 UTF-8 문자열!
-  console.log("첫 번째 줄 미리보기:", text.split("\n")[0]); // 디버깅용
-    const workbook = XLSX.read(text, { type: "string" });
-    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-    const rows: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
-
-    if (rows.length < 2) continue;
-
-    const headers = rows[0];
-    const chartNumberIdx = headers.findIndex((h: string) => h.includes("차트번호"));
-    const ageIdx = headers.findIndex((h: string) => h.includes("나이"));
-    const visitTypeIdx = headers.findIndex((h: string) => h.includes("초재진구분"));
-    const doctorIdx = headers.findIndex((h: string) => h.includes("담당의"));
-    const addressIdx = headers.findIndex((h: string) => h.includes("주소"));
-
-    if ([chartNumberIdx, ageIdx, visitTypeIdx, doctorIdx, addressIdx].some(i => i === -1)) {
-      console.error("Missing required columns in PatientListBit2");
+    if (workbook.SheetNames.length === 0) {
+      console.error("❌ No worksheets found in file");
       continue;
     }
 
-    for (let i = 1; i < rows.length; i++) {
-      const row = rows[i];
-      const chartNumber = Number(row[chartNumberIdx]);
-      if (isNaN(chartNumber)) continue;
+    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
 
-      // 나이 처리 (기존 로직과 동일)
-      let age: number | null = null;
-      const ageStr = String(row[ageIdx] || "").trim();
-      const koreanAge = ageStr.match(/(\d+)세(?:\s*(\d+)개월)?/);
-      if (koreanAge) {
-        const years = parseInt(koreanAge[1]);
-        const months = koreanAge[2] ? parseInt(koreanAge[2]) : 0;
-        age = normalizeAge(Math.round(years + months / 12));
-      } else if (/^\d+$/.test(ageStr)) {
-        age = normalizeAge(Number(ageStr));
+    // Get all data including headers
+    const allData = XLSX.utils.sheet_to_json<any[]>(worksheet, {
+      header: 1,
+      range: 0, // Start from the first row to get all data
+    });
+
+    if (allData.length < 2) {
+      console.error("❌ Insufficient rows in the file");
+      continue;
+    }
+
+    // Get header row (first row, index 0)
+    const headers = allData[0];
+
+    // Find the index for each required column
+    const chartNumberIndex = headers.findIndex(
+      (col: any) => col === "차트번호"
+    );
+    const ageIndex = headers.findIndex((col: any) => col === "나이");
+    const visitTypeIndex = headers.findIndex(
+      (col: any) => col === "초재진구분"
+    );
+    const doctorIndex = headers.findIndex((col: any) => col === "담당의");
+    const addressIndex = headers.findIndex((col: any) => col === "주소");
+
+    if (
+      chartNumberIndex === -1 ||
+      ageIndex === -1 ||
+      visitTypeIndex === -1 ||
+      doctorIndex === -1 ||
+      addressIndex === -1
+    ) {
+      console.error("❌ Required columns not found in the file");
+      console.error("Available headers:", headers);
+      console.error("Looking for: 차트번호, 나이, 초재진구분, 담당의, 주소");
+      continue;
+    }
+
+    console.log(
+      `✅ Found columns - 차트번호: ${chartNumberIndex}, 나이: ${ageIndex}, 초재진구분: ${visitTypeIndex}, 담당의: ${doctorIndex}, 주소: ${addressIndex}`
+    );
+
+    // Process data rows (starting from row 2, index 1)
+    for (let i = 1; i < allData.length; i++) {
+      const row = allData[i];
+
+      // Skip empty rows
+      if (!row || row.length === 0) {
+        continue;
       }
 
-      // 초재진구분
-      const rawVisitType = String(row[visitTypeIdx] || "").trim().replace(/\s/g, "");
-      const visitType = rawVisitType === "초진" || rawVisitType === "신환" ? "신환" : "재진";
+      // Check if required fields exist (차트번호 is mandatory)
+      if (!row[chartNumberIndex] || !row[ageIndex] || !row[visitTypeIndex]) {
+        continue;
+      }
 
-      const doctor = String(row[doctorIdx] || "").trim();
-      const address = String(row[addressIdx] || "").trim() || "N/A";
+      // Process chart number
+      const chartNumber = Number(row[chartNumberIndex]);
+      if (isNaN(chartNumber)) {
+        console.log(`Skipping row ${i}: invalid chart number`);
+        continue;
+      }
 
-      data.push({ chartNumber, age, visitType, doctor, address });
+      // Process age
+      let age: number | null = null;
+      if (
+        row[ageIndex] !== undefined &&
+        row[ageIndex] !== null &&
+        row[ageIndex] !== ""
+      ) {
+        const ageString = String(row[ageIndex]).trim();
+        const koreanAgeMatch = ageString.match(/(\d+)세(?:(\d+)개월)?/);
+
+        if (koreanAgeMatch) {
+          const years = parseInt(koreanAgeMatch[1]);
+          const months = koreanAgeMatch[2] ? parseInt(koreanAgeMatch[2]) : 0;
+
+          if (!isNaN(years) && years >= 0) {
+            // Convert to decimal age (years + months/12)
+            const totalAge = years + months / 12;
+            age = normalizeAge(Math.round(totalAge)); // Round to nearest year
+          }
+        } else {
+          // Fallback: try to parse as plain number
+          const ageValue = Number(ageString);
+          if (!isNaN(ageValue) && ageValue >= 0) {
+            age = normalizeAge(ageValue);
+          }
+        }
+      }
+
+      // Process visit type
+      // Process visit type
+      let visitType = "재진"; // Default to 재진
+      if (row[visitTypeIndex]) {
+        const rawVisitType = String(row[visitTypeIndex])
+          .trim()
+          .replace(/\s/g, "");
+        // Map 초진 and 신환 -> 신환, everything else -> 재진
+        if (rawVisitType === "초진" || rawVisitType === "신환") {
+          visitType = "신환";
+        }
+        // 재진 or any other value defaults to 재진
+      }
+
+      // Process doctor
+      const doctor = row[doctorIndex] ? String(row[doctorIndex]).trim() : "";
+
+      // Process address
+      const address = row[addressIndex]
+        ? String(row[addressIndex]).trim()
+        : "N/A";
+
+      const patientData: PatientListBit = {
+        chartNumber,
+        age,
+        visitType,
+        doctor,
+        address,
+      };
+
+      data.push(patientData);
     }
+
+    console.log(`✅ Processed ${data.length} records from PatientListBit file`);
   }
 
-  console.log(`Processed ${data.length} records from PatientListBit2 (CSV)`);
   return data;
 }
