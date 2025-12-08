@@ -842,41 +842,50 @@ export function MergedDataCchart(
   return df_merged;
 }
 
+
 export function mergeDataBit(
   dailyIncome: DailyIncomeBit[],
   patientList: PatientListBit[]
 ): MergedDataBit[] {
-  // Build "visits" array from dailyIncome
-  const visits: VisitDataBit[] = dailyIncome.map((inc) => ({
-    chartNumber: inc.chartNumber,
-    visitDate: inc.visitDate,
-    totalCost: inc.totalCost,
-  }));
-
-  // Create merged data from visits
-  const df_merged = visits.map((visit) => ({
-    chartNumber: visit.chartNumber,
-    visitDate: visit.visitDate,
-    totalCost: visit.totalCost,
-    age: null as number | null, // Will be filled in later
-    address: "N/D", // Will be filled in from patient list
-    visitType: "재진", // Default to 재진
-    doctor: "", // Will be filled in from patient list
-  }));
-
-  // Build a Map for quick patient lookup
-  const patientMap = new Map<
-    number,
-    {
-      age: number | null;
-      address: string;
-      visitType: string;
-      doctor: string;
+  // Normalize dates to YYYY-MM-DD format for comparison
+  const normalizeDate = (date: string | Date): string => {
+    if (date instanceof Date) {
+      return date.toISOString().split('T')[0];
     }
-  >();
+    // Already a string, ensure it's in YYYY-MM-DD format
+    return String(date).split('T')[0]; // Remove time part if exists
+  };
 
+  // Build a two-level Map: chartNumber + visitDate -> patient data
+  const patientMapByDateAndChart = new Map<string, {
+    age: number | null;
+    address: string;
+    visitType: string;
+    doctor: string;
+  }>();
+
+  // Build a fallback Map: chartNumber only -> patient data (use most recent)
+  const patientMapByChart = new Map<number, {
+    age: number | null;
+    address: string;
+    visitType: string;
+    doctor: string;
+  }>();
+
+  // Populate both maps
   for (const pat of patientList) {
-    patientMap.set(pat.chartNumber, {
+    const normalizedDate = normalizeDate(pat.visitDate);
+    const key = `${pat.chartNumber}_${normalizedDate}`;
+    
+    patientMapByDateAndChart.set(key, {
+      age: pat.age,
+      address: pat.address || "N/D",
+      visitType: pat.visitType,
+      doctor: pat.doctor || "N/D",
+    });
+
+    // For fallback, keep the most recent or just overwrite
+    patientMapByChart.set(pat.chartNumber, {
       age: pat.age,
       address: pat.address || "N/D",
       visitType: pat.visitType,
@@ -884,21 +893,33 @@ export function mergeDataBit(
     });
   }
 
-  // Fill patient data into df_merged
-  df_merged.forEach((record) => {
-    const patientData = patientMap.get(record.chartNumber);
-    if (patientData) {
-      record.age = patientData.age;
-      record.address = patientData.address;
-      record.visitType = patientData.visitType;
-      record.doctor = patientData.doctor;
+  // Create merged data from dailyIncome
+  const df_merged = dailyIncome.map((income) => {
+    const normalizedIncomeDate = normalizeDate(income.visitDate);
+    const key = `${income.chartNumber}_${normalizedIncomeDate}`;
+    
+    // Try to match by chartNumber + visitDate first
+    let patientData = patientMapByDateAndChart.get(key);
+    
+    // If no match, fallback to chartNumber only
+    if (!patientData) {
+      patientData = patientMapByChart.get(income.chartNumber);
+      if (patientData) {
+        console.log(`⚠️ Using chartNumber-only match for ${income.chartNumber} on ${normalizedIncomeDate}`);
+      }
     }
+
+    return {
+      chartNumber: income.chartNumber,
+      visitDate: new Date(income.visitDate),
+      totalCost: income.totalCost,
+      age: patientData?.age ?? null,
+      address: patientData?.address ?? "N/D",
+      visitType: patientData?.visitType ?? "재진",
+      doctor: patientData?.doctor ?? "N/D",
+    };
   });
 
-  // Convert visitDate strings to Date objects
-  df_merged.forEach((record) => {
-    record.visitDate = new Date(record.visitDate as string);
-  });
-
+  console.log(`✅ Merged ${df_merged.length} records`);
   return df_merged;
 }

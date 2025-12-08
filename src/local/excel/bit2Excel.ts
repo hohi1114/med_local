@@ -113,25 +113,32 @@ for (const buffer of fileBuffers) {
 }
 
 
+
 export async function parsePatientListBit2(
   fileBuffers: ArrayBuffer[]
 ): Promise<PatientListBit[]> {
   const data: PatientListBit[] = [];
 
   for (const buffer of fileBuffers) {
-    const workbook = XLSX.read(buffer, { type: "array" });
+    let text: string;
 
-    if (workbook.SheetNames.length === 0) {
-      console.error("❌ No worksheets found in file");
-      continue;
+    try {
+      // 첫 번째 시도: 한국 병원 전산 전용 디코더
+      text = decodeKoreanHospitalFile(buffer);
+    } catch (e) {
+      console.warn("UTF-16 실패 → CP949로 재시도");
+      const { default: iconv } = await import("iconv-lite");
+      text = iconv.decode(Buffer.from(buffer), "cp949");
     }
 
-    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+    console.log("첫 번째 줄 미리보기:", text.split("\n")[0]);
 
-    // Get all data including headers
-    const allData = XLSX.utils.sheet_to_json<any[]>(worksheet, {
+    // CSV → Workbook → 첫 번째 시트
+    const workbook = XLSX.read(text, { type: "string" });
+    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+    const allData: any[] = XLSX.utils.sheet_to_json(worksheet, {
       header: 1,
-      range: 0, // Start from the first row to get all data
+      defval: "",
     });
 
     if (allData.length < 2) {
@@ -144,12 +151,13 @@ export async function parsePatientListBit2(
 
     // Find the index for each required column
     const chartNumberIndex = headers.findIndex(
-      (col: any) => col === "차트번호"
+      (col: any) => col === "차트번호" || col === "챠트번호"
     );
     const ageIndex = headers.findIndex((col: any) => col === "나이");
     const visitTypeIndex = headers.findIndex(
       (col: any) => col === "초재진구분"
     );
+    const visitDateIndex = headers.findIndex((col: any) => col === "내원날짜"); // 추가!
     const doctorIndex = headers.findIndex((col: any) => col === "담당의");
     const addressIndex = headers.findIndex((col: any) => col === "주소");
 
@@ -157,17 +165,18 @@ export async function parsePatientListBit2(
       chartNumberIndex === -1 ||
       ageIndex === -1 ||
       visitTypeIndex === -1 ||
+      visitDateIndex === -1 || // 추가!
       doctorIndex === -1 ||
       addressIndex === -1
     ) {
       console.error("❌ Required columns not found in the file");
       console.error("Available headers:", headers);
-      console.error("Looking for: 차트번호, 나이, 초재진구분, 담당의, 주소");
+      console.error("Looking for: 차트번호, 나이, 초재진구분, 내원날짜, 담당의, 주소");
       continue;
     }
 
     console.log(
-      `✅ Found columns - 차트번호: ${chartNumberIndex}, 나이: ${ageIndex}, 초재진구분: ${visitTypeIndex}, 담당의: ${doctorIndex}, 주소: ${addressIndex}`
+      `✅ Found columns - 차트번호: ${chartNumberIndex}, 나이: ${ageIndex}, 초재진구분: ${visitTypeIndex}, 내원날짜: ${visitDateIndex}, 담당의: ${doctorIndex}, 주소: ${addressIndex}`
     );
 
     // Process data rows (starting from row 2, index 1)
@@ -179,8 +188,8 @@ export async function parsePatientListBit2(
         continue;
       }
 
-      // Check if required fields exist (차트번호 is mandatory)
-      if (!row[chartNumberIndex] || !row[ageIndex] || !row[visitTypeIndex]) {
+      // Check if required fields exist
+      if (!row[chartNumberIndex] || !row[ageIndex] || !row[visitTypeIndex] || !row[visitDateIndex]) {
         continue;
       }
 
@@ -206,12 +215,10 @@ export async function parsePatientListBit2(
           const months = koreanAgeMatch[2] ? parseInt(koreanAgeMatch[2]) : 0;
 
           if (!isNaN(years) && years >= 0) {
-            // Convert to decimal age (years + months/12)
             const totalAge = years + months / 12;
-            age = normalizeAge(Math.round(totalAge)); // Round to nearest year
+            age = normalizeAge(Math.round(totalAge));
           }
         } else {
-          // Fallback: try to parse as plain number
           const ageValue = Number(ageString);
           if (!isNaN(ageValue) && ageValue >= 0) {
             age = normalizeAge(ageValue);
@@ -220,17 +227,52 @@ export async function parsePatientListBit2(
       }
 
       // Process visit type
-      // Process visit type
       let visitType = "재진"; // Default to 재진
       if (row[visitTypeIndex]) {
         const rawVisitType = String(row[visitTypeIndex])
           .trim()
           .replace(/\s/g, "");
-        // Map 초진 and 신환 -> 신환, everything else -> 재진
         if (rawVisitType === "초진" || rawVisitType === "신환") {
           visitType = "신환";
         }
-        // 재진 or any other value defaults to 재진
+      }
+
+      // Process visit date (내원날짜) - 추가!
+      let visitDate = row[visitDateIndex];
+      
+      if (typeof visitDate === "string") {
+        // Handle formats like "2025.12.1" or "2025-12-01" or "2025년 12월 01일" or "20251201"
+        if (visitDate.includes("년") && visitDate.includes("월") && visitDate.includes("일")) {
+          const match = visitDate.match(/(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일/);
+          if (match) {
+            const [, year, month, day] = match;
+            visitDate = `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+          }
+        } else if (visitDate.includes(".")) {
+          // Format "2025.12.1" → "2025-12-01"
+          const parts = visitDate.split(".");
+          if (parts.length === 3) {
+            visitDate = `${parts[0]}-${parts[1].padStart(2, "0")}-${parts[2].padStart(2, "0")}`;
+          }
+        } else if (visitDate.includes("/")) {
+          // Format "2025/12/1" → "2025-12-01"
+          const parts = visitDate.split("/");
+          if (parts.length === 3) {
+            visitDate = `${parts[0]}-${parts[1].padStart(2, "0")}-${parts[2].padStart(2, "0")}`;
+          }
+        } else if (/^\d{8}$/.test(visitDate)) {
+          // Format "20251201" → "2025-12-01"
+          visitDate = parseYyyymmdd(visitDate);
+        }
+      } else if (typeof visitDate === "number") {
+        // Excel serial date or YYYYMMDD number
+        if (visitDate > 19000000 && visitDate < 21000000) {
+          // Looks like YYYYMMDD
+          visitDate = parseYyyymmdd(visitDate);
+        } else {
+          // Excel serial
+          visitDate = excelSerialToDate(visitDate);
+        }
       }
 
       // Process doctor
@@ -245,6 +287,7 @@ export async function parsePatientListBit2(
         chartNumber,
         age,
         visitType,
+        visitDate: String(visitDate), // 추가!
         doctor,
         address,
       };
@@ -252,7 +295,7 @@ export async function parsePatientListBit2(
       data.push(patientData);
     }
 
-    console.log(`✅ Processed ${data.length} records from PatientListBit file`);
+    console.log(`✅ Processed ${data.length} records from PatientListBit2 file`);
   }
 
   return data;
