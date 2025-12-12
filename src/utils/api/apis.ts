@@ -295,3 +295,35 @@ export const uploadDataToBackendDentWeb = async (
     throw error; // Re-throw to handle in the component
   }
 };
+
+// ⭐ Admin 로그인 (기존 postLogin과 거의 동일)
+// ⭐ Admin 로그인은 apiRequest 대신 직접 fetch 사용
+
+// ⭐ Vite 환경변수 사용
+export const postAdminLogin = async (email: string, password: string) => {
+  const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/login`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      email,
+      password,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Login failed');
+  }
+
+  const data = await response.json();
+
+  await saveTokensToCookie({
+    access_token: data.access_token,
+    refresh_token: data.refresh_token,
+    expires_in: data.expires_in
+  });
+
+  return data;
+};

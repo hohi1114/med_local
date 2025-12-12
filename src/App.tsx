@@ -16,11 +16,19 @@ import PaymentHistoryPage from "./pages/PaymentHistoryPage.tsx";
 import CompareAvenuePage from "./pages/CompareAvenuePage.tsx";
 import MapByRegionPage from "./pages/MapByRegionPage.tsx";
 
+// ⭐ Admin 페이지 import
+import { AdminLogin } from "./pages/AdminLogin";
+import { AdminDashboard } from "./pages/AdminDashboard";
+
 function App() {
   const { fetchUserInfo } = useUpdateUserInfo();
 
   useEffect(() => {
-    if (!window.location.pathname.startsWith("/login")) {
+    // Admin 페이지와 일반 로그인 페이지는 제외
+    if (
+      !window.location.pathname.startsWith("/login") &&
+      !window.location.pathname.startsWith("/admin")
+    ) {
       fetchUserInfo();
     }
   }, []);
@@ -28,8 +36,14 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* 일반 사용자 로그인 */}
         <Route path="/login" element={<LoginPage />} />
 
+        {/* ⭐ Admin 라우트 (BaseLayout 없이 독립적으로) */}
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+
+        {/* 일반 사용자 페이지 (BaseLayout 적용) */}
         <Route path="/" element={<BaseLayout />}>
           <Route index element={<Navigate to="dashboard" replace />} />
 
