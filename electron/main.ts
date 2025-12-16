@@ -68,7 +68,7 @@ import {
   mergeDataHanChart,
   mergeDataOrm,
   mergeDataVegas,
-  MergedDataDoctorP,
+  mergeDataDoctorP,
   MergedDataCchart,
   mergeDataBit,
   mergeDataNeo
@@ -411,7 +411,7 @@ ipcMain.handle("parse-patient-list-bit2", async (event, fileBuffers) => {
 
   ipcMain.handle("merge-data-doctorp", async (event, visits, patients) => {
     try {
-      return MergedDataDoctorP(visits, patients);
+      return mergeDataDoctorP(visits, patients);
     } catch (error) {
       console.error("Error merging Euisarang data:", error);
       throw error;

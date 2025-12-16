@@ -111,28 +111,23 @@ export interface MergedDataCchart {
   totalCost: number;
   age: number | null;
   address: string;
+  route: string;
 }
+
 
 export interface VisitDataDoctorP {
   chartNumber: number;
-  visitDate: string | Date;
+  visitDate: string;
   totalCost: number;
-  route: string; //내원경로
-  area: string; //진료내역
-  doctor: string; // 담당의사
-  visitType: string;
 }
 
 export interface MergedDataDoctorP {
   chartNumber: number;
-  visitDate: string | Date;
+  visitDate: Date; // string 대신 Date로 변경
   totalCost: number;
+  route: string;
   age: number | null;
   address: string;
-  area: string;
-  doctor: string; //담당의
-  route: string; // 경로
-  visitType: string;
 }
 
 interface VisitDataBit {
@@ -728,19 +723,24 @@ export function mergeDataDentWeb(
 
   return df_merged;
 }
-export function MergedDataDoctorP(
+
+
+
+type PatientInfo = {
+  address: string;
+  age: number | null;
+  route: string;
+};
+
+export function mergeDataDoctorP(
   dailyIncome: DailyIncomeDoctorP[],
   patientList: PatientListDoctorP[]
 ): MergedDataDoctorP[] {
-  // Build "visits" array from dailyIncome (Vegas includes age in daily income)
+  // Build "visits" array from dailyIncome
   const visits: VisitDataDoctorP[] = dailyIncome.map((inc) => ({
     chartNumber: inc.chartNumber,
     visitDate: inc.visitDate,
     totalCost: inc.totalCost,
-    visitType: inc.visitType,
-    route: inc.route,
-    area: inc.area,
-    doctor: inc.doctor,
   }));
 
   // Create merged data from visits
@@ -748,46 +748,41 @@ export function MergedDataDoctorP(
     chartNumber: visit.chartNumber,
     visitDate: visit.visitDate,
     totalCost: visit.totalCost,
-    visitType: visit.visitType,
-    route: visit.route,
-    area: visit.area,
-    doctor: visit.doctor,
-    age: null as number | null, //Will be filled in later
+    route: "", // Will be filled in from patient list
+    age: null as number | null, // Will be filled in from patient list
     address: "N/D", // Will be filled in from patient list
   }));
 
   // Build a Map
-  const patientMap = new Map<
-    number,
-    {
-      address: string;
-      age: number | null;
-    }
-  >();
+  const patientMap = new Map<number, PatientInfo>();
 
   for (const pat of patientList) {
     patientMap.set(pat.chartNumber, {
       address: pat.address || "N/D",
       age: pat?.age ?? null,
+      route: pat.route || "",
     });
   }
 
-  // Fill address data into df_merged
+  // Fill patient data into df_merged
   df_merged.forEach((record) => {
     const patientData = patientMap.get(record.chartNumber);
     if (patientData) {
       record.address = patientData.address;
       record.age = patientData.age;
+      record.route = patientData.route;
     }
   });
 
-  // NOW convert visitDate strings to Date objects
-  df_merged.forEach((record) => {
-    record.visitDate = new Date(record.visitDate as string);
-  });
+  // Convert visitDate strings to Date objects
+  const result: MergedDataDoctorP[] = df_merged.map((record) => ({
+    ...record,
+    visitDate: new Date(record.visitDate),
+  }));
 
-  return df_merged;
+  return result;
 }
+
 
 export function MergedDataCchart(
   dailyIncome: DailyIncomeCchart[],
@@ -807,6 +802,7 @@ export function MergedDataCchart(
     totalCost: visit.totalCost,
     age: null as number | null, //Will be filled in later
     address: "N/D", // Will be filled in from patient list
+    route: "N/D"
   }));
 
   // Build a Map
@@ -815,6 +811,7 @@ export function MergedDataCchart(
     {
       address: string;
       age: number | null;
+      route: string;
     }
   >();
 
@@ -822,6 +819,7 @@ export function MergedDataCchart(
     patientMap.set(pat.chartNumber, {
       address: pat.address || "N/D",
       age: pat?.age ?? null,
+      route: pat.route || "N/D",
     });
   }
 
@@ -831,6 +829,7 @@ export function MergedDataCchart(
     if (patientData) {
       record.address = patientData.address;
       record.age = patientData.age;
+      record.route= patientData.route;
     }
   });
 

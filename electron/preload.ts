@@ -65,7 +65,7 @@ contextBridge.exposeInMainWorld("electron", {
 
   parseDaysFilesDoctorP: (fileBuffers: ArrayBuffer[]) =>
     ipcRenderer.invoke("parse-daily-income-doctorp", fileBuffers),
-  parsePatientListDoctorP: (fileBuffers: ArrayBuffer[]) =>
+  parsePlaceFilesDoctorP: (fileBuffers: ArrayBuffer[]) =>
     ipcRenderer.invoke("parse-patient-list-doctorp", fileBuffers),
 
   parseDailyIncomecChart: (fileBuffers: ArrayBuffer[]) =>

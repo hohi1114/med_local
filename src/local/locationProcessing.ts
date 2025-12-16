@@ -42,9 +42,6 @@ interface ProcessedPatientDataOrm extends ProcessedPatientData{
 }
 
 interface ProcessedPatientDataDoctorP extends ProcessedPatientData {
-  visitType: string;
-  area: string;
-  doctor: string;
   route: string;
 }
 
@@ -864,13 +861,14 @@ export async function processDataLocallyVegas(
   }
 }
 
+
 export async function processDataLocallyDoctorP(
   mergedData: MergedDataDoctorP[],
   accessToken: string,
   progressCallback?: (current: number, total: number) => void
 ) {
   try {
-    // Step 0: Load chart number mapping and update chartNumber- 중요한 익명화 작업
+    // Step 0: Load chart number mapping and update chartNumber - 중요한 익명화 작업
     const chartNumberMapping = await getMappingData(accessToken);
 
     // Step 1: Update chartNumber using the fetched mapping
@@ -935,19 +933,19 @@ export async function processDataLocallyDoctorP(
 
     // Parse the polygon data
     const smallRegions = regionData.smallRegions.map((region) => ({
-      id: region.id, // Use name as id if id is not available
+      id: region.id,
       name: region.name,
       coords: parsePolygon(region.polygon),
     }));
 
     const dongRegions = regionData.dongRegions.map((region) => ({
-      id: region.id, // Use name as id if id is not available
+      id: region.id,
       name: region.name,
       coords: parsePolygon(region.polygon),
     }));
 
     const guRegions = regionData.guRegions.map((region) => ({
-      id: region.id, // Use name as id if id is not available
+      id: region.id,
       name: region.name,
       coords: parsePolygon(region.polygon),
     }));
@@ -977,10 +975,7 @@ export async function processDataLocallyDoctorP(
           age: record.age,
           total_cost: record.totalCost,
           visit_date: record.visitDate,
-          area: record.area,
-          doctor: record.doctor,
           route: record.route,
-          visitType: record.visitType,
           location_true: record.location_true,
           small_region_id,
           dong_region_id,
@@ -998,7 +993,6 @@ export async function processDataLocallyDoctorP(
         longitude,
         location_true,
         totalCost,
-        visitType,
         route,
         age,
       } = record;
@@ -1022,7 +1016,7 @@ export async function processDataLocallyDoctorP(
         lat: latitude,
         lng: longitude,
         total_cost: totalCost,
-        visit_type: visitType,
+        visit_type:"",
         route: route,
         age: String(age),
       });
@@ -1046,6 +1040,7 @@ export async function processDataLocallyDoctorP(
     throw error;
   }
 }
+
 
 export async function processDataLocallyDentWeb(
   mergedData: MergedDataDentWeb[],
@@ -1715,6 +1710,7 @@ export async function processDataLocallycChart(
           age: record.age,
           total_cost: record.totalCost,
           visit_date: record.visitDate,
+          route: record. route,
           location_true: record.location_true,
           small_region_id,
           dong_region_id,
@@ -1727,7 +1723,7 @@ export async function processDataLocallycChart(
     const dateLocationMap = new Map<string, LocationPoint[]>();
 
     recordsWithGeodata.forEach((record) => {
-      const { visitDate, latitude, longitude, location_true, totalCost, age } =
+      const { visitDate, latitude, longitude, location_true, totalCost, age, route } =
         record;
 
       // Skip records without valid locations
@@ -1750,7 +1746,7 @@ export async function processDataLocallycChart(
         lng: longitude,
         total_cost: totalCost,
         visit_type: "",
-        route: "",
+        route: route,
         age: String(age),
       });
     });

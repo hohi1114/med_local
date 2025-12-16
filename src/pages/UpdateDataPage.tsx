@@ -231,7 +231,7 @@ export async function uploadDataToBackendcChart(
 
     // Send the request to the backend
     const response = await axios.post<ProcessDataResponse>(
-      `${baseURL}/data/process`,
+      `${baseURL}/data/cChart`,
       payload,
       {
         headers: {
@@ -448,7 +448,7 @@ export async function uploadDataToBackendDoctorP(
 
     // Send the request to the backend
     const response = await axios.post<ProcessDataResponse>(
-      `${baseURL}/data/doctorp`,
+      `${baseURL}/data/process`,
       payload,
       {
         headers: {
@@ -995,122 +995,115 @@ const UpdateDataPage = () => {
   };
 
 
+const handleProcessDataDoctorP = async (): Promise<void> => {
+  if (!placeFiles || !dailyIncome) {
+    openNotification("warning", "파일 누락", "모든 파일을 업로드해주세요.");
+    return;
+  }
 
-  const handleProcessDataDoctorP = async (): Promise<void> => {
-    if (!placeFiles || !dailyIncome) {
-      openNotification("warning", "파일 누락", "모든 파일을 업로드해주세요.");
-      return;
+  setProgress(1); // Start progress
+
+  const removeProgressListener = window.electron.onGeocodingProgress(
+    ({ current, total }) => {
+      // Calculate overall progress (giving geocoding 60% of the total weight)
+      // First 20% for file processing and merging, last 20% for final processing and upload prep
+      const geocodingProgress = (current / total) * 80;
+      setProgress(10 + geocodingProgress);
     }
+  );
 
-    setProgress(1); // Start progress
-
-    const removeProgressListener = window.electron.onGeocodingProgress(
-      ({ current, total }) => {
-        // Calculate overall progress (giving geocoding 60% of the total weight)
-        // First 20% for file processing and merging, last 20% for final processing and upload prep
-        const geocodingProgress = (current / total) * 80;
-        setProgress(10 + geocodingProgress);
-      }
+  try {
+    // Step 1: Convert files to ArrayBuffers
+    const daysBuffers = await Promise.all(
+      Array.from(dailyIncome).map((file) => file.arrayBuffer())
     );
 
-    try {
-      // Step 1: Convert files to ArrayBuffers for local processing
-      const daysBuffers = await Promise.all(
-        Array.from(dailyIncome).map((file) => file.arrayBuffer())
-      );
+    const placeBuffers = await Promise.all(
+      Array.from(placeFiles).map((file) => file.arrayBuffer())
+    );
 
-      const placeBuffers = await Promise.all(
-        Array.from(placeFiles).map((file) => file.arrayBuffer())
-      );
+    // Step 2: Parse files locally via Electron
+    const visits = await window.electron.parseDaysFilesDoctorP(daysBuffers);
+    console.log("Parsed visits:", visits);
 
-      // Step 2: Parse files locally via Electron
-      const visits = await window.electron.parseDaysFilesDoctorP(daysBuffers);
+    const patients = await window.electron.parsePlaceFilesDoctorP(placeBuffers);
+    console.log("Parsed patients:", patients);
 
-      const patients = await window.electron.parsePatientListDoctorP(
-        placeBuffers
-      );
+    // Step 3: Merge data locally
+    const mergedData = await window.electron.mergeDataDoctorP(visits, patients);
+    console.log("Merged data:", mergedData);
 
-      console.log(visits);
-      console.log(patients);
+    setProgress(10);
 
-      // Step 3: Merge data locally
-      const mergedData = await window.electron.mergeDataDoctorP(
-        visits,
-        patients
-      );
+    // Step 4: Process the merged data (geocoding, region assignment, etc.)
+    const processedData = await window.electron.processDataLocallyDoctorP(
+      mergedData,
+      getCookie("accessToken")
+    );
 
-      console.log(mergedData)
+    removeProgressListener();
 
-      setProgress(10);
+    setProgress(90);
 
-      // Step 4: Process the merged data (geocoding, region assignment, etc.)
-      const processedData = await window.electron.processDataLocallyDoctorP(
-        mergedData,
-        getCookie("accessToken")
-      );
+    console.log("Processed data:", processedData);
 
-      console.log("Processed data:", processedData);
+    // Step 5: Send only the processed data to the backend
+    // Start the upload but don't await it
+    const uploadPromise = uploadDataToBackendDoctorP(
+      getCookie("accessToken"),
+      processedData
+    );
 
-      removeProgressListener();
+    setProgress(95);
 
-      setProgress(90);
+    // Inform the user that data is being processed in the background
+    openNotification(
+      "success",
+      "데이터 업로드 중",
+      "데이터가 처리되어 업로드 중입니다. 업로드가 완료되면 알려드립니다. 프로그램을 종료하지 마세요."
+    );
 
-      // Step 5: Send only the processed data to the backend
-      // Start the upload but don't await it
-      const uploadPromise = uploadDataToBackendDoctorP(
-        getCookie("accessToken"),
-        processedData
-      );
+    // Set progress to 100% since from the user's perspective, the task is complete
+    setProgress(100);
 
-      setProgress(95);
+    // Handle the upload promise in the background
+    uploadPromise
+      .then((backendResponse) => {
+        fetchUploadedDates();
+        // Handle successful upload (when it eventually completes)
+        openNotification(
+          "success",
+          "데이터 업로드 완료",
+          "모든 Doctor P 시스템 데이터가 성공적으로 처리되었습니다."
+        );
 
-      // Inform the user that data is being processed in the background
-      openNotification(
-        "success",
-        "데이터 업로드 중",
-        "데이터가 처리되어 업로드 중입니다. 업로드가 완료되면 알려드립니다. 프로그램을 종료하지 마세요."
-      );
-
-      // Set progress to 100% since from the user's perspective, the task is complete
-      setProgress(100);
-
-      uploadPromise
-        .then((backendResponse) => {
-          fetchUploadedDates();
-          // Handle successful upload (when it eventually completes)
-          openNotification(
-            "success",
-            "데이터 업로드 완료",
-            "모든 데이터가 성공적으로 처리되었습니다."
-          );
-
-          // Update any UI components that should reflect the successful upload
-          // updateDataCount(backendResponse);
-        })
-        .catch((error) => {
-          // Handle error in the background
-          console.error("❌ Background upload error:", error);
-          openNotification(
-            "error",
-            "업로드 실패",
-            error instanceof Error
-              ? error.message
-              : "알 수 없는 오류가 발생했습니다."
-          );
-        });
-    } catch (error) {
-      // This catch block handles errors in the processing phase
-      console.error("❌ Error processing data:", error);
-      openNotification(
-        "error",
-        "데이터 처리 실패",
-        error instanceof Error
-          ? error.message
-          : "알 수 없는 오류가 발생했습니다."
-      );
-      setProgress(0); // Reset progress on error
-    }
-  };
+        // Update any UI components that should reflect the successful upload
+        // updateDataCount(backendResponse);
+      })
+      .catch((error) => {
+        // Handle error in the background
+        console.error("❌ Background upload error:", error);
+        openNotification(
+          "error",
+          "업로드 실패",
+          error instanceof Error
+            ? error.message
+            : "알 수 없는 오류가 발생했습니다."
+        );
+      });
+  } catch (error) {
+    // This catch block handles errors in the processing phase
+    console.error("❌ Error processing Doctor P data:", error);
+    openNotification(
+      "error",
+      "데이터 처리 실패",
+      error instanceof Error
+        ? error.message
+        : "알 수 없는 오류가 발생했습니다."
+    );
+    setProgress(0); // Reset progress on error
+  }
+};
 
   const handleProcessDataEgis = async (): Promise<void> => {
     if (!placeFiles || !dailyIncome) {

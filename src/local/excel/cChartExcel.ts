@@ -11,6 +11,7 @@ export interface PatientListCchart {
   chartNumber: number;
   age: number | null;
   address: string;
+  route: string;
 }
 
 export async function parseDailyIncomecChart(
@@ -184,6 +185,7 @@ export async function parsePatientListcChart(
     const patientNumberIndex = headers.findIndex((col) => col === "환자번호");
     const rrnIndex = headers.findIndex((col) => col === "주민번호");
     const addressIndex = headers.findIndex((col) => col === "주소");
+    const routeIndex = headers.findIndex((col) => col === "내원경로");
 
     if (patientNumberIndex === -1 || rrnIndex === -1 || addressIndex === -1) {
       console.error("❌ Required columns not found in the file");
@@ -209,11 +211,18 @@ export async function parsePatientListcChart(
       const address = row[addressIndex]
         ? String(row[addressIndex]).trim()
         : "N/A";
+      
+
+      const route = row[routeIndex]
+        ? String(row[routeIndex]).trim()
+        : "N/A";
+      
 
       data.push({
         chartNumber,
         age: normalizedAge,
         address: address || "N/A",
+        route: route || "N/A"
       });
     }
   }

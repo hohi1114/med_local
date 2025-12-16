@@ -6,16 +6,67 @@ export interface DailyIncomeDoctorP {
   chartNumber: number;
   visitDate: string;
   totalCost: number;
-  route: string; //내원경로
-  area: string; //진료내역
-  doctor: string; // 담당의사
-  visitType: string;
 }
 
 export interface PatientListDoctorP {
   chartNumber: number;
   address: string;
   age: number | null;
+  route: string;
+}
+
+// 날짜 정규화 헬퍼 함수
+function normalizeDate(dateValue: any): string {
+  // Excel 시리얼 넘버인 경우
+  if (typeof dateValue === "number") {
+    const excelDate = XLSX.SSF.parse_date_code(dateValue);
+    if (excelDate) {
+      return `${excelDate.y}-${String(excelDate.m).padStart(2, "0")}-${String(
+        excelDate.d
+      ).padStart(2, "0")}`;
+    }
+  }
+
+  // 문자열인 경우 (2025-12-13 형식)
+  if (typeof dateValue === "string") {
+    return dateValue.trim();
+  }
+
+  // Date 객체인 경우
+  if (dateValue instanceof Date && !isNaN(dateValue.getTime())) {
+    return dateValue.toISOString().split("T")[0];
+  }
+
+  // 변환 실패 시 원본 반환
+  return String(dateValue);
+}
+
+// 나이 정규화 헬퍼 함수
+function parseAge(ageValue: any): number | null {
+  if (ageValue == null || ageValue === "") {
+    return null;
+  }
+
+  // 문자열인 경우
+  if (typeof ageValue === "string") {
+    // "30세", "25세" 형식 처리
+    const ageMatch = ageValue.trim().match(/^(\d+)세?$/);
+    if (ageMatch) {
+      const age = Number(ageMatch[1]);
+      return !isNaN(age) ? normalizeAge(age) : null;
+    }
+    
+    // 숫자만 있는 문자열
+    const age = Number(ageValue.trim());
+    return !isNaN(age) ? normalizeAge(age) : null;
+  }
+
+  // 이미 숫자인 경우
+  if (typeof ageValue === "number") {
+    return !isNaN(ageValue) ? normalizeAge(ageValue) : null;
+  }
+
+  return null;
 }
 
 // In src/services/fileProcessing.ts
@@ -37,7 +88,8 @@ export async function parseDaysFilesDoctorP(
     // Get all data including headers
     const allData = XLSX.utils.sheet_to_json<any[]>(worksheet, {
       header: 1,
-      range: 0, // Start from the first row to get all data
+      range: 0,
+      raw: false,
     });
 
     if (allData.length < 2) {
@@ -52,33 +104,18 @@ export async function parseDaysFilesDoctorP(
       (col: any) => col === "환자번호"
     );
     const visitDateIndex = headers.findIndex((col: any) => col === "진료일");
+    const totalCostIndex = headers.findIndex((col: any) => col === "총 매출");
 
-    // For totalCost, check both possible column names
-    const totalCostIndex = headers.findIndex((col: any) => col === "결제금액");
-
-    const doctorIndex = headers.findIndex((col: any) => col === "담당의");
-
-    const routeIndex = headers.findIndex((col: any) => col === "내원경로");
-
-    const areaIndex = headers.findIndex((col: any) => col === "방문목적");
-    const visitTypeIndex = headers.findIndex((col: any) => col === "신환여부");
-
-    console.log(
-      chartNumberIndex,
-      visitDateIndex,
-      totalCostIndex,
-      visitTypeIndex
-    );
+    console.log(chartNumberIndex, visitDateIndex, totalCostIndex);
 
     // Check if all required columns were found
     if (
       chartNumberIndex === -1 ||
       visitDateIndex === -1 ||
-      totalCostIndex === -1 ||
-      visitTypeIndex === -1
+      totalCostIndex === -1
     ) {
       console.error(`❌ Required columns not found in sheet`);
-      continue; // Skip this sheet
+      continue;
     }
 
     // Process data rows (skip the header row)
@@ -88,8 +125,7 @@ export async function parseDaysFilesDoctorP(
       if (
         !row[chartNumberIndex] ||
         !row[visitDateIndex] ||
-        row[totalCostIndex] == null ||
-        !row[visitTypeIndex]
+        row[totalCostIndex] == null
       ) {
         continue;
       }
@@ -100,51 +136,24 @@ export async function parseDaysFilesDoctorP(
         continue;
       }
 
-      let visitDate = row[visitDateIndex];
+      // 날짜 정규화
+      const visitDate = normalizeDate(row[visitDateIndex]);
 
-      if (typeof visitDate === "number") {
-        const excelDate = XLSX.SSF.parse_date_code(visitDate); // +1 보정
-        if (excelDate) {
-          visitDate = `${excelDate.y}-${String(excelDate.m).padStart(
-            2,
-            "0"
-          )}-${String(excelDate.d).padStart(2, "0")}`;
-        }
+      // totalCost 처리 - 쉼표 제거 후 숫자 변환
+      let totalCostValue = row[totalCostIndex];
+      if (typeof totalCostValue === "string") {
+        totalCostValue = totalCostValue.replace(/,/g, "");
       }
-
-      const totalCost = Number(row[totalCostIndex]);
-      //if (isNaN(totalCost)) {
-      // continue;
-      // }
-
-      const area =
-        areaIndex !== -1 && row[areaIndex] ? String(row[areaIndex]).trim() : ""; //진료내역
-
-      const doctor =
-        doctorIndex !== -1 && row[doctorIndex]
-          ? String(row[doctorIndex]).trim()
-          : ""; //진료의사
-
-      const route =
-        routeIndex !== -1 && row[routeIndex]
-          ? String(row[routeIndex]).trim()
-          : ""; //내원경로
-      let visitType = String(row[visitTypeIndex]).replace(/\s/g, "");
-      // Convert visit types according to the specified rules
-      if (visitType === "신환") {
-        visitType = "신환";
-      } else if (visitType === "구환") {
-        visitType = "재진";
+      const totalCost = Number(totalCostValue);
+      
+      if (isNaN(totalCost)) {
+        continue;
       }
 
       data.push({
         chartNumber,
         visitDate,
         totalCost,
-        area,
-        doctor,
-        route,
-        visitType,
       });
     }
   }
@@ -169,7 +178,8 @@ export async function parsePlaceFilesDoctorP(
     // Get all data including headers
     const allData = XLSX.utils.sheet_to_json<any[]>(worksheet, {
       header: 1,
-      range: 0, // Start from the first row to get all data
+      range: 0,
+      raw: false,
     });
 
     if (allData.length < 2) {
@@ -185,16 +195,20 @@ export async function parsePlaceFilesDoctorP(
     );
     const ageIndex = headers.findIndex((col: any) => col === "나이");
     const addressIndex = headers.findIndex((col: any) => col === "주소");
+    const routeIndex = headers.findIndex((col: any) => col === "환자태그");
 
-    console.log(chartNumberIndex);
-    console.log(ageIndex);
-    console.log(addressIndex);
+    console.log(chartNumberIndex, ageIndex, addressIndex, routeIndex);
 
-    if (chartNumberIndex === -1 || ageIndex === -1 || addressIndex === -1) {
+    if (
+      chartNumberIndex === -1 ||
+      ageIndex === -1 ||
+      addressIndex === -1 ||
+      routeIndex === -1
+    ) {
       console.error(
         `❌ Required columns not found in sheet ${workbook.SheetNames[0]}`
       );
-      continue; // Skip this sheet
+      continue;
     }
 
     for (let i = 1; i < allData.length; i++) {
@@ -210,16 +224,17 @@ export async function parsePlaceFilesDoctorP(
         continue;
       }
 
-      const age = row[ageIndex];
-      // Normalize age if it's a valid number
-      let normalizedAge = !isNaN(age) ? normalizeAge(age) : 0;
+      // 나이 파싱 ("30세" 형식 처리)
+      const normalizedAge = parseAge(row[ageIndex]);
 
       const address = row[addressIndex] || "N/D";
+      const route = row[routeIndex] || "";
 
       data.push({
         chartNumber,
         age: normalizedAge,
         address: typeof address === "string" ? address : String(address),
+        route: typeof route === "string" ? route : String(route),
       });
     }
   }

@@ -55,7 +55,8 @@ export function normalizeAge(age: number): number {
  * 엑셀 date 저장 오류 해결
  */
 
-export function excelSerialToDate(serial: number): string {
+export function 
+excelSerialToDate(serial: number): string {
   // Input validation
   if (serial < 0) {
     throw new Error("Invalid Excel serial date: cannot be negative");
