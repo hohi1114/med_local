@@ -191,17 +191,30 @@ export async function parseDailyIncomeOrm(
             : "";
 
         // 나이
+        // 나이
         let age: number | null = null;
         if (ageIndex !== -1 && row[ageIndex] != null) {
           const rawAge = String(row[ageIndex]).trim();
           let ageNum: number | null = null;
 
-          if (/^\d+\s*세?$/.test(rawAge)) {
+          // ✅ "7세 5개월" 형식 처리 추가
+          if (/^\d+세\s*\d*개월?$/.test(rawAge)) {
+            // "7세 5개월" → 7만 추출 (월은 무시)
+            const match = rawAge.match(/^(\d+)세/);
+            if (match) {
+              ageNum = Number(match[1]);
+            }
+          } 
+          // "33세" 형식
+          else if (/^\d+\s*세?$/.test(rawAge)) {
             ageNum = Number(rawAge.replace(/[^\d]/g, ""));
-          } else if (/^[여남남여]\/\d+$/.test(rawAge)) {
-            // 예: "여/33"
+          } 
+          // "여/33" 형식
+          else if (/^[여남남여]\/\d+$/.test(rawAge)) {
             ageNum = Number(rawAge.split("/")[1]);
-          } else if (/^\d+$/.test(rawAge)) {
+          } 
+          // 순수 숫자 "33"
+          else if (/^\d+$/.test(rawAge)) {
             ageNum = Number(rawAge);
           }
 
