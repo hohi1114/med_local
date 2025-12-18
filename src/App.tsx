@@ -15,6 +15,9 @@ import CardManagementPage from "./pages/CardManagementPage.tsx";
 import PaymentHistoryPage from "./pages/PaymentHistoryPage.tsx";
 import CompareAvenuePage from "./pages/CompareAvenuePage.tsx";
 import MapByRegionPage from "./pages/MapByRegionPage.tsx";
+import HospitalMapAnalysisPage from "./pages/HospitalMapAnalysisPage.tsx";
+import PatientComparisonPage from "./pages/PatientComparisonPage";
+
 
 // ⭐ Admin 페이지 import
 import { AdminLogin } from "./pages/AdminLogin";
@@ -42,20 +45,20 @@ function App() {
         {/* ⭐ Admin 라우트 (BaseLayout 없이 독립적으로) */}
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/admin/patient-comparison" element={<PatientComparisonPage />} />
+        <Route path="/admin/hospital-map" element={
+          <NaverScriptLoader>
+            <HospitalMapAnalysisPage />
+          </NaverScriptLoader>
+        }
+        />
 
         {/* 일반 사용자 페이지 (BaseLayout 적용) */}
         <Route path="/" element={<BaseLayout />}>
           <Route index element={<Navigate to="dashboard" replace />} />
 
           <Route path="dashboard" element={<DashBoardPage />} />
-          <Route
-            path="map"
-            element={
-              <NaverScriptLoader>
-                <MapByRegionPage />
-              </NaverScriptLoader>
-            }
-          />
+          <Route path="/admin/map" element={<HospitalMapAnalysisPage />} />
           <Route
             path="statistics-by-region"
             element={<StatisticsByRegionPage />}

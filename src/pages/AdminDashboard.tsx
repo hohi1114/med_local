@@ -45,6 +45,13 @@ interface WeeklyStat {
   top_3_districts_ratio: number;
 }
 
+// ⭐ 4주 단위 통계 타입
+interface AggregatedStat extends WeeklyStat {
+  period_label: string;
+  period_weeks: number;
+  working_days: number;
+}
+
 // ⭐ 숫자 + 가로 바 인라인 컴포넌트
 const InlineBar: React.FC<{ value: number; max: number; color: string }> = ({ value, max, color }) => {
   const percentage = max > 0 ? Math.min((value / max) * 100, 100) : 0;
@@ -186,6 +193,9 @@ export const AdminDashboard: React.FC = () => {
   
   // ⭐ 일평균 모드 토글
   const [isDailyAverage, setIsDailyAverage] = useState(false);
+  
+  // ⭐ 4주 단위 모드 토글
+  const [is4WeekMode, setIs4WeekMode] = useState(false);
 
   useEffect(() => {
     checkAdminAuth();
@@ -194,7 +204,7 @@ export const AdminDashboard: React.FC = () => {
 
   useEffect(() => {
     if (selectedHospital) {
-      setMessage(''); // 병원 변경 시 메시지 초기화
+      setMessage('');
       loadWeeklyStats(selectedHospital);
     }
   }, [selectedHospital]);
@@ -206,7 +216,6 @@ export const AdminDashboard: React.FC = () => {
     }
   }, [startWeekIndex, endWeekIndex, allWeeklyStats]);
 
-  // 메시지 자동 사라짐 (5초 후)
   useEffect(() => {
     if (message) {
       const timer = setTimeout(() => {
@@ -250,7 +259,6 @@ export const AdminDashboard: React.FC = () => {
       setWeeklyStats(recentStats);
       setStartWeekIndex(Math.max(0, reversedStats.length - 10));
       setEndWeekIndex(reversedStats.length - 1);
-      // 성공 시 메시지를 건드리지 않음 (handleUpdateStats의 성공 메시지 유지)
     } catch (error: any) {
       console.error('Failed to load stats:', error);
       setMessage(`오류: ${error.message}`);
@@ -289,7 +297,6 @@ export const AdminDashboard: React.FC = () => {
     return `${num >= 0 ? '+' : ''}${num.toFixed(1)}%`;
   };
 
-  // ⭐ 양수는 빨간색, 음수는 파란색 (한국 주식 스타일)
   const getPercentColor = (percent: number | null) => {
     if (percent === null) return '#9ca3af';
     if (percent > 0) return '#dc2626';
@@ -297,37 +304,138 @@ export const AdminDashboard: React.FC = () => {
     return '#9ca3af';
   };
 
-  // ⭐ 영업일 수 계산 (7 - 휴무일)
   const getWorkingDays = (closedDays: number) => Math.max(7 - closedDays, 1);
 
-  // ⭐ 객단가 계산 (매출 / 전체환자)
   const getRevenuePerPatient = (revenue: number, patients: number) => {
     if (patients === 0) return 0;
     return Math.round(revenue / patients);
   };
 
-  // ⭐ 일평균 데이터 계산
-  const calculateDailyStats = useMemo(() => {
-    return weeklyStats.map((stat, index) => {
-      const workingDays = getWorkingDays(stat.closed_days);
-      const prevStat = index > 0 ? weeklyStats[index - 1] : null;
-      const prevWorkingDays = prevStat ? getWorkingDays(prevStat.closed_days) : null;
+  // ⭐ 4주 단위 데이터 집계
+  const aggregated4WeekStats = useMemo((): AggregatedStat[] => {
+    if (!is4WeekMode || weeklyStats.length === 0) return [];
+    
+    const result: AggregatedStat[] = [];
+    
+    // ⭐ 뒤에서부터 4주씩 묶기 (최근 데이터 기준)
+    for (let i = weeklyStats.length; i > 0; i -= 4) {
+      const startIdx = Math.max(0, i - 4);
+      const chunk = weeklyStats.slice(startIdx, i);
+      if (chunk.length === 0) continue;
+      
+      // 기간 정보
+      const periodStart = chunk[0].week_start;
+      const periodEnd = chunk[chunk.length - 1].week_end;
+      const periodWeeks = chunk.length;
+      
+      // 합산
+      const totalClosedDays = chunk.reduce((sum, s) => sum + s.closed_days, 0);
+      const totalRevenue = chunk.reduce((sum, s) => sum + s.total_revenue, 0);
+      const totalNewPatients = chunk.reduce((sum, s) => sum + s.new_patients, 0);
+      const totalFirstVisit = chunk.reduce((sum, s) => sum + s.first_visit_patients, 0);
+      const totalReturn = chunk.reduce((sum, s) => sum + s.return_patients, 0);
+      const totalPatients = chunk.reduce((sum, s) => sum + s.total_patients, 0);
+      const workingDays = (7 * periodWeeks) - totalClosedDays;
+      
+      // 연령별 합산
+      const ageGroups: Record<string, number> = {};
+      ['0', '10', '20', '30', '40', '50', '60', '70+'].forEach(age => {
+        ageGroups[age] = chunk.reduce((sum, s) => sum + (s.age_groups?.[age] || 0), 0);
+      });
+      
+      // 동별 합산
+      const districtsData: Record<string, number> = {};
+      chunk.forEach(s => {
+        if (s.top_districts_data) {
+          Object.entries(s.top_districts_data).forEach(([district, count]) => {
+            districtsData[district] = (districtsData[district] || 0) + (count as number);
+          });
+        }
+      });
+      
+      // Top 동 합계/비율 계산
+      const sortedDistricts = Object.entries(districtsData).sort((a, b) => b[1] - a[1]);
+      const topDistrictsSum = sortedDistricts.slice(0, 7).reduce((sum, [, count]) => sum + count, 0);
+      const top3DistrictsSum = sortedDistricts.slice(0, 3).reduce((sum, [, count]) => sum + count, 0);
+      const topDistrictsRatio = totalNewPatients > 0 ? (topDistrictsSum / totalNewPatients) * 100 : 0;
+      const top3DistrictsRatio = totalNewPatients > 0 ? (top3DistrictsSum / totalNewPatients) * 100 : 0;
+      
+      result.unshift({  // ⭐ unshift로 앞에 추가 (시간순 유지)
+        week_start: periodStart,
+        week_end: periodEnd,
+        period_label: `${periodStart} ~ ${periodEnd.slice(5)}`,
+        period_weeks: periodWeeks,
+        closed_days: totalClosedDays,
+        working_days: workingDays,
+        total_revenue: totalRevenue,
+        revenue_change_percent: 0,
+        new_patients: totalNewPatients,
+        new_patients_change_percent: 0,
+        first_visit_patients: totalFirstVisit,
+        first_visit_patients_change_percent: 0,
+        return_patients: totalReturn,
+        return_patients_change_percent: 0,
+        total_patients: totalPatients,
+        total_patients_change_percent: 0,
+        age_groups: ageGroups,
+        top_districts_data: districtsData,
+        top_districts_sum: topDistrictsSum,
+        top_districts_ratio: topDistrictsRatio,
+        top_3_districts_sum: top3DistrictsSum,
+        top_3_districts_ratio: top3DistrictsRatio,
+      });
+    }
+    
+    // 증감률 계산
+    for (let i = 1; i < result.length; i++) {
+      const prev = result[i - 1];
+      const curr = result[i];
+      
+      const calcChange = (current: number, previous: number) => {
+        if (previous === 0) return null;
+        return ((current - previous) / previous) * 100;
+      };
+      
+      curr.revenue_change_percent = calcChange(curr.total_revenue, prev.total_revenue) || 0;
+      curr.new_patients_change_percent = calcChange(curr.new_patients, prev.new_patients) || 0;
+      curr.first_visit_patients_change_percent = calcChange(curr.first_visit_patients, prev.first_visit_patients) || 0;
+      curr.return_patients_change_percent = calcChange(curr.return_patients, prev.return_patients) || 0;
+      curr.total_patients_change_percent = calcChange(curr.total_patients, prev.total_patients) || 0;
+    }
+    
+    return result;
+  }, [weeklyStats, is4WeekMode]);
 
-      // 일평균 값 계산
+  // ⭐ 표시할 데이터 (1주 or 4주)
+  const displayStats = useMemo(() => {
+    return is4WeekMode ? aggregated4WeekStats : weeklyStats;
+  }, [is4WeekMode, aggregated4WeekStats, weeklyStats]);
+
+  // ⭐ 일평균 데이터 계산 (수정됨)
+  const calculateDailyStats = useMemo(() => {
+    return displayStats.map((stat, index) => {
+      const workingDays = is4WeekMode 
+        ? (stat as AggregatedStat).working_days 
+        : getWorkingDays(stat.closed_days);
+      const prevStat = index > 0 ? displayStats[index - 1] : null;
+      const prevWorkingDays = prevStat 
+        ? (is4WeekMode 
+            ? (prevStat as AggregatedStat).working_days 
+            : getWorkingDays(prevStat.closed_days))
+        : null;
+
       const dailyRevenue = Math.round(stat.total_revenue / workingDays);
       const dailyNewPatients = stat.new_patients / workingDays;
       const dailyFirstVisit = stat.first_visit_patients / workingDays;
       const dailyReturn = stat.return_patients / workingDays;
       const dailyTotal = stat.total_patients / workingDays;
 
-      // 이전 주 일평균
       const prevDailyRevenue = prevStat && prevWorkingDays ? Math.round(prevStat.total_revenue / prevWorkingDays) : null;
       const prevDailyNewPatients = prevStat && prevWorkingDays ? prevStat.new_patients / prevWorkingDays : null;
       const prevDailyFirstVisit = prevStat && prevWorkingDays ? prevStat.first_visit_patients / prevWorkingDays : null;
       const prevDailyReturn = prevStat && prevWorkingDays ? prevStat.return_patients / prevWorkingDays : null;
       const prevDailyTotal = prevStat && prevWorkingDays ? prevStat.total_patients / prevWorkingDays : null;
 
-      // 일평균 기준 증감률 계산
       const calcChangePercent = (current: number, prev: number | null) => {
         if (prev === null || prev === 0) return null;
         return ((current - prev) / prev) * 100;
@@ -337,27 +445,26 @@ export const AdminDashboard: React.FC = () => {
         ...stat,
         working_days: workingDays,
         revenue_per_patient: getRevenuePerPatient(stat.total_revenue, stat.total_patients),
-        // 일평균 값
         daily_revenue: dailyRevenue,
         daily_new_patients: dailyNewPatients,
         daily_first_visit: dailyFirstVisit,
         daily_return: dailyReturn,
         daily_total: dailyTotal,
-        // 일평균 기준 증감률
         daily_revenue_change: calcChangePercent(dailyRevenue, prevDailyRevenue),
         daily_new_patients_change: calcChangePercent(dailyNewPatients, prevDailyNewPatients),
         daily_first_visit_change: calcChangePercent(dailyFirstVisit, prevDailyFirstVisit),
         daily_return_change: calcChangePercent(dailyReturn, prevDailyReturn),
         daily_total_change: calcChangePercent(dailyTotal, prevDailyTotal),
-        // 객단가 증감률
         prev_revenue_per_patient: prevStat ? getRevenuePerPatient(prevStat.total_revenue, prevStat.total_patients) : null,
       };
     });
-  }, [weeklyStats]);
+  }, [displayStats, is4WeekMode]);
 
-  // 차트 데이터
-  const chartData = weeklyStats.map(stat => ({
-    week: stat.week_start.slice(5),
+  // 차트 데이터 (수정됨)
+  const chartData = displayStats.map(stat => ({
+    week: is4WeekMode 
+      ? `${stat.week_start.slice(5)}~${stat.week_end.slice(5)}`
+      : stat.week_start.slice(5),
     매출: stat.total_revenue,
     신환: stat.new_patients,
     초진: stat.first_visit_patients,
@@ -365,13 +472,13 @@ export const AdminDashboard: React.FC = () => {
     전체환자: stat.total_patients,
   }));
 
-  // 각 지표별 최대값 계산
+  // 각 지표별 최대값 계산 (수정됨)
   const maxRevenue = useMemo(() => {
     if (isDailyAverage) {
       return Math.max(...calculateDailyStats.map(stat => stat.daily_revenue), 1);
     }
-    return Math.max(...weeklyStats.map(stat => stat.total_revenue), 1);
-  }, [weeklyStats, calculateDailyStats, isDailyAverage]);
+    return Math.max(...displayStats.map(stat => stat.total_revenue), 1);
+  }, [displayStats, calculateDailyStats, isDailyAverage]);
 
   const maxRevenuePerPatient = useMemo(() => {
     return Math.max(...calculateDailyStats.map(stat => stat.revenue_per_patient), 1);
@@ -381,48 +488,48 @@ export const AdminDashboard: React.FC = () => {
     if (isDailyAverage) {
       return Math.max(...calculateDailyStats.map(stat => stat.daily_new_patients), 1);
     }
-    return Math.max(...weeklyStats.map(stat => stat.new_patients), 1);
-  }, [weeklyStats, calculateDailyStats, isDailyAverage]);
+    return Math.max(...displayStats.map(stat => stat.new_patients), 1);
+  }, [displayStats, calculateDailyStats, isDailyAverage]);
 
   const maxFirstVisitPatients = useMemo(() => {
     if (isDailyAverage) {
       return Math.max(...calculateDailyStats.map(stat => stat.daily_first_visit), 1);
     }
-    return Math.max(...weeklyStats.map(stat => stat.first_visit_patients), 1);
-  }, [weeklyStats, calculateDailyStats, isDailyAverage]);
+    return Math.max(...displayStats.map(stat => stat.first_visit_patients), 1);
+  }, [displayStats, calculateDailyStats, isDailyAverage]);
 
   const maxReturnPatients = useMemo(() => {
     if (isDailyAverage) {
       return Math.max(...calculateDailyStats.map(stat => stat.daily_return), 1);
     }
-    return Math.max(...weeklyStats.map(stat => stat.return_patients), 1);
-  }, [weeklyStats, calculateDailyStats, isDailyAverage]);
+    return Math.max(...displayStats.map(stat => stat.return_patients), 1);
+  }, [displayStats, calculateDailyStats, isDailyAverage]);
 
   const maxTotalPatients = useMemo(() => {
     if (isDailyAverage) {
       return Math.max(...calculateDailyStats.map(stat => stat.daily_total), 1);
     }
-    return Math.max(...weeklyStats.map(stat => stat.total_patients), 1);
-  }, [weeklyStats, calculateDailyStats, isDailyAverage]);
+    return Math.max(...displayStats.map(stat => stat.total_patients), 1);
+  }, [displayStats, calculateDailyStats, isDailyAverage]);
 
-  // ⭐ 각 연령대별 최대값 계산
+  // ⭐ 각 연령대별 최대값 계산 (수정됨)
   const maxAgeByGroup = useMemo(() => {
     const ageGroups = ['0', '10', '20', '30', '40', '50', '60', '70+'];
     const result: Record<string, number> = {};
     
     ageGroups.forEach(age => {
-      const values = weeklyStats.map(stat => stat.age_groups?.[age] || 0);
+      const values = displayStats.map(stat => stat.age_groups?.[age] || 0);
       result[age] = Math.max(...values, 1);
     });
     
     return result;
-  }, [weeklyStats]);
+  }, [displayStats]);
 
-  // ⭐ Top 7 동 이름 추출
+  // ⭐ Top 7 동 이름 추출 (수정됨)
   const topDistricts = useMemo(() => {
     const districtTotal: Record<string, number> = {};
     
-    weeklyStats.forEach(stat => {
+    displayStats.forEach(stat => {
       if (stat.top_districts_data) {
         Object.entries(stat.top_districts_data).forEach(([district, count]) => {
           districtTotal[district] = (districtTotal[district] || 0) + (count as number);
@@ -434,19 +541,19 @@ export const AdminDashboard: React.FC = () => {
       .sort((a, b) => b[1] - a[1])
       .slice(0, 7)
       .map(([name]) => name);
-  }, [weeklyStats]);
+  }, [displayStats]);
 
-  // ⭐ 각 동별 최대값 계산
+  // ⭐ 각 동별 최대값 계산 (수정됨)
   const maxByDistrict = useMemo(() => {
     const result: Record<string, number> = {};
     
     topDistricts.forEach(district => {
-      const values = weeklyStats.map(stat => stat.top_districts_data?.[district] || 0);
+      const values = displayStats.map(stat => stat.top_districts_data?.[district] || 0);
       result[district] = Math.max(...values, 1);
     });
     
     return result;
-  }, [weeklyStats, topDistricts]);
+  }, [displayStats, topDistricts]);
 
   const weekOptions = allWeeklyStats.map((stat, index) => ({
     index,
@@ -466,24 +573,47 @@ export const AdminDashboard: React.FC = () => {
               </p>
             )}
           </div>
-          <button
-            onClick={handleLogout}
-            style={{
-              padding: '8px 16px',
-              fontSize: '13px',
-              color: '#6b7280',
-              backgroundColor: 'transparent',
-              border: '1px solid #e5e7eb',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-            }}
-          >
-            로그아웃
-          </button>
+          {/* ⭐ 버튼 그룹 */}
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            {/* 🗺️ 위치 분석 버튼 추가 */}
+            <button
+              onClick={() => navigate('/admin/hospital-map')}
+              style={{
+                padding: '8px 16px',
+                fontSize: '13px',
+                fontWeight: 500,
+                color: '#fff',
+                backgroundColor: '#10b981',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              🗺️ 위치 분석
+            </button>
+            
+            <button
+              onClick={handleLogout}
+              style={{
+                padding: '8px 16px',
+                fontSize: '13px',
+                color: '#6b7280',
+                backgroundColor: 'transparent',
+                border: '1px solid #e5e7eb',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              로그아웃
+            </button>
+          </div>
         </div>
-      </div>
-
+      </div>          
       <div style={{ padding: '32px 48px' }}>
         {/* 병원 선택 탭 */}
         <div style={{ backgroundColor: '#fff', borderRadius: '8px', marginBottom: '24px', overflowX: 'auto', border: '1px solid #e5e7eb' }}>
@@ -567,6 +697,47 @@ export const AdminDashboard: React.FC = () => {
               </div>
             </div>
 
+            {/* ⭐ 1주/4주 단위 토글 추가 */}
+            <div>
+              <label style={{ display: 'block', fontSize: '13px', color: '#6b7280', marginBottom: '10px' }}>
+                집계 단위
+              </label>
+              <div style={{ display: 'flex', gap: '4px', backgroundColor: '#f3f4f6', borderRadius: '8px', padding: '4px' }}>
+                <button
+                  onClick={() => setIs4WeekMode(false)}
+                  style={{
+                    padding: '8px 16px',
+                    fontSize: '13px',
+                    fontWeight: 500,
+                    color: !is4WeekMode ? '#fff' : '#6b7280',
+                    backgroundColor: !is4WeekMode ? '#374151' : 'transparent',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  1주
+                </button>
+                <button
+                  onClick={() => setIs4WeekMode(true)}
+                  style={{
+                    padding: '8px 16px',
+                    fontSize: '13px',
+                    fontWeight: 500,
+                    color: is4WeekMode ? '#fff' : '#6b7280',
+                    backgroundColor: is4WeekMode ? '#374151' : 'transparent',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  4주
+                </button>
+              </div>
+            </div>
+
             <button
               onClick={handleUpdateStats}
               disabled={loading || !selectedHospital}
@@ -600,11 +771,11 @@ export const AdminDashboard: React.FC = () => {
           )}
         </div>
 
-        {loading && weeklyStats.length === 0 ? (
+        {loading && displayStats.length === 0 ? (
           <div style={{ backgroundColor: '#fff', borderRadius: '8px', padding: '64px', textAlign: 'center', border: '1px solid #e5e7eb' }}>
             <p style={{ color: '#6b7280', fontSize: '14px' }}>로딩 중...</p>
           </div>
-        ) : weeklyStats.length === 0 ? (
+        ) : displayStats.length === 0 ? (
           <div style={{ backgroundColor: '#fff', borderRadius: '8px', padding: '64px', textAlign: 'center', border: '1px solid #e5e7eb' }}>
             <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '16px' }}>통계 데이터가 없습니다</p>
             <button
@@ -628,7 +799,9 @@ export const AdminDashboard: React.FC = () => {
             {/* 차트 섹션 */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px', marginBottom: '24px' }}>
               <div style={{ backgroundColor: '#fff', borderRadius: '8px', padding: '24px', border: '1px solid #e5e7eb' }}>
-                <h3 style={{ fontSize: '14px', fontWeight: 500, color: '#374151', marginBottom: '16px' }}>매출 추이</h3>
+                <h3 style={{ fontSize: '14px', fontWeight: 500, color: '#374151', marginBottom: '16px' }}>
+                  매출 추이 {is4WeekMode && <span style={{ color: '#6b7280', fontWeight: 400 }}>(4주 단위)</span>}
+                </h3>
                 <ResponsiveContainer width="100%" height={220}>
                   <LineChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -652,7 +825,9 @@ export const AdminDashboard: React.FC = () => {
               {/* ⭐ 환자 수 추이 차트 with 토글 */}
               <div style={{ backgroundColor: '#fff', borderRadius: '8px', padding: '24px', border: '1px solid #e5e7eb' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                  <h3 style={{ fontSize: '14px', fontWeight: 500, color: '#374151' }}>환자 수 추이</h3>
+                  <h3 style={{ fontSize: '14px', fontWeight: 500, color: '#374151' }}>
+                    환자 수 추이 {is4WeekMode && <span style={{ color: '#6b7280', fontWeight: 400 }}>(4주 단위)</span>}
+                  </h3>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button
                       onClick={() => setShowNewPatients(!showNewPatients)}
@@ -724,7 +899,7 @@ export const AdminDashboard: React.FC = () => {
               {/* 테이블 상단 토글 */}
               <div style={{ padding: '16px 24px', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: '14px', fontWeight: 500, color: '#374151' }}>
-                  주간 통계 {isDailyAverage && <span style={{ color: '#6b7280', fontWeight: 400 }}>(일평균)</span>}
+                  {is4WeekMode ? '4주 단위 통계' : '주간 통계'} {isDailyAverage && <span style={{ color: '#6b7280', fontWeight: 400 }}>(일평균)</span>}
                 </span>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                   <span style={{ fontSize: '12px', color: '#6b7280' }}>표시 기준:</span>
@@ -742,7 +917,7 @@ export const AdminDashboard: React.FC = () => {
                       transition: 'all 0.15s ease',
                     }}
                   >
-                    주간 합계
+                    {is4WeekMode ? '4주 합계' : '주간 합계'}
                   </button>
                   <button
                     onClick={() => setIsDailyAverage(true)}
@@ -833,7 +1008,6 @@ export const AdminDashboard: React.FC = () => {
                   </thead>
                   <tbody>
                     {[...calculateDailyStats].reverse().map((stat, index) => {
-                      // 일평균/주간합계에 따른 값 선택
                       const displayRevenue = isDailyAverage ? stat.daily_revenue : stat.total_revenue;
                       const displayRevenueChange = isDailyAverage ? stat.daily_revenue_change : stat.revenue_change_percent;
                       const displayNewPatients = isDailyAverage ? stat.daily_new_patients : stat.new_patients;
@@ -845,7 +1019,6 @@ export const AdminDashboard: React.FC = () => {
                       const displayTotal = isDailyAverage ? stat.daily_total : stat.total_patients;
                       const displayTotalChange = isDailyAverage ? stat.daily_total_change : stat.total_patients_change_percent;
                       
-                      // 객단가 증감률 계산
                       const revenuePerPatientChange = stat.prev_revenue_per_patient && stat.prev_revenue_per_patient > 0
                         ? ((stat.revenue_per_patient - stat.prev_revenue_per_patient) / stat.prev_revenue_per_patient) * 100
                         : null;
@@ -855,6 +1028,11 @@ export const AdminDashboard: React.FC = () => {
                         <td style={{ position: 'sticky', left: 0, zIndex: 10, backgroundColor: '#fff', padding: '12px 16px', whiteSpace: 'nowrap', fontSize: '11px', fontWeight: 500, color: '#374151', borderRight: '1px solid #e5e7eb', minWidth: '130px' }}>
                           {stat.week_start}<br/>
                           <span style={{ color: '#9ca3af' }}>~ {stat.week_end.slice(5)}</span>
+                          {is4WeekMode && (
+                            <span style={{ display: 'block', color: '#3b82f6', fontSize: '10px', marginTop: '2px' }}>
+                              ({(stat as AggregatedStat).period_weeks}주)
+                            </span>
+                          )}
                         </td>
                         
                         {/* 영업일 */}
