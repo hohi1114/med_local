@@ -656,9 +656,6 @@ export const AdminDashboard: React.FC = () => {
               <span style={{ fontSize: '13px', fontWeight: 500, color: '#374151' }}>
                 병원 선택
               </span>
-              <span style={{ fontSize: '12px', color: '#6b7280' }}>
-                ({hospitals.length}개)
-              </span>
               {!isHospitalSelectorOpen && selectedHospital && (
                 <span style={{ 
                   fontSize: '12px', 
