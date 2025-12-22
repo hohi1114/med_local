@@ -53,12 +53,19 @@ function App() {
         }
         />
 
+
+
         {/* 일반 사용자 페이지 (BaseLayout 적용) */}
         <Route path="/" element={<BaseLayout />}>
           <Route index element={<Navigate to="dashboard" replace />} />
 
           <Route path="dashboard" element={<DashBoardPage />} />
-          <Route path="/admin/map" element={<HospitalMapAnalysisPage />} />
+          <Route path="map"  element={
+              <NaverScriptLoader>
+                <MapByRegionPage />
+              </NaverScriptLoader>
+            }
+          />
           <Route
             path="statistics-by-region"
             element={<StatisticsByRegionPage />}

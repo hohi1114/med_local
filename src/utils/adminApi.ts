@@ -47,6 +47,11 @@ class AdminAPI {
     return apiRequest('post', '/stats/admin/calculate-all-top-districts');
   }
 
+  async calculateTopDistricts(hospitalName: string): Promise<AdminApiResponse> {
+    return apiRequest('post', '/stats/admin/calculate-top-districts', { hospitalName });
+  }
+
+
   async updateHospitalStats(hospitalName: string): Promise<AdminApiResponse> {
     return apiRequest('post', '/stats/admin/update-hospital-stats', { hospitalName });
   }

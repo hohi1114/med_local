@@ -197,6 +197,11 @@ export const AdminDashboard: React.FC = () => {
   // ⭐ 4주 단위 모드 토글
   const [is4WeekMode, setIs4WeekMode] = useState(false);
 
+
+  // 1. state 추가 (기존 state들 근처에)
+  const [isHospitalSelectorOpen, setIsHospitalSelectorOpen] = useState(true);
+ 
+
   useEffect(() => {
     checkAdminAuth();
     loadHospitals();
@@ -282,6 +287,22 @@ export const AdminDashboard: React.FC = () => {
       setLoading(false);
     }
   };
+
+  const handleCalculateTopDistricts = async () => {
+  if (!selectedHospital) return;
+  
+  setLoading(true);
+  setMessage('');
+  try {
+    await adminAPI.calculateTopDistricts(selectedHospital);
+    setMessage('지역 업데이트 완료');
+    await loadWeeklyStats(selectedHospital);
+  } catch (error: any) {
+    setMessage(`오류: ${error.message}`);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleLogout = () => {
     logout();
@@ -616,29 +637,78 @@ export const AdminDashboard: React.FC = () => {
       </div>          
       <div style={{ padding: '32px 48px' }}>
         {/* 병원 선택 탭 */}
-        <div style={{ backgroundColor: '#fff', borderRadius: '8px', marginBottom: '24px', overflowX: 'auto', border: '1px solid #e5e7eb' }}>
-          <div style={{ display: 'flex' }}>
-            {hospitals.map((hospital) => (
-              <button
-                key={hospital.id}
-                onClick={() => setSelectedHospital(hospital.name)}
-                style={{
-                  padding: '14px 24px',
-                  fontSize: '13px',
-                  fontWeight: selectedHospital === hospital.name ? 600 : 400,
-                  color: selectedHospital === hospital.name ? '#111827' : '#9ca3af',
-                  backgroundColor: 'transparent',
-                  border: 'none',
-                  borderBottom: selectedHospital === hospital.name ? '2px solid #111827' : '2px solid transparent',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {hospital.name}
-              </button>
-            ))}
+        {/* 병원 선택 탭 */}
+        <div style={{ backgroundColor: '#fff', borderRadius: '8px', marginBottom: '24px', border: '1px solid #e5e7eb' }}>
+          {/* 헤더 (항상 보임) */}
+          <div 
+            onClick={() => setIsHospitalSelectorOpen(!isHospitalSelectorOpen)}
+            style={{ 
+              padding: '14px 20px', 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              cursor: 'pointer',
+              borderBottom: isHospitalSelectorOpen ? '1px solid #e5e7eb' : 'none',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ fontSize: '13px', fontWeight: 500, color: '#374151' }}>
+                병원 선택
+              </span>
+              <span style={{ fontSize: '12px', color: '#6b7280' }}>
+                ({hospitals.length}개)
+              </span>
+              {!isHospitalSelectorOpen && selectedHospital && (
+                <span style={{ 
+                  fontSize: '12px', 
+                  color: '#fff', 
+                  backgroundColor: '#374151',
+                  padding: '4px 10px',
+                  borderRadius: '4px',
+                  fontWeight: 500,
+                }}>
+                  {selectedHospital}
+                </span>
+              )}
+            </div>
+            <span style={{ 
+              fontSize: '12px', 
+              color: '#9ca3af',
+              transform: isHospitalSelectorOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+              transition: 'transform 0.2s ease',
+            }}>
+              ▼
+            </span>
           </div>
+          
+          {/* 병원 목록 (접기/펼치기) */}
+          {isHospitalSelectorOpen && (
+            <div style={{ overflowX: 'auto' }}>
+              <div style={{ display: 'flex' }}>
+                {hospitals.map((hospital) => (
+                  <button
+                    key={hospital.id}
+                    onClick={() => setSelectedHospital(hospital.name)}
+                    style={{
+                      padding: '14px 24px',
+                      fontSize: '13px',
+                      fontWeight: selectedHospital === hospital.name ? 600 : 400,
+                      color: selectedHospital === hospital.name ? '#111827' : '#9ca3af',
+                      backgroundColor: 'transparent',
+                      border: 'none',
+                      borderBottom: selectedHospital === hospital.name ? '2px solid #111827' : '2px solid transparent',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {hospital.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 주차 범위 선택 & 액션 버튼 */}
@@ -646,7 +716,7 @@ export const AdminDashboard: React.FC = () => {
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: '24px' }}>
             <div style={{ flex: 1, minWidth: '300px' }}>
               <label style={{ display: 'block', fontSize: '13px', color: '#6b7280', marginBottom: '10px' }}>
-                기간 선택 ({allWeeklyStats.length}주)
+                기간 선택({allWeeklyStats.length}주)
               </label>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                 <select
@@ -755,6 +825,29 @@ export const AdminDashboard: React.FC = () => {
             >
               {loading ? '업데이트 중...' : '통계 업데이트'}
             </button>
+
+
+            <button
+              onClick={handleCalculateTopDistricts}
+              disabled={loading || !selectedHospital}
+              style={{
+                padding: '10px 20px',
+                fontSize: '13px',
+                fontWeight: 500,
+                color: '#fff',
+                backgroundColor: loading || !selectedHospital ? '#d1d5db' : '#6366f1',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: loading || !selectedHospital ? 'not-allowed' : 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              {loading ? '업데이트 중...' : '지역 업데이트'}
+            </button>
+
+
+
+
           </div>
 
           {message && (
