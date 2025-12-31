@@ -862,6 +862,14 @@ export async function processDataLocallyVegas(
 }
 
 
+function toLocalDateString(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+
 export async function processDataLocallyDoctorP(
   mergedData: MergedDataDoctorP[],
   accessToken: string,
@@ -1002,9 +1010,9 @@ export async function processDataLocallyDoctorP(
 
       // Format date as a consistent string
       const dateStr =
-        typeof visitDate === "string"
-          ? visitDate
-          : new Date(visitDate).toISOString().split("T")[0];
+      typeof visitDate === "string"
+        ? visitDate
+        : toLocalDateString(new Date(visitDate));
 
       // Initialize the array for this date if it doesn't exist
       if (!dateLocationMap.has(dateStr)) {

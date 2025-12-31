@@ -1,6 +1,5 @@
 
 import * as XLSX from "xlsx";
-import { excelSerialToDate } from "../ExcelParser";
 import { normalizeAge } from "../ExcelParser";
 import { DailyIncomeBit,PatientListBit } from "./bitExcel";
 
@@ -61,9 +60,9 @@ for (const buffer of fileBuffers) {
   // 이제 이 text는 완벽한 UTF-8 문자열!
   console.log("첫 번째 줄 미리보기:", text.split("\n")[0]); // 디버깅용
     // CSV → Workbook → 첫 번째 시트
-    const workbook = XLSX.read(text, { type: "string" });
+    const workbook = XLSX.read(text, { type: "string", raw:true });
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-    const rows: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
+    const rows: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" , raw:true});
 
     if (rows.length < 2) {
       console.error("Insufficient rows in CSV");
@@ -175,9 +174,6 @@ export async function parsePatientListBit2(
       continue;
     }
 
-    console.log(
-      `✅ Found columns - 차트번호: ${chartNumberIndex}, 나이: ${ageIndex}, 초재진구분: ${visitTypeIndex}, 내원날짜: ${visitDateIndex}, 담당의: ${doctorIndex}, 주소: ${addressIndex}`
-    );
 
     // Process data rows (starting from row 2, index 1)
     for (let i = 1; i < allData.length; i++) {
@@ -236,44 +232,54 @@ export async function parsePatientListBit2(
           visitType = "신환";
         }
       }
-
-      // Process visit date (내원날짜) - 추가!
       let visitDate = row[visitDateIndex];
       
-      if (typeof visitDate === "string") {
-        // Handle formats like "2025.12.1" or "2025-12-01" or "2025년 12월 01일" or "20251201"
-        if (visitDate.includes("년") && visitDate.includes("월") && visitDate.includes("일")) {
-          const match = visitDate.match(/(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일/);
-          if (match) {
-            const [, year, month, day] = match;
-            visitDate = `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+
+        if (typeof visitDate === "string") {
+          // Handle formats like "2025.12.1" or "2025-12-01" or "2025년 12월 01일" or "20251201"
+          if (visitDate.includes("년") && visitDate.includes("월") && visitDate.includes("일")) {
+          
+            const match = visitDate.match(/(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일/);
+            if (match) {
+              const [, year, month, day] = match;
+              visitDate = `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+            }
+          } else if (visitDate.includes(".")) {
+          
+            // Format "2025.12.1" → "2025-12-01"
+            const parts = visitDate.split(".");
+            if (parts.length === 3) {
+              visitDate = `${parts[0]}-${parts[1].padStart(2, "0")}-${parts[2].padStart(2, "0")}`;
+            }
+          } else if (visitDate.includes("/")) {
+          
+            // Format "2025/12/1" → "2025-12-01"
+            const parts = visitDate.split("/");
+            if (parts.length === 3) {
+              visitDate = `${parts[0]}-${parts[1].padStart(2, "0")}-${parts[2].padStart(2, "0")}`;
+            }
+          } else if (/^\d{8}$/.test(visitDate)) {
+          
+            // Format "20251201" → "2025-12-01"
+            visitDate = parseYyyymmdd(visitDate);
+          } else {
+            
           }
-        } else if (visitDate.includes(".")) {
-          // Format "2025.12.1" → "2025-12-01"
-          const parts = visitDate.split(".");
-          if (parts.length === 3) {
-            visitDate = `${parts[0]}-${parts[1].padStart(2, "0")}-${parts[2].padStart(2, "0")}`;
+        } else if (typeof visitDate === "number") {
+        
+          // Excel serial date or YYYYMMDD number
+          if (visitDate > 19000000 && visitDate < 21000000) {
+            
+            // Looks like YYYYMMDD
+            visitDate = parseYyyymmdd(visitDate);
+          } else {
+          
+            // Excel serial
+            visitDate = excelSerialToDate(visitDate);
           }
-        } else if (visitDate.includes("/")) {
-          // Format "2025/12/1" → "2025-12-01"
-          const parts = visitDate.split("/");
-          if (parts.length === 3) {
-            visitDate = `${parts[0]}-${parts[1].padStart(2, "0")}-${parts[2].padStart(2, "0")}`;
-          }
-        } else if (/^\d{8}$/.test(visitDate)) {
-          // Format "20251201" → "2025-12-01"
-          visitDate = parseYyyymmdd(visitDate);
-        }
-      } else if (typeof visitDate === "number") {
-        // Excel serial date or YYYYMMDD number
-        if (visitDate > 19000000 && visitDate < 21000000) {
-          // Looks like YYYYMMDD
-          visitDate = parseYyyymmdd(visitDate);
         } else {
-          // Excel serial
-          visitDate = excelSerialToDate(visitDate);
         }
-      }
+      
 
       // Process doctor
       const doctor = row[doctorIndex] ? String(row[doctorIndex]).trim() : "";
@@ -294,9 +300,42 @@ export async function parsePatientListBit2(
 
       data.push(patientData);
     }
-
-    console.log(`✅ Processed ${data.length} records from PatientListBit2 file`);
   }
 
   return data;
+}
+
+export function excelSerialToDate(serial: number): string {
+  // Input validation
+  if (serial < 0) {
+    throw new Error("Invalid Excel serial date: cannot be negative");
+  }
+
+  if (serial < 1) {
+    throw new Error(
+      "Invalid Excel serial date: cannot represent dates before 1900-01-01"
+    );
+  }
+
+  // Adjust for Excel's leap year bug
+  // Serial number 60 in Excel represents the non-existent Feb 29, 1900
+  let adjustedSerial = serial;
+  if (serial >= 60) {
+    adjustedSerial = serial - 1;
+  }
+
+  // Calculate the date
+  const millisecondsPerDay = 24 * 60 * 60 * 1000;
+  // Excel dates start from December 30, 1899 (day 0 in Excel)
+  const baseDate = new Date(Date.UTC(1899, 11, 30));
+  const targetDate = new Date(
+    baseDate.getTime() + (adjustedSerial + 1) * millisecondsPerDay  // +1 추가
+  );
+
+  // Format the date as YYYY-MM-DD using UTC to avoid timezone issues
+  const year = targetDate.getUTCFullYear();
+  const month = String(targetDate.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(targetDate.getUTCDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }

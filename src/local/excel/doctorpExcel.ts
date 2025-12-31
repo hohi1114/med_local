@@ -17,28 +17,35 @@ export interface PatientListDoctorP {
 
 // 날짜 정규화 헬퍼 함수
 function normalizeDate(dateValue: any): string {
+  let date: Date;
+
   // Excel 시리얼 넘버인 경우
   if (typeof dateValue === "number") {
     const excelDate = XLSX.SSF.parse_date_code(dateValue);
     if (excelDate) {
-      return `${excelDate.y}-${String(excelDate.m).padStart(2, "0")}-${String(
-        excelDate.d
-      ).padStart(2, "0")}`;
+      date = new Date(excelDate.y, excelDate.m - 1, excelDate.d);
+    } else {
+      return String(dateValue);
     }
   }
-
   // 문자열인 경우 (2025-12-13 형식)
-  if (typeof dateValue === "string") {
-    return dateValue.trim();
+  else if (typeof dateValue === "string") {
+    date = new Date(dateValue.trim());
   }
-
   // Date 객체인 경우
-  if (dateValue instanceof Date && !isNaN(dateValue.getTime())) {
-    return dateValue.toISOString().split("T")[0];
+  else if (dateValue instanceof Date && !isNaN(dateValue.getTime())) {
+    date = dateValue;
+  }
+  // 변환 실패 시 원본 반환
+  else {
+    return String(dateValue);
   }
 
-  // 변환 실패 시 원본 반환
-  return String(dateValue);
+  // 로컬 날짜 문자열 반환
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 // 나이 정규화 헬퍼 함수

@@ -846,16 +846,20 @@ export function mergeDataBit(
   dailyIncome: DailyIncomeBit[],
   patientList: PatientListBit[]
 ): MergedDataBit[] {
-  // Normalize dates to YYYY-MM-DD format for comparison
+  
   const normalizeDate = (date: string | Date): string => {
     if (date instanceof Date) {
       return date.toISOString().split('T')[0];
     }
-    // Already a string, ensure it's in YYYY-MM-DD format
-    return String(date).split('T')[0]; // Remove time part if exists
+    const d = new Date(date);
+    if (!isNaN(d.getTime())) {
+      return d.toISOString().split('T')[0];
+    }
+    return String(date).split('T')[0];
   };
 
-  // Build a two-level Map: chartNumber + visitDate -> patient data
+  const normalizeChartNumber = (cn: number | string): string => String(cn);
+
   const patientMapByDateAndChart = new Map<string, {
     age: number | null;
     address: string;
@@ -863,48 +867,57 @@ export function mergeDataBit(
     doctor: string;
   }>();
 
-  // Build a fallback Map: chartNumber only -> patient data (use most recent)
-  const patientMapByChart = new Map<number, {
+  const patientFirstVisitByChart = new Map<string, {
+    visitDate: string;
     age: number | null;
     address: string;
     visitType: string;
     doctor: string;
   }>();
 
-  // Populate both maps
   for (const pat of patientList) {
     const normalizedDate = normalizeDate(pat.visitDate);
-    const key = `${pat.chartNumber}_${normalizedDate}`;
+    const normalizedChart = normalizeChartNumber(pat.chartNumber);
+    const key = `${normalizedChart}_${normalizedDate}`;
     
-    patientMapByDateAndChart.set(key, {
+    const patientData = {
       age: pat.age,
       address: pat.address || "N/D",
       visitType: pat.visitType,
       doctor: pat.doctor || "N/D",
-    });
+    };
 
-    // For fallback, keep the most recent or just overwrite
-    patientMapByChart.set(pat.chartNumber, {
-      age: pat.age,
-      address: pat.address || "N/D",
-      visitType: pat.visitType,
-      doctor: pat.doctor || "N/D",
-    });
+    patientMapByDateAndChart.set(key, patientData);
+
+    if (!patientFirstVisitByChart.has(normalizedChart)) {
+      patientFirstVisitByChart.set(normalizedChart, {
+        visitDate: normalizedDate,
+        ...patientData,
+      });
+    }
   }
 
-  // Create merged data from dailyIncome
+
+
   const df_merged = dailyIncome.map((income) => {
     const normalizedIncomeDate = normalizeDate(income.visitDate);
-    const key = `${income.chartNumber}_${normalizedIncomeDate}`;
+    const normalizedChart = normalizeChartNumber(income.chartNumber);
+    const key = `${normalizedChart}_${normalizedIncomeDate}`;
     
-    // Try to match by chartNumber + visitDate first
+    // 1차: 정확한 매칭
     let patientData = patientMapByDateAndChart.get(key);
     
-    // If no match, fallback to chartNumber only
+    // 2차: fallback
     if (!patientData) {
-      patientData = patientMapByChart.get(income.chartNumber);
-      if (patientData) {
-        console.log(`⚠️ Using chartNumber-only match for ${income.chartNumber} on ${normalizedIncomeDate}`);
+      const firstVisit = patientFirstVisitByChart.get(normalizedChart);
+      if (firstVisit) {
+        patientData = {
+          age: firstVisit.age,
+          address: firstVisit.address,
+          visitType: "재진",
+          doctor: firstVisit.doctor,
+        };
+      
       }
     }
 
@@ -918,7 +931,7 @@ export function mergeDataBit(
       doctor: patientData?.doctor ?? "N/D",
     };
   });
-
-  console.log(`✅ Merged ${df_merged.length} records`);
+  
+  
   return df_merged;
 }
