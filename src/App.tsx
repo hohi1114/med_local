@@ -22,6 +22,7 @@ import PatientComparisonPage from "./pages/PatientComparisonPage";
 // ⭐ Admin 페이지 import
 import { AdminLogin } from "./pages/AdminLogin";
 import { AdminDashboard } from "./pages/AdminDashboard";
+import { ReportBuilderPage } from "./pages/ReportBuilderPage";
 
 function App() {
   const { fetchUserInfo } = useUpdateUserInfo();
@@ -45,6 +46,7 @@ function App() {
         {/* ⭐ Admin 라우트 (BaseLayout 없이 독립적으로) */}
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/admin/report-builder" element={<ReportBuilderPage />} />
         <Route path="/admin/patient-comparison" element={<PatientComparisonPage />} />
         <Route path="/admin/hospital-map" element={
           <NaverScriptLoader>

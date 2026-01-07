@@ -596,7 +596,28 @@ export const AdminDashboard: React.FC = () => {
           </div>
           {/* ⭐ 버튼 그룹 */}
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            {/* 🗺️ 위치 분석 버튼 추가 */}
+            {/* 📊 보고서 생성 버튼 */}
+            <button
+              onClick={() => navigate('/admin/report-builder')}
+              style={{
+                padding: '8px 16px',
+                fontSize: '13px',
+                fontWeight: 500,
+                color: '#fff',
+                backgroundColor: '#8b5cf6',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              📊 보고서 생성
+            </button>
+
+            {/* 🗺️ 위치 분석 버튼 */}
             <button
               onClick={() => navigate('/admin/hospital-map')}
               style={{
@@ -616,7 +637,7 @@ export const AdminDashboard: React.FC = () => {
             >
               🗺️ 위치 분석
             </button>
-            
+
             <button
               onClick={handleLogout}
               style={{
