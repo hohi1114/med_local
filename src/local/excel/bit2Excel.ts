@@ -15,7 +15,26 @@ function parseYyyymmdd(dateInput: string | number): string {
   return str; // fallback
 }
 
-import { Buffer } from "buffer"; // Electron은 기본 있음
+/**
+ * 파일이 Excel 바이너리 파일인지 확인 (xlsx, xls)
+ * xlsx: PK 시그니처 (ZIP 파일)
+ * xls: D0 CF 11 E0 시그니처 (OLE2 compound document)
+ */
+function isExcelBinaryFile(buffer: ArrayBuffer): boolean {
+  const uint8 = new Uint8Array(buffer);
+
+  // xlsx 파일 (ZIP 포맷): PK.. 시그니처
+  if (uint8[0] === 0x50 && uint8[1] === 0x4B) {
+    return true;
+  }
+
+  // xls 파일 (OLE2): D0 CF 11 E0 시그니처
+  if (uint8[0] === 0xD0 && uint8[1] === 0xCF && uint8[2] === 0x11 && uint8[3] === 0xE0) {
+    return true;
+  }
+
+  return false;
+}
 
 /**
  * 한국 병원 전산 파일(특히 BIT2) 전용 디코더
@@ -39,30 +58,31 @@ function decodeKoreanHospitalFile(buffer: ArrayBuffer): string {
   return new TextDecoder(encoder).decode(uint8);
 }
 
+/**
+ * 파일 타입에 따라 적절한 방법으로 Workbook 파싱
+ */
+function parseFileToWorkbook(buffer: ArrayBuffer): XLSX.WorkBook {
+  if (isExcelBinaryFile(buffer)) {
+    // xlsx/xls 바이너리 파일
+    return XLSX.read(buffer, { type: "array" });
+  } else {
+    // CSV/텍스트 파일 (UTF-16LE 등)
+    const text = decodeKoreanHospitalFile(buffer);
+    console.log("첫 번째 줄 미리보기:", text.split("\n")[0]);
+    return XLSX.read(text, { type: "string", raw: true });
+  }
+}
+
 export async function parseDailyIncomeBit2(
   fileBuffers: ArrayBuffer[]
 ): Promise<DailyIncomeBit[]> {
   const data: DailyIncomeBit[] = [];
-  
-for (const buffer of fileBuffers) {
-  let text: string;
 
-  try {
-    // 첫 번째 시도: 한국 병원 전산 전용 디코더 (이게 정답!)
-    text = decodeKoreanHospitalFile(buffer);
-  } catch (e) {
-    console.warn("UTF-16 실패 → CP949로 재시도");
-    // 만약에 UTF-16이 아니면 CP949 fallback
-    const { default: iconv } = await import("iconv-lite");
-    text = iconv.decode(Buffer.from(buffer), "cp949");
-  }
-
-  // 이제 이 text는 완벽한 UTF-8 문자열!
-  console.log("첫 번째 줄 미리보기:", text.split("\n")[0]); // 디버깅용
-    // CSV → Workbook → 첫 번째 시트
-    const workbook = XLSX.read(text, { type: "string", raw:true });
+  for (const buffer of fileBuffers) {
+    // 파일 타입에 따라 자동 분기 처리 (xlsx/xls/csv)
+    const workbook = parseFileToWorkbook(buffer);
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-    const rows: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" , raw:true});
+    const rows: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "", raw: true });
 
     if (rows.length < 2) {
       console.error("Insufficient rows in CSV");
@@ -119,21 +139,8 @@ export async function parsePatientListBit2(
   const data: PatientListBit[] = [];
 
   for (const buffer of fileBuffers) {
-    let text: string;
-
-    try {
-      // 첫 번째 시도: 한국 병원 전산 전용 디코더
-      text = decodeKoreanHospitalFile(buffer);
-    } catch (e) {
-      console.warn("UTF-16 실패 → CP949로 재시도");
-      const { default: iconv } = await import("iconv-lite");
-      text = iconv.decode(Buffer.from(buffer), "cp949");
-    }
-
-    console.log("첫 번째 줄 미리보기:", text.split("\n")[0]);
-
-    // CSV → Workbook → 첫 번째 시트
-    const workbook = XLSX.read(text, { type: "string" });
+    // 파일 타입에 따라 자동 분기 처리 (xlsx/xls/csv)
+    const workbook = parseFileToWorkbook(buffer);
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
     const allData: any[] = XLSX.utils.sheet_to_json(worksheet, {
       header: 1,

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { adminAPI } from '../utils/adminApi';
 import { generateWeeklyTrendChart, generateAgeAnalysisChart, generateWeeklyAgeHeatmapChart, generateAreaComparisonChart, generateWeeklyRegionHeatmapChart, generateWeeklyAreaConcentrationChart } from '../utils/chartGenerator';
 import { generateSummaryInterpretation, generateAgeInterpretation, generateWeeklyAgeTrendInterpretation, generateRegionInterpretation, generateWeeklyRegionTrendInterpretation, generateWeeklyAreaConcentrationInterpretation } from '../utils/openai';
+import { getMarketingCalendar, MarketingCalendarEntry, getNotionDatabases, addNotionDatabase, deleteNotionDatabase, NotionDatabaseRecord } from '../utils/notionApi';
 
 interface Hospital {
   id: string;
@@ -59,6 +60,14 @@ export const ReportBuilderPage: React.FC = () => {
   const [periodBStart, setPeriodBStart] = useState('');
   const [periodBEnd, setPeriodBEnd] = useState('');
 
+  // Notion Database ID (채널별 유입 성과용)
+  const [notionDatabaseId, setNotionDatabaseId] = useState('');
+  const [savedNotionDatabases, setSavedNotionDatabases] = useState<NotionDatabaseRecord[]>([]);
+  const [showAddDbModal, setShowAddDbModal] = useState(false);
+  const [newDbId, setNewDbId] = useState('');
+  const [newDbName, setNewDbName] = useState('');
+  const [addingDb, setAddingDb] = useState(false);
+
   // 보고서 섹션 상태
   const [sections, setSections] = useState<ReportSection[]>([
     {
@@ -88,6 +97,14 @@ export const ReportBuilderPage: React.FC = () => {
     {
       id: 'region_analysis',
       title: '유입 추이 분석 - 지역별',
+      enabled: false,
+      generated: false,
+      includedInPdf: false,
+      contentHtml: '',
+    },
+    {
+      id: 'channel_performance',
+      title: '채널별 유입 성과 보고',
       enabled: false,
       generated: false,
       includedInPdf: false,
@@ -136,21 +153,86 @@ export const ReportBuilderPage: React.FC = () => {
       const reversedStats = stats.reverse();
       setWeeklyStats(reversedStats);
 
-      // 최근 4주를 기본 Period A로 설정
+      // 최근 4주를 기본 Period A로 설정 (시작~종료 모두 week_start 사용)
       if (reversedStats.length >= 4) {
         setPeriodAStart(reversedStats[reversedStats.length - 4].week_start);
-        setPeriodAEnd(reversedStats[reversedStats.length - 1].week_end);
+        setPeriodAEnd(reversedStats[reversedStats.length - 1].week_start);
       }
 
-      // 그 이전 4주를 Period B로 설정
+      // 그 이전 4주를 Period B로 설정 (시작~종료 모두 week_start 사용)
       if (reversedStats.length >= 8) {
         setPeriodBStart(reversedStats[reversedStats.length - 8].week_start);
-        setPeriodBEnd(reversedStats[reversedStats.length - 5].week_end);
+        setPeriodBEnd(reversedStats[reversedStats.length - 5].week_start);
+      }
+
+      // 선택된 병원의 user_id로 Notion DB 목록 로드
+      const hospital = hospitals.find(h => h.name === hospitalName);
+      if (hospital) {
+        loadNotionDatabases(hospital.id);
       }
     } catch (error) {
       console.error('Failed to load stats:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Notion Database 목록 로드
+  const loadNotionDatabases = async (userId: string) => {
+    try {
+      const databases = await getNotionDatabases(userId);
+      setSavedNotionDatabases(databases);
+      // 첫 번째 DB가 있으면 자동 선택, 없으면 초기화
+      if (databases.length > 0) {
+        setNotionDatabaseId(databases[0].database_id);
+      } else {
+        setNotionDatabaseId('');
+      }
+    } catch (error) {
+      console.error('Failed to load Notion databases:', error);
+      setSavedNotionDatabases([]);
+      setNotionDatabaseId('');
+    }
+  };
+
+  // Notion Database 추가
+  const handleAddNotionDatabase = async () => {
+    if (!newDbId.trim()) return;
+
+    const hospital = hospitals.find(h => h.name === selectedHospital);
+    if (!hospital) return;
+
+    setAddingDb(true);
+    try {
+      await addNotionDatabase(hospital.id, newDbId.trim(), newDbName.trim() || undefined);
+      await loadNotionDatabases(hospital.id);
+      setNewDbId('');
+      setNewDbName('');
+      setShowAddDbModal(false);
+    } catch (error: any) {
+      alert(error.message || 'Database 추가 중 오류가 발생했습니다.');
+    } finally {
+      setAddingDb(false);
+    }
+  };
+
+  // Notion Database 삭제
+  const handleDeleteNotionDatabase = async (id: string) => {
+    if (!confirm('이 Database를 삭제하시겠습니까?')) return;
+
+    try {
+      await deleteNotionDatabase(id);
+      const hospital = hospitals.find(h => h.name === selectedHospital);
+      if (hospital) {
+        await loadNotionDatabases(hospital.id);
+      }
+      // 삭제된 DB가 선택된 경우 초기화
+      const deletedDb = savedNotionDatabases.find(db => db.id === id);
+      if (deletedDb && notionDatabaseId === deletedDb.database_id) {
+        setNotionDatabaseId('');
+      }
+    } catch (error: any) {
+      alert(error.message || 'Database 삭제 중 오류가 발생했습니다.');
     }
   };
 
@@ -166,20 +248,30 @@ export const ReportBuilderPage: React.FC = () => {
   // 선택된 섹션 가져오기
   const selectedSection = sections.find(s => s.id === selectedSectionId);
 
+  // 선택된 week_start에 해당하는 week_end 찾기 (종료일은 해당 주의 끝까지 포함)
+  const getWeekEnd = (weekStart: string): string => {
+    const stat = weeklyStats.find(s => s.week_start === weekStart);
+    return stat ? stat.week_end : weekStart;
+  };
+
   // 개요 생성 함수
   const generateOverview = (): string => {
     if (!selectedHospital || !periodAStart || !periodAEnd) {
       return '<p>병원과 기간을 선택해주세요.</p>';
     }
 
+    // 종료일을 해당 주의 week_end로 변환
+    const actualPeriodAEnd = getWeekEnd(periodAEnd);
+    const actualPeriodBEnd = getWeekEnd(periodBEnd);
+
     // Period A 데이터 집계
     const periodAStats = weeklyStats.filter(
-      (stat) => stat.week_start >= periodAStart && stat.week_end <= periodAEnd
+      (stat) => stat.week_start >= periodAStart && stat.week_end <= actualPeriodAEnd
     );
 
     // Period B 데이터 집계
     const periodBStats = weeklyStats.filter(
-      (stat) => stat.week_start >= periodBStart && stat.week_end <= periodBEnd
+      (stat) => stat.week_start >= periodBStart && stat.week_end <= actualPeriodBEnd
     );
 
     if (periodAStats.length === 0) {
@@ -204,7 +296,7 @@ export const ReportBuilderPage: React.FC = () => {
         <tbody>
           <tr>
             <td style="background-color: #f3f4f6; font-weight: 600; width: 120px;">분석 기간</td>
-            <td>${formatDate(periodAStart)} – ${formatDate(periodAEnd)} (${periodADays}일)</td>
+            <td>${formatDate(periodAStart)} – ${formatDate(actualPeriodAEnd)} (${periodADays}일)</td>
           </tr>
           <tr>
             <td style="background-color: #f3f4f6; font-weight: 600;">휴무일</td>
@@ -213,7 +305,7 @@ export const ReportBuilderPage: React.FC = () => {
           ${hasComparisonPeriod ? `
           <tr>
             <td style="background-color: #f3f4f6; font-weight: 600;">비교 기간</td>
-            <td>${formatDate(periodBStart)} – ${formatDate(periodBEnd)} (${periodBDays}일)</td>
+            <td>${formatDate(periodBStart)} – ${formatDate(actualPeriodBEnd)} (${periodBDays}일)</td>
           </tr>
           <tr>
             <td style="background-color: #f3f4f6; font-weight: 600;">휴무일 (비교)</td>
@@ -227,11 +319,15 @@ export const ReportBuilderPage: React.FC = () => {
 
   // 요약 섹션 생성 (차트 포함)
   const generateSummaryWithChart = async (): Promise<string> => {
+    // 종료일을 해당 주의 week_end로 변환
+    const actualPeriodAEnd = getWeekEnd(periodAEnd);
+    const actualPeriodBEnd = getWeekEnd(periodBEnd);
+
     const periodAStats = weeklyStats.filter(
-      (stat) => stat.week_start >= periodAStart && stat.week_end <= periodAEnd
+      (stat) => stat.week_start >= periodAStart && stat.week_end <= actualPeriodAEnd
     );
     const periodBStats = weeklyStats.filter(
-      (stat) => stat.week_start >= periodBStart && stat.week_end <= periodBEnd
+      (stat) => stat.week_start >= periodBStart && stat.week_end <= actualPeriodBEnd
     );
 
     if (periodAStats.length === 0) {
@@ -395,8 +491,8 @@ export const ReportBuilderPage: React.FC = () => {
 
     allWeeks.forEach((stat, idx) => {
       const weekLabel = formatWeekLabel(stat.week_start);
-      const isInPeriodA = stat.week_start >= periodAStart && stat.week_end <= periodAEnd;
-      const isInPeriodB = stat.week_start >= periodBStart && stat.week_end <= periodBEnd;
+      const isInPeriodA = stat.week_start >= periodAStart && stat.week_end <= actualPeriodAEnd;
+      const isInPeriodB = stat.week_start >= periodBStart && stat.week_end <= actualPeriodBEnd;
 
       // A기간에 속하면 연한 초록, B기간에 속하면 연한 핑크
       let rowStyle = '';
@@ -451,8 +547,8 @@ export const ReportBuilderPage: React.FC = () => {
     // AI 해석 생성
     try {
       const summaryInterpretation = await generateSummaryInterpretation({
-        periodALabel: `${periodAStart} ~ ${periodAEnd}`,
-        periodBLabel: `${periodBStart} ~ ${periodBEnd}`,
+        periodALabel: `${periodAStart} ~ ${actualPeriodAEnd}`,
+        periodBLabel: `${periodBStart} ~ ${actualPeriodBEnd}`,
         periodA: {
           totalRevenue: periodA.revenue,
           newPatients: periodA.newPatients,
@@ -488,11 +584,15 @@ export const ReportBuilderPage: React.FC = () => {
 
   // 연령대별 분석 생성
   const generateAgeAnalysis = async (): Promise<string> => {
+    // 종료일을 해당 주의 week_end로 변환
+    const actualPeriodAEnd = getWeekEnd(periodAEnd);
+    const actualPeriodBEnd = getWeekEnd(periodBEnd);
+
     const periodAStats = weeklyStats.filter(
-      (stat) => stat.week_start >= periodAStart && stat.week_end <= periodAEnd
+      (stat) => stat.week_start >= periodAStart && stat.week_end <= actualPeriodAEnd
     );
     const periodBStats = weeklyStats.filter(
-      (stat) => stat.week_start >= periodBStart && stat.week_end <= periodBEnd
+      (stat) => stat.week_start >= periodBStart && stat.week_end <= actualPeriodBEnd
     );
 
     if (periodAStats.length === 0) {
@@ -605,8 +705,8 @@ export const ReportBuilderPage: React.FC = () => {
     // AI 해석 생성
     try {
       const ageInterpretation = await generateAgeInterpretation({
-        periodALabel: `${periodAStart} ~ ${periodAEnd}`,
-        periodBLabel: `${periodBStart} ~ ${periodBEnd}`,
+        periodALabel: `${periodAStart} ~ ${actualPeriodAEnd}`,
+        periodBLabel: `${periodBStart} ~ ${actualPeriodBEnd}`,
         periodA: periodAAge,
         periodB: periodBAge,
       });
@@ -636,7 +736,7 @@ export const ReportBuilderPage: React.FC = () => {
 
     const weeks = allPeriodStats.map(stat => formatWeekLabel(stat.week_start));
     const periodLabels = allPeriodStats.map(stat => {
-      const isInPeriodA = stat.week_start >= periodAStart && stat.week_end <= periodAEnd;
+      const isInPeriodA = stat.week_start >= periodAStart && stat.week_end <= actualPeriodAEnd;
       return isInPeriodA ? 'A' : 'B';
     });
     const ages = ['0', '10', '20', '30', '40', '50', '60', '70+'];
@@ -710,7 +810,7 @@ export const ReportBuilderPage: React.FC = () => {
     // 주별 신환 추이 AI 해석 생성
     try {
       const weeklyAgeTrendData = allPeriodStats.map(stat => {
-        const isInPeriodA = stat.week_start >= periodAStart && stat.week_end <= periodAEnd;
+        const isInPeriodA = stat.week_start >= periodAStart && stat.week_end <= actualPeriodAEnd;
         return {
           week: formatWeekLabel(stat.week_start),
           period: isInPeriodA ? 'A' as const : 'B' as const,
@@ -719,8 +819,8 @@ export const ReportBuilderPage: React.FC = () => {
       });
 
       const weeklyAgeTrendInterpretation = await generateWeeklyAgeTrendInterpretation({
-        periodALabel: `${periodAStart} ~ ${periodAEnd}`,
-        periodBLabel: `${periodBStart} ~ ${periodBEnd}`,
+        periodALabel: `${periodAStart} ~ ${actualPeriodAEnd}`,
+        periodBLabel: `${periodBStart} ~ ${actualPeriodBEnd}`,
         weeklyData: weeklyAgeTrendData,
       });
 
@@ -735,11 +835,15 @@ export const ReportBuilderPage: React.FC = () => {
 
   // 지역별 분석 생성
   const generateRegionAnalysis = async (): Promise<string> => {
+    // 종료일을 해당 주의 week_end로 변환
+    const actualPeriodAEnd = getWeekEnd(periodAEnd);
+    const actualPeriodBEnd = getWeekEnd(periodBEnd);
+
     const periodAStats = weeklyStats.filter(
-      (stat) => stat.week_start >= periodAStart && stat.week_end <= periodAEnd
+      (stat) => stat.week_start >= periodAStart && stat.week_end <= actualPeriodAEnd
     );
     const periodBStats = weeklyStats.filter(
-      (stat) => stat.week_start >= periodBStart && stat.week_end <= periodBEnd
+      (stat) => stat.week_start >= periodBStart && stat.week_end <= actualPeriodBEnd
     );
 
     if (periodAStats.length === 0) {
@@ -862,8 +966,8 @@ export const ReportBuilderPage: React.FC = () => {
     // AI 해석 생성
     try {
       const regionInterpretation = await generateRegionInterpretation({
-        periodALabel: `${periodAStart} ~ ${periodAEnd}`,
-        periodBLabel: `${periodBStart} ~ ${periodBEnd}`,
+        periodALabel: `${periodAStart} ~ ${actualPeriodAEnd}`,
+        periodBLabel: `${periodBStart} ~ ${actualPeriodBEnd}`,
         top7: sortedDistricts.map(d => ({
           name: d.name.split(' ').pop() || d.name,
           countA: d.countA,
@@ -965,7 +1069,7 @@ export const ReportBuilderPage: React.FC = () => {
     // 주별 지역별 AI 해석 생성
     try {
       const weeklyRegionTrendData = allPeriodStats.map(stat => {
-        const isInPeriodA = stat.week_start >= periodAStart && stat.week_end <= periodAEnd;
+        const isInPeriodA = stat.week_start >= periodAStart && stat.week_end <= actualPeriodAEnd;
         const regionCounts: Record<string, number> = {};
         sortedDistricts.forEach(district => {
           const shortName = district.name.split(' ').pop() || district.name;
@@ -979,8 +1083,8 @@ export const ReportBuilderPage: React.FC = () => {
       });
 
       const weeklyRegionTrendInterpretation = await generateWeeklyRegionTrendInterpretation({
-        periodALabel: `${periodAStart} ~ ${periodAEnd}`,
-        periodBLabel: `${periodBStart} ~ ${periodBEnd}`,
+        periodALabel: `${periodAStart} ~ ${actualPeriodAEnd}`,
+        periodBLabel: `${periodBStart} ~ ${actualPeriodBEnd}`,
         regions: topRegionNames,
         weeklyData: weeklyRegionTrendData,
       });
@@ -1086,7 +1190,7 @@ export const ReportBuilderPage: React.FC = () => {
     // 주별 TOP3/TOP7 집중도 AI 해석 생성
     try {
       const weeklyConcentrationData = allPeriodStats.map((stat, idx) => {
-        const isInPeriodA = stat.week_start >= periodAStart && stat.week_end <= periodAEnd;
+        const isInPeriodA = stat.week_start >= periodAStart && stat.week_end <= actualPeriodAEnd;
         return {
           week: formatWeekLabel(stat.week_start),
           period: isInPeriodA ? 'A' as const : 'B' as const,
@@ -1099,8 +1203,8 @@ export const ReportBuilderPage: React.FC = () => {
       });
 
       const concentrationInterpretation = await generateWeeklyAreaConcentrationInterpretation({
-        periodALabel: `${periodAStart} ~ ${periodAEnd}`,
-        periodBLabel: `${periodBStart} ~ ${periodBEnd}`,
+        periodALabel: `${periodAStart} ~ ${actualPeriodAEnd}`,
+        periodBLabel: `${periodBStart} ~ ${actualPeriodBEnd}`,
         weeklyData: weeklyConcentrationData,
       });
 
@@ -1110,6 +1214,215 @@ export const ReportBuilderPage: React.FC = () => {
       html += '<p style="margin-top: 16px;"><em>주별 TOP3/TOP7 집중도 추이에 대한 해석을 여기에 작성하세요...</em></p>';
     }
 
+    return html;
+  };
+
+  // 채널별 유입 성과 보고 생성
+  const generateChannelPerformance = async (): Promise<string> => {
+    let html = '<h2>3. 채널별 유입 성과 보고</h2>';
+
+    if (!notionDatabaseId) {
+      html += `
+        <div style="background-color: #fef3c7; padding: 16px; border: 1px solid #f59e0b; border-radius: 8px; margin: 16px 0;">
+          <p style="color: #92400e; margin: 0;">
+            Notion Database ID가 설정되지 않았습니다. 아래 입력란에 Notion Database ID를 입력해주세요.
+          </p>
+        </div>
+      `;
+      return html;
+    }
+
+    try {
+      // 종료일을 해당 주의 week_end로 변환
+      const actualPeriodAEnd = getWeekEnd(periodAEnd);
+      const actualPeriodBEnd = getWeekEnd(periodBEnd);
+
+      const calendarData = await getMarketingCalendar(
+        notionDatabaseId,
+        periodAStart,
+        actualPeriodAEnd,
+        periodBStart,
+        actualPeriodBEnd
+      );
+
+      if (calendarData.periodA.length === 0 && calendarData.periodB.length === 0) {
+        html += '<p>해당 기간에 마케팅 캘린더 데이터가 없습니다.</p>';
+        return html;
+      }
+
+      // 날짜 포맷 함수
+      const formatPeriodDate = (date: string) => date.replace(/-/g, '.');
+
+      // A기간 타임라인 표
+      if (calendarData.periodA.length > 0) {
+        html += generateTimelineTable(calendarData.periodA, `A기간 마케팅 활동 (${formatPeriodDate(periodAStart)} ~ ${formatPeriodDate(actualPeriodAEnd)})`);
+      }
+
+      // B기간 타임라인 표
+      if (calendarData.periodB.length > 0) {
+        html += generateTimelineTable(calendarData.periodB, `B기간 마케팅 활동 (${formatPeriodDate(periodBStart)} ~ ${formatPeriodDate(actualPeriodBEnd)})`);
+      }
+
+      // 컨텐츠 종류별 통계 (A기간만)
+      html += generateContentTypeStats(calendarData.periodA);
+
+      return html;
+    } catch (error) {
+      console.error('채널별 유입 성과 생성 오류:', error);
+      html += `
+        <div style="background-color: #fee2e2; padding: 16px; border: 1px solid #fca5a5; border-radius: 8px; margin: 16px 0;">
+          <p style="color: #991b1b; margin: 0;">
+            Notion 데이터를 불러오는 중 오류가 발생했습니다. Notion Database ID와 API 연동 설정을 확인해주세요.
+          </p>
+        </div>
+      `;
+      return html;
+    }
+  };
+
+  // Type별 색상 맵 (Notion 스타일)
+  const getTypeStyle = (type: string): string => {
+    const typeColorMap: Record<string, { bg: string; text: string }> = {
+      // 분홍 (pink)
+      '특이사항': { bg: '#fce7f3', text: '#9d174d' },
+      // 갈색 (brown)
+      '월간 전략': { bg: '#fef3c7', text: '#92400e' },
+      '주간 모니터링': { bg: '#fef3c7', text: '#92400e' },
+      '주요 원내 일정': { bg: '#fef3c7', text: '#92400e' },
+      // 초록 (green)
+      '블로그': { bg: '#d1fae5', text: '#065f46' },
+      // 주황 (orange)
+      '디자인': { bg: '#ffedd5', text: '#9a3412' },
+      // 빨강 (red)
+      '악성 리뷰': { bg: '#fee2e2', text: '#991b1b' },
+      // 보라 (purple)
+      '플레이스 리뷰': { bg: '#ede9fe', text: '#5b21b6' },
+      '플레이스 콘텐츠': { bg: '#ede9fe', text: '#5b21b6' },
+      '플레이스 순위': { bg: '#ede9fe', text: '#5b21b6' },
+      // 파랑 (blue)
+      'META 광고': { bg: '#dbeafe', text: '#1e40af' },
+      '플레이스 광고': { bg: '#dbeafe', text: '#1e40af' },
+      // 노랑 (yellow)
+      '커뮤니티 마케팅': { bg: '#fef9c3', text: '#854d0e' },
+      '미팅': { bg: '#fef9c3', text: '#854d0e' },
+      // 회색 (gray)
+      '오프라인 마케팅': { bg: '#f3f4f6', text: '#374151' },
+      '의료광고심의': { bg: '#f3f4f6', text: '#374151' },
+    };
+
+    const colors = typeColorMap[type] || { bg: '#f3f4f6', text: '#374151' };
+    return `background-color: ${colors.bg}; color: ${colors.text}; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; display: inline-block;`;
+  };
+
+  // 일자별 타임라인 표 생성
+  const generateTimelineTable = (entries: MarketingCalendarEntry[], title: string): string => {
+    if (entries.length === 0) return '';
+
+    // 날짜순 정렬
+    const sortedEntries = [...entries].sort((a, b) =>
+      new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+
+    let html = `<h3 style="margin-top: 24px;">${title}</h3>`;
+    html += `
+      <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%; margin: 16px 0;">
+        <thead>
+          <tr style="background-color: #f3f4f6;">
+            <th style="width: 100px;">날짜</th>
+            <th style="width: 120px;">Type</th>
+            <th style="width: 80px;">진행 현황</th>
+            <th>제목</th>
+            <th style="width: 100px;">담당자</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    sortedEntries.forEach(entry => {
+      // 상태에 따른 배경색
+      let statusStyle = '';
+      const statusLower = entry.status.toLowerCase();
+      if (statusLower.includes('완료') || statusLower.includes('done') || statusLower.includes('complete')) {
+        statusStyle = 'background-color: #d1fae5; color: #065f46;';
+      } else if (statusLower.includes('진행') || statusLower.includes('progress') || statusLower.includes('ing')) {
+        statusStyle = 'background-color: #fef3c7; color: #92400e;';
+      } else if (statusLower.includes('예정') || statusLower.includes('todo') || statusLower.includes('plan') || statusLower.includes('시작 전')) {
+        statusStyle = 'background-color: #f3f4f6; color: #374151;';
+      } else if (statusLower.includes('보류')) {
+        statusStyle = 'background-color: #fee2e2; color: #991b1b;';
+      }
+
+      const formattedDate = entry.date ? entry.date.replace(/-/g, '.') : '-';
+      const typeHtml = entry.type ? `<span style="${getTypeStyle(entry.type)}">${entry.type}</span>` : '-';
+
+      html += `
+        <tr>
+          <td style="font-weight: 500;">${formattedDate}</td>
+          <td>${typeHtml}</td>
+          <td style="${statusStyle} text-align: center; font-weight: 500;">${entry.status || '-'}</td>
+          <td>${entry.title || '-'}</td>
+          <td>${entry.assignee || '-'}</td>
+        </tr>
+      `;
+    });
+
+    html += '</tbody></table>';
+    return html;
+  };
+
+  // 컨텐츠 종류별 통계 생성 (A기간만)
+  const generateContentTypeStats = (periodA: MarketingCalendarEntry[]): string => {
+    // 컨텐츠 종류별 카운트
+    const statsA: Record<string, number> = {};
+
+    periodA.forEach(entry => {
+      if (entry.type) {
+        statsA[entry.type] = (statsA[entry.type] || 0) + 1;
+      }
+    });
+
+    // 내림차순 정렬 (많이 한 순서)
+    const sortedTypes = Object.entries(statsA)
+      .sort((a, b) => b[1] - a[1])
+      .map(([type]) => type);
+
+    if (sortedTypes.length === 0) return '';
+
+    let html = '<h3 style="margin-top: 32px;">컨텐츠 종류별 활동 현황</h3>';
+    html += `
+      <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%; margin: 16px 0;">
+        <thead>
+          <tr style="background-color: #f3f4f6;">
+            <th style="width: 200px;">컨텐츠 종류</th>
+            <th style="width: 100px;">활동 수</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    sortedTypes.forEach(type => {
+      const count = statsA[type] || 0;
+      const typeHtml = `<span style="${getTypeStyle(type)}">${type}</span>`;
+
+      html += `
+        <tr>
+          <td>${typeHtml}</td>
+          <td style="text-align: center; font-weight: 500;">${count}건</td>
+        </tr>
+      `;
+    });
+
+    // 합계 행
+    const totalA = periodA.length;
+
+    html += `
+      <tr style="background-color: #f9fafb; font-weight: 600;">
+        <td>합계</td>
+        <td style="text-align: center;">${totalA}건</td>
+      </tr>
+    `;
+
+    html += '</tbody></table>';
     return html;
   };
 
@@ -1151,6 +1464,9 @@ export const ReportBuilderPage: React.FC = () => {
           break;
         case 'region_analysis':
           content = await generateRegionAnalysis();
+          break;
+        case 'channel_performance':
+          content = await generateChannelPerformance();
           break;
         case 'conclusion':
           content = generateConclusion();
@@ -1303,8 +1619,8 @@ export const ReportBuilderPage: React.FC = () => {
         </div>
 
         <div class="period-info">
-          <strong>분석 기간 (A):</strong> ${periodAStart} ~ ${periodAEnd}<br/>
-          <strong>비교 기간 (B):</strong> ${periodBStart} ~ ${periodBEnd}
+          <strong>분석 기간 (A):</strong> ${periodAStart} ~ ${getWeekEnd(periodAEnd)}<br/>
+          <strong>비교 기간 (B):</strong> ${periodBStart} ~ ${getWeekEnd(periodBEnd)}
         </div>
 
         ${includedSections.map(section => section.contentHtml).join('\n\n')}
@@ -1435,8 +1751,8 @@ export const ReportBuilderPage: React.FC = () => {
                 >
                   <option value="">종료 주</option>
                   {weeklyStats.map((stat) => (
-                    <option key={stat.id} value={stat.week_end}>
-                      {stat.week_end}
+                    <option key={stat.id} value={stat.week_start}>
+                      {stat.week_start}
                     </option>
                   ))}
                 </select>
@@ -1489,14 +1805,188 @@ export const ReportBuilderPage: React.FC = () => {
                 >
                   <option value="">종료 주</option>
                   {weeklyStats.map((stat) => (
-                    <option key={stat.id} value={stat.week_end}>
-                      {stat.week_end}
+                    <option key={stat.id} value={stat.week_start}>
+                      {stat.week_start}
                     </option>
                   ))}
                 </select>
               </div>
             </div>
-            <div></div>
+            {/* Notion Database 선택 */}
+            <div>
+              <label style={{ display: 'block', fontSize: '13px', color: '#6b7280', marginBottom: '8px', fontWeight: 500 }}>
+                Notion Database (채널별 유입 성과용)
+              </label>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                <div style={{ flex: 1 }}>
+                  <select
+                    value={notionDatabaseId}
+                    onChange={(e) => setNotionDatabaseId(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '6px',
+                      fontSize: '13px',
+                      color: '#374151',
+                      backgroundColor: '#fff',
+                    }}
+                    disabled={loading}
+                  >
+                    <option value="">Database 선택</option>
+                    {savedNotionDatabases.map((db) => (
+                      <option key={db.id} value={db.database_id}>
+                        {db.database_name || db.database_id.substring(0, 8) + '...'}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <button
+                  onClick={() => setShowAddDbModal(true)}
+                  style={{
+                    padding: '10px 14px',
+                    fontSize: '13px',
+                    fontWeight: 500,
+                    color: '#fff',
+                    backgroundColor: '#3b82f6',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                  }}
+                  disabled={loading}
+                >
+                  + 추가
+                </button>
+              </div>
+              {savedNotionDatabases.length > 0 && notionDatabaseId && (
+                <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '11px', color: '#6b7280' }}>
+                    선택됨: {savedNotionDatabases.find(db => db.database_id === notionDatabaseId)?.database_name || notionDatabaseId.substring(0, 16) + '...'}
+                  </span>
+                  <button
+                    onClick={() => {
+                      const db = savedNotionDatabases.find(d => d.database_id === notionDatabaseId);
+                      if (db) handleDeleteNotionDatabase(db.id);
+                    }}
+                    style={{
+                      padding: '2px 6px',
+                      fontSize: '10px',
+                      color: '#ef4444',
+                      backgroundColor: 'transparent',
+                      border: '1px solid #ef4444',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    삭제
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Notion Database 추가 모달 */}
+            {showAddDbModal && (
+              <div style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: 'rgba(0,0,0,0.5)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 1000,
+              }}>
+                <div style={{
+                  backgroundColor: '#fff',
+                  padding: '24px',
+                  borderRadius: '12px',
+                  width: '400px',
+                  maxWidth: '90%',
+                }}>
+                  <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>
+                    Notion Database 추가
+                  </h3>
+                  <div style={{ marginBottom: '12px' }}>
+                    <label style={{ display: 'block', fontSize: '13px', color: '#6b7280', marginBottom: '4px' }}>
+                      Database ID *
+                    </label>
+                    <input
+                      type="text"
+                      value={newDbId}
+                      onChange={(e) => setNewDbId(e.target.value)}
+                      placeholder="예: 2ca7117064f4807d9e97..."
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '13px',
+                      }}
+                    />
+                  </div>
+                  <div style={{ marginBottom: '16px' }}>
+                    <label style={{ display: 'block', fontSize: '13px', color: '#6b7280', marginBottom: '4px' }}>
+                      Database 이름 (선택)
+                    </label>
+                    <input
+                      type="text"
+                      value={newDbName}
+                      onChange={(e) => setNewDbName(e.target.value)}
+                      placeholder="예: 마케팅 캘린더"
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '13px',
+                      }}
+                    />
+                    <p style={{ fontSize: '11px', color: '#9ca3af', marginTop: '4px' }}>
+                      비워두면 Notion에서 자동으로 가져옵니다
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                    <button
+                      onClick={() => {
+                        setShowAddDbModal(false);
+                        setNewDbId('');
+                        setNewDbName('');
+                      }}
+                      style={{
+                        padding: '10px 16px',
+                        fontSize: '13px',
+                        color: '#6b7280',
+                        backgroundColor: '#f3f4f6',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      취소
+                    </button>
+                    <button
+                      onClick={handleAddNotionDatabase}
+                      disabled={addingDb || !newDbId.trim()}
+                      style={{
+                        padding: '10px 16px',
+                        fontSize: '13px',
+                        fontWeight: 500,
+                        color: '#fff',
+                        backgroundColor: addingDb || !newDbId.trim() ? '#9ca3af' : '#3b82f6',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: addingDb || !newDbId.trim() ? 'not-allowed' : 'pointer',
+                      }}
+                    >
+                      {addingDb ? '추가 중...' : '추가'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
