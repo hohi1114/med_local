@@ -638,6 +638,27 @@ export const AdminDashboard: React.FC = () => {
               🗺️ 위치 분석
             </button>
 
+            {/* 💬 리뷰 코칭 버튼 */}
+            <button
+              onClick={() => navigate('/admin/review-coaching')}
+              style={{
+                padding: '8px 16px',
+                fontSize: '13px',
+                fontWeight: 500,
+                color: '#fff',
+                backgroundColor: '#f59e0b',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              💬 리뷰 코칭
+            </button>
+
             <button
               onClick={handleLogout}
               style={{

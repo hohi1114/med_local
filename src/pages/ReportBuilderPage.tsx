@@ -1,9 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { adminAPI } from '../utils/adminApi';
+import { adminAPI, BlogAccount, BlogKeywordsData } from '../utils/adminApi';
+import { getCookie } from '../utils/api/cookie';
 import { generateWeeklyTrendChart, generateAgeAnalysisChart, generateWeeklyAgeHeatmapChart, generateAreaComparisonChart, generateWeeklyRegionHeatmapChart, generateWeeklyAreaConcentrationChart } from '../utils/chartGenerator';
-import { generateSummaryInterpretation, generateAgeInterpretation, generateWeeklyAgeTrendInterpretation, generateRegionInterpretation, generateWeeklyRegionTrendInterpretation, generateWeeklyAreaConcentrationInterpretation } from '../utils/openai';
+import { generateSummaryInterpretation, generateAgeInterpretation, generateWeeklyAgeTrendInterpretation, generateRegionInterpretation, generateWeeklyRegionTrendInterpretation, generateWeeklyAreaConcentrationInterpretation, generateSmartplaceInterpretation, generateBlogInterpretation } from '../utils/openai';
 import { getMarketingCalendar, MarketingCalendarEntry, getNotionDatabases, addNotionDatabase, deleteNotionDatabase, NotionDatabaseRecord } from '../utils/notionApi';
+import { NotionDbModal, ReportHeader, SectionList, SectionEditor } from '../components/report';
+
+interface AnalyticsHospital {
+  hospital_id: string;
+  name: string;
+}
 
 interface Hospital {
   id: string;
@@ -68,6 +75,15 @@ export const ReportBuilderPage: React.FC = () => {
   const [newDbName, setNewDbName] = useState('');
   const [addingDb, setAddingDb] = useState(false);
 
+  // 새 DB (Analytics) 병원 상태
+  const [analyticsHospitals, setAnalyticsHospitals] = useState<AnalyticsHospital[]>([]);
+  const [analyticsHospitalId, setAnalyticsHospitalId] = useState('');
+
+  // 블로그 계정 상태
+  const [blogAccounts, setBlogAccounts] = useState<BlogAccount[]>([]);
+  const [selectedBlogIds, setSelectedBlogIds] = useState<string[]>([]);
+  const [blogKeywordsData, setBlogKeywordsData] = useState<Record<string, BlogKeywordsData>>({});
+
   // 보고서 섹션 상태
   const [sections, setSections] = useState<ReportSection[]>([
     {
@@ -122,15 +138,28 @@ export const ReportBuilderPage: React.FC = () => {
 
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
 
+  // 인증 체크
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = await getCookie('accessToken');
+      if (!token) {
+        navigate('/admin/login');
+      }
+    };
+    checkAuth();
+  }, [navigate]);
+
   // 초기 로딩
   useEffect(() => {
     loadHospitals();
+    loadAnalyticsHospitals();
   }, []);
 
-  // 병원 선택 시 데이터 로드
+  // 병원 선택 시 데이터 로드 및 매핑 불러오기
   useEffect(() => {
     if (selectedHospital) {
       loadWeeklyStats(selectedHospital);
+      loadAnalyticsMapping(selectedHospital);
     }
   }, [selectedHospital]);
 
@@ -143,6 +172,78 @@ export const ReportBuilderPage: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to load hospitals:', error);
+    }
+  };
+
+  const loadAnalyticsHospitals = async () => {
+    try {
+      const list = await adminAPI.getAnalyticsHospitals();
+      setAnalyticsHospitals(list);
+    } catch (error) {
+      console.error('Failed to load analytics hospitals:', error);
+    }
+  };
+
+  const loadAnalyticsMapping = async (hospitalName: string) => {
+    try {
+      const mappedId = await adminAPI.getAnalyticsMapping(hospitalName);
+      setAnalyticsHospitalId(mappedId || '');
+      // 블로그 계정도 함께 로드
+      if (mappedId) {
+        loadBlogAccounts(mappedId);
+      } else {
+        setBlogAccounts([]);
+        setSelectedBlogIds([]);
+      }
+    } catch (error) {
+      console.error('Failed to load analytics mapping:', error);
+    }
+  };
+
+  const handleAnalyticsHospitalChange = async (id: string) => {
+    setAnalyticsHospitalId(id);
+    if (selectedHospital) {
+      try {
+        await adminAPI.saveAnalyticsMapping(selectedHospital, id || null);
+      } catch (error) {
+        console.error('Failed to save analytics mapping:', error);
+      }
+    }
+    // 블로그 계정 로드
+    if (id) {
+      loadBlogAccounts(id);
+    } else {
+      setBlogAccounts([]);
+      setSelectedBlogIds([]);
+    }
+  };
+
+  const loadBlogAccounts = async (hospitalId: string) => {
+    try {
+      const accounts = await adminAPI.getBlogAccounts(hospitalId);
+      setBlogAccounts(accounts);
+      // 기본적으로 모든 블로그 선택
+      setSelectedBlogIds(accounts.map(a => a.id));
+    } catch (error) {
+      console.error('Failed to load blog accounts:', error);
+      setBlogAccounts([]);
+    }
+  };
+
+  const handleBlogSelection = (blogId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedBlogIds(prev => [...prev, blogId]);
+    } else {
+      setSelectedBlogIds(prev => prev.filter(id => id !== blogId));
+    }
+  };
+
+  const loadBlogKeywords = async (blogId: string) => {
+    try {
+      const data = await adminAPI.getBlogKeywords(blogId, periodAStart, periodAEnd);
+      setBlogKeywordsData(prev => ({ ...prev, [blogId]: data }));
+    } catch (error) {
+      console.error('Failed to load blog keywords:', error);
     }
   };
 
@@ -1221,11 +1322,102 @@ export const ReportBuilderPage: React.FC = () => {
   const generateChannelPerformance = async (): Promise<string> => {
     let html = '<h2>3. 채널별 유입 성과 보고</h2>';
 
-    if (!notionDatabaseId) {
+    // 날짜 포맷 함수
+    const formatPeriodDate = (date: string) => date.replace(/-/g, '.');
+
+    // 종료일을 해당 주의 week_end로 변환
+    const actualPeriodAEnd = getWeekEnd(periodAEnd);
+    const actualPeriodBEnd = getWeekEnd(periodBEnd);
+
+    // Notion 데이터 로드 (에러 시에도 계속 진행)
+    let calendarData: { periodA: MarketingCalendarEntry[]; periodB: MarketingCalendarEntry[] } = { periodA: [], periodB: [] };
+    if (notionDatabaseId) {
+      try {
+        calendarData = await getMarketingCalendar(
+          notionDatabaseId,
+          periodAStart,
+          actualPeriodAEnd,
+          periodBStart,
+          actualPeriodBEnd
+        );
+      } catch (error) {
+        console.error('Notion 데이터 로드 오류:', error);
+      }
+    }
+
+    // A기간 타임라인 표
+    if (calendarData.periodA.length > 0) {
+      html += generateTimelineTable(calendarData.periodA, `A기간 마케팅 활동 (${formatPeriodDate(periodAStart)} ~ ${formatPeriodDate(actualPeriodAEnd)})`);
+    }
+
+    // 컨텐츠 종류별 통계 (A기간만)
+    if (calendarData.periodA.length > 0) {
+      html += generateContentTypeStats(calendarData.periodA);
+    }
+
+    // A. 네이버 플레이스 섹션
+    html += await generateNaverPlaceSection();
+
+    // B. 네이버 블로그 섹션
+    html += await generateNaverBlogSection();
+
+    return html;
+  };
+
+  // A. 네이버 플레이스 섹션 생성
+  const generateNaverPlaceSection = async (): Promise<string> => {
+    let html = '<h3 style="margin-top: 32px; font-size: 16px; font-weight: 600;">A. 네이버 플레이스</h3>';
+
+    // 가. 당월 운영 목표
+    html += `
+      <h4 style="margin-top: 24px;">가. 당월 운영 목표</h4>
+      <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%; margin: 16px 0;">
+        <tbody>
+          <tr>
+            <td style="background-color: #f3f4f6; font-weight: 600; width: 150px;">핵심 목표</td>
+            <td><em style="color: #9ca3af;">(내용을 입력해주세요)</em></td>
+          </tr>
+          <tr>
+            <td style="background-color: #f3f4f6; font-weight: 600;">주요 관리 키워드</td>
+            <td><em style="color: #9ca3af;">(키워드를 입력해주세요)</em></td>
+          </tr>
+          <tr>
+            <td style="background-color: #f3f4f6; font-weight: 600;">운영 전략 요약</td>
+            <td><em style="color: #9ca3af;">(전략을 입력해주세요)</em></td>
+          </tr>
+        </tbody>
+      </table>
+    `;
+
+    // 나. 주요 이벤트 (플레이스 순위 그래프)
+    html += await generatePlaceRankSection();
+
+    // 다. 유입 통계 분석
+    html += await generateSmartplaceStatsSection();
+
+    // 라. 후속 전략
+    html += `
+      <h4 style="margin-top: 24px;">라. 후속 전략</h4>
+      <ul style="color: #374151;">
+        <li><em style="color: #9ca3af;">(전략 1을 입력해주세요)</em></li>
+        <li><em style="color: #9ca3af;">(전략 2를 입력해주세요)</em></li>
+        <li><em style="color: #9ca3af;">(전략 3을 입력해주세요)</em></li>
+      </ul>
+    `;
+
+    return html;
+  };
+
+  // 나. 주요 이벤트 - 플레이스 순위 그래프
+  const generatePlaceRankSection = async (): Promise<string> => {
+    let html = '<h4 style="margin-top: 24px;">나. 주요 이벤트</h4>';
+    html += '<p style="font-size: 14px; color: #6b7280; margin-bottom: 16px;">키워드 순위 변동 추이</p>';
+
+    if (!analyticsHospitalId) {
       html += `
         <div style="background-color: #fef3c7; padding: 16px; border: 1px solid #f59e0b; border-radius: 8px; margin: 16px 0;">
           <p style="color: #92400e; margin: 0;">
-            Notion Database ID가 설정되지 않았습니다. 아래 입력란에 Notion Database ID를 입력해주세요.
+            Analytics DB 병원 ID가 설정되지 않았습니다. 상단에서 병원을 먼저 선택해주세요.
           </p>
         </div>
       `;
@@ -1233,51 +1425,709 @@ export const ReportBuilderPage: React.FC = () => {
     }
 
     try {
-      // 종료일을 해당 주의 week_end로 변환
-      const actualPeriodAEnd = getWeekEnd(periodAEnd);
-      const actualPeriodBEnd = getWeekEnd(periodBEnd);
+      const placeData = await adminAPI.getPlaceRankHistory(analyticsHospitalId);
+      const { keyword, rankHistory } = placeData;
 
-      const calendarData = await getMarketingCalendar(
-        notionDatabaseId,
-        periodAStart,
-        actualPeriodAEnd,
-        periodBStart,
-        actualPeriodBEnd
-      );
-
-      if (calendarData.periodA.length === 0 && calendarData.periodB.length === 0) {
-        html += '<p>해당 기간에 마케팅 캘린더 데이터가 없습니다.</p>';
+      if (!keyword || rankHistory.length === 0) {
+        html += `
+          <div style="background-color: #fef3c7; padding: 16px; border: 1px solid #f59e0b; border-radius: 8px; margin: 16px 0;">
+            <p style="color: #92400e; margin: 0;">
+              플레이스 순위 데이터가 없습니다. (키워드: ${keyword || '미설정'})
+            </p>
+          </div>
+        `;
         return html;
       }
 
-      // 날짜 포맷 함수
-      const formatPeriodDate = (date: string) => date.replace(/-/g, '.');
-
-      // A기간 타임라인 표
-      if (calendarData.periodA.length > 0) {
-        html += generateTimelineTable(calendarData.periodA, `A기간 마케팅 활동 (${formatPeriodDate(periodAStart)} ~ ${formatPeriodDate(actualPeriodAEnd)})`);
+      // 분석 기간에 맞춰 데이터 필터링
+      const periodStart = periodAStart ? new Date(periodAStart) : null;
+      const periodEnd = periodAEnd ? new Date(periodAEnd) : null;
+      if (periodEnd) {
+        periodEnd.setDate(periodEnd.getDate() + 6);
+        periodEnd.setHours(23, 59, 59, 999);
       }
 
-      // B기간 타임라인 표
-      if (calendarData.periodB.length > 0) {
-        html += generateTimelineTable(calendarData.periodB, `B기간 마케팅 활동 (${formatPeriodDate(periodBStart)} ~ ${formatPeriodDate(actualPeriodBEnd)})`);
+      const sortedHistory = [...rankHistory]
+        .sort((a, b) => new Date(a.checked_at).getTime() - new Date(b.checked_at).getTime())
+        .filter(item => {
+          const itemDate = new Date(item.checked_at);
+          if (periodStart && itemDate < periodStart) return false;
+          if (periodEnd && itemDate > periodEnd) return false;
+          return true;
+        });
+
+      if (sortedHistory.length === 0) {
+        html += `
+          <div style="background-color: #fef3c7; padding: 16px; border: 1px solid #f59e0b; border-radius: 8px; margin: 16px 0;">
+            <p style="color: #92400e; margin: 0;">
+              선택한 분석 기간(${periodAStart} ~ ${periodAEnd}) 내 플레이스 순위 데이터가 없습니다.
+            </p>
+          </div>
+        `;
+        return html;
       }
 
-      // 컨텐츠 종류별 통계 (A기간만)
-      html += generateContentTypeStats(calendarData.periodA);
+      // 기간 내 첫 순위와 마지막 순위 비교
+      const firstRank = sortedHistory[0]?.rank;
+      const latestRank = sortedHistory[sortedHistory.length - 1]?.rank;
+      const rankChange = firstRank - latestRank;
+
+      let changeDisplay = '-';
+      let changeColor = '#9ca3af';
+      if (rankChange > 0) {
+        changeDisplay = `▲${rankChange}`;
+        changeColor = '#10b981';
+      } else if (rankChange < 0) {
+        changeDisplay = `▼${Math.abs(rankChange)}`;
+        changeColor = '#ef4444';
+      }
+
+      // 차트용 SVG 생성
+      const chartWidth = 600;
+      const chartHeight = 200;
+      const padding = { top: 20, right: 30, bottom: 40, left: 50 };
+      const innerWidth = chartWidth - padding.left - padding.right;
+      const innerHeight = chartHeight - padding.top - padding.bottom;
+
+      const recentHistory = sortedHistory;
+      const maxRank = Math.max(...recentHistory.map(d => d.rank), 10);
+      const minRank = Math.min(...recentHistory.map(d => d.rank), 1);
+
+      const points = recentHistory.map((d, i) => {
+        const x = padding.left + (i / Math.max(recentHistory.length - 1, 1)) * innerWidth;
+        const y = padding.top + ((d.rank - minRank) / Math.max(maxRank - minRank, 1)) * innerHeight;
+        return { x, y, rank: d.rank, date: d.checked_at };
+      });
+
+      const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+
+      const formatDate = (dateStr: string) => {
+        const date = new Date(dateStr);
+        return `${date.getMonth() + 1}/${date.getDate()}`;
+      };
+
+      const periodLabel = periodAStart && periodAEnd ? `(${periodAStart} ~ ${periodAEnd})` : '';
+
+      html += `
+        <div style="background-color: #f0fdf4; padding: 24px; border: 1px solid #86efac; border-radius: 8px; margin: 16px 0;">
+          <h5 style="margin: 0 0 8px 0; color: #166534;">"${keyword}" 키워드 순위 변동 추이</h5>
+          <p style="margin: 0 0 16px 0; font-size: 13px; color: #6b7280;">분석 기간: ${periodLabel} (${sortedHistory.length}건 기록)</p>
+          <div style="background-color: #fff; padding: 16px; border-radius: 8px;">
+            <svg width="${chartWidth}" height="${chartHeight}" style="display: block; margin: 0 auto;">
+              ${Array.from({ length: 5 }, (_, i) => {
+                const y = padding.top + (i / 4) * innerHeight;
+                const rank = Math.round(minRank + (i / 4) * (maxRank - minRank));
+                return `
+                  <line x1="${padding.left}" y1="${y}" x2="${chartWidth - padding.right}" y2="${y}" stroke="#e5e7eb" stroke-dasharray="4"/>
+                  <text x="${padding.left - 10}" y="${y + 4}" text-anchor="end" font-size="12" fill="#6b7280">${rank}위</text>
+                `;
+              }).join('')}
+              <path d="${pathD}" fill="none" stroke="#10b981" stroke-width="2"/>
+              ${points.map(p => `<circle cx="${p.x}" cy="${p.y}" r="4" fill="#10b981"/>`).join('')}
+              ${recentHistory.length > 0 ? `
+                <text x="${padding.left}" y="${chartHeight - 10}" text-anchor="start" font-size="11" fill="#6b7280">${formatDate(recentHistory[0].checked_at)}</text>
+                <text x="${chartWidth - padding.right}" y="${chartHeight - 10}" text-anchor="end" font-size="11" fill="#6b7280">${formatDate(recentHistory[recentHistory.length - 1].checked_at)}</text>
+              ` : ''}
+            </svg>
+          </div>
+        </div>
+      `;
+
+      // 순위 현황 테이블
+      html += `
+        <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%; margin: 16px 0;">
+          <thead>
+            <tr style="background-color: #f3f4f6;">
+              <th>키워드</th>
+              <th>기간 시작 순위</th>
+              <th>기간 종료 순위</th>
+              <th>변동</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>${keyword}</td>
+              <td style="text-align: center;">${firstRank}위 (${formatDate(sortedHistory[0].checked_at)})</td>
+              <td style="text-align: center; font-weight: 600;">${latestRank}위 (${formatDate(sortedHistory[sortedHistory.length - 1].checked_at)})</td>
+              <td style="text-align: center; color: ${changeColor}; font-weight: 600;">${changeDisplay}</td>
+            </tr>
+          </tbody>
+        </table>
+      `;
 
       return html;
     } catch (error) {
-      console.error('채널별 유입 성과 생성 오류:', error);
+      console.error('플레이스 순위 섹션 생성 오류:', error);
       html += `
         <div style="background-color: #fee2e2; padding: 16px; border: 1px solid #fca5a5; border-radius: 8px; margin: 16px 0;">
           <p style="color: #991b1b; margin: 0;">
-            Notion 데이터를 불러오는 중 오류가 발생했습니다. Notion Database ID와 API 연동 설정을 확인해주세요.
+            Analytics 데이터를 불러오는 중 오류가 발생했습니다.
           </p>
         </div>
       `;
       return html;
     }
+  };
+
+  // 다. 유입 통계 분석 - 스마트플레이스 데이터
+  const generateSmartplaceStatsSection = async (): Promise<string> => {
+    let html = '<h4 style="margin-top: 24px;">다. 유입 통계 분석</h4>';
+
+    if (!analyticsHospitalId) {
+      html += `
+        <div style="background-color: #fef3c7; padding: 16px; border: 1px solid #f59e0b; border-radius: 8px; margin: 16px 0;">
+          <p style="color: #92400e; margin: 0;">
+            Analytics DB 병원 ID가 설정되지 않았습니다. 상단에서 병원을 먼저 선택해주세요.
+          </p>
+        </div>
+      `;
+      return html;
+    }
+
+    try {
+      const statsData = await adminAPI.getSmartplaceStats(analyticsHospitalId);
+
+      if (!statsData || statsData.length === 0) {
+        html += `
+          <div style="background-color: #fef3c7; padding: 16px; border: 1px solid #f59e0b; border-radius: 8px; margin: 16px 0;">
+            <p style="color: #92400e; margin: 0;">
+              스마트플레이스 유입 통계 데이터가 없습니다.
+            </p>
+          </div>
+        `;
+        return html;
+      }
+
+      // range 날짜 파싱 (형식: "26. 1. 5. 월 - 1. 11. 일")
+      const parseRangeDate = (range: string): { start: Date; end: Date } | null => {
+        try {
+          const parts = range.split(' - ');
+          if (parts.length !== 2) return null;
+
+          const startParts = parts[0].replace(/\./g, '').trim().split(' ');
+          const endParts = parts[1].replace(/\./g, '').trim().split(' ');
+
+          const year = parseInt(startParts[0]) + 2000;
+          const startMonth = parseInt(startParts[1]) - 1;
+          const startDay = parseInt(startParts[2]);
+          const endMonth = parseInt(endParts[0]) - 1;
+          const endDay = parseInt(endParts[1]);
+
+          return {
+            start: new Date(year, startMonth, startDay),
+            end: new Date(year, endMonth, endDay)
+          };
+        } catch {
+          return null;
+        }
+      };
+
+      // 기간 A, B 파싱
+      const periodAStartDate = periodAStart ? new Date(periodAStart) : null;
+      const periodAEndDate = periodAEnd ? new Date(periodAEnd) : null;
+      if (periodAEndDate) periodAEndDate.setDate(periodAEndDate.getDate() + 6);
+
+      const periodBStartDate = periodBStart ? new Date(periodBStart) : null;
+      const periodBEndDate = periodBEnd ? new Date(periodBEnd) : null;
+      if (periodBEndDate) periodBEndDate.setDate(periodBEndDate.getDate() + 6);
+
+      // 기간별 데이터 필터링
+      const filterByPeriod = (start: Date | null, end: Date | null) => {
+        return statsData.filter(stat => {
+          const rangeDates = parseRangeDate(stat.range);
+          if (!rangeDates || !start || !end) return false;
+          return rangeDates.start >= start && rangeDates.end <= end;
+        });
+      };
+
+      const periodAStats = filterByPeriod(periodAStartDate, periodAEndDate);
+      const periodBStats = filterByPeriod(periodBStartDate, periodBEndDate);
+
+      // 집계 함수
+      const aggregateStats = (stats: typeof statsData) => {
+        const totalVisits = stats.reduce((sum, stat) => sum + stat.visitCount, 0);
+        const channelTotals: Record<string, number> = {};
+        const channelPercentages: Record<string, number> = {};
+        const keywordTotals: Record<string, number> = {};
+
+        stats.forEach(stat => {
+          stat.channels.forEach(ch => {
+            const visits = stat.visitCount * ch.percentage / 100;
+            channelTotals[ch.name] = (channelTotals[ch.name] || 0) + visits;
+          });
+          stat.keywords.forEach(kw => {
+            const visits = stat.visitCount * kw.percentage / 100;
+            keywordTotals[kw.name] = (keywordTotals[kw.name] || 0) + visits;
+          });
+        });
+
+        // 비율 계산
+        Object.keys(channelTotals).forEach(name => {
+          channelPercentages[name] = totalVisits > 0 ? (channelTotals[name] / totalVisits) * 100 : 0;
+        });
+
+        return { totalVisits, channelTotals, channelPercentages, keywordTotals };
+      };
+
+      const periodAAgg = aggregateStats(periodAStats.length > 0 ? periodAStats : [statsData[0]]);
+      const periodBAgg = periodBStats.length > 0 ? aggregateStats(periodBStats) : null;
+
+      const formatNumber = (num: number) => new Intl.NumberFormat('ko-KR').format(Math.round(num));
+      const formatDecimal = (num: number) => num.toFixed(1);
+      const formatDate = (date: string) => date.replace(/-/g, '.');
+
+      // 0. 전체 유입량 표시 (검정색 글씨 한 줄)
+      const periodALabel = periodAStart && periodAEnd ? `${formatDate(periodAStart)} ~ ${formatDate(periodAEnd)}` : '분석 기간';
+      const periodBLabelForTable = periodBStart && periodBEnd ? `${formatDate(periodBStart)} ~ ${formatDate(periodBEnd)}` : '';
+      html += `
+        <p style="font-size: 16px; color: #111827; margin: 16px 0;">
+          전체 유입량 <strong>${formatNumber(periodAAgg.totalVisits)}회</strong> (${periodALabel})
+        </p>
+      `;
+
+      // 모든 채널명 수집
+      const allChannels = new Set<string>();
+      Object.keys(periodAAgg.channelTotals).forEach(name => allChannels.add(name));
+      if (periodBAgg) Object.keys(periodBAgg.channelTotals).forEach(name => allChannels.add(name));
+      const channelNames = Array.from(allChannels);
+
+      // 1. 유입량 테이블 (A기간 vs B기간)
+      html += `
+        <h5 style="margin-top: 24px;">채널별 유입량</h5>
+        <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%; margin: 16px 0;">
+          <thead>
+            <tr style="background-color: #f3f4f6;">
+              <th>유입량</th>
+              <th>전체</th>
+              ${channelNames.map(name => `<th>${name}</th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="font-weight: 600; font-size: 12px;">${periodALabel}</td>
+              <td style="text-align: center; font-weight: 600;">${formatNumber(periodAAgg.totalVisits)}</td>
+              ${channelNames.map(name => `<td style="text-align: center;">${formatNumber(periodAAgg.channelTotals[name] || 0)}</td>`).join('')}
+            </tr>
+            ${periodBAgg ? `
+            <tr>
+              <td style="font-weight: 600; font-size: 12px;">${periodBLabelForTable}</td>
+              <td style="text-align: center; font-weight: 600;">${formatNumber(periodBAgg.totalVisits)}</td>
+              ${channelNames.map(name => `<td style="text-align: center;">${formatNumber(periodBAgg.channelTotals[name] || 0)}</td>`).join('')}
+            </tr>
+            ` : ''}
+          </tbody>
+        </table>
+      `;
+
+      // 2. 유입비율 테이블 (A기간 vs B기간)
+      html += `
+        <h5 style="margin-top: 24px;">채널별 유입비율 (%)</h5>
+        <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%; margin: 16px 0;">
+          <thead>
+            <tr style="background-color: #f3f4f6;">
+              <th>유입비율</th>
+              ${channelNames.map(name => `<th>${name}</th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="font-weight: 600; font-size: 12px;">${periodALabel}</td>
+              ${channelNames.map(name => `<td style="text-align: center;">${formatDecimal(periodAAgg.channelPercentages[name] || 0)}</td>`).join('')}
+            </tr>
+            ${periodBAgg ? `
+            <tr>
+              <td style="font-weight: 600; font-size: 12px;">${periodBLabelForTable}</td>
+              ${channelNames.map(name => `<td style="text-align: center;">${formatDecimal(periodBAgg.channelPercentages[name] || 0)}</td>`).join('')}
+            </tr>
+            ` : ''}
+          </tbody>
+        </table>
+      `;
+
+      // 3. 주요 검색 키워드 테이블 (분석 기간)
+      const totalKeywordVisits = Object.values(periodAAgg.keywordTotals).reduce((sum, v) => sum + v, 0);
+      const sortedKeywords = Object.entries(periodAAgg.keywordTotals).sort((a, b) => b[1] - a[1]).slice(0, 10);
+
+      html += `
+        <h5 style="margin-top: 24px;">주요 검색 키워드 (${periodALabel})</h5>
+        <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%; margin: 16px 0;">
+          <thead>
+            <tr style="background-color: #f3f4f6;">
+              <th>키워드</th>
+              <th>유입량</th>
+              <th>비율</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      sortedKeywords.forEach(([name, visits]) => {
+        const percentage = totalKeywordVisits > 0 ? (visits / totalKeywordVisits) * 100 : 0;
+        html += `
+          <tr>
+            <td>${name}</td>
+            <td style="text-align: center;">${formatNumber(visits)}</td>
+            <td style="text-align: center;">${formatDecimal(percentage)}%</td>
+          </tr>
+        `;
+      });
+
+      html += `
+        </tbody>
+      </table>
+      `;
+
+      // GPT 해석 요약 생성
+      const sortedChannelsForGPT = Object.entries(periodAAgg.channelTotals).sort((a, b) => b[1] - a[1]);
+      const periodAChannels = sortedChannelsForGPT.map(([name, visits]) => ({
+        name,
+        visits: Math.round(visits),
+        percentage: periodAAgg.channelPercentages[name] || 0
+      }));
+
+      const periodAKeywords = sortedKeywords.map(([name, visits]) => ({
+        name,
+        visits: Math.round(visits),
+        percentage: totalKeywordVisits > 0 ? (visits / totalKeywordVisits) * 100 : 0
+      }));
+
+      const periodBLabel = periodBStart && periodBEnd ? `${formatDate(periodBStart)} ~ ${formatDate(periodBEnd)}` : '';
+
+      const gptData = {
+        periodALabel,
+        periodBLabel,
+        periodA: {
+          totalVisits: Math.round(periodAAgg.totalVisits),
+          channels: periodAChannels,
+          keywords: periodAKeywords
+        },
+        periodB: periodBAgg ? {
+          totalVisits: Math.round(periodBAgg.totalVisits),
+          channels: Object.entries(periodBAgg.channelTotals).map(([name, visits]) => ({
+            name,
+            visits: Math.round(visits),
+            percentage: periodBAgg.channelPercentages[name] || 0
+          }))
+        } : null
+      };
+
+      try {
+        const gptInterpretation = await generateSmartplaceInterpretation(gptData);
+        html += `<p style="background-color: #f0f9ff; padding: 12px; border-radius: 8px; border-left: 4px solid #3b82f6; margin-top: 16px;">${gptInterpretation}</p>`;
+      } catch (gptError) {
+        console.error('GPT 해석 생성 오류:', gptError);
+        html += '<p style="margin-top: 16px;"><em>유입 통계 분석에 대한 해석을 여기에 작성하세요...</em></p>';
+      }
+
+      return html;
+    } catch (error) {
+      console.error('스마트플레이스 통계 섹션 생성 오류:', error);
+      html += `
+        <div style="background-color: #fee2e2; padding: 16px; border: 1px solid #fca5a5; border-radius: 8px; margin: 16px 0;">
+          <p style="color: #991b1b; margin: 0;">
+            스마트플레이스 데이터를 불러오는 중 오류가 발생했습니다.
+          </p>
+        </div>
+      `;
+      return html;
+    }
+  };
+
+  // B. 네이버 블로그 섹션 생성
+  const generateNaverBlogSection = async (): Promise<string> => {
+    let html = '<h3 style="margin-top: 48px; font-size: 16px; font-weight: 600;">B. 네이버 블로그</h3>';
+
+    // 블로그 계정이 없는 경우
+    if (blogAccounts.length === 0) {
+      html += `
+        <div style="background-color: #fef3c7; padding: 16px; border: 1px solid #f59e0b; border-radius: 8px; margin: 16px 0;">
+          <p style="color: #92400e; margin: 0;">
+            등록된 블로그 계정이 없습니다. Analytics DB에서 블로그 정보를 확인해주세요.
+          </p>
+        </div>
+      `;
+      return html;
+    }
+
+    // 블로그 선택 UI (2개 이상일 때만)
+    if (blogAccounts.length > 1) {
+      html += `
+        <div style="background-color: #f9fafb; padding: 16px; border: 1px solid #e5e7eb; border-radius: 8px; margin: 16px 0;">
+          <p style="font-weight: 600; margin: 0 0 12px 0;">분석 대상 블로그 선택</p>
+          <div style="display: flex; flex-wrap: wrap; gap: 12px;">
+      `;
+      blogAccounts.forEach(account => {
+        const isSelected = selectedBlogIds.includes(account.id);
+        html += `
+          <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+            <input type="checkbox" ${isSelected ? 'checked' : ''} disabled style="width: 16px; height: 16px;">
+            <span style="font-size: 14px;">${account.name}${account.isMain ? ' (메인)' : ''}</span>
+          </label>
+        `;
+      });
+      html += `
+          </div>
+          <p style="font-size: 12px; color: #6b7280; margin: 8px 0 0 0;">* 선택된 블로그: ${selectedBlogIds.length}개</p>
+        </div>
+      `;
+    }
+
+    // 선택된 블로그들의 데이터만 사용
+    const selectedAccounts = blogAccounts.filter(a => selectedBlogIds.includes(a.id));
+
+    // 가. 당월 운영 목표
+    html += `
+      <h4 style="margin-top: 24px;">가. 당월 운영 목표</h4>
+      <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%; margin: 16px 0;">
+        <tbody>
+          <tr>
+            <td style="background-color: #f3f4f6; font-weight: 600; width: 150px;">운영 방향</td>
+            <td><em style="color: #9ca3af;">(내용을 입력해주세요)</em></td>
+          </tr>
+          <tr>
+            <td style="background-color: #f3f4f6; font-weight: 600;">키워드 운영 전략</td>
+            <td><em style="color: #9ca3af;">(전략을 입력해주세요)</em></td>
+          </tr>
+        </tbody>
+      </table>
+    `;
+
+    // 타겟 키워드 운영 표 (비교기간 vs 기준기간)
+    const formatDate = (date: string) => date.replace(/-/g, '.');
+    const periodALabel = periodAStart && periodAEnd ? `${formatDate(periodAStart)} ~ ${formatDate(periodAEnd)}` : '기준기간';
+    const periodBLabel = periodBStart && periodBEnd ? `${formatDate(periodBStart)} ~ ${formatDate(periodBEnd)}` : '비교기간';
+
+    html += `
+      <h5 style="margin-top: 20px;">타겟 키워드 운영</h5>
+      <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%; margin: 16px 0;">
+        <thead>
+          <tr style="background-color: #f3f4f6;">
+            <th style="width: 40px;">No</th>
+            <th>비교기간 (${periodBLabel})</th>
+            <th>기준기간 (${periodALabel})</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    // 키워드 데이터 로드 및 표시
+    for (let i = 1; i <= 10; i++) {
+      html += `
+        <tr>
+          <td style="text-align: center;">${i}</td>
+          <td><em style="color: #9ca3af;">(키워드)</em></td>
+          <td><em style="color: #9ca3af;">(키워드)</em></td>
+        </tr>
+      `;
+    }
+
+    html += '</tbody></table>';
+
+    // 나. 유입 통계 분석
+    html += '<h4 style="margin-top: 24px;">나. 유입 통계 분석</h4>';
+
+    // 1. 블로그 성과 지표 (조회수)
+    html += '<h5 style="margin-top: 20px;">1. 블로그 성과 지표</h5>';
+
+    // 기간별 조회수 집계
+    const aggregateVisits = (account: typeof selectedAccounts[0], startDate: string, endDate: string) => {
+      if (!account.visitStats || account.visitStats.length === 0) return 0;
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      end.setDate(end.getDate() + 6); // 주간 종료일
+
+      return account.visitStats
+        .filter(stat => {
+          const statStart = new Date(stat.weekStart);
+          return statStart >= start && statStart <= end;
+        })
+        .reduce((sum, stat) => sum + stat.visitTotal, 0);
+    };
+
+    // 선택된 블로그들의 조회수 합산
+    let totalVisitsA = 0;
+    let totalVisitsB = 0;
+
+    selectedAccounts.forEach(account => {
+      if (periodAStart && periodAEnd) {
+        totalVisitsA += aggregateVisits(account, periodAStart, periodAEnd);
+      }
+      if (periodBStart && periodBEnd) {
+        totalVisitsB += aggregateVisits(account, periodBStart, periodBEnd);
+      }
+    });
+
+    const formatNumber = (num: number) => new Intl.NumberFormat('ko-KR').format(Math.round(num));
+
+    html += `
+      <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%; margin: 16px 0;">
+        <thead>
+          <tr style="background-color: #f3f4f6;">
+            <th>기간</th>
+            <th>총 조회수</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="font-weight: 600; font-size: 12px;">${periodALabel}</td>
+            <td style="text-align: center; font-weight: 600;">${formatNumber(totalVisitsA)}</td>
+          </tr>
+          ${periodBStart && periodBEnd ? `
+          <tr>
+            <td style="font-weight: 600; font-size: 12px;">${periodBLabel}</td>
+            <td style="text-align: center;">${formatNumber(totalVisitsB)}</td>
+          </tr>
+          ` : ''}
+        </tbody>
+      </table>
+    `;
+
+    // 2. 유입 경로 (플레이스 vs 검색)
+    html += '<h5 style="margin-top: 20px;">2. 유입 경로 분석</h5>';
+
+    // 기간별 유입 경로 집계
+    const aggregateReferers = (account: typeof selectedAccounts[0], startDate: string, endDate: string) => {
+      if (!account.refererStats || account.refererStats.length === 0) return {};
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      end.setDate(end.getDate() + 6);
+
+      const totals: Record<string, number> = {};
+      let count = 0;
+
+      account.refererStats
+        .filter(stat => {
+          const statStart = new Date(stat.weekStart);
+          return statStart >= start && statStart <= end;
+        })
+        .forEach(stat => {
+          stat.referers.forEach(ref => {
+            totals[ref.source] = (totals[ref.source] || 0) + ref.percentage;
+          });
+          count++;
+        });
+
+      // 평균 계산
+      Object.keys(totals).forEach(key => {
+        totals[key] = count > 0 ? totals[key] / count : 0;
+      });
+
+      return totals;
+    };
+
+    // 선택된 블로그들의 유입 경로 합산
+    const refererTotalsA: Record<string, number> = {};
+    const refererTotalsB: Record<string, number> = {};
+
+    selectedAccounts.forEach(account => {
+      if (periodAStart && periodAEnd) {
+        const refs = aggregateReferers(account, periodAStart, periodAEnd);
+        Object.entries(refs).forEach(([source, pct]) => {
+          refererTotalsA[source] = (refererTotalsA[source] || 0) + pct;
+        });
+      }
+      if (periodBStart && periodBEnd) {
+        const refs = aggregateReferers(account, periodBStart, periodBEnd);
+        Object.entries(refs).forEach(([source, pct]) => {
+          refererTotalsB[source] = (refererTotalsB[source] || 0) + pct;
+        });
+      }
+    });
+
+    // 평균 계산 (블로그 수로 나눔)
+    const accountCount = selectedAccounts.length || 1;
+    Object.keys(refererTotalsA).forEach(key => {
+      refererTotalsA[key] = refererTotalsA[key] / accountCount;
+    });
+    Object.keys(refererTotalsB).forEach(key => {
+      refererTotalsB[key] = refererTotalsB[key] / accountCount;
+    });
+
+    // 플레이스 유입 비율 계산
+    const placeRefererA = refererTotalsA['플레이스'] || refererTotalsA['네이버플레이스'] || 0;
+    const searchRefererA = refererTotalsA['네이버검색'] || refererTotalsA['검색'] || 0;
+    const placeRefererB = refererTotalsB['플레이스'] || refererTotalsB['네이버플레이스'] || 0;
+    const searchRefererB = refererTotalsB['네이버검색'] || refererTotalsB['검색'] || 0;
+
+    // 유입량 계산 (조회수 * 비율)
+    const placeVisitsA = totalVisitsA * (placeRefererA / 100);
+    const searchVisitsA = totalVisitsA * (searchRefererA / 100);
+    const placeVisitsB = totalVisitsB * (placeRefererB / 100);
+    const searchVisitsB = totalVisitsB * (searchRefererB / 100);
+
+    const formatDecimal = (num: number) => num.toFixed(1);
+
+    html += `
+      <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%; margin: 16px 0;">
+        <thead>
+          <tr style="background-color: #f3f4f6;">
+            <th>기간</th>
+            <th>플레이스 유입 비율</th>
+            <th>검색 유입 비율</th>
+            <th>플레이스 유입량</th>
+            <th>검색 유입량</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="font-weight: 600; font-size: 12px;">${periodALabel}</td>
+            <td style="text-align: center;">${formatDecimal(placeRefererA)}%</td>
+            <td style="text-align: center;">${formatDecimal(searchRefererA)}%</td>
+            <td style="text-align: center;">${formatNumber(placeVisitsA)}</td>
+            <td style="text-align: center;">${formatNumber(searchVisitsA)}</td>
+          </tr>
+          ${periodBStart && periodBEnd ? `
+          <tr>
+            <td style="font-weight: 600; font-size: 12px;">${periodBLabel}</td>
+            <td style="text-align: center;">${formatDecimal(placeRefererB)}%</td>
+            <td style="text-align: center;">${formatDecimal(searchRefererB)}%</td>
+            <td style="text-align: center;">${formatNumber(placeVisitsB)}</td>
+            <td style="text-align: center;">${formatNumber(searchVisitsB)}</td>
+          </tr>
+          ` : ''}
+        </tbody>
+      </table>
+    `;
+
+    // GPT 해석
+    try {
+      const blogGptData = {
+        periodALabel,
+        periodBLabel,
+        periodA: {
+          totalVisits: totalVisitsA,
+          placeRefererPercent: placeRefererA,
+          searchRefererPercent: searchRefererA,
+          placeVisits: placeVisitsA,
+          searchVisits: searchVisitsA
+        },
+        periodB: periodBStart && periodBEnd ? {
+          totalVisits: totalVisitsB,
+          placeRefererPercent: placeRefererB,
+          searchRefererPercent: searchRefererB,
+          placeVisits: placeVisitsB,
+          searchVisits: searchVisitsB
+        } : null
+      };
+
+      const blogInterpretation = await generateBlogInterpretation(blogGptData);
+      html += `<p style="background-color: #f0f9ff; padding: 12px; border-radius: 8px; border-left: 4px solid #3b82f6; margin-top: 16px;">${blogInterpretation}</p>`;
+    } catch (gptError) {
+      console.error('블로그 GPT 해석 생성 오류:', gptError);
+      html += '<p style="margin-top: 16px;"><em>유입 통계 분석에 대한 해석을 여기에 작성하세요...</em></p>';
+    }
+
+    // 다. 후속 전략
+    html += `
+      <h4 style="margin-top: 24px;">다. 후속 전략</h4>
+      <ul style="color: #374151;">
+        <li><em style="color: #9ca3af;">(전략 1을 입력해주세요)</em></li>
+        <li><em style="color: #9ca3af;">(전략 2를 입력해주세요)</em></li>
+        <li><em style="color: #9ca3af;">(전략 3을 입력해주세요)</em></li>
+      </ul>
+    `;
+
+    return html;
   };
 
   // Type별 색상 맵 (Notion 스타일)
@@ -1650,563 +2500,70 @@ export const ReportBuilderPage: React.FC = () => {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f8fafc' }}>
       {/* Header */}
-      <div style={{ backgroundColor: '#fff', borderBottom: '1px solid #e5e7eb' }}>
-        <div style={{ padding: '20px 48px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <h1 style={{ fontSize: '18px', fontWeight: 600, color: '#111827', margin: 0 }}>
-              자동화된 보고서 생성
-            </h1>
-            <p style={{ fontSize: '13px', color: '#6b7280', marginTop: '4px' }}>
-              섹션을 선택하고 내용을 편집한 후 PDF로 내보내세요
-            </p>
-          </div>
-          <button
-            onClick={() => navigate('/admin/dashboard')}
-            style={{
-              padding: '8px 16px',
-              fontSize: '13px',
-              color: '#6b7280',
-              backgroundColor: 'transparent',
-              border: '1px solid #e5e7eb',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-            }}
-          >
-            ← 대시보드로 돌아가기
-          </button>
-        </div>
+      <ReportHeader
+        hospitals={hospitals}
+        selectedHospital={selectedHospital}
+        onHospitalChange={setSelectedHospital}
+        loading={loading}
+        weeklyStats={weeklyStats}
+        periodAStart={periodAStart}
+        periodAEnd={periodAEnd}
+        periodBStart={periodBStart}
+        periodBEnd={periodBEnd}
+        onPeriodAStartChange={setPeriodAStart}
+        onPeriodAEndChange={setPeriodAEnd}
+        onPeriodBStartChange={setPeriodBStart}
+        onPeriodBEndChange={setPeriodBEnd}
+        notionDatabaseId={notionDatabaseId}
+        savedNotionDatabases={savedNotionDatabases}
+        onNotionDbChange={setNotionDatabaseId}
+        onShowAddDbModal={() => setShowAddDbModal(true)}
+        onDeleteNotionDb={handleDeleteNotionDatabase}
+        analyticsHospitals={analyticsHospitals}
+        analyticsHospitalId={analyticsHospitalId}
+        onAnalyticsIdChange={handleAnalyticsHospitalChange}
+        blogAccounts={blogAccounts}
+        selectedBlogIds={selectedBlogIds}
+        onBlogSelection={handleBlogSelection}
+      />
 
-        {/* 병원 및 기간 선택 */}
-        <div style={{ padding: '0 48px 20px 48px', borderTop: '1px solid #f3f4f6' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', paddingTop: '20px' }}>
-            {/* 병원 선택 */}
-            <div>
-              <label style={{ display: 'block', fontSize: '13px', color: '#6b7280', marginBottom: '8px', fontWeight: 500 }}>
-                병원 선택
-              </label>
-              <select
-                value={selectedHospital}
-                onChange={(e) => setSelectedHospital(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '6px',
-                  fontSize: '13px',
-                  color: '#374151',
-                  backgroundColor: '#fff',
-                }}
-                disabled={loading}
-              >
-                {hospitals.map((hospital) => (
-                  <option key={hospital.id} value={hospital.name}>
-                    {hospital.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* 기간 A 선택 */}
-            <div>
-              <label style={{ display: 'block', fontSize: '13px', color: '#6b7280', marginBottom: '8px', fontWeight: 500 }}>
-                분석 기간 (A)
-              </label>
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <select
-                  value={periodAStart}
-                  onChange={(e) => setPeriodAStart(e.target.value)}
-                  style={{
-                    flex: 1,
-                    padding: '10px 12px',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '6px',
-                    fontSize: '13px',
-                    color: '#374151',
-                    backgroundColor: '#fff',
-                  }}
-                  disabled={loading}
-                >
-                  <option value="">시작 주</option>
-                  {weeklyStats.map((stat) => (
-                    <option key={stat.id} value={stat.week_start}>
-                      {stat.week_start}
-                    </option>
-                  ))}
-                </select>
-                <span style={{ color: '#9ca3af' }}>~</span>
-                <select
-                  value={periodAEnd}
-                  onChange={(e) => setPeriodAEnd(e.target.value)}
-                  style={{
-                    flex: 1,
-                    padding: '10px 12px',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '6px',
-                    fontSize: '13px',
-                    color: '#374151',
-                    backgroundColor: '#fff',
-                  }}
-                  disabled={loading}
-                >
-                  <option value="">종료 주</option>
-                  {weeklyStats.map((stat) => (
-                    <option key={stat.id} value={stat.week_start}>
-                      {stat.week_start}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* 비교 기간 B 선택 */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', paddingTop: '12px' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '13px', color: '#6b7280', marginBottom: '8px', fontWeight: 500 }}>
-                비교 기간 (B)
-              </label>
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <select
-                  value={periodBStart}
-                  onChange={(e) => setPeriodBStart(e.target.value)}
-                  style={{
-                    flex: 1,
-                    padding: '10px 12px',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '6px',
-                    fontSize: '13px',
-                    color: '#374151',
-                    backgroundColor: '#fff',
-                  }}
-                  disabled={loading}
-                >
-                  <option value="">시작 주</option>
-                  {weeklyStats.map((stat) => (
-                    <option key={stat.id} value={stat.week_start}>
-                      {stat.week_start}
-                    </option>
-                  ))}
-                </select>
-                <span style={{ color: '#9ca3af' }}>~</span>
-                <select
-                  value={periodBEnd}
-                  onChange={(e) => setPeriodBEnd(e.target.value)}
-                  style={{
-                    flex: 1,
-                    padding: '10px 12px',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '6px',
-                    fontSize: '13px',
-                    color: '#374151',
-                    backgroundColor: '#fff',
-                  }}
-                  disabled={loading}
-                >
-                  <option value="">종료 주</option>
-                  {weeklyStats.map((stat) => (
-                    <option key={stat.id} value={stat.week_start}>
-                      {stat.week_start}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            {/* Notion Database 선택 */}
-            <div>
-              <label style={{ display: 'block', fontSize: '13px', color: '#6b7280', marginBottom: '8px', fontWeight: 500 }}>
-                Notion Database (채널별 유입 성과용)
-              </label>
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-                <div style={{ flex: 1 }}>
-                  <select
-                    value={notionDatabaseId}
-                    onChange={(e) => setNotionDatabaseId(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '10px 12px',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '6px',
-                      fontSize: '13px',
-                      color: '#374151',
-                      backgroundColor: '#fff',
-                    }}
-                    disabled={loading}
-                  >
-                    <option value="">Database 선택</option>
-                    {savedNotionDatabases.map((db) => (
-                      <option key={db.id} value={db.database_id}>
-                        {db.database_name || db.database_id.substring(0, 8) + '...'}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <button
-                  onClick={() => setShowAddDbModal(true)}
-                  style={{
-                    padding: '10px 14px',
-                    fontSize: '13px',
-                    fontWeight: 500,
-                    color: '#fff',
-                    backgroundColor: '#3b82f6',
-                    border: 'none',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                  }}
-                  disabled={loading}
-                >
-                  + 추가
-                </button>
-              </div>
-              {savedNotionDatabases.length > 0 && notionDatabaseId && (
-                <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '11px', color: '#6b7280' }}>
-                    선택됨: {savedNotionDatabases.find(db => db.database_id === notionDatabaseId)?.database_name || notionDatabaseId.substring(0, 16) + '...'}
-                  </span>
-                  <button
-                    onClick={() => {
-                      const db = savedNotionDatabases.find(d => d.database_id === notionDatabaseId);
-                      if (db) handleDeleteNotionDatabase(db.id);
-                    }}
-                    style={{
-                      padding: '2px 6px',
-                      fontSize: '10px',
-                      color: '#ef4444',
-                      backgroundColor: 'transparent',
-                      border: '1px solid #ef4444',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    삭제
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Notion Database 추가 모달 */}
-            {showAddDbModal && (
-              <div style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                backgroundColor: 'rgba(0,0,0,0.5)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                zIndex: 1000,
-              }}>
-                <div style={{
-                  backgroundColor: '#fff',
-                  padding: '24px',
-                  borderRadius: '12px',
-                  width: '400px',
-                  maxWidth: '90%',
-                }}>
-                  <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>
-                    Notion Database 추가
-                  </h3>
-                  <div style={{ marginBottom: '12px' }}>
-                    <label style={{ display: 'block', fontSize: '13px', color: '#6b7280', marginBottom: '4px' }}>
-                      Database ID *
-                    </label>
-                    <input
-                      type="text"
-                      value={newDbId}
-                      onChange={(e) => setNewDbId(e.target.value)}
-                      placeholder="예: 2ca7117064f4807d9e97..."
-                      style={{
-                        width: '100%',
-                        padding: '10px 12px',
-                        border: '1px solid #e5e7eb',
-                        borderRadius: '6px',
-                        fontSize: '13px',
-                      }}
-                    />
-                  </div>
-                  <div style={{ marginBottom: '16px' }}>
-                    <label style={{ display: 'block', fontSize: '13px', color: '#6b7280', marginBottom: '4px' }}>
-                      Database 이름 (선택)
-                    </label>
-                    <input
-                      type="text"
-                      value={newDbName}
-                      onChange={(e) => setNewDbName(e.target.value)}
-                      placeholder="예: 마케팅 캘린더"
-                      style={{
-                        width: '100%',
-                        padding: '10px 12px',
-                        border: '1px solid #e5e7eb',
-                        borderRadius: '6px',
-                        fontSize: '13px',
-                      }}
-                    />
-                    <p style={{ fontSize: '11px', color: '#9ca3af', marginTop: '4px' }}>
-                      비워두면 Notion에서 자동으로 가져옵니다
-                    </p>
-                  </div>
-                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                    <button
-                      onClick={() => {
-                        setShowAddDbModal(false);
-                        setNewDbId('');
-                        setNewDbName('');
-                      }}
-                      style={{
-                        padding: '10px 16px',
-                        fontSize: '13px',
-                        color: '#6b7280',
-                        backgroundColor: '#f3f4f6',
-                        border: 'none',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      취소
-                    </button>
-                    <button
-                      onClick={handleAddNotionDatabase}
-                      disabled={addingDb || !newDbId.trim()}
-                      style={{
-                        padding: '10px 16px',
-                        fontSize: '13px',
-                        fontWeight: 500,
-                        color: '#fff',
-                        backgroundColor: addingDb || !newDbId.trim() ? '#9ca3af' : '#3b82f6',
-                        border: 'none',
-                        borderRadius: '6px',
-                        cursor: addingDb || !newDbId.trim() ? 'not-allowed' : 'pointer',
-                      }}
-                    >
-                      {addingDb ? '추가 중...' : '추가'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      {/* Notion Database 추가 모달 */}
+      <NotionDbModal
+        show={showAddDbModal}
+        newDbId={newDbId}
+        newDbName={newDbName}
+        adding={addingDb}
+        onDbIdChange={setNewDbId}
+        onDbNameChange={setNewDbName}
+        onClose={() => {
+          setShowAddDbModal(false);
+          setNewDbId('');
+          setNewDbName('');
+        }}
+        onAdd={handleAddNotionDatabase}
+      />
 
       <div style={{ padding: '32px 48px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '24px' }}>
           {/* Left Panel - 섹션 선택 */}
-          <div>
-            <div style={{ backgroundColor: '#fff', borderRadius: '8px', padding: '24px', border: '1px solid #e5e7eb' }}>
-              <h3 style={{ fontSize: '14px', fontWeight: 600, color: '#374151', marginBottom: '16px' }}>
-                보고서 구성 요소
-              </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {sections.map((section) => (
-                  <div
-                    key={section.id}
-                    style={{
-                      padding: '12px',
-                      backgroundColor: selectedSectionId === section.id ? '#f3f4f6' : '#fff',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '6px',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
-                    }}
-                    onClick={() => setSelectedSectionId(section.id)}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                      <input
-                        type="checkbox"
-                        checked={section.enabled}
-                        onChange={(e) => {
-                          e.stopPropagation();
-                          toggleSection(section.id);
-                        }}
-                        style={{ cursor: 'pointer' }}
-                      />
-                      <span style={{ fontSize: '13px', fontWeight: 500, color: '#374151', flex: 1 }}>
-                        {section.title}
-                      </span>
-                    </div>
-
-                    {section.enabled && (
-                      <div style={{ marginLeft: '24px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        {!section.generated ? (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleGenerateDraft(section.id);
-                            }}
-                            disabled={generatingSection === section.id}
-                            style={{
-                              padding: '6px 12px',
-                              fontSize: '11px',
-                              fontWeight: 500,
-                              color: '#fff',
-                              backgroundColor: generatingSection === section.id ? '#9ca3af' : '#3b82f6',
-                              border: 'none',
-                              borderRadius: '4px',
-                              cursor: generatingSection === section.id ? 'not-allowed' : 'pointer',
-                            }}
-                          >
-                            {generatingSection === section.id ? '생성 중...' : '초안 생성'}
-                          </button>
-                        ) : (
-                          <>
-                            <span style={{ fontSize: '11px', color: '#10b981' }}>
-                              ✓ 생성 완료
-                            </span>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px' }}>
-                              <input
-                                type="checkbox"
-                                checked={section.includedInPdf}
-                                onChange={(e) => {
-                                  e.stopPropagation();
-                                  toggleIncludeInPdf(section.id);
-                                }}
-                                style={{ cursor: 'pointer' }}
-                              />
-                              <span style={{ color: section.includedInPdf ? '#374151' : '#9ca3af' }}>
-                                PDF에 포함
-                              </span>
-                            </label>
-                          </>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid #e5e7eb' }}>
-                <button
-                  onClick={handleGeneratePdf}
-                  style={{
-                    width: '100%',
-                    padding: '10px 16px',
-                    fontSize: '13px',
-                    fontWeight: 500,
-                    color: '#fff',
-                    backgroundColor: sections.some(s => s.includedInPdf) ? '#10b981' : '#d1d5db',
-                    border: 'none',
-                    borderRadius: '6px',
-                    cursor: sections.some(s => s.includedInPdf) ? 'pointer' : 'not-allowed',
-                    transition: 'all 0.15s ease',
-                  }}
-                  disabled={!sections.some(s => s.includedInPdf)}
-                >
-                  📄 PDF 생성
-                </button>
-              </div>
-            </div>
-          </div>
+          <SectionList
+            sections={sections}
+            selectedSectionId={selectedSectionId}
+            generatingSection={generatingSection}
+            onSelectSection={setSelectedSectionId}
+            onToggleSection={toggleSection}
+            onToggleIncludeInPdf={toggleIncludeInPdf}
+            onGenerateDraft={handleGenerateDraft}
+            onGeneratePdf={handleGeneratePdf}
+          />
 
           {/* Right Panel - 에디터 */}
-          <div>
-            <div style={{ backgroundColor: '#fff', borderRadius: '8px', padding: '24px', border: '1px solid #e5e7eb', minHeight: '600px' }}>
-              {selectedSection ? (
-                <>
-                  <div style={{ marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid #e5e7eb' }}>
-                    <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#111827', margin: 0 }}>
-                      {selectedSection.title}
-                    </h3>
-                    {selectedSection.generated && (
-                      <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
-                        아래 내용을 자유롭게 수정할 수 있습니다
-                      </p>
-                    )}
-                  </div>
-
-                  {!selectedSection.enabled ? (
-                    <div style={{ padding: '64px 24px', textAlign: 'center' }}>
-                      <p style={{ color: '#9ca3af', fontSize: '14px' }}>
-                        이 섹션을 사용하려면 먼저 체크박스를 선택하세요
-                      </p>
-                    </div>
-                  ) : !selectedSection.generated ? (
-                    <div style={{ padding: '64px 24px', textAlign: 'center' }}>
-                      <p style={{ color: '#9ca3af', fontSize: '14px', marginBottom: '16px' }}>
-                        초안을 생성하여 시작하세요
-                      </p>
-                      <button
-                        onClick={() => handleGenerateDraft(selectedSection.id)}
-                        disabled={generatingSection === selectedSection.id}
-                        style={{
-                          padding: '10px 20px',
-                          fontSize: '13px',
-                          fontWeight: 500,
-                          color: '#fff',
-                          backgroundColor: generatingSection === selectedSection.id ? '#9ca3af' : '#3b82f6',
-                          border: 'none',
-                          borderRadius: '6px',
-                          cursor: generatingSection === selectedSection.id ? 'not-allowed' : 'pointer',
-                        }}
-                      >
-                        {generatingSection === selectedSection.id ? '생성 중...' : '초안 생성'}
-                      </button>
-                    </div>
-                  ) : (
-                    <div>
-                      {/* HTML 에디터와 미리보기 */}
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                        {/* 왼쪽: HTML 편집 */}
-                        <div>
-                          <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '8px', fontWeight: 500 }}>
-                            HTML 편집
-                          </label>
-                          <textarea
-                            value={selectedSection.contentHtml}
-                            onChange={(e) => handleContentChange(selectedSection.id, e.target.value)}
-                            style={{
-                              width: '100%',
-                              height: '500px',
-                              padding: '16px',
-                              fontSize: '12px',
-                              color: '#374151',
-                              border: '1px solid #e5e7eb',
-                              borderRadius: '6px',
-                              fontFamily: 'monospace',
-                              resize: 'none',
-                              lineHeight: '1.6',
-                              overflow: 'auto',
-                              boxSizing: 'border-box',
-                            }}
-                          />
-                        </div>
-
-                        {/* 오른쪽: 미리보기 */}
-                        <div>
-                          <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '8px', fontWeight: 500 }}>
-                            미리보기
-                          </label>
-                          <div
-                            dangerouslySetInnerHTML={{ __html: selectedSection.contentHtml }}
-                            style={{
-                              height: '500px',
-                              maxHeight: '500px',
-                              padding: '16px',
-                              fontSize: '13px',
-                              color: '#374151',
-                              border: '1px solid #e5e7eb',
-                              borderRadius: '6px',
-                              backgroundColor: '#fff',
-                              overflowY: 'scroll',
-                              lineHeight: '1.7',
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div style={{ padding: '64px 24px', textAlign: 'center' }}>
-                  <p style={{ color: '#9ca3af', fontSize: '14px' }}>
-                    왼쪽에서 섹션을 선택하여 편집을 시작하세요
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
+          <SectionEditor
+            section={selectedSection ?? null}
+            generatingSection={generatingSection}
+            onContentChange={handleContentChange}
+            onGenerateDraft={handleGenerateDraft}
+          />
         </div>
       </div>
     </div>

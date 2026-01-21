@@ -23,6 +23,8 @@ import PatientComparisonPage from "./pages/PatientComparisonPage";
 import { AdminLogin } from "./pages/AdminLogin";
 import { AdminDashboard } from "./pages/AdminDashboard";
 import { ReportBuilderPage } from "./pages/ReportBuilderPage";
+import { ReviewCoachingPage } from "./pages/ReviewCoachingPage";
+import { HospitalProfilePage } from "./pages/HospitalProfilePage";
 
 function App() {
   const { fetchUserInfo } = useUpdateUserInfo();
@@ -48,6 +50,8 @@ function App() {
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/admin/report-builder" element={<ReportBuilderPage />} />
         <Route path="/admin/patient-comparison" element={<PatientComparisonPage />} />
+        <Route path="/admin/review-coaching" element={<ReviewCoachingPage />} />
+        <Route path="/admin/hospital-profile" element={<HospitalProfilePage />} />
         <Route path="/admin/hospital-map" element={
           <NaverScriptLoader>
             <HospitalMapAnalysisPage />

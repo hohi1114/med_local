@@ -81,6 +81,39 @@ interface WeeklyAreaConcentrationData {
   }>;
 }
 
+interface SmartplaceAnalysisData {
+  periodALabel: string;
+  periodBLabel: string;
+  periodA: {
+    totalVisits: number;
+    channels: Array<{ name: string; visits: number; percentage: number }>;
+    keywords: Array<{ name: string; visits: number; percentage: number }>;
+  };
+  periodB: {
+    totalVisits: number;
+    channels: Array<{ name: string; visits: number; percentage: number }>;
+  } | null;
+}
+
+interface BlogAnalysisData {
+  periodALabel: string;
+  periodBLabel: string;
+  periodA: {
+    totalVisits: number;
+    placeRefererPercent: number;
+    searchRefererPercent: number;
+    placeVisits: number;
+    searchVisits: number;
+  };
+  periodB: {
+    totalVisits: number;
+    placeRefererPercent: number;
+    searchRefererPercent: number;
+    placeVisits: number;
+    searchVisits: number;
+  } | null;
+}
+
 /**
  * 요약 분석 해석 생성
  */
@@ -164,6 +197,36 @@ export async function generateWeeklyAreaConcentrationInterpretation(
 ): Promise<string> {
   try {
     const response = await authApi.post('/openai/interpretation/weekly-area-concentration', data);
+    return response.data.interpretation;
+  } catch (error) {
+    console.error('AI 해석 생성 오류:', error);
+    throw new Error('AI 해석 생성 중 오류가 발생했습니다.');
+  }
+}
+
+/**
+ * 스마트플레이스 유입 통계 해석 생성
+ */
+export async function generateSmartplaceInterpretation(
+  data: SmartplaceAnalysisData
+): Promise<string> {
+  try {
+    const response = await authApi.post('/openai/interpretation/smartplace', data);
+    return response.data.interpretation;
+  } catch (error) {
+    console.error('AI 해석 생성 오류:', error);
+    throw new Error('AI 해석 생성 중 오류가 발생했습니다.');
+  }
+}
+
+/**
+ * 블로그 유입 통계 해석 생성
+ */
+export async function generateBlogInterpretation(
+  data: BlogAnalysisData
+): Promise<string> {
+  try {
+    const response = await authApi.post('/openai/interpretation/blog', data);
     return response.data.interpretation;
   } catch (error) {
     console.error('AI 해석 생성 오류:', error);
