@@ -45,9 +45,9 @@ export async function generateWeeklyTrendChart(
     console.log('💰 Max Revenue:', maxRevenue);
     console.log('👥 Max New Patients:', maxNewPatients);
 
-    // 제목 - 더 크게
+    // 제목 - 1.3배 증가
     ctx.fillStyle = '#000';
-    ctx.font = 'bold 22px sans-serif'; // 18px에서 22px로 증가
+    ctx.font = 'bold 29px sans-serif'; // 22px * 1.3
     ctx.textAlign = 'center';
     ctx.fillText('주별 유입 추이 (Weekly Inflow & Revenue Trend)', width / 2, 30);
 
@@ -97,9 +97,9 @@ export async function generateWeeklyTrendChart(
       ctx.fill();
     });
 
-    // X축 레이블 - 더 크게
+    // X축 레이블 - 1.3배 증가
     ctx.fillStyle = '#666';
-    ctx.font = 'bold 16px sans-serif'; // 14px에서 16px로 증가
+    ctx.font = 'bold 21px sans-serif'; // 16px * 1.3
     ctx.textAlign = 'center';
     data.forEach((item, index) => {
       const x = padding.left + index * barWidth + barWidth / 2;
@@ -107,9 +107,9 @@ export async function generateWeeklyTrendChart(
       ctx.fillText(item.week, x, y);
     });
 
-    // Y축 (Revenue - 왼쪽) - 더 크게
+    // Y축 (Revenue - 왼쪽) - 1.3배 증가
     ctx.fillStyle = '#E67E22';
-    ctx.font = 'bold 16px sans-serif'; // 14px에서 16px로 증가
+    ctx.font = 'bold 21px sans-serif'; // 16px * 1.3
     ctx.textAlign = 'right';
     ctx.save();
     ctx.translate(40, height / 2);
@@ -137,7 +137,7 @@ export async function generateWeeklyTrendChart(
       const displayY = padding.top + chartHeight - (chartHeight / revenueSteps) * i;
 
       ctx.fillStyle = '#E67E22';
-      ctx.font = 'bold 15px sans-serif'; // 13px에서 15px로 증가
+      ctx.font = 'bold 20px sans-serif'; // 15px * 1.3
       ctx.textAlign = 'right';
       ctx.fillText(
         new Intl.NumberFormat('ko-KR').format(value),
@@ -154,9 +154,9 @@ export async function generateWeeklyTrendChart(
       ctx.stroke();
     }
 
-    // Y축 (New Patients - 오른쪽) - 더 크게
+    // Y축 (New Patients - 오른쪽) - 1.3배 증가
     ctx.fillStyle = '#3498DB';
-    ctx.font = 'bold 16px sans-serif'; // 14px에서 16px로 증가
+    ctx.font = 'bold 21px sans-serif'; // 16px * 1.3
     ctx.save();
     ctx.translate(width - 40, height / 2);
     ctx.rotate(Math.PI / 2);
@@ -182,7 +182,7 @@ export async function generateWeeklyTrendChart(
       const displayY = padding.top + chartHeight - (chartHeight / patientsSteps) * i;
 
       ctx.fillStyle = '#3498DB';
-      ctx.font = 'bold 15px sans-serif'; // 13px에서 15px로 증가
+      ctx.font = 'bold 20px sans-serif'; // 15px * 1.3
       ctx.textAlign = 'left';
       ctx.fillText(
         value.toString(),
@@ -206,23 +206,23 @@ export async function generateWeeklyTrendChart(
     ctx.fillStyle = '#FAD7A0';
     ctx.fillRect(padding.left, legendY, 20, 15);
     ctx.fillStyle = '#000';
-    ctx.font = 'bold 16px sans-serif'; // 14px에서 16px로 증가
+    ctx.font = 'bold 21px sans-serif'; // 16px * 1.3
     ctx.textAlign = 'left';
     ctx.fillText('Revenue', padding.left + 25, legendY + 12);
 
-    // New Patients 범례 - 선과 점 더 두껍고 크게
+    // New Patients 범례
     ctx.strokeStyle = '#3498DB';
-    ctx.lineWidth = 5; // 3에서 5로 증가
+    ctx.lineWidth = 4;
     ctx.beginPath();
     ctx.moveTo(padding.left + 120, legendY + 7);
     ctx.lineTo(padding.left + 140, legendY + 7);
     ctx.stroke();
     ctx.fillStyle = '#3498DB';
     ctx.beginPath();
-    ctx.arc(padding.left + 130, legendY + 7, 6, 0, Math.PI * 2); // 4에서 6으로 증가
+    ctx.arc(padding.left + 130, legendY + 7, 5, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = '#000';
-    ctx.font = 'bold 16px sans-serif'; // 14px에서 16px로 증가
+    ctx.font = 'bold 21px sans-serif'; // 16px * 1.3
     ctx.fillText('New Patients', padding.left + 145, legendY + 12);
 
     // Base64 변환
@@ -283,7 +283,7 @@ export async function generateAgeAnalysisChart(
 
     // 제목
     ctx.fillStyle = '#000';
-    ctx.font = 'bold 18px sans-serif';
+    ctx.font = 'bold 23px sans-serif'; // 18px * 1.3
     ctx.textAlign = 'center';
     ctx.fillText('연령대별 신환 유입 추이 (A vs B)', width / 2, 30);
 
@@ -308,9 +308,9 @@ export async function generateAgeAnalysisChart(
       ctx.fillRect(x + groupWidth * 0.1 + barWidth + 5, yA, barWidth, heightA);
     });
 
-    // X축 레이블 - 더 크게
+    // X축 레이블 - 1.3배 증가
     ctx.fillStyle = '#666';
-    ctx.font = 'bold 14px sans-serif'; // 11px에서 14px로 증가
+    ctx.font = 'bold 18px sans-serif'; // 14px * 1.3
     ctx.textAlign = 'center';
     chartLabels.forEach((label, index) => {
       const x = padding.left + index * groupWidth + groupWidth / 2;
@@ -318,9 +318,9 @@ export async function generateAgeAnalysisChart(
       ctx.fillText(label, x, y);
     });
 
-    // Y축 레이블 - 더 크게
+    // Y축 레이블 - 1.3배 증가
     ctx.fillStyle = '#000';
-    ctx.font = 'bold 14px sans-serif'; // 12px에서 14px로 증가
+    ctx.font = 'bold 18px sans-serif'; // 14px * 1.3
     ctx.save();
     ctx.translate(30, height / 2);
     ctx.rotate(-Math.PI / 2);
@@ -349,7 +349,7 @@ export async function generateAgeAnalysisChart(
       const y = padding.top + chartHeight - (chartHeight / steps) * i;
 
       ctx.fillStyle = '#666';
-      ctx.font = 'bold 13px sans-serif'; // 11px에서 13px로 증가
+      ctx.font = 'bold 17px sans-serif'; // 13px * 1.3
       ctx.textAlign = 'right';
       ctx.fillText(
         new Intl.NumberFormat('ko-KR').format(value),
@@ -384,7 +384,7 @@ export async function generateAgeAnalysisChart(
     ctx.fillStyle = '#D9D9D9';
     ctx.fillRect(legendX, legendY, 20, 15);
     ctx.fillStyle = '#000';
-    ctx.font = 'bold 14px sans-serif'; // 12px에서 14px로 증가
+    ctx.font = 'bold 18px sans-serif'; // 14px * 1.3
     ctx.textAlign = 'left';
     ctx.fillText('B(비교 기간)', legendX + 25, legendY + 12);
 
@@ -433,9 +433,9 @@ export async function generateWeeklyAgeHeatmapChart(
     // 상수 설정
     const PADDING = { top: 80, right: 120, bottom: 60, left: 120 };
     const HEATMAP_HEIGHT = 600; // 테이블 제거로 높이 증가
-    const TITLE_FONT = 'bold 32px sans-serif'; // 22px에서 24px로 증가
-    const AXIS_LABEL_FONT = 'bold 23px sans-serif'; // 16px에서 18px로 증가
-    const CELL_TEXT_FONT = 'bold 23px sans-serif'; // 15px에서 17px로 증가
+    const TITLE_FONT = 'bold 42px sans-serif'; // 32px * 1.3
+    const AXIS_LABEL_FONT = 'bold 30px sans-serif'; // 23px * 1.3
+    const CELL_TEXT_FONT = 'bold 30px sans-serif'; // 23px * 1.3
 
     // 배경색
     ctx.fillStyle = 'white';
@@ -570,10 +570,10 @@ export async function generateWeeklyAgeHeatmapChart(
     ctx.lineWidth = 2;
     ctx.strokeRect(colorbarX, colorbarY, colorbarWidth, colorbarHeight);
 
-    // Colorbar 눈금 및 레이블 - 더 크게
+    // Colorbar 눈금 및 레이블 - 1.3배 증가
     const tickCount = 5;
     ctx.fillStyle = '#000';
-    ctx.font = 'bold 14px sans-serif'; // 12px에서 14px로 증가
+    ctx.font = 'bold 18px sans-serif'; // 14px * 1.3
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     
@@ -668,12 +668,12 @@ export async function generateAreaComparisonChart(
 
     // 상수 설정
     const PADDING = { top: 80, right: 80, bottom: 60, left: 170 };
-    const TITLE_FONT = 'bold 22px sans-serif';
-    const SUBTITLE_FONT = 'bold 16px sans-serif';
-    const AXIS_LABEL_FONT = 'bold 16px sans-serif';
-    const AREA_LABEL_FONT = 'bold 15px sans-serif';
-    const VALUE_FONT = 'bold 14px sans-serif';
-    const LEGEND_FONT = 'bold 14px sans-serif';
+    const TITLE_FONT = 'bold 29px sans-serif'; // 22px * 1.3
+    const SUBTITLE_FONT = 'bold 21px sans-serif'; // 16px * 1.3
+    const AXIS_LABEL_FONT = 'bold 21px sans-serif'; // 16px * 1.3
+    const AREA_LABEL_FONT = 'bold 20px sans-serif'; // 15px * 1.3
+    const VALUE_FONT = 'bold 18px sans-serif'; // 14px * 1.3
+    const LEGEND_FONT = 'bold 18px sans-serif'; // 14px * 1.3
 
     // 배경색
     ctx.fillStyle = 'white';
@@ -866,10 +866,10 @@ export async function generateWeeklyRegionHeatmapChart(
     // 상수 설정
     const PADDING = { top: 80, right: 120, bottom: 60, left: 140 };
     const HEATMAP_HEIGHT = 600;
-    const TITLE_FONT = 'bold 32px sans-serif';
-    const SUBTITLE_FONT = 'bold 18px sans-serif';
-    const AXIS_LABEL_FONT = 'bold 20px sans-serif';
-    const CELL_TEXT_FONT = 'bold 20px sans-serif';
+    const TITLE_FONT = 'bold 42px sans-serif'; // 32px * 1.3
+    const SUBTITLE_FONT = 'bold 23px sans-serif'; // 18px * 1.3
+    const AXIS_LABEL_FONT = 'bold 26px sans-serif'; // 20px * 1.3
+    const CELL_TEXT_FONT = 'bold 26px sans-serif'; // 20px * 1.3
 
     // 배경색
     ctx.fillStyle = 'white';
@@ -998,7 +998,7 @@ export async function generateWeeklyRegionHeatmapChart(
 
     // Colorbar 레이블 (상단, 중간, 하단)
     ctx.fillStyle = '#333';
-    ctx.font = 'bold 16px sans-serif';
+    ctx.font = 'bold 21px sans-serif'; // 16px * 1.3
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     ctx.fillText(maxValue.toString(), colorbarX + colorbarWidth + 5, colorbarY);
@@ -1024,15 +1024,15 @@ export async function generateWeeklyRegionHeatmapChart(
 interface WeeklyAreaConcentrationData {
   weeks: string[];
   top3Counts: number[];      // 각 주의 TOP3 동 합계
-  top7Counts: number[];      // 각 주의 TOP7 동 합계
+  top7Counts: number[];      // 각 주의 Sub4 동 합계 (4~7위)
   top3Ratios: number[];      // 각 주의 TOP3 비율 (%)
-  top7Ratios: number[];      // 각 주의 TOP7 비율 (%)
+  top7Ratios: number[];      // 각 주의 Sub4 비율 (%)
 }
 
 /**
- * 주별 유입 추이 (TOP3 vs TOP7 + 집중도) 히트맵 차트 생성
+ * 주별 유입 추이 (TOP3 vs Sub4 + 집중도) 히트맵 차트 생성
  *
- * @param data 주별 TOP3/TOP7 데이터
+ * @param data 주별 TOP3/Sub4 데이터
  * @returns Base64 인코딩된 이미지 Data URL
  */
 export async function generateWeeklyAreaConcentrationChart(
@@ -1054,10 +1054,10 @@ export async function generateWeeklyAreaConcentrationChart(
     const PADDING = { top: 80, right: 120, bottom: 60, left: 140 };
     const HEATMAP_HEIGHT = 300;
     const GAP_BETWEEN = 50;
-    const TITLE_FONT = 'bold 28px sans-serif';
-    const SUBTITLE_FONT = 'bold 16px sans-serif';
-    const AXIS_LABEL_FONT = 'bold 18px sans-serif';
-    const CELL_TEXT_FONT = 'bold 18px sans-serif';
+    const TITLE_FONT = 'bold 36px sans-serif'; // 28px * 1.3
+    const SUBTITLE_FONT = 'bold 21px sans-serif'; // 16px * 1.3
+    const AXIS_LABEL_FONT = 'bold 23px sans-serif'; // 18px * 1.3
+    const CELL_TEXT_FONT = 'bold 23px sans-serif'; // 18px * 1.3
 
     // 배경색
     ctx.fillStyle = 'white';
@@ -1077,7 +1077,7 @@ export async function generateWeeklyAreaConcentrationChart(
 
     // 부제목 1
     ctx.font = SUBTITLE_FONT;
-    ctx.fillText('Heatmap 3: Weekly Patient Inflow Trend (TOP 3 vs TOP 7)', width / 2, heatmap1StartY - 10);
+    ctx.fillText('Heatmap 3: Weekly Patient Inflow Trend (TOP 3 vs Sub 4)', width / 2, heatmap1StartY - 10);
 
     const heatmapWidth = width - PADDING.left - PADDING.right;
     const cellWidth = heatmapWidth / data.weeks.length;
@@ -1123,7 +1123,7 @@ export async function generateWeeklyAreaConcentrationChart(
       ctx.fillText(value.toString(), x + cellWidth / 2, y + cellHeightCount / 2);
     });
 
-    // TOP 7 Dongs 행
+    // Sub 4 Dongs 행
     data.weeks.forEach((week, weekIdx) => {
       const value = data.top7Counts[weekIdx];
       const x = PADDING.left + weekIdx * cellWidth;
@@ -1149,7 +1149,7 @@ export async function generateWeeklyAreaConcentrationChart(
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
     ctx.fillText('TOP 3 Dongs', PADDING.left - 10, heatmap1StartY + cellHeightCount / 2);
-    ctx.fillText('TOP 7 Dongs', PADDING.left - 10, heatmap1StartY + cellHeightCount + cellHeightCount / 2);
+    ctx.fillText('Sub 4 Dongs', PADDING.left - 10, heatmap1StartY + cellHeightCount + cellHeightCount / 2);
 
     // Colorbar 1 (Count)
     const colorbar1X = width - PADDING.right + 20;
@@ -1171,7 +1171,7 @@ export async function generateWeeklyAreaConcentrationChart(
 
     // Colorbar 1 레이블
     ctx.fillStyle = '#333';
-    ctx.font = 'bold 14px sans-serif';
+    ctx.font = 'bold 18px sans-serif'; // 14px * 1.3
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     ctx.fillText(maxCount.toString(), colorbar1X + colorbar1Width + 5, heatmap1StartY);
@@ -1241,7 +1241,7 @@ export async function generateWeeklyAreaConcentrationChart(
       ctx.fillText(value.toFixed(1) + '%', x + cellWidth / 2, y + cellHeightCount / 2);
     });
 
-    // TOP 7 Ratio 행
+    // Sub 4 Ratio 행
     data.weeks.forEach((week, weekIdx) => {
       const value = data.top7Ratios[weekIdx];
       const x = PADDING.left + weekIdx * cellWidth;
@@ -1267,7 +1267,7 @@ export async function generateWeeklyAreaConcentrationChart(
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
     ctx.fillText('TOP 3 Ratio (%)', PADDING.left - 10, heatmap2StartY + cellHeightCount / 2);
-    ctx.fillText('TOP 7 Ratio (%)', PADDING.left - 10, heatmap2StartY + cellHeightCount + cellHeightCount / 2);
+    ctx.fillText('Sub 4 Ratio (%)', PADDING.left - 10, heatmap2StartY + cellHeightCount + cellHeightCount / 2);
 
     // X축 레이블 (weeks) - 두 번째 히트맵 아래에만
     ctx.fillStyle = '#000';
@@ -1300,7 +1300,7 @@ export async function generateWeeklyAreaConcentrationChart(
 
     // Colorbar 2 레이블
     ctx.fillStyle = '#333';
-    ctx.font = 'bold 14px sans-serif';
+    ctx.font = 'bold 18px sans-serif'; // 14px * 1.3
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     ctx.fillText(maxRatio.toFixed(0), colorbar2X + colorbar1Width + 5, heatmap2StartY);

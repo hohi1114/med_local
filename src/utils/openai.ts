@@ -233,3 +233,24 @@ export async function generateBlogInterpretation(
     throw new Error('AI 해석 생성 중 오류가 발생했습니다.');
   }
 }
+
+interface KeywordClassificationResult {
+  success: boolean;
+  local: string[];
+  national: string[];
+}
+
+/**
+ * 키워드 지역/전국구 분류
+ */
+export async function classifyKeywords(
+  keywords: string[]
+): Promise<KeywordClassificationResult> {
+  try {
+    const response = await authApi.post('/openai/classify-keywords', { keywords });
+    return response.data;
+  } catch (error) {
+    console.error('키워드 분류 오류:', error);
+    throw new Error('키워드 분류 중 오류가 발생했습니다.');
+  }
+}

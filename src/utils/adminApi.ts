@@ -45,6 +45,18 @@ interface SmartplaceStat {
   visitCount: number;
 }
 
+// Notion Cron Database 인터페이스
+interface NotionCronDatabase {
+  id: string;
+  db_type: 'blog' | 'upload';
+  database_id: string;
+  month: string;
+  description: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 // 블로그 관련 인터페이스
 interface RefererEntry {
   source: string;
@@ -52,15 +64,13 @@ interface RefererEntry {
 }
 
 interface RefererStat {
-  weekStart: string;
-  weekEnd: string;
-  referers: RefererEntry[];
+  startFrom: string;  // "20251006" 형식
+  entries: RefererEntry[];
 }
 
 interface VisitStat {
-  weekStart: string;
-  weekEnd: string;
-  visitTotal: number;
+  startFrom: string;  // "20251006" 형식
+  total: number;
 }
 
 interface BlogAccount {
@@ -73,11 +83,9 @@ interface BlogAccount {
 }
 
 interface BlogPost {
-  id: string;
-  title: string;
   publishedDate: string;
   keywords: string[];
-  url: string;
+  viewCount: number;
 }
 
 interface BlogKeywordsData {
@@ -191,8 +199,48 @@ class AdminAPI {
       topKeywords: response.topKeywords || []
     };
   }
+
+  // =====================================================
+  // Notion Cron Database 관리 API
+  // =====================================================
+
+  // 모든 크론 DB 설정 조회
+  async getNotionCronDatabases(): Promise<NotionCronDatabase[]> {
+    const response = await apiRequest('get', '/notion/cron-databases');
+    return response.databases || [];
+  }
+
+  // 크론 DB 설정 추가
+  async addNotionCronDatabase(data: {
+    db_type: 'blog' | 'upload';
+    database_id: string;
+    month: string;
+    description?: string;
+  }): Promise<NotionCronDatabase> {
+    const response = await apiRequest('post', '/notion/cron-databases', data);
+    return response.database;
+  }
+
+  // 크론 DB 설정 수정
+  async updateNotionCronDatabase(
+    id: string,
+    data: { database_id?: string; description?: string; is_active?: boolean }
+  ): Promise<NotionCronDatabase> {
+    const response = await apiRequest('put', `/notion/cron-databases/${id}`, data);
+    return response.database;
+  }
+
+  // 크론 DB 설정 삭제
+  async deleteNotionCronDatabase(id: string): Promise<void> {
+    await apiRequest('delete', `/notion/cron-databases/${id}`);
+  }
+
+  // 알림 크론 수동 실행
+  async testNotionDeadlineCron(): Promise<any> {
+    return await apiRequest('post', '/notion/test-deadline-cron');
+  }
 }
 
 export const adminAPI = new AdminAPI();
 
-export type { BlogAccount, BlogKeywordsData, RefererStat, VisitStat };
+export type { BlogAccount, BlogKeywordsData, RefererStat, VisitStat, NotionCronDatabase };

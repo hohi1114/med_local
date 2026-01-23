@@ -7,14 +7,14 @@ import type { ReportSection } from '../../types/report';
 
 interface SectionEditorProps {
   section: ReportSection | null;
-  generatingSection: string | null;
+  generatingSections: Set<string>;
   onContentChange: (id: string, content: string) => void;
   onGenerateDraft: (id: string) => void;
 }
 
 export const SectionEditor: React.FC<SectionEditorProps> = ({
   section,
-  generatingSection,
+  generatingSections,
   onContentChange,
   onGenerateDraft,
 }) => {
@@ -59,19 +59,19 @@ export const SectionEditor: React.FC<SectionEditorProps> = ({
             </p>
             <button
               onClick={() => onGenerateDraft(section.id)}
-              disabled={generatingSection === section.id}
+              disabled={generatingSections.has(section.id)}
               style={{
                 padding: '10px 20px',
                 fontSize: '13px',
                 fontWeight: 500,
                 color: '#fff',
-                backgroundColor: generatingSection === section.id ? '#9ca3af' : '#3b82f6',
+                backgroundColor: generatingSections.has(section.id) ? '#9ca3af' : '#3b82f6',
                 border: 'none',
                 borderRadius: '6px',
-                cursor: generatingSection === section.id ? 'not-allowed' : 'pointer',
+                cursor: generatingSections.has(section.id) ? 'not-allowed' : 'pointer',
               }}
             >
-              {generatingSection === section.id ? '생성 중...' : '초안 생성'}
+              {generatingSections.has(section.id) ? '생성 중...' : '초안 생성'}
             </button>
           </div>
         ) : (

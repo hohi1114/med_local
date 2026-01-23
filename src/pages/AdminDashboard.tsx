@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { adminAPI } from '../utils/adminApi';
 import { logout } from "../utils/api/apihelper";
 import { getCookie } from "../utils/api/cookie";
+import NotionCronSettings from '../components/admin/NotionCronSettings';
 import {
   BarChart,
   Bar,
@@ -1286,6 +1287,11 @@ export const AdminDashboard: React.FC = () => {
             </div>
           </>
         )}
+
+        {/* 노션 알림 DB 설정 */}
+        <div style={{ marginTop: '32px' }}>
+          <NotionCronSettings />
+        </div>
       </div>
     </div>
   );

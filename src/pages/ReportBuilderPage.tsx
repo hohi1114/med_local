@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { adminAPI, BlogAccount, BlogKeywordsData } from '../utils/adminApi';
+import { adminAPI, BlogAccount } from '../utils/adminApi';
 import { getCookie } from '../utils/api/cookie';
 import { generateWeeklyTrendChart, generateAgeAnalysisChart, generateWeeklyAgeHeatmapChart, generateAreaComparisonChart, generateWeeklyRegionHeatmapChart, generateWeeklyAreaConcentrationChart } from '../utils/chartGenerator';
-import { generateSummaryInterpretation, generateAgeInterpretation, generateWeeklyAgeTrendInterpretation, generateRegionInterpretation, generateWeeklyRegionTrendInterpretation, generateWeeklyAreaConcentrationInterpretation, generateSmartplaceInterpretation, generateBlogInterpretation } from '../utils/openai';
+import { generateSummaryInterpretation, generateAgeInterpretation, generateWeeklyAgeTrendInterpretation, generateRegionInterpretation, generateWeeklyRegionTrendInterpretation, generateWeeklyAreaConcentrationInterpretation, generateSmartplaceInterpretation, classifyKeywords } from '../utils/openai';
 import { getMarketingCalendar, MarketingCalendarEntry, getNotionDatabases, addNotionDatabase, deleteNotionDatabase, NotionDatabaseRecord } from '../utils/notionApi';
 import { NotionDbModal, ReportHeader, SectionList, SectionEditor } from '../components/report';
 
@@ -59,7 +59,7 @@ export const ReportBuilderPage: React.FC = () => {
   const [selectedHospital, setSelectedHospital] = useState('');
   const [weeklyStats, setWeeklyStats] = useState<WeeklyStat[]>([]);
   const [loading, setLoading] = useState(false);
-  const [generatingSection, setGeneratingSection] = useState<string | null>(null);
+  const [generatingSections, setGeneratingSections] = useState<Set<string>>(new Set());
 
   // 기간 선택 (A: 분석 기간, B: 비교 기간)
   const [periodAStart, setPeriodAStart] = useState('');
@@ -82,7 +82,6 @@ export const ReportBuilderPage: React.FC = () => {
   // 블로그 계정 상태
   const [blogAccounts, setBlogAccounts] = useState<BlogAccount[]>([]);
   const [selectedBlogIds, setSelectedBlogIds] = useState<string[]>([]);
-  const [blogKeywordsData, setBlogKeywordsData] = useState<Record<string, BlogKeywordsData>>({});
 
   // 보고서 섹션 상태
   const [sections, setSections] = useState<ReportSection[]>([
@@ -238,14 +237,6 @@ export const ReportBuilderPage: React.FC = () => {
     }
   };
 
-  const loadBlogKeywords = async (blogId: string) => {
-    try {
-      const data = await adminAPI.getBlogKeywords(blogId, periodAStart, periodAEnd);
-      setBlogKeywordsData(prev => ({ ...prev, [blogId]: data }));
-    } catch (error) {
-      console.error('Failed to load blog keywords:', error);
-    }
-  };
 
   const loadWeeklyStats = async (hospitalName: string) => {
     setLoading(true);
@@ -353,6 +344,18 @@ export const ReportBuilderPage: React.FC = () => {
   const getWeekEnd = (weekStart: string): string => {
     const stat = weeklyStats.find(s => s.week_start === weekStart);
     return stat ? stat.week_end : weekStart;
+  };
+
+  // GPT 해석 텍스트에 줄바꿈 추가 (문장 끝마다)
+  const formatInterpretation = (text: string): string => {
+    // 다양한 문장 종결 패턴을 처리
+    return text
+      // 먼저 기존 줄바꿈을 <br/>로 변환
+      .replace(/\n/g, '<br/><br/>')
+      // 마침표+공백 → 줄바꿈 (이미 <br/>이 있는 경우 제외)
+      .replace(/\.(?!<br\/>)(\s)/g, '.<br/><br/>')
+      // 연속된 <br/> 정리 (4개 이상을 2개로)
+      .replace(/(<br\/>){3,}/g, '<br/><br/>');
   };
 
   // 개요 생성 함수
@@ -463,6 +466,14 @@ export const ReportBuilderPage: React.FC = () => {
       totalPatients: periodA.totalPatients - periodB.totalPatients,
     };
 
+    // 증감률 계산 함수
+    const calcChangeRate = (a: number, b: number): string => {
+      if (b === 0) return '-';
+      const rate = ((a - b) / b) * 100;
+      const sign = rate >= 0 ? '+' : '';
+      return `${sign}${rate.toFixed(1)}%`;
+    };
+
     // 셀 배경색 생성 함수 (증가=연한초록, 감소=연한빨강)
     const getCellStyle = (diffValue: number): string => {
       if (diffValue > 0) {
@@ -550,11 +561,11 @@ export const ReportBuilderPage: React.FC = () => {
           </tr>
           <tr>
             <td style="background-color: #f3f4f6; font-weight: 600;">A - B</td>
-            <td>${diff.revenue >= 0 ? '+' : ''}${formatNumber(diff.revenue)}</td>
-            <td>${diff.newPatients >= 0 ? '+' : ''}${formatNumber(diff.newPatients)}</td>
-            <td>${diff.firstVisit >= 0 ? '+' : ''}${formatNumber(diff.firstVisit)}</td>
-            <td>${diff.returnPatients >= 0 ? '+' : ''}${formatNumber(diff.returnPatients)}</td>
-            <td>${diff.totalPatients >= 0 ? '+' : ''}${formatNumber(diff.totalPatients)}</td>
+            <td style="vertical-align: middle;">${diff.revenue >= 0 ? '+' : ''}${formatNumber(diff.revenue)}<div style="font-size: 11px; color: ${diff.revenue >= 0 ? '#059669' : '#dc2626'}; margin-top: 4px;">(${calcChangeRate(periodA.revenue, periodB.revenue)})</div></td>
+            <td style="vertical-align: middle;">${diff.newPatients >= 0 ? '+' : ''}${formatNumber(diff.newPatients)}<div style="font-size: 11px; color: ${diff.newPatients >= 0 ? '#059669' : '#dc2626'}; margin-top: 4px;">(${calcChangeRate(periodA.newPatients, periodB.newPatients)})</div></td>
+            <td style="vertical-align: middle;">${diff.firstVisit >= 0 ? '+' : ''}${formatNumber(diff.firstVisit)}<div style="font-size: 11px; color: ${diff.firstVisit >= 0 ? '#059669' : '#dc2626'}; margin-top: 4px;">(${calcChangeRate(periodA.firstVisit, periodB.firstVisit)})</div></td>
+            <td style="vertical-align: middle;">${diff.returnPatients >= 0 ? '+' : ''}${formatNumber(diff.returnPatients)}<div style="font-size: 11px; color: ${diff.returnPatients >= 0 ? '#059669' : '#dc2626'}; margin-top: 4px;">(${calcChangeRate(periodA.returnPatients, periodB.returnPatients)})</div></td>
+            <td style="vertical-align: middle;">${diff.totalPatients >= 0 ? '+' : ''}${formatNumber(diff.totalPatients)}<div style="font-size: 11px; color: ${diff.totalPatients >= 0 ? '#059669' : '#dc2626'}; margin-top: 4px;">(${calcChangeRate(periodA.totalPatients, periodB.totalPatients)})</div></td>
           </tr>
         </tbody>
       </table>
@@ -674,7 +685,7 @@ export const ReportBuilderPage: React.FC = () => {
         })),
       });
 
-      html += `<p style="background-color: #f0f9ff; padding: 12px; border-radius: 8px; border-left: 4px solid #3b82f6; margin-top: 16px;">${summaryInterpretation}</p>`;
+      html += `<p style="background-color: #f0f9ff; padding: 12px; border-radius: 8px; border-left: 4px solid #3b82f6; margin-top: 16px; line-height: 1.8;">${formatInterpretation(summaryInterpretation)}</p>`;
     } catch (error) {
       console.error('AI 해석 생성 오류:', error);
       html += '<p style="margin-top: 16px;"><em>주별 추이에 대한 해석을 여기에 작성하세요...</em></p>';
@@ -759,6 +770,14 @@ export const ReportBuilderPage: React.FC = () => {
       }
     };
 
+    // 증감률 계산 함수
+    const calcChangeRate = (a: number, b: number): string => {
+      if (b === 0) return '-';
+      const rate = ((a - b) / b) * 100;
+      const sign = rate >= 0 ? '+' : '';
+      return `${sign}${rate.toFixed(1)}%`;
+    };
+
     // 테이블 생성 - 가로형 (연령대가 컬럼) - 원래대로
     html += `
       <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%; margin: 16px 0;">
@@ -796,7 +815,8 @@ export const ReportBuilderPage: React.FC = () => {
               const diff = periodAAge[age] - periodBAge[age];
               const diffStyle = getDiffStyle(diff);
               const sign = diff > 0 ? '+' : '';
-              return `<td style="${diffStyle}">${sign}${formatNumber(diff)}</td>`;
+              const changeRate = calcChangeRate(periodAAge[age], periodBAge[age]);
+              return `<td style="${diffStyle}">${sign}${formatNumber(diff)}<div style="font-size: 11px; margin-top: 2px;">(${changeRate})</div></td>`;
             }).join('')}
           </tr>
         </tbody>
@@ -812,7 +832,7 @@ export const ReportBuilderPage: React.FC = () => {
         periodB: periodBAge,
       });
 
-      html += `<p style="background-color: #f0f9ff; padding: 12px; border-radius: 8px; border-left: 4px solid #3b82f6;">${ageInterpretation}</p>`;
+      html += `<p style="background-color: #f0f9ff; padding: 12px; border-radius: 8px; border-left: 4px solid #3b82f6; line-height: 1.8;">${formatInterpretation(ageInterpretation)}</p>`;
     } catch (error) {
       console.error('AI 해석 생성 오류:', error);
       html += '<p><em>연령대별 분석 해석 및 드라이버 분석을 여기에 작성하세요...</em></p>';
@@ -925,7 +945,7 @@ export const ReportBuilderPage: React.FC = () => {
         weeklyData: weeklyAgeTrendData,
       });
 
-      html += `<p style="background-color: #f0f9ff; padding: 12px; border-radius: 8px; border-left: 4px solid #3b82f6; margin-top: 16px;">${weeklyAgeTrendInterpretation}</p>`;
+      html += `<p style="background-color: #f0f9ff; padding: 12px; border-radius: 8px; border-left: 4px solid #3b82f6; margin-top: 16px; line-height: 1.8;">${formatInterpretation(weeklyAgeTrendInterpretation)}</p>`;
     } catch (error) {
       console.error('AI 해석 생성 오류:', error);
       html += '<p style="margin-top: 16px;"><em>주별 신환 추이에 대한 해석을 여기에 작성하세요...</em></p>';
@@ -994,7 +1014,29 @@ export const ReportBuilderPage: React.FC = () => {
     const top7A = sortedDistricts.reduce((sum, d) => sum + d.countA, 0);
     const top7B = sortedDistricts.reduce((sum, d) => sum + d.countB, 0);
 
+    // 증감률 계산 함수
+    const calcChangeRate = (a: number, b: number): string => {
+      if (b === 0) return '-';
+      const rate = ((a - b) / b) * 100;
+      const sign = rate >= 0 ? '+' : '';
+      return `${sign}${rate.toFixed(1)}%`;
+    };
+
     let html = '<h3>c. 지역별 유입 추이 분석</h3>';
+
+    // 분석 기간 전체 신규 환자 수 표시
+    html += `
+      <div style="margin: 16px 0; padding: 16px; background-color: #f9fafb; border-radius: 8px; display: flex; gap: 32px;">
+        <div>
+          <span style="font-size: 13px; color: #6b7280;">분석 기간 (A) 전체 신규 환자 수:</span>
+          <span style="font-size: 15px; font-weight: 600; color: #059669; margin-left: 8px;">${formatNumber(totalA)}명</span>
+        </div>
+        <div>
+          <span style="font-size: 13px; color: #6b7280;">비교 기간 (B) 전체 신규 환자 수:</span>
+          <span style="font-size: 15px; font-weight: 600; color: #dc2626; margin-left: 8px;">${formatNumber(totalB)}명</span>
+        </div>
+      </div>
+    `;
 
     // 지역별 차트 생성 (표 위에 배치)
     try {
@@ -1037,12 +1079,14 @@ export const ReportBuilderPage: React.FC = () => {
 
     sortedDistricts.forEach(district => {
       const diff = district.countA - district.countB;
+      const changeRate = calcChangeRate(district.countA, district.countB);
+      const diffColor = diff >= 0 ? '#059669' : '#dc2626';
       html += `
         <tr>
           <td><strong>${district.name.split(' ').pop()}</strong></td>
           <td>${formatNumber(district.countA)}</td>
           <td>${formatNumber(district.countB)}</td>
-          <td>${diff >= 0 ? '+' : ''}${formatNumber(diff)}</td>
+          <td style="color: ${diffColor}; font-weight: 600;">${diff >= 0 ? '+' : ''}${formatNumber(diff)}<div style="font-size: 11px; margin-top: 2px;">(${changeRate})</div></td>
         </tr>
       `;
     });
@@ -1078,7 +1122,7 @@ export const ReportBuilderPage: React.FC = () => {
         totalB,
       });
 
-      html += `<p style="background-color: #f0f9ff; padding: 12px; border-radius: 8px; border-left: 4px solid #3b82f6;">${regionInterpretation}</p>`;
+      html += `<p style="background-color: #f0f9ff; padding: 12px; border-radius: 8px; border-left: 4px solid #3b82f6; line-height: 1.8;">${formatInterpretation(regionInterpretation)}</p>`;
     } catch (error) {
       console.error('AI 해석 생성 오류:', error);
       html += '<p><em>지역별 분석 해석 및 집중도 변화에 대한 분석을 여기에 작성하세요...</em></p>';
@@ -1190,36 +1234,36 @@ export const ReportBuilderPage: React.FC = () => {
         weeklyData: weeklyRegionTrendData,
       });
 
-      html += `<p style="background-color: #f0f9ff; padding: 12px; border-radius: 8px; border-left: 4px solid #3b82f6; margin-top: 16px;">${weeklyRegionTrendInterpretation}</p>`;
+      html += `<p style="background-color: #f0f9ff; padding: 12px; border-radius: 8px; border-left: 4px solid #3b82f6; margin-top: 16px; line-height: 1.8;">${formatInterpretation(weeklyRegionTrendInterpretation)}</p>`;
     } catch (error) {
       console.error('AI 해석 생성 오류:', error);
       html += '<p style="margin-top: 16px;"><em>주별 지역별 신환 추이에 대한 해석을 여기에 작성하세요...</em></p>';
     }
 
-    // e. 주별 유입 추이 (TOP3 vs TOP7 + 집중도)
-    html += '<h3 style="margin-top: 48px;">e. 주별 TOP3/TOP7 집중도 추이</h3>';
+    // e. 주별 유입 추이 (TOP3 vs Sub4 + 집중도)
+    html += '<h3 style="margin-top: 48px;">e. 주별 TOP3/Sub4 집중도 추이</h3>';
 
-    // 주별 TOP3, TOP7 데이터 계산
+    // 주별 TOP3, Sub4 데이터 계산
     const top3Districts = sortedDistricts.slice(0, 3);
-    const top7Districts = sortedDistricts;
+    const sub4Districts = sortedDistricts.slice(3, 7); // 하위 4개 동 (4~7위)
 
     const weeklyTop3Counts: number[] = [];
-    const weeklyTop7Counts: number[] = [];
+    const weeklySub4Counts: number[] = [];
     const weeklyTop3Ratios: number[] = [];
-    const weeklyTop7Ratios: number[] = [];
+    const weeklySub4Ratios: number[] = [];
 
     allPeriodStats.forEach(stat => {
       // TOP3 합계
       const top3Sum = top3Districts.reduce((sum, d) => sum + (stat.top_districts_data?.[d.name] || 0), 0);
-      // TOP7 합계
-      const top7Sum = top7Districts.reduce((sum, d) => sum + (stat.top_districts_data?.[d.name] || 0), 0);
+      // Sub4 합계 (4~7위)
+      const sub4Sum = sub4Districts.reduce((sum, d) => sum + (stat.top_districts_data?.[d.name] || 0), 0);
       // 해당 주의 전체 신환 수
       const weeklyTotal = stat.new_patients;
 
       weeklyTop3Counts.push(top3Sum);
-      weeklyTop7Counts.push(top7Sum);
+      weeklySub4Counts.push(sub4Sum);
       weeklyTop3Ratios.push(weeklyTotal > 0 ? (top3Sum / weeklyTotal) * 100 : 0);
-      weeklyTop7Ratios.push(weeklyTotal > 0 ? (top7Sum / weeklyTotal) * 100 : 0);
+      weeklySub4Ratios.push(weeklyTotal > 0 ? (sub4Sum / weeklyTotal) * 100 : 0);
     });
 
     // 히트맵 차트 생성
@@ -1227,14 +1271,14 @@ export const ReportBuilderPage: React.FC = () => {
       const concentrationChartBase64 = await generateWeeklyAreaConcentrationChart({
         weeks,
         top3Counts: weeklyTop3Counts,
-        top7Counts: weeklyTop7Counts,
+        top7Counts: weeklySub4Counts,
         top3Ratios: weeklyTop3Ratios,
-        top7Ratios: weeklyTop7Ratios,
+        top7Ratios: weeklySub4Ratios,
       });
 
       html += `
         <div style="margin: 24px 0; text-align: center;">
-          <img src="${concentrationChartBase64}" alt="주별 TOP3/TOP7 집중도 추이" style="max-width: 100%; height: auto; border: 1px solid #e5e7eb; border-radius: 8px;">
+          <img src="${concentrationChartBase64}" alt="주별 TOP3/Sub4 집중도 추이" style="max-width: 100%; height: auto; border: 1px solid #e5e7eb; border-radius: 8px;">
         </div>
       `;
     } catch (error) {
@@ -1256,8 +1300,8 @@ export const ReportBuilderPage: React.FC = () => {
             <th></th>
             <th>TOP3 동</th>
             <th>TOP3 동 비율</th>
-            <th>TOP7 동</th>
-            <th>TOP7 동 비율</th>
+            <th>Sub4 동</th>
+            <th>Sub4 동 비율</th>
           </tr>
         </thead>
         <tbody>
@@ -1268,17 +1312,17 @@ export const ReportBuilderPage: React.FC = () => {
       const weekLabel = formatWeekLabel(stat.week_start);
       const reversedIdx = allPeriodStats.length - 1 - idx;
       const top3Count = weeklyTop3Counts[reversedIdx];
-      const top7Count = weeklyTop7Counts[reversedIdx];
+      const sub4Count = weeklySub4Counts[reversedIdx];
       const top3Ratio = weeklyTop3Ratios[reversedIdx];
-      const top7Ratio = weeklyTop7Ratios[reversedIdx];
+      const sub4Ratio = weeklySub4Ratios[reversedIdx];
 
       html += `
         <tr>
           <td style="background-color: #f3f4f6; font-weight: 600;">${weekLabel}</td>
           <td>${formatNumber(top3Count)}</td>
           <td>${top3Ratio.toFixed(0)}%</td>
-          <td>${formatNumber(top7Count)}</td>
-          <td>${top7Ratio.toFixed(0)}%</td>
+          <td>${formatNumber(sub4Count)}</td>
+          <td>${sub4Ratio.toFixed(0)}%</td>
         </tr>
       `;
     });
@@ -1288,7 +1332,7 @@ export const ReportBuilderPage: React.FC = () => {
       </table>
     `;
 
-    // 주별 TOP3/TOP7 집중도 AI 해석 생성
+    // 주별 TOP3/Sub4 집중도 AI 해석 생성
     try {
       const weeklyConcentrationData = allPeriodStats.map((stat, idx) => {
         const isInPeriodA = stat.week_start >= periodAStart && stat.week_end <= actualPeriodAEnd;
@@ -1296,9 +1340,9 @@ export const ReportBuilderPage: React.FC = () => {
           week: formatWeekLabel(stat.week_start),
           period: isInPeriodA ? 'A' as const : 'B' as const,
           top3Count: weeklyTop3Counts[idx],
-          top7Count: weeklyTop7Counts[idx],
+          top7Count: weeklySub4Counts[idx],
           top3Ratio: weeklyTop3Ratios[idx],
-          top7Ratio: weeklyTop7Ratios[idx],
+          top7Ratio: weeklySub4Ratios[idx],
           totalNewPatients: stat.new_patients,
         };
       });
@@ -1309,10 +1353,10 @@ export const ReportBuilderPage: React.FC = () => {
         weeklyData: weeklyConcentrationData,
       });
 
-      html += `<p style="background-color: #f0f9ff; padding: 12px; border-radius: 8px; border-left: 4px solid #3b82f6; margin-top: 16px;">${concentrationInterpretation}</p>`;
+      html += `<p style="background-color: #f0f9ff; padding: 12px; border-radius: 8px; border-left: 4px solid #3b82f6; margin-top: 16px; line-height: 1.8;">${formatInterpretation(concentrationInterpretation)}</p>`;
     } catch (error) {
       console.error('AI 해석 생성 오류:', error);
-      html += '<p style="margin-top: 16px;"><em>주별 TOP3/TOP7 집중도 추이에 대한 해석을 여기에 작성하세요...</em></p>';
+      html += '<p style="margin-top: 16px;"><em>주별 TOP3/Sub4 집중도 추이에 대한 해석을 여기에 작성하세요...</em></p>';
     }
 
     return html;
@@ -1813,7 +1857,7 @@ export const ReportBuilderPage: React.FC = () => {
 
       try {
         const gptInterpretation = await generateSmartplaceInterpretation(gptData);
-        html += `<p style="background-color: #f0f9ff; padding: 12px; border-radius: 8px; border-left: 4px solid #3b82f6; margin-top: 16px;">${gptInterpretation}</p>`;
+        html += `<p style="background-color: #f0f9ff; padding: 12px; border-radius: 8px; border-left: 4px solid #3b82f6; margin-top: 16px; line-height: 1.8;">${formatInterpretation(gptInterpretation)}</p>`;
       } catch (gptError) {
         console.error('GPT 해석 생성 오류:', gptError);
         html += '<p style="margin-top: 16px;"><em>유입 통계 분석에 대한 해석을 여기에 작성하세요...</em></p>';
@@ -1849,33 +1893,36 @@ export const ReportBuilderPage: React.FC = () => {
       return html;
     }
 
-    // 블로그 선택 UI (2개 이상일 때만)
-    if (blogAccounts.length > 1) {
-      html += `
-        <div style="background-color: #f9fafb; padding: 16px; border: 1px solid #e5e7eb; border-radius: 8px; margin: 16px 0;">
-          <p style="font-weight: 600; margin: 0 0 12px 0;">분석 대상 블로그 선택</p>
-          <div style="display: flex; flex-wrap: wrap; gap: 12px;">
-      `;
-      blogAccounts.forEach(account => {
-        const isSelected = selectedBlogIds.includes(account.id);
-        html += `
-          <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-            <input type="checkbox" ${isSelected ? 'checked' : ''} disabled style="width: 16px; height: 16px;">
-            <span style="font-size: 14px;">${account.name}${account.isMain ? ' (메인)' : ''}</span>
-          </label>
-        `;
-      });
-      html += `
-          </div>
-          <p style="font-size: 12px; color: #6b7280; margin: 8px 0 0 0;">* 선택된 블로그: ${selectedBlogIds.length}개</p>
-        </div>
-      `;
-    }
-
     // 선택된 블로그들의 데이터만 사용
     const selectedAccounts = blogAccounts.filter(a => selectedBlogIds.includes(a.id));
 
-    // 가. 당월 운영 목표
+    if (selectedAccounts.length === 0) {
+      html += `
+        <div style="background-color: #fef3c7; padding: 16px; border: 1px solid #f59e0b; border-radius: 8px; margin: 16px 0;">
+          <p style="color: #92400e; margin: 0;">
+            분석할 블로그를 선택해주세요.
+          </p>
+        </div>
+      `;
+      return html;
+    }
+
+    // 공통 함수들
+    const formatDate = (date: string) => date.replace(/-/g, '.');
+    const periodALabel = periodAStart && periodAEnd ? `${formatDate(periodAStart)} ~ ${formatDate(periodAEnd)}` : '기준기간';
+    const periodBLabel = periodBStart && periodBEnd ? `${formatDate(periodBStart)} ~ ${formatDate(periodBEnd)}` : '비교기간';
+    const formatNumber = (num: number) => new Intl.NumberFormat('ko-KR').format(Math.round(num));
+    const formatDecimal = (num: number) => num.toFixed(1);
+
+    // startFrom 형식: "20251006" -> Date로 변환
+    const parseStartFrom = (startFrom: string) => {
+      const year = parseInt(startFrom.substring(0, 4));
+      const month = parseInt(startFrom.substring(4, 6)) - 1;
+      const day = parseInt(startFrom.substring(6, 8));
+      return new Date(year, month, day);
+    };
+
+    // 가. 당월 운영 목표 (공통)
     html += `
       <h4 style="margin-top: 24px;">가. 당월 운영 목표</h4>
       <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%; margin: 16px 0;">
@@ -1892,234 +1939,224 @@ export const ReportBuilderPage: React.FC = () => {
       </table>
     `;
 
-    // 타겟 키워드 운영 표 (비교기간 vs 기준기간)
-    const formatDate = (date: string) => date.replace(/-/g, '.');
-    const periodALabel = periodAStart && periodAEnd ? `${formatDate(periodAStart)} ~ ${formatDate(periodAEnd)}` : '기준기간';
-    const periodBLabel = periodBStart && periodBEnd ? `${formatDate(periodBStart)} ~ ${formatDate(periodBEnd)}` : '비교기간';
+    // 각 블로그별로 개별 섹션 생성
+    for (let blogIndex = 0; blogIndex < selectedAccounts.length; blogIndex++) {
+      const account = selectedAccounts[blogIndex];
+      const blogLabel = account.isMain ? `${account.name}` : `${account.blogId}`;
 
-    html += `
-      <h5 style="margin-top: 20px;">타겟 키워드 운영</h5>
-      <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%; margin: 16px 0;">
-        <thead>
-          <tr style="background-color: #f3f4f6;">
-            <th style="width: 40px;">No</th>
-            <th>비교기간 (${periodBLabel})</th>
-            <th>기준기간 (${periodALabel})</th>
-          </tr>
-        </thead>
-        <tbody>
-    `;
-
-    // 키워드 데이터 로드 및 표시
-    for (let i = 1; i <= 10; i++) {
       html += `
-        <tr>
-          <td style="text-align: center;">${i}</td>
-          <td><em style="color: #9ca3af;">(키워드)</em></td>
-          <td><em style="color: #9ca3af;">(키워드)</em></td>
-        </tr>
+        <div style="margin-top: 32px; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px; background-color: #fafafa;">
+          <h5 style="margin: 0 0 16px 0; font-size: 15px; font-weight: 600; color: #1f2937;">
+            📊 ${blogLabel}
+            ${account.isMain ? '<span style="margin-left: 8px; padding: 2px 8px; font-size: 11px; background-color: #dbeafe; color: #1d4ed8; border-radius: 4px;">메인</span>' : ''}
+          </h5>
       `;
-    }
 
-    html += '</tbody></table>';
+      // 1. 타겟 키워드 운영
+      try {
+        const keywordsA: string[] = [];
+        const keywordsB: string[] = [];
 
-    // 나. 유입 통계 분석
-    html += '<h4 style="margin-top: 24px;">나. 유입 통계 분석</h4>';
-
-    // 1. 블로그 성과 지표 (조회수)
-    html += '<h5 style="margin-top: 20px;">1. 블로그 성과 지표</h5>';
-
-    // 기간별 조회수 집계
-    const aggregateVisits = (account: typeof selectedAccounts[0], startDate: string, endDate: string) => {
-      if (!account.visitStats || account.visitStats.length === 0) return 0;
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      end.setDate(end.getDate() + 6); // 주간 종료일
-
-      return account.visitStats
-        .filter(stat => {
-          const statStart = new Date(stat.weekStart);
-          return statStart >= start && statStart <= end;
-        })
-        .reduce((sum, stat) => sum + stat.visitTotal, 0);
-    };
-
-    // 선택된 블로그들의 조회수 합산
-    let totalVisitsA = 0;
-    let totalVisitsB = 0;
-
-    selectedAccounts.forEach(account => {
-      if (periodAStart && periodAEnd) {
-        totalVisitsA += aggregateVisits(account, periodAStart, periodAEnd);
-      }
-      if (periodBStart && periodBEnd) {
-        totalVisitsB += aggregateVisits(account, periodBStart, periodBEnd);
-      }
-    });
-
-    const formatNumber = (num: number) => new Intl.NumberFormat('ko-KR').format(Math.round(num));
-
-    html += `
-      <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%; margin: 16px 0;">
-        <thead>
-          <tr style="background-color: #f3f4f6;">
-            <th>기간</th>
-            <th>총 조회수</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td style="font-weight: 600; font-size: 12px;">${periodALabel}</td>
-            <td style="text-align: center; font-weight: 600;">${formatNumber(totalVisitsA)}</td>
-          </tr>
-          ${periodBStart && periodBEnd ? `
-          <tr>
-            <td style="font-weight: 600; font-size: 12px;">${periodBLabel}</td>
-            <td style="text-align: center;">${formatNumber(totalVisitsB)}</td>
-          </tr>
-          ` : ''}
-        </tbody>
-      </table>
-    `;
-
-    // 2. 유입 경로 (플레이스 vs 검색)
-    html += '<h5 style="margin-top: 20px;">2. 유입 경로 분석</h5>';
-
-    // 기간별 유입 경로 집계
-    const aggregateReferers = (account: typeof selectedAccounts[0], startDate: string, endDate: string) => {
-      if (!account.refererStats || account.refererStats.length === 0) return {};
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      end.setDate(end.getDate() + 6);
-
-      const totals: Record<string, number> = {};
-      let count = 0;
-
-      account.refererStats
-        .filter(stat => {
-          const statStart = new Date(stat.weekStart);
-          return statStart >= start && statStart <= end;
-        })
-        .forEach(stat => {
-          stat.referers.forEach(ref => {
-            totals[ref.source] = (totals[ref.source] || 0) + ref.percentage;
+        if (periodAStart && periodAEnd) {
+          const dataA = await adminAPI.getBlogKeywords(account.blogId, periodAStart, periodAEnd);
+          dataA.topKeywords.forEach(kw => {
+            if (!keywordsA.includes(kw.keyword)) keywordsA.push(kw.keyword);
           });
-          count++;
-        });
+        }
+        if (periodBStart && periodBEnd) {
+          const dataB = await adminAPI.getBlogKeywords(account.blogId, periodBStart, periodBEnd);
+          dataB.topKeywords.forEach(kw => {
+            if (!keywordsB.includes(kw.keyword)) keywordsB.push(kw.keyword);
+          });
+        }
 
-      // 평균 계산
-      Object.keys(totals).forEach(key => {
-        totals[key] = count > 0 ? totals[key] / count : 0;
-      });
+        // LLM으로 키워드 분류 (모든 키워드를 한 번에 분류)
+        const allKeywords = [...new Set([...keywordsA, ...keywordsB])];
+        let localKeywordsSet = new Set<string>();
 
-      return totals;
-    };
+        if (allKeywords.length > 0) {
+          try {
+            const classificationResult = await classifyKeywords(allKeywords);
+            localKeywordsSet = new Set(classificationResult.local || []);
+          } catch (classifyError) {
+            console.error('키워드 분류 오류:', classifyError);
+            // 분류 실패 시 모든 키워드를 전국구로 처리
+          }
+        }
 
-    // 선택된 블로그들의 유입 경로 합산
-    const refererTotalsA: Record<string, number> = {};
-    const refererTotalsB: Record<string, number> = {};
+        // 키워드 셀 스타일 (지역: 연파랑, 전국구: 진파랑)
+        const getKeywordCellStyle = (keyword: string): string => {
+          if (localKeywordsSet.has(keyword)) {
+            return 'background-color: #dbeafe; color: #1e40af;'; // 연파랑 배경
+          }
+          return 'background-color: #3b82f6; color: #ffffff;'; // 진파랑 배경
+        };
 
-    selectedAccounts.forEach(account => {
-      if (periodAStart && periodAEnd) {
-        const refs = aggregateReferers(account, periodAStart, periodAEnd);
-        Object.entries(refs).forEach(([source, pct]) => {
-          refererTotalsA[source] = (refererTotalsA[source] || 0) + pct;
-        });
+        html += `
+          <p style="font-weight: 600; margin: 16px 0 8px 0;">타겟 키워드 운영</p>
+          <div style="display: flex; gap: 12px; margin-bottom: 8px; font-size: 11px;">
+            <span><span style="display: inline-block; width: 12px; height: 12px; background-color: #dbeafe; border: 1px solid #93c5fd; margin-right: 4px;"></span>지역 키워드</span>
+            <span><span style="display: inline-block; width: 12px; height: 12px; background-color: #3b82f6; margin-right: 4px;"></span>전국구 키워드</span>
+          </div>
+          <table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse; width: 100%; margin-bottom: 16px; font-size: 13px;">
+            <thead>
+              <tr style="background-color: #f3f4f6;">
+                <th style="width: 30px;">No</th>
+                <th>비교기간 (${periodBLabel})</th>
+                <th>기준기간 (${periodALabel})</th>
+              </tr>
+            </thead>
+            <tbody>
+        `;
+
+        const maxKeywords = Math.max(keywordsA.length, keywordsB.length, 5);
+        for (let i = 0; i < Math.min(maxKeywords, 10); i++) {
+          const kwB = keywordsB[i];
+          const kwA = keywordsA[i];
+          html += `
+            <tr>
+              <td style="text-align: center;">${i + 1}</td>
+              <td style="${kwB ? getKeywordCellStyle(kwB) : ''}">${kwB || '<em style="color: #9ca3af;">-</em>'}</td>
+              <td style="${kwA ? getKeywordCellStyle(kwA) : ''}">${kwA || '<em style="color: #9ca3af;">-</em>'}</td>
+            </tr>
+          `;
+        }
+
+        html += '</tbody></table>';
+      } catch (error) {
+        console.error('Failed to load blog keywords for', account.blogId, error);
+        html += '<p style="color: #9ca3af; font-size: 13px;">키워드 데이터를 불러올 수 없습니다.</p>';
       }
-      if (periodBStart && periodBEnd) {
-        const refs = aggregateReferers(account, periodBStart, periodBEnd);
-        Object.entries(refs).forEach(([source, pct]) => {
-          refererTotalsB[source] = (refererTotalsB[source] || 0) + pct;
-        });
+
+      // 2. 블로그 성과 지표 (조회수) - visitStats가 있는 경우만
+      if (account.visitStats && account.visitStats.length > 0) {
+        const aggregateVisits = (startDate: string, endDate: string) => {
+          const start = new Date(startDate);
+          const end = new Date(endDate);
+          end.setDate(end.getDate() + 6);
+
+          return account.visitStats
+            .filter(stat => {
+              const statStart = parseStartFrom(stat.startFrom);
+              return statStart >= start && statStart <= end;
+            })
+            .reduce((sum, stat) => sum + stat.total, 0);
+        };
+
+        const totalVisitsA = periodAStart && periodAEnd ? aggregateVisits(periodAStart, periodAEnd) : 0;
+        const totalVisitsB = periodBStart && periodBEnd ? aggregateVisits(periodBStart, periodBEnd) : 0;
+
+        html += `
+          <p style="font-weight: 600; margin: 16px 0 8px 0;">블로그 성과 지표</p>
+          <table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse; width: 100%; margin-bottom: 16px; font-size: 13px;">
+            <thead>
+              <tr style="background-color: #f3f4f6;">
+                <th>기간</th>
+                <th>총 조회수</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="font-weight: 600; font-size: 12px;">${periodALabel}</td>
+                <td style="text-align: center; font-weight: 600;">${formatNumber(totalVisitsA)}</td>
+              </tr>
+              ${periodBStart && periodBEnd ? `
+              <tr>
+                <td style="font-weight: 600; font-size: 12px;">${periodBLabel}</td>
+                <td style="text-align: center;">${formatNumber(totalVisitsB)}</td>
+              </tr>
+              ` : ''}
+            </tbody>
+          </table>
+        `;
       }
-    });
 
-    // 평균 계산 (블로그 수로 나눔)
-    const accountCount = selectedAccounts.length || 1;
-    Object.keys(refererTotalsA).forEach(key => {
-      refererTotalsA[key] = refererTotalsA[key] / accountCount;
-    });
-    Object.keys(refererTotalsB).forEach(key => {
-      refererTotalsB[key] = refererTotalsB[key] / accountCount;
-    });
+      // 3. 유입 경로 분석 - refererStats가 있는 경우만
+      if (account.refererStats && account.refererStats.length > 0) {
+        // visitStats와 refererStats를 매칭하여 유입 수 계산
+        const calcRefererVisits = (startDate: string, endDate: string) => {
+          const start = new Date(startDate);
+          const end = new Date(endDate);
+          end.setDate(end.getDate() + 6);
 
-    // 플레이스 유입 비율 계산
-    const placeRefererA = refererTotalsA['플레이스'] || refererTotalsA['네이버플레이스'] || 0;
-    const searchRefererA = refererTotalsA['네이버검색'] || refererTotalsA['검색'] || 0;
-    const placeRefererB = refererTotalsB['플레이스'] || refererTotalsB['네이버플레이스'] || 0;
-    const searchRefererB = refererTotalsB['네이버검색'] || refererTotalsB['검색'] || 0;
+          let placeVisits = 0;
+          let searchVisits = 0;
+          let totalVisits = 0;
 
-    // 유입량 계산 (조회수 * 비율)
-    const placeVisitsA = totalVisitsA * (placeRefererA / 100);
-    const searchVisitsA = totalVisitsA * (searchRefererA / 100);
-    const placeVisitsB = totalVisitsB * (placeRefererB / 100);
-    const searchVisitsB = totalVisitsB * (searchRefererB / 100);
+          // refererStats 기반으로 계산
+          account.refererStats
+            .filter(stat => {
+              const statStart = parseStartFrom(stat.startFrom);
+              return statStart >= start && statStart <= end;
+            })
+            .forEach(refererStat => {
+              // 같은 주차의 visitStats 찾기
+              const visitStat = account.visitStats?.find(v => v.startFrom === refererStat.startFrom);
+              const weekTotal = visitStat?.total || 0;
+              totalVisits += weekTotal;
 
-    const formatDecimal = (num: number) => num.toFixed(1);
+              if (refererStat.entries && weekTotal > 0) {
+                refererStat.entries.forEach(entry => {
+                  const visits = weekTotal * (entry.percentage / 100);
+                  if (entry.source.includes('플레이스')) {
+                    placeVisits += visits;
+                  } else if (entry.source.includes('통합검색') || entry.source.includes('블로그검색')) {
+                    searchVisits += visits;
+                  }
+                });
+              }
+            });
 
-    html += `
-      <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%; margin: 16px 0;">
-        <thead>
-          <tr style="background-color: #f3f4f6;">
-            <th>기간</th>
-            <th>플레이스 유입 비율</th>
-            <th>검색 유입 비율</th>
-            <th>플레이스 유입량</th>
-            <th>검색 유입량</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td style="font-weight: 600; font-size: 12px;">${periodALabel}</td>
-            <td style="text-align: center;">${formatDecimal(placeRefererA)}%</td>
-            <td style="text-align: center;">${formatDecimal(searchRefererA)}%</td>
-            <td style="text-align: center;">${formatNumber(placeVisitsA)}</td>
-            <td style="text-align: center;">${formatNumber(searchVisitsA)}</td>
-          </tr>
-          ${periodBStart && periodBEnd ? `
-          <tr>
-            <td style="font-weight: 600; font-size: 12px;">${periodBLabel}</td>
-            <td style="text-align: center;">${formatDecimal(placeRefererB)}%</td>
-            <td style="text-align: center;">${formatDecimal(searchRefererB)}%</td>
-            <td style="text-align: center;">${formatNumber(placeVisitsB)}</td>
-            <td style="text-align: center;">${formatNumber(searchVisitsB)}</td>
-          </tr>
-          ` : ''}
-        </tbody>
-      </table>
-    `;
+          return { placeVisits, searchVisits, totalVisits };
+        };
 
-    // GPT 해석
-    try {
-      const blogGptData = {
-        periodALabel,
-        periodBLabel,
-        periodA: {
-          totalVisits: totalVisitsA,
-          placeRefererPercent: placeRefererA,
-          searchRefererPercent: searchRefererA,
-          placeVisits: placeVisitsA,
-          searchVisits: searchVisitsA
-        },
-        periodB: periodBStart && periodBEnd ? {
-          totalVisits: totalVisitsB,
-          placeRefererPercent: placeRefererB,
-          searchRefererPercent: searchRefererB,
-          placeVisits: placeVisitsB,
-          searchVisits: searchVisitsB
-        } : null
-      };
+        const resultA = periodAStart && periodAEnd ? calcRefererVisits(periodAStart, periodAEnd) : { placeVisits: 0, searchVisits: 0, totalVisits: 0 };
+        const resultB = periodBStart && periodBEnd ? calcRefererVisits(periodBStart, periodBEnd) : { placeVisits: 0, searchVisits: 0, totalVisits: 0 };
 
-      const blogInterpretation = await generateBlogInterpretation(blogGptData);
-      html += `<p style="background-color: #f0f9ff; padding: 12px; border-radius: 8px; border-left: 4px solid #3b82f6; margin-top: 16px;">${blogInterpretation}</p>`;
-    } catch (gptError) {
-      console.error('블로그 GPT 해석 생성 오류:', gptError);
-      html += '<p style="margin-top: 16px;"><em>유입 통계 분석에 대한 해석을 여기에 작성하세요...</em></p>';
+        const placeRefererA = resultA.totalVisits > 0 ? (resultA.placeVisits / resultA.totalVisits) * 100 : 0;
+        const searchRefererA = resultA.totalVisits > 0 ? (resultA.searchVisits / resultA.totalVisits) * 100 : 0;
+        const placeRefererB = resultB.totalVisits > 0 ? (resultB.placeVisits / resultB.totalVisits) * 100 : 0;
+        const searchRefererB = resultB.totalVisits > 0 ? (resultB.searchVisits / resultB.totalVisits) * 100 : 0;
+
+        html += `
+          <p style="font-weight: 600; margin: 16px 0 8px 0;">유입 경로 분석</p>
+          <table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse; width: 100%; margin-bottom: 16px; font-size: 13px;">
+            <thead>
+              <tr style="background-color: #f3f4f6;">
+                <th>기간</th>
+                <th>플레이스 유입</th>
+                <th>검색 유입</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="font-weight: 600; font-size: 12px;">${periodALabel}</td>
+                <td style="text-align: center;">${formatDecimal(placeRefererA)}% (${formatNumber(resultA.placeVisits)}명)</td>
+                <td style="text-align: center;">${formatDecimal(searchRefererA)}% (${formatNumber(resultA.searchVisits)}명)</td>
+              </tr>
+              ${periodBStart && periodBEnd ? `
+              <tr>
+                <td style="font-weight: 600; font-size: 12px;">${periodBLabel}</td>
+                <td style="text-align: center;">${formatDecimal(placeRefererB)}% (${formatNumber(resultB.placeVisits)}명)</td>
+                <td style="text-align: center;">${formatDecimal(searchRefererB)}% (${formatNumber(resultB.searchVisits)}명)</td>
+              </tr>
+              ` : ''}
+            </tbody>
+          </table>
+        `;
+      }
+
+      // 데이터가 없는 경우 메시지
+      if ((!account.visitStats || account.visitStats.length === 0) && (!account.refererStats || account.refererStats.length === 0)) {
+        html += '<p style="color: #9ca3af; font-size: 13px; margin: 16px 0;">유입 통계 데이터가 없습니다.</p>';
+      }
+
+      html += '</div>'; // 블로그 섹션 닫기
     }
 
-    // 다. 후속 전략
+    // 다. 후속 전략 (공통)
     html += `
-      <h4 style="margin-top: 24px;">다. 후속 전략</h4>
+      <h4 style="margin-top: 24px;">나. 후속 전략</h4>
       <ul style="color: #374151;">
         <li><em style="color: #9ca3af;">(전략 1을 입력해주세요)</em></li>
         <li><em style="color: #9ca3af;">(전략 2를 입력해주세요)</em></li>
@@ -2296,9 +2333,13 @@ export const ReportBuilderPage: React.FC = () => {
     `;
   };
 
-  // 초안 생성
+  // 초안 생성 (동시에 여러 섹션 생성 가능)
   const handleGenerateDraft = async (id: string) => {
-    setGeneratingSection(id);
+    // 이미 생성 중인 섹션이면 무시
+    if (generatingSections.has(id)) return;
+
+    // 생성 중 목록에 추가
+    setGeneratingSections(prev => new Set(prev).add(id));
     let content = '';
 
     try {
@@ -2325,7 +2366,7 @@ export const ReportBuilderPage: React.FC = () => {
           content = '<h2>' + sections.find(s => s.id === id)?.title + '</h2><p>생성된 초안 내용...</p>';
       }
 
-      setSections(sections.map(section =>
+      setSections(prev => prev.map(section =>
         section.id === id
           ? {
               ...section,
@@ -2335,7 +2376,12 @@ export const ReportBuilderPage: React.FC = () => {
           : section
       ));
     } finally {
-      setGeneratingSection(null);
+      // 생성 중 목록에서 제거
+      setGeneratingSections(prev => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
     }
   };
 
@@ -2408,6 +2454,20 @@ export const ReportBuilderPage: React.FC = () => {
             color: #374151;
             margin-top: 24px;
             margin-bottom: 12px;
+          }
+          h4 {
+            font-size: 15px;
+            font-weight: 600;
+            color: #374151;
+            margin-top: 20px;
+            margin-bottom: 10px;
+          }
+          h5 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #4b5563;
+            margin-top: 16px;
+            margin-bottom: 8px;
           }
           table {
             border-collapse: collapse;
@@ -2549,7 +2609,7 @@ export const ReportBuilderPage: React.FC = () => {
           <SectionList
             sections={sections}
             selectedSectionId={selectedSectionId}
-            generatingSection={generatingSection}
+            generatingSections={generatingSections}
             onSelectSection={setSelectedSectionId}
             onToggleSection={toggleSection}
             onToggleIncludeInPdf={toggleIncludeInPdf}
@@ -2560,7 +2620,7 @@ export const ReportBuilderPage: React.FC = () => {
           {/* Right Panel - 에디터 */}
           <SectionEditor
             section={selectedSection ?? null}
-            generatingSection={generatingSection}
+            generatingSections={generatingSections}
             onContentChange={handleContentChange}
             onGenerateDraft={handleGenerateDraft}
           />

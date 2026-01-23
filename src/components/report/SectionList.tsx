@@ -8,7 +8,7 @@ import type { ReportSection } from '../../types/report';
 interface SectionListProps {
   sections: ReportSection[];
   selectedSectionId: string | null;
-  generatingSection: string | null;
+  generatingSections: Set<string>;
   onSelectSection: (id: string) => void;
   onToggleSection: (id: string) => void;
   onToggleIncludeInPdf: (id: string) => void;
@@ -19,7 +19,7 @@ interface SectionListProps {
 export const SectionList: React.FC<SectionListProps> = ({
   sections,
   selectedSectionId,
-  generatingSection,
+  generatingSections,
   onSelectSection,
   onToggleSection,
   onToggleIncludeInPdf,
@@ -69,19 +69,19 @@ export const SectionList: React.FC<SectionListProps> = ({
                         e.stopPropagation();
                         onGenerateDraft(section.id);
                       }}
-                      disabled={generatingSection === section.id}
+                      disabled={generatingSections.has(section.id)}
                       style={{
                         padding: '6px 12px',
                         fontSize: '11px',
                         fontWeight: 500,
                         color: '#fff',
-                        backgroundColor: generatingSection === section.id ? '#9ca3af' : '#3b82f6',
+                        backgroundColor: generatingSections.has(section.id) ? '#9ca3af' : '#3b82f6',
                         border: 'none',
                         borderRadius: '4px',
-                        cursor: generatingSection === section.id ? 'not-allowed' : 'pointer',
+                        cursor: generatingSections.has(section.id) ? 'not-allowed' : 'pointer',
                       }}
                     >
-                      {generatingSection === section.id ? '생성 중...' : '초안 생성'}
+                      {generatingSections.has(section.id) ? '생성 중...' : '초안 생성'}
                     </button>
                   ) : (
                     <>
