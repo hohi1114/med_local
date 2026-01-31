@@ -49,7 +49,12 @@ const NotionCronSettings: React.FC = () => {
       });
       loadDatabases();
     } catch (error: any) {
-      alert(error.message || '추가 실패');
+      const dbTypeName = newDb.db_type === 'blog' ? '블로그' : '업로드';
+      if (error.message?.includes('409') || error.message?.includes('이미 등록')) {
+        alert(`중복 등록: ${newDb.month}에 "${dbTypeName}" 타입이 이미 존재합니다.\n기존 항목을 삭제하거나 다른 월을 선택해주세요.`);
+      } else {
+        alert(error.message || '추가 실패');
+      }
     }
   };
 

@@ -201,6 +201,9 @@ export const AdminDashboard: React.FC = () => {
 
   // 1. state 추가 (기존 state들 근처에)
   const [isHospitalSelectorOpen, setIsHospitalSelectorOpen] = useState(true);
+
+  // 노션 설정 모달
+  const [showNotionSettings, setShowNotionSettings] = useState(false);
  
 
   useEffect(() => {
@@ -618,6 +621,27 @@ export const AdminDashboard: React.FC = () => {
               📊 보고서 생성
             </button>
 
+            {/* 📋 노션 DB 설정 버튼 */}
+            <button
+              onClick={() => setShowNotionSettings(true)}
+              style={{
+                padding: '8px 16px',
+                fontSize: '13px',
+                fontWeight: 500,
+                color: '#fff',
+                backgroundColor: '#1e293b',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              📋 노션 알림 설정
+            </button>
+
             {/* 🗺️ 위치 분석 버튼 */}
             <button
               onClick={() => navigate('/admin/hospital-map')}
@@ -658,6 +682,27 @@ export const AdminDashboard: React.FC = () => {
               }}
             >
               💬 리뷰 코칭
+            </button>
+
+            {/* HTracker 버튼 */}
+            <button
+              onClick={() => window.open('https://htracker-xi.vercel.app/', '_blank')}
+              style={{
+                padding: '8px 16px',
+                fontSize: '13px',
+                fontWeight: 500,
+                color: '#fff',
+                backgroundColor: '#3b82f6',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              HTracker
             </button>
 
             <button
@@ -1288,11 +1333,56 @@ export const AdminDashboard: React.FC = () => {
           </>
         )}
 
-        {/* 노션 알림 DB 설정 */}
-        <div style={{ marginTop: '32px' }}>
-          <NotionCronSettings />
-        </div>
       </div>
+
+      {/* 노션 알림 DB 설정 모달 */}
+      {showNotionSettings && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+          }}
+          onClick={() => setShowNotionSettings(false)}
+        >
+          <div
+            style={{
+              backgroundColor: '#fff',
+              borderRadius: '12px',
+              maxWidth: '700px',
+              width: '90%',
+              maxHeight: '80vh',
+              overflow: 'auto',
+              position: 'relative',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowNotionSettings(false)}
+              style={{
+                position: 'absolute',
+                top: '12px',
+                right: '12px',
+                background: 'none',
+                border: 'none',
+                fontSize: '20px',
+                cursor: 'pointer',
+                color: '#64748b',
+              }}
+            >
+              ✕
+            </button>
+            <NotionCronSettings />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
