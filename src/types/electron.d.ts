@@ -123,6 +123,11 @@ declare global {
       onGeocodingProgress: (
         callback: (data: { current: number; total: number }) => void
       ) => () => void;
+
+      // 자동 업데이트
+      onUpdateAvailable: (callback: () => void) => () => void;
+      onUpdateDownloaded: (callback: () => void) => () => void;
+      installUpdate: () => Promise<void>;
     };
   }
 }

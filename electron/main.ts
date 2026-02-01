@@ -1,4 +1,5 @@
 import { app, BrowserWindow, ipcMain } from "electron";
+import { autoUpdater } from "electron-updater";
 import path from "path";
 import si from "systeminformation";
 
@@ -107,7 +108,7 @@ const createMainWindow = () => {
     mainWindow.loadURL("http://localhost:5173"); // React 앱 로드
     mainWindow.webContents.openDevTools();
   } else {
-    mainWindow.loadURL(`http://3.39.10.210:8000`);
+    mainWindow.loadURL(`http://htracker.org:8000`);
   }
 
   mainWindow.on("closed", () => (mainWindow = null));
@@ -115,6 +116,47 @@ const createMainWindow = () => {
 
 app.whenReady().then(() => {
   createMainWindow();
+
+  // 자동 업데이트 설정
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+
+  // 프로덕션에서만 자동 업데이트 체크
+  if (!isDev) {
+    autoUpdater.checkForUpdatesAndNotify();
+  }
+
+  // 업데이트 이벤트 핸들러 (디버깅용 로그 포함)
+  autoUpdater.on("checking-for-update", () => {
+    console.log("업데이트 확인 중...");
+  });
+
+  autoUpdater.on("update-available", (info) => {
+    console.log("업데이트 가능:", info.version);
+    mainWindow?.webContents.send("update-available");
+  });
+
+  autoUpdater.on("update-not-available", () => {
+    console.log("최신 버전입니다.");
+  });
+
+  autoUpdater.on("download-progress", (progress) => {
+    console.log(`다운로드 중: ${Math.round(progress.percent)}%`);
+  });
+
+  autoUpdater.on("update-downloaded", (info) => {
+    console.log("업데이트 다운로드 완료:", info.version);
+    mainWindow?.webContents.send("update-downloaded");
+  });
+
+  autoUpdater.on("error", (err) => {
+    console.error("업데이트 오류:", err);
+  });
+
+  // 업데이트 설치 및 재시작 요청 처리
+  ipcMain.handle("install-update", () => {
+    autoUpdater.quitAndInstall();
+  });
 
   // 시스템 UUID를 가져오는 요청 처리
   ipcMain.handle("get-system-uuid", async () => {

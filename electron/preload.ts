@@ -156,4 +156,17 @@ contextBridge.exposeInMainWorld("electron", {
       ipcRenderer.removeListener("geocoding-progress", listener);
     };
   },
+
+  // 자동 업데이트 관련
+  onUpdateAvailable: (callback: () => void) => {
+    ipcRenderer.on("update-available", callback);
+    return () => ipcRenderer.removeListener("update-available", callback);
+  },
+
+  onUpdateDownloaded: (callback: () => void) => {
+    ipcRenderer.on("update-downloaded", callback);
+    return () => ipcRenderer.removeListener("update-downloaded", callback);
+  },
+
+  installUpdate: () => ipcRenderer.invoke("install-update"),
 });
