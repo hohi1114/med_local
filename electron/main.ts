@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, ipcMain, dialog } from "electron";
 import { autoUpdater } from "electron-updater";
 import path from "path";
 import si from "systeminformation";
@@ -134,6 +134,15 @@ app.whenReady().then(() => {
   autoUpdater.on("update-available", (info) => {
     console.log("업데이트 가능:", info.version);
     mainWindow?.webContents.send("update-available");
+
+    // 네이티브 다이얼로그로 알림
+    dialog.showMessageBox(mainWindow!, {
+      type: "info",
+      title: "업데이트 알림",
+      message: `새 버전(${info.version})을 다운로드하고 있습니다.`,
+      detail: "다운로드가 완료되면 자동으로 설치됩니다.",
+      buttons: ["확인"],
+    });
   });
 
   autoUpdater.on("update-not-available", () => {
@@ -148,6 +157,22 @@ app.whenReady().then(() => {
   autoUpdater.on("update-downloaded", (info) => {
     console.log("업데이트 다운로드 완료:", info.version);
     mainWindow?.webContents.send("update-downloaded");
+
+    // 네이티브 다이얼로그로 재시작 확인
+    dialog
+      .showMessageBox(mainWindow!, {
+        type: "info",
+        title: "업데이트 준비 완료",
+        message: `새 버전(${info.version})이 준비되었습니다.`,
+        detail: "지금 재시작하여 업데이트를 적용하시겠습니까?",
+        buttons: ["지금 재시작", "나중에"],
+        defaultId: 0,
+      })
+      .then((result) => {
+        if (result.response === 0) {
+          autoUpdater.quitAndInstall();
+        }
+      });
   });
 
   autoUpdater.on("error", (err) => {
