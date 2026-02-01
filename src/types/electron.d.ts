@@ -126,6 +126,7 @@ declare global {
 
       // 자동 업데이트
       onUpdateAvailable: (callback: () => void) => () => void;
+      onUpdateProgress: (callback: (percent: number) => void) => () => void;
       onUpdateDownloaded: (callback: () => void) => () => void;
       installUpdate: () => Promise<void>;
     };

@@ -142,6 +142,7 @@ app.whenReady().then(() => {
 
   autoUpdater.on("download-progress", (progress) => {
     console.log(`다운로드 중: ${Math.round(progress.percent)}%`);
+    mainWindow?.webContents.send("update-progress", Math.round(progress.percent));
   });
 
   autoUpdater.on("update-downloaded", (info) => {

@@ -163,6 +163,14 @@ contextBridge.exposeInMainWorld("electron", {
     return () => ipcRenderer.removeListener("update-available", callback);
   },
 
+  onUpdateProgress: (callback: (percent: number) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, percent: number) => {
+      callback(percent);
+    };
+    ipcRenderer.on("update-progress", listener);
+    return () => ipcRenderer.removeListener("update-progress", listener);
+  },
+
   onUpdateDownloaded: (callback: () => void) => {
     ipcRenderer.on("update-downloaded", callback);
     return () => ipcRenderer.removeListener("update-downloaded", callback);
