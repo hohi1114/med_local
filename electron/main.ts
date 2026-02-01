@@ -117,12 +117,12 @@ const createMainWindow = () => {
 app.whenReady().then(() => {
   createMainWindow();
 
-  // 자동 업데이트 설정
+  // 자동 업데이트 설정 (Windows 전용)
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
 
-  // 프로덕션에서만 자동 업데이트 체크
-  if (!isDev) {
+  // Windows 프로덕션에서만 자동 업데이트 체크
+  if (!isDev && process.platform === "win32") {
     autoUpdater.checkForUpdatesAndNotify();
   }
 
