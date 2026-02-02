@@ -125,7 +125,7 @@ export async function fetchRegionData(token: string): Promise<RegionResponse> {
 
 export async function getMappingData(token: string): Promise<MappingResponse> {
   try {
-    const baseURL = "http://htrakcer.org:3001/api";
+    const baseURL = "http://htracker.org:3001/api";
 
     const response = await axios.post<MappingResponse>(
       `${baseURL}/data/get_mapping`,
