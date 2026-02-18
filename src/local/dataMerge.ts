@@ -382,76 +382,72 @@ export async function parseDailyIncomeNeo(
 }
 
 
-// For Neo data - visitType comes from patientList
+// For Neo data - visitType is determined dynamically
 export function mergeDataNeo(
   dailyIncome: DailyIncomeNeo[],
   patientList: PatientListNeo[]
 ): MergedDataNeo[] {
-  // Create a map for patient data: key = "chartNumber:visitDate"
-  const patientVisitMap = new Map<
-    string,
-    {
-      visitType: string;
-      age: number | null;
-      address: string;
-    }
-  >();
-
-  // Also create a map for chart-level data (age/address with values)
+  // Create a map for patient data: chartNumber -> { firstVisitDate, age, address }
   const patientChartMap = new Map<
     number,
     {
+      firstVisitDate: string;
       age: number | null;
       address: string;
     }
   >();
 
-  // First pass: build both maps
+  // Build patient chart map
   for (const pat of patientList) {
-    const visitKey = `${pat.chartNumber}:${pat.visitDate}`;
-    
-    // Store visit-specific data
-    patientVisitMap.set(visitKey, {
-      visitType: pat.visitType,
-      age: pat.age,
-      address: pat.address,
-    });
+    const existing = patientChartMap.get(pat.chartNumber);
 
-    // Store chart-level data only if age or address has meaningful values
-    if (pat.age !== null || (pat.address && pat.address !== "N/A" && pat.address !== "")) {
-      const existing = patientChartMap.get(pat.chartNumber);
-      
-      // Update if no existing data, or if current row has better data
-      if (!existing) {
-        patientChartMap.set(pat.chartNumber, {
-          age: pat.age,
-          address: pat.address,
-        });
-      } else {
-        // Prefer non-null age and non-empty address
-        patientChartMap.set(pat.chartNumber, {
-          age: pat.age !== null ? pat.age : existing.age,
-          address: pat.address && pat.address !== "N/A" && pat.address !== "" 
-            ? pat.address 
-            : existing.address,
-        });
-      }
+    if (!existing) {
+      patientChartMap.set(pat.chartNumber, {
+        firstVisitDate: String(pat.firstVisitDate),
+        age: pat.age,
+        address: pat.address,
+      });
+    } else {
+      // Prefer non-null age and non-empty address
+      patientChartMap.set(pat.chartNumber, {
+        firstVisitDate: existing.firstVisitDate,
+        age: pat.age !== null ? pat.age : existing.age,
+        address: pat.address && pat.address !== "N/A" && pat.address !== ""
+          ? pat.address
+          : existing.address,
+      });
     }
   }
 
+  // Helper function to normalize date string for comparison
+  const normalizeDate = (date: string | Date): string => {
+    const d = new Date(date);
+    return d.toISOString().split('T')[0]; // YYYY-MM-DD format
+  };
+
   // Create merged data from dailyIncome
   const df_merged: MergedDataNeo[] = dailyIncome.map((inc) => {
-    const visitKey = `${inc.chartNumber}:${inc.visitDate}`;
-    const visitData = patientVisitMap.get(visitKey);
     const chartData = patientChartMap.get(inc.chartNumber);
+
+    // Determine visitType dynamically:
+    // 신환: chartNumber exists in patientList AND visitDate equals firstVisitDate
+    // 재진: otherwise
+    let visitType = "재진";
+    if (chartData) {
+      const incVisitDate = normalizeDate(inc.visitDate);
+      const firstVisitDate = normalizeDate(chartData.firstVisitDate);
+      if (incVisitDate === firstVisitDate) {
+        visitType = "신환";
+      }
+    }
 
     return {
       chartNumber: inc.chartNumber,
-      visitDate: new Date(inc.visitDate as string), // Convert immediately
+      visitDate: new Date(inc.visitDate as string),
       totalCost: inc.totalCost,
-      visitType: visitData?.visitType || "",
-      age: visitData?.age ?? chartData?.age ?? null,
-      address: visitData?.address || chartData?.address || "N/D",
+      visitType,
+      age: chartData?.age ?? null,
+      address: chartData?.address || "N/D",
     };
   });
 

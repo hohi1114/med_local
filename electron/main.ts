@@ -108,7 +108,7 @@ const createMainWindow = () => {
     mainWindow.loadURL("http://localhost:5173"); // React 앱 로드
     mainWindow.webContents.openDevTools();
   } else {
-    mainWindow.loadURL(`http://htracker.org:8000`);
+    mainWindow.loadURL(`https://htracker.org`);
   }
 
   mainWindow.on("closed", () => (mainWindow = null));

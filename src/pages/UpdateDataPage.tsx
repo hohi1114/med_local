@@ -45,7 +45,7 @@ export async function uploadDataToBackend(
   processedData: ProcessDataPayload
 ): Promise<ProcessDataResponse> {
   try {
-    const baseURL = "http://htracker.org:3001/api";
+    const baseURL = "https://htracker.org/api";
 
     // Prepare the request payload
     const payload = {
@@ -88,7 +88,7 @@ export async function uploadDataToBackendVegas(
   processedData: ProcessDataPayload
 ): Promise<ProcessDataResponse> {
   try {
-    const baseURL = "http://htracker.org:3001/api";
+    const baseURL = "https://htracker.org/api";
 
     // Prepare the request payload
     const payload = {
@@ -132,7 +132,7 @@ export async function uploadDataToBackendNeo(
   processedData: ProcessDataPayload
 ): Promise<ProcessDataResponse> {
   try {
-    const baseURL = "http://htracker.org:3001/api";
+    const baseURL = "https://htracker.org/api";
 
     // Prepare the request payload
     const payload = {
@@ -176,7 +176,7 @@ export async function uploadDataToBackendOrm(
   processedData: ProcessDataPayload
 ): Promise<ProcessDataResponse> {
   try {
-    const baseURL = "http://htracker.org:3001/api";
+    const baseURL = "https://htracker.org/api";
 
     // Prepare the request payload
     const payload = {
@@ -221,7 +221,7 @@ export async function uploadDataToBackendcChart(
   processedData: ProcessDataPayload
 ): Promise<ProcessDataResponse> {
   try {
-    const baseURL = "http://htracker.org:3001/api";
+    const baseURL = "https://htracker.org/api";
 
     // Prepare the request payload
     const payload = {
@@ -265,7 +265,7 @@ export async function uploadDataToBackendBit(
   processedData: ProcessDataPayload
 ): Promise<ProcessDataResponse> {
   try {
-    const baseURL = "http://htracker.org:3001/api";
+    const baseURL = "https://htracker.org/api";
 
     // Prepare the request payload
     const payload = {
@@ -306,7 +306,7 @@ export async function uploadDataToBackendHanChart(
   processedData: ProcessDataPayload
 ): Promise<ProcessDataResponse> {
   try {
-    const baseURL = "http://htracker.org:3001/api";
+    const baseURL = "https://htracker.org/api";
 
     // Prepare the request payload
     const payload = {
@@ -349,7 +349,7 @@ export async function uploadDataToBackendDentWeb(
   processedData: ProcessDataPayload
 ): Promise<ProcessDataResponse> {
   try {
-    const baseURL = "http://htracker.org:3001/api";
+    const baseURL = "https://htracker.org/api";
 
     // Prepare the request payload
     const payload = {
@@ -394,7 +394,7 @@ export async function uploadDataToBackendEgis(
   processedData: ProcessDataPayload
 ): Promise<ProcessDataResponse> {
   try {
-    const baseURL = "http://htracker.org:3001/api";
+    const baseURL = "https://htracker.org/api";
 
     // Prepare the request payload
     const payload = {
@@ -438,7 +438,7 @@ export async function uploadDataToBackendDoctorP(
   processedData: ProcessDataPayload
 ): Promise<ProcessDataResponse> {
   try {
-    const baseURL = "http://htracker.org:3001/api";
+    const baseURL = "https://htracker.org/api";
 
     // Prepare the request payload
     const payload = {
@@ -914,9 +914,6 @@ const UpdateDataPage = () => {
       console.log(visits);
       const patients = await window.electron.parsePatientListNeo(placeBuffers);
       console.log(patients);
-
-
-
 
       // Step 3: Merge data locally
       const mergedData = await window.electron.mergeDataNeo(visits, patients);
