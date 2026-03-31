@@ -260,6 +260,41 @@ export async function uploadDataToBackendcChart(
 
 
 
+export async function uploadDataToBackendSmartNC(
+  token: string,
+  processedData: ProcessDataPayload
+): Promise<ProcessDataResponse> {
+  try {
+    const baseURL = "https://htracker.org/api";
+    const payload = {
+      processedRecords: processedData.patient_records,
+      date_location_groups: processedData.date_location_groups,
+    };
+    const response = await axios.post<ProcessDataResponse>(
+      `${baseURL}/data/smartnc`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    console.log("✅ SmartNC data processed successfully:", response.data);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      console.error("❌ Error processing SmartNC data:", error.response.data);
+      throw new Error(
+        error.response.data.error || "Failed to process SmartNC data"
+      );
+    } else {
+      throw new Error("An unexpected error occurred while processing SmartNC data");
+    }
+  }
+}
+
+
 export async function uploadDataToBackendBit(
   token: string,
   processedData: ProcessDataPayload
@@ -476,12 +511,13 @@ export async function uploadDataToBackendDoctorP(
 }
 
 const UpdateDataPage = () => {
-  const [dataType, setDataType] = useState<"euisarang" | "egis" | "dentweb" | "orm" | "vegas" | "vegas2" | "hanchart" | "doctorp" | "cChart" | "bit" | "bit2"|"neo">(
-    "euisarang" 
+  const [dataType, setDataType] = useState<"euisarang" | "egis" | "dentweb" | "orm" | "vegas" | "vegas2" | "hanchart" | "doctorp" | "cChart" | "bit" | "bit2" | "neo" | "smartnc">(
+    "euisarang"
   ); // Track data type
   const [daysFiles, setDaysFiles] = useState<FileList | null>(null); // Euisarang
   const [placeFiles, setPlaceFiles] = useState<FileList | null>(null); // Euisarang & Egis
   const [dailyIncome, setDailyIncome] = useState<FileList | null>(null); // Egis
+  const [patientFiles, setPatientFiles] = useState<FileList | null>(null); // SmartNC (3rd file)
   const [progress, setProgress] = useState<number>(0);
   const [api, contextHolder] = notification.useNotification();
   const { fetchUploadedDates } = useUpdateUserInfo();
@@ -523,8 +559,9 @@ const UpdateDataPage = () => {
           emrType === "doctorp" ||
           emrType === "cChart" ||
           emrType === "bit" ||
-          emrType === "bit2"||
-          emrType === "neo"
+          emrType === "bit2" ||
+          emrType === "neo" ||
+          emrType === "smartnc"
         ) {
           setDataType(emrType);
         }
@@ -1883,6 +1920,95 @@ const handleProcessDataDoctorP = async (): Promise<void> => {
 
 
 
+  const handleProcessDataSmartNC = async (): Promise<void> => {
+    if (!dailyIncome || !placeFiles || !patientFiles) {
+      openNotification("warning", "파일 누락", "모든 파일을 업로드해주세요.");
+      return;
+    }
+
+    setProgress(1);
+
+    const removeProgressListener = window.electron.onGeocodingProgress(
+      ({ current, total }) => {
+        const geocodingProgress = (current / total) * 80;
+        setProgress(10 + geocodingProgress);
+      }
+    );
+
+    try {
+      const incomeBuffers = await Promise.all(
+        Array.from(dailyIncome).map((file) => file.arrayBuffer())
+      );
+      const addressBuffers = await Promise.all(
+        Array.from(placeFiles).map((file) => file.arrayBuffer())
+      );
+      const patientBuffers = await Promise.all(
+        Array.from(patientFiles).map((file) => file.arrayBuffer())
+      );
+
+      const visits = await window.electron.parseDailyIncomeSmartNC(incomeBuffers);
+      console.log("SmartNC visits:", visits);
+
+      const patientAddress = await window.electron.parsePatientAddressSmartNC(addressBuffers);
+      console.log("SmartNC address:", patientAddress);
+
+      const patients = await window.electron.parsePatientListSmartNC(patientBuffers);
+      console.log("SmartNC patients:", patients);
+
+      const mergedData = await window.electron.mergeDataSmartNC(visits, patientAddress, patients);
+      console.log("SmartNC merged:", mergedData);
+
+      setProgress(10);
+
+      const processedData = await window.electron.processDataLocallySmartNC(
+        mergedData,
+        getCookie("accessToken")
+      );
+
+      removeProgressListener();
+      setProgress(90);
+
+      console.log("SmartNC processed:", processedData);
+
+      const uploadPromise = uploadDataToBackendSmartNC(
+        getCookie("accessToken"),
+        processedData
+      );
+
+      setProgress(95);
+
+      openNotification(
+        "success",
+        "데이터 업로드 중",
+        "데이터가 처리되어 업로드 중입니다. 업로드가 완료되면 알려드립니다. 프로그램을 종료하지 마세요."
+      );
+
+      setProgress(100);
+
+      uploadPromise
+        .then(() => {
+          fetchUploadedDates();
+          openNotification("success", "데이터 업로드 완료", "모든 데이터가 성공적으로 처리되었습니다.");
+        })
+        .catch((error) => {
+          console.error("❌ Background upload error:", error);
+          openNotification(
+            "error",
+            "업로드 실패",
+            error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다."
+          );
+        });
+    } catch (error) {
+      console.error("❌ Error processing SmartNC data:", error);
+      openNotification(
+        "error",
+        "데이터 처리 실패",
+        error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다."
+      );
+      setProgress(0);
+    }
+  };
+
   const handleProcessData = () => {
     if (dataType === "euisarang") {
       handleProcessDataEuisarang();
@@ -1908,6 +2034,8 @@ const handleProcessDataDoctorP = async (): Promise<void> => {
     }
       else if(dataType === "neo"){
         handleProcessDataNeo()
+    } else if (dataType === "smartnc") {
+      handleProcessDataSmartNC();
     } else {
       handleProcessDataDoctorP();
     }
@@ -1918,6 +2046,9 @@ const handleProcessDataDoctorP = async (): Promise<void> => {
   const isButtonDisabled = () => {
     if (dataType === "euisarang" || dataType === "dentweb" || dataType === "orm" || dataType === "cChart") {
       return !daysFiles || !placeFiles || progress > 0;
+    }
+    if (dataType === "smartnc") {
+      return !dailyIncome || !placeFiles || !patientFiles || progress > 0;
     }
     return !dailyIncome || !placeFiles || progress > 0;
   };
@@ -2044,6 +2175,22 @@ const handleProcessDataDoctorP = async (): Promise<void> => {
             </>
           )}
 
+          {dataType === "smartnc" && (
+            <>
+              <FileUpload
+                title="일일진료수입통계"
+                onFilesUploaded={(files) => setDailyIncome(files)}
+              />
+              <FileUpload
+                title="고객주소통계"
+                onFilesUploaded={(files) => setPlaceFiles(files)}
+              />
+              <FileUpload
+                title="내원일별 환자명부"
+                onFilesUploaded={(files) => setPatientFiles(files)}
+              />
+            </>
+          )}
 
         </ContentContainer>
 

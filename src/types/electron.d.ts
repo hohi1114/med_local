@@ -49,6 +49,11 @@ declare global {
       parseDailyIncomeNeo: (fileBuffers: ArrayBuffer[]) => Promise<any>;
       parsePatientListNeo: (fileBuffers: ArrayBuffer[]) => Promise<any>;
 
+      // File processing - SmartNC
+      parseDailyIncomeSmartNC: (fileBuffers: ArrayBuffer[]) => Promise<any>;
+      parsePatientAddressSmartNC: (fileBuffers: ArrayBuffer[]) => Promise<any>;
+      parsePatientListSmartNC: (fileBuffers: ArrayBuffer[]) => Promise<any>;
+
       // Data merging
       mergeDataEuisarang: (visits: any[], patients: any[]) => Promise<any>;
       mergeDataDentWeb: (visits: any[], patients: any[]) => Promise<any>;
@@ -67,6 +72,8 @@ declare global {
       ) => Promise<any>;
 
       mergeDataNeo: (dailyIncome: any[], patientList: any[]) => Promise<any>;
+
+      mergeDataSmartNC: (dailyIncome: any[], patientAddress: any[], patientList: any[]) => Promise<any>;
 
       mergeDatacChart: (dailyIncome: any[], patientList: any[]) => Promise<any>;
       // Final data processing
@@ -116,6 +123,11 @@ declare global {
       ) => Promise<any>;
 
        processDataLocallyNeo: (
+        mergedData: any[],
+        accessToken: string
+      ) => Promise<any>;
+
+      processDataLocallySmartNC: (
         mergedData: any[],
         accessToken: string
       ) => Promise<any>;

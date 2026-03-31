@@ -61,6 +61,12 @@ import{
 parseDailyIncomeNeo,parsePatientListNeo
 }from "../src/local/excel/neoExcel"
 
+import {
+  parseDailyIncomeSmartNC,
+  parsePatientAddressSmartNC,
+  parsePatientListSmartNC,
+} from "../src/local/excel/smartncExcel";
+
 
 import {
   mergeDataDentWeb,
@@ -72,7 +78,8 @@ import {
   mergeDataDoctorP,
   MergedDataCchart,
   mergeDataBit,
-  mergeDataNeo
+  mergeDataNeo,
+  mergeDataSmartNC,
 } from "../src/local/dataMerge";
 import {
   processDataLocally,
@@ -84,7 +91,8 @@ import {
   processDataLocallycChart,
   processDataLocallyBit,
   processDataLocallyOrm,
-  processDataLocallyNeo
+  processDataLocallyNeo,
+  processDataLocallySmartNC,
 } from "../src/local/locationProcessing";
 
 const isDev = process.env.NODE_ENV === "development";
@@ -440,6 +448,42 @@ ipcMain.handle("parse-patient-list-bit2", async (event, fileBuffers) => {
     }
   });
 
+  ipcMain.handle("parse-daily-income-smartnc", async (event, fileBuffers) => {
+    try {
+      return await parseDailyIncomeSmartNC(fileBuffers);
+    } catch (error) {
+      console.error("Error parsing SmartNC daily income:", error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle("parse-patient-address-smartnc", async (event, fileBuffers) => {
+    try {
+      return await parsePatientAddressSmartNC(fileBuffers);
+    } catch (error) {
+      console.error("Error parsing SmartNC patient address:", error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle("parse-patient-list-smartnc", async (event, fileBuffers) => {
+    try {
+      return await parsePatientListSmartNC(fileBuffers);
+    } catch (error) {
+      console.error("Error parsing SmartNC patient list:", error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle("merge-data-smartnc", async (event, dailyIncome, patientAddress, patientList) => {
+    try {
+      return mergeDataSmartNC(dailyIncome, patientAddress, patientList);
+    } catch (error) {
+      console.error("Error merging SmartNC data:", error);
+      throw error;
+    }
+  });
+
 
   ipcMain.handle("merge-data-orm", async (event, visits, patients) => {
     try {
@@ -601,6 +645,24 @@ ipcMain.handle("parse-patient-list-bit2", async (event, fileBuffers) => {
         );
       } catch (error) {
         console.error("Error processing data:", error);
+        throw error;
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "process-data-locally-smartnc",
+    async (event, mergedData, accessToken) => {
+      try {
+        return await processDataLocallySmartNC(
+          mergedData,
+          accessToken,
+          (current, total) => {
+            event.sender.send("geocoding-progress", { current, total });
+          }
+        );
+      } catch (error) {
+        console.error("Error processing SmartNC data:", error);
         throw error;
       }
     }

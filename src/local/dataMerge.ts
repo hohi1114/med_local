@@ -1,6 +1,11 @@
 import * as XLSX from "xlsx";
 import { normalizeAge } from "./ExcelParser";
 import { excelSerialToDate, calculateAge } from "./ExcelParser"
+import {
+  DailyIncomeSmartNC,
+  PatientAddressSmartNC,
+  PatientListSmartNC,
+} from "./excel/smartncExcel";
 
 export interface MergedData {
   chartNumber: number;
@@ -106,6 +111,15 @@ export interface VisitDataCchart {
 }
 
 export interface MergedDataCchart {
+  chartNumber: number;
+  visitDate: string | Date;
+  totalCost: number;
+  age: number | null;
+  address: string;
+  route: string;
+}
+
+export interface MergedDataSmartNC {
   chartNumber: number;
   visitDate: string | Date;
   totalCost: number;
@@ -927,7 +941,53 @@ export function mergeDataBit(
       doctor: patientData?.doctor ?? "N/D",
     };
   });
-  
-  
+
+
+  return df_merged;
+}
+
+
+export function mergeDataSmartNC(
+  dailyIncome: DailyIncomeSmartNC[],
+  patientAddress: PatientAddressSmartNC[],
+  patientList: PatientListSmartNC[]
+): MergedDataSmartNC[] {
+  // IPC 직렬화 시 숫자가 문자열로 올 수 있으므로 string 키로 통일
+  const toKey = (n: number | string) => String(Number(n));
+
+  // chartNumber → address
+  const addressMap = new Map<string, string>();
+  for (const p of patientAddress) {
+    const key = toKey(p.chartNumber);
+    if (!addressMap.has(key)) {
+      addressMap.set(key, p.address);
+    }
+  }
+
+  // chartNumber → age (첫 번째 유효한 값만)
+  const ageMap = new Map<string, number | null>();
+  for (const p of patientList) {
+    const key = toKey(p.chartNumber);
+    if (!ageMap.has(key) && p.age !== null) {
+      ageMap.set(key, p.age);
+    }
+  }
+
+  const df_merged: MergedDataSmartNC[] = dailyIncome.map((inc) => {
+    const key = toKey(inc.chartNumber);
+    return {
+      chartNumber: inc.chartNumber,
+      visitDate: inc.visitDate as string | Date,
+      totalCost: inc.totalCost,
+      age: ageMap.get(key) ?? null,
+      address: addressMap.get(key) ?? "N/D",
+      route: "N/D",
+    };
+  });
+
+  df_merged.forEach((record) => {
+    record.visitDate = new Date(record.visitDate as string);
+  });
+
   return df_merged;
 }

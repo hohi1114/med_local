@@ -79,6 +79,14 @@ contextBridge.exposeInMainWorld("electron", {
   parsePatientListNeo: (fileBuffers: ArrayBuffer[]) =>
     ipcRenderer.invoke("parse-patient-list-neo", fileBuffers),
 
+  // File processing - SmartNC
+  parseDailyIncomeSmartNC: (fileBuffers: ArrayBuffer[]) =>
+    ipcRenderer.invoke("parse-daily-income-smartnc", fileBuffers),
+  parsePatientAddressSmartNC: (fileBuffers: ArrayBuffer[]) =>
+    ipcRenderer.invoke("parse-patient-address-smartnc", fileBuffers),
+  parsePatientListSmartNC: (fileBuffers: ArrayBuffer[]) =>
+    ipcRenderer.invoke("parse-patient-list-smartnc", fileBuffers),
+
   // Data merging
   mergeDataEuisarang: (visits: any[], patients: any[]) =>
     ipcRenderer.invoke("merge-data-euisarang", visits, patients),
@@ -102,6 +110,9 @@ contextBridge.exposeInMainWorld("electron", {
 
   mergeDataNeo: (dailyIncome: any[], patientList: any[]) =>
     ipcRenderer.invoke("merge-data-neo", dailyIncome, patientList),
+
+  mergeDataSmartNC: (dailyIncome: any[], patientAddress: any[], patientList: any[]) =>
+    ipcRenderer.invoke("merge-data-smartnc", dailyIncome, patientAddress, patientList),
 
   // Final data processing
   processDataLocally: (mergedData: any[], accessToken: string) =>
@@ -138,6 +149,9 @@ contextBridge.exposeInMainWorld("electron", {
 
   processDataLocallyNeo: (mergedData: any[], accessToken: string) =>
     ipcRenderer.invoke("process-data-locally-neo", mergedData, accessToken),
+
+  processDataLocallySmartNC: (mergedData: any[], accessToken: string) =>
+    ipcRenderer.invoke("process-data-locally-smartnc", mergedData, accessToken),
 
   onGeocodingProgress: (
     callback: (data: { current: number; total: number }) => void
