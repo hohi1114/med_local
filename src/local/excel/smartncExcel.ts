@@ -44,7 +44,6 @@ export async function parseDailyIncomeSmartNC(
     const visitDateIndex = headers.findIndex((col: any) => col === "수납일자");
     const chartNumberIndex = headers.findIndex((col: any) => col === "고객번호");
     const totalCostIndex = headers.findIndex((col: any) => col === "총진료비");
-    const insuranceTypeIndex = headers.findIndex((col: any) => col === "보험종류");
 
     if (visitDateIndex === -1 || chartNumberIndex === -1 || totalCostIndex === -1) {
       console.error("❌ Required columns not found");
@@ -57,13 +56,8 @@ export async function parseDailyIncomeSmartNC(
       if (!row || row.length === 0) continue;
       if (!row[chartNumberIndex] || !row[visitDateIndex]) continue;
 
-      // Skip 일반 insurance type
-      if (
-        insuranceTypeIndex !== -1 &&
-        String(row[insuranceTypeIndex] ?? "").trim() === "일반"
-      ) {
-        continue;
-      }
+      // Skip 합계 행
+      if (String(row[visitDateIndex] ?? "").trim() === "합계") continue;
 
       const chartNumber = Number(
         String(row[chartNumberIndex]).trim().replace(/^0+/, "") || "0"
@@ -235,13 +229,16 @@ export async function parsePatientListSmartNC(
       continue;
     }
 
+    // 헤더의 "고객번호"는 col A(index 0)이나 실제 데이터는 col B(index 1)에 위치 → +1 보정
+    const chartNumberDataIndex = chartNumberIndex + 1;
+
     for (let i = headerRowIndex + 1; i < allData.length; i++) {
       const row = allData[i];
       if (!row || row.length === 0) continue;
 
-      if (!row[chartNumberIndex]) continue;
+      if (!row[chartNumberDataIndex]) continue;
       const chartNumber = Number(
-        String(row[chartNumberIndex]).trim().replace(/^0+/, "") || "0"
+        String(row[chartNumberDataIndex]).trim().replace(/^0+/, "") || "0"
       );
       if (isNaN(chartNumber)) continue;
 
