@@ -7,6 +7,7 @@ import {
   MergedDataCchart,
   MergedDataDentWeb,
   MergedDataDoctorP,
+  MergedDataDoctorP2,
   MergedDataEgis,
   MergedDataHanChart,
   MergedDataVegas,
@@ -1050,6 +1051,14 @@ export async function processDataLocallyDoctorP(
   }
 }
 
+
+export async function processDataLocallyDoctorP2(
+  mergedData: MergedDataDoctorP2[],
+  accessToken: string,
+  progressCallback?: (current: number, total: number) => void
+) {
+  return processDataLocallyDoctorP(mergedData as any, accessToken, progressCallback);
+}
 
 export async function processDataLocallyDentWeb(
   mergedData: MergedDataDentWeb[],

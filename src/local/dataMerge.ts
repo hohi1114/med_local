@@ -144,6 +144,21 @@ export interface MergedDataDoctorP {
   address: string;
 }
 
+export interface VisitDataDoctorP2 {
+  chartNumber: number;
+  visitDate: string;
+  totalCost: number;
+}
+
+export interface MergedDataDoctorP2 {
+  chartNumber: number;
+  visitDate: Date;
+  totalCost: number;
+  route: string;
+  age: number | null;
+  address: string;
+}
+
 interface VisitDataBit {
   chartNumber: number;
   visitDate: string | Date;
@@ -192,6 +207,7 @@ import {
 } from "./excel/hanchartExcel";
 import { DailyIncomeDentweb, PatientDataDentWeb } from "./excel/dentwebExcel";
 import { DailyIncomeDoctorP, PatientListDoctorP } from "./excel/doctorpExcel";
+import { DailyIncomeDoctorP2, PatientListDoctorP2 } from "./excel/doctorpExcel2";
 import { DailyIncomeOrm,PatientListOrm } from "./excel/ormExcel";
 import { DailyIncomeCchart, PatientListCchart } from "./excel/cChartExcel";
 import {
@@ -791,6 +807,43 @@ export function mergeDataDoctorP(
   }));
 
   return result;
+}
+
+export function mergeDataDoctorP2(
+  dailyIncome: DailyIncomeDoctorP2[],
+  patientList: PatientListDoctorP2[]
+): MergedDataDoctorP2[] {
+  const df_merged = dailyIncome.map((inc) => ({
+    chartNumber: inc.chartNumber,
+    visitDate: inc.visitDate,
+    totalCost: inc.totalCost,
+    route: "",
+    age: null as number | null,
+    address: "N/D",
+  }));
+
+  const patientMap = new Map<number, { address: string; age: number | null; route: string }>();
+  for (const pat of patientList) {
+    patientMap.set(pat.chartNumber, {
+      address: pat.address || "N/D",
+      age: pat.age ?? null,
+      route: pat.route || "",
+    });
+  }
+
+  df_merged.forEach((record) => {
+    const patientData = patientMap.get(record.chartNumber);
+    if (patientData) {
+      record.address = patientData.address;
+      record.age = patientData.age;
+      record.route = patientData.route;
+    }
+  });
+
+  return df_merged.map((record) => ({
+    ...record,
+    visitDate: new Date(record.visitDate),
+  }));
 }
 
 

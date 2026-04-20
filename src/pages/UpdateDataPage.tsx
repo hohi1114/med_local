@@ -511,7 +511,7 @@ export async function uploadDataToBackendDoctorP(
 }
 
 const UpdateDataPage = () => {
-  const [dataType, setDataType] = useState<"euisarang" | "egis" | "dentweb" | "orm" | "vegas" | "vegas2" | "hanchart" | "doctorp" | "cChart" | "bit" | "bit2" | "neo" | "smartnc">(
+  const [dataType, setDataType] = useState<"euisarang" | "egis" | "dentweb" | "orm" | "vegas" | "vegas2" | "hanchart" | "doctorp" | "doctorp2" | "cChart" | "bit" | "bit2" | "neo" | "smartnc">(
     "euisarang"
   ); // Track data type
   const [daysFiles, setDaysFiles] = useState<FileList | null>(null); // Euisarang
@@ -557,6 +557,7 @@ const UpdateDataPage = () => {
           emrType === "vegas2" ||
           emrType === "hanchart" ||
           emrType === "doctorp" ||
+          emrType === "doctorp2" ||
           emrType === "cChart" ||
           emrType === "bit" ||
           emrType === "bit2" ||
@@ -1136,6 +1137,79 @@ const handleProcessDataDoctorP = async (): Promise<void> => {
         : "알 수 없는 오류가 발생했습니다."
     );
     setProgress(0); // Reset progress on error
+  }
+};
+
+const handleProcessDataDoctorP2 = async (): Promise<void> => {
+  if (!placeFiles || !dailyIncome) {
+    openNotification("warning", "파일 누락", "모든 파일을 업로드해주세요.");
+    return;
+  }
+
+  setProgress(1);
+
+  const removeProgressListener = window.electron.onGeocodingProgress(
+    ({ current, total }) => {
+      const geocodingProgress = (current / total) * 80;
+      setProgress(10 + geocodingProgress);
+    }
+  );
+
+  try {
+    const daysBuffers = await Promise.all(
+      Array.from(dailyIncome).map((file) => file.arrayBuffer())
+    );
+    const placeBuffers = await Promise.all(
+      Array.from(placeFiles).map((file) => file.arrayBuffer())
+    );
+
+    const visits = await window.electron.parseDaysFilesDoctorP2(daysBuffers);
+    console.log("Parsed day files:", visits);
+
+    const patients = await window.electron.parsePlaceFilesDoctorP2(placeBuffers);
+    console.log("Parsed patient list:", patients);
+
+    const mergedData = await window.electron.mergeDataDoctorP2(visits, patients);
+    console.log("Merged data:", mergedData);
+
+    setProgress(10);
+
+    const processedData = await window.electron.processDataLocallyDoctorP2(
+      mergedData,
+      getCookie("accessToken")
+    );
+
+    removeProgressListener();
+    setProgress(90);
+
+    const uploadPromise = uploadDataToBackendDoctorP(
+      getCookie("accessToken"),
+      processedData
+    );
+
+    setProgress(95);
+
+    openNotification(
+      "success",
+      "데이터 업로드 중",
+      "데이터가 처리되어 업로드 중입니다. 업로드가 완료되면 알려드립니다. 프로그램을 종료하지 마세요."
+    );
+
+    setProgress(100);
+
+    uploadPromise
+      .then(() => {
+        fetchUploadedDates();
+        openNotification("success", "데이터 업로드 완료", "모든 DoctorP2 데이터가 성공적으로 처리되었습니다.");
+      })
+      .catch((error) => {
+        console.error("❌ Background upload error:", error);
+        openNotification("error", "업로드 실패", error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다.");
+      });
+  } catch (error) {
+    console.error("❌ Error processing DoctorP2 data:", error);
+    openNotification("error", "데이터 처리 실패", error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다.");
+    setProgress(0);
   }
 };
 
@@ -2036,6 +2110,8 @@ const handleProcessDataDoctorP = async (): Promise<void> => {
         handleProcessDataNeo()
     } else if (dataType === "smartnc") {
       handleProcessDataSmartNC();
+    } else if (dataType === "doctorp2") {
+      handleProcessDataDoctorP2();
     } else {
       handleProcessDataDoctorP();
     }
@@ -2170,6 +2246,19 @@ const handleProcessDataDoctorP = async (): Promise<void> => {
               />
               <FileUpload
                 title="닥터팔레트 환자주소"
+                onFilesUploaded={(files) => setPlaceFiles(files)}
+              />
+            </>
+          )}
+
+          {dataType === "doctorp2" && (
+            <>
+              <FileUpload
+                title="닥터팔레트2 일일수입"
+                onFilesUploaded={(files) => setDailyIncome(files)}
+              />
+              <FileUpload
+                title="닥터팔레트2 환자주소"
                 onFilesUploaded={(files) => setPlaceFiles(files)}
               />
             </>

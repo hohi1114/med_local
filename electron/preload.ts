@@ -68,6 +68,11 @@ contextBridge.exposeInMainWorld("electron", {
   parsePlaceFilesDoctorP: (fileBuffers: ArrayBuffer[]) =>
     ipcRenderer.invoke("parse-patient-list-doctorp", fileBuffers),
 
+  parseDaysFilesDoctorP2: (fileBuffers: ArrayBuffer[]) =>
+    ipcRenderer.invoke("parse-daily-income-doctorp2", fileBuffers),
+  parsePlaceFilesDoctorP2: (fileBuffers: ArrayBuffer[]) =>
+    ipcRenderer.invoke("parse-patient-list-doctorp2", fileBuffers),
+
   parseDailyIncomecChart: (fileBuffers: ArrayBuffer[]) =>
     ipcRenderer.invoke("parse-daily-income-cChart", fileBuffers),
   parsePatientListcChart: (fileBuffers: ArrayBuffer[]) =>
@@ -102,6 +107,8 @@ contextBridge.exposeInMainWorld("electron", {
     ipcRenderer.invoke("merge-data-hanchart", dailyIncome, patientList),
   mergeDataDoctorP: (dailyIncome: any[], patientList: any[]) =>
     ipcRenderer.invoke("merge-data-doctorp", dailyIncome, patientList),
+  mergeDataDoctorP2: (dailyIncome: any[], patientList: any[]) =>
+    ipcRenderer.invoke("merge-data-doctorp2", dailyIncome, patientList),
   mergeDataBit: (dailyIncome: any[], patientList: any[]) =>
     ipcRenderer.invoke("merge-data-bit", dailyIncome, patientList),
 
@@ -140,6 +147,8 @@ contextBridge.exposeInMainWorld("electron", {
 
   processDataLocallyDoctorP: (mergedData: any[], accessToken: string) =>
     ipcRenderer.invoke("process-data-locally-doctorp", mergedData, accessToken),
+  processDataLocallyDoctorP2: (mergedData: any[], accessToken: string) =>
+    ipcRenderer.invoke("process-data-locally-doctorp2", mergedData, accessToken),
 
   processDataLocallycChart: (mergedData: any[], accessToken: string) =>
     ipcRenderer.invoke("process-data-locally-cChart", mergedData, accessToken),

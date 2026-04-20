@@ -43,6 +43,11 @@ import {
 } from "../src/local/excel/doctorpExcel";
 
 import {
+  parseDaysFilesDoctorP2,
+  parsePlaceFilesDoctorP2,
+} from "../src/local/excel/doctorpExcel2";
+
+import {
   parseDailyIncomeBit,
   parsePatientListBit,
 } from "../src/local/excel/bitExcel";
@@ -76,6 +81,7 @@ import {
   mergeDataOrm,
   mergeDataVegas,
   mergeDataDoctorP,
+  mergeDataDoctorP2,
   MergedDataCchart,
   mergeDataBit,
   mergeDataNeo,
@@ -88,6 +94,7 @@ import {
   processDataLocallyDentWeb,
   processDataLocallyEgis,
   processDataLocallyDoctorP,
+  processDataLocallyDoctorP2,
   processDataLocallycChart,
   processDataLocallyBit,
   processDataLocallyOrm,
@@ -391,6 +398,24 @@ ipcMain.handle("parse-daily-income-bit2", async (event, fileBuffers) => {
 ipcMain.handle("parse-patient-list-bit2", async (event, fileBuffers) => {
   return await parsePatientListBit2(fileBuffers);
 });
+  ipcMain.handle("parse-daily-income-doctorp2", async (_event, fileBuffers) => {
+    try {
+      return await parseDaysFilesDoctorP2(fileBuffers);
+    } catch (error) {
+      console.error("Error parsing daily income:", error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle("parse-patient-list-doctorp2", async (_event, fileBuffers) => {
+    try {
+      return await parsePlaceFilesDoctorP2(fileBuffers);
+    } catch (error) {
+      console.error("Error parsing patient list:", error);
+      throw error;
+    }
+  });
+
   ipcMain.handle("parse-daily-income-doctorp", async (event, fileBuffers) => {
     try {
       return await parseDaysFilesDoctorP(fileBuffers);
@@ -517,6 +542,15 @@ ipcMain.handle("parse-patient-list-bit2", async (event, fileBuffers) => {
       return mergeDataBit(visits, patients);
     } catch (error) {
       console.error("Error merging Euisarang data:", error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle("merge-data-doctorp2", async (_event, visits, patients) => {
+    try {
+      return mergeDataDoctorP2(visits, patients);
+    } catch (error) {
+      console.error("Error merging data:", error);
       throw error;
     }
   });
@@ -673,6 +707,24 @@ ipcMain.handle("parse-patient-list-bit2", async (event, fileBuffers) => {
     async (event, mergedData, accessToken) => {
       try {
         return await processDataLocallyDentWeb(
+          mergedData,
+          accessToken,
+          (current, total) => {
+            event.sender.send("geocoding-progress", { current, total });
+          }
+        );
+      } catch (error) {
+        console.error("Error processing data:", error);
+        throw error;
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "process-data-locally-doctorp2",
+    async (event, mergedData, accessToken) => {
+      try {
+        return await processDataLocallyDoctorP2(
           mergedData,
           accessToken,
           (current, total) => {

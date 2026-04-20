@@ -35,6 +35,9 @@ declare global {
       parseDaysFilesDoctorP: (buffers: ArrayBuffer[]) => Promise<any>;
       parsePlaceFilesDoctorP: (buffers: ArrayBuffer[]) => Promise<any>;
 
+      parseDaysFilesDoctorP2: (buffers: ArrayBuffer[]) => Promise<any>;
+      parsePlaceFilesDoctorP2: (buffers: ArrayBuffer[]) => Promise<any>;
+
       parseDailyIncomecChart: (fileBuffers: ArrayBuffer[]) => Promise<any>;
       parsePatientListcChart: (fileBuffers: ArrayBuffer[]) => Promise<any>;
 
@@ -67,6 +70,10 @@ declare global {
       ) => Promise<any>;
       mergeDataDentWeb: (dailyIncome: any[], patients: any[]) => Promise<any>;
       mergeDataDoctorP: (
+        dailyIncome: any[],
+        patientList: any[]
+      ) => Promise<any>;
+      mergeDataDoctorP2: (
         dailyIncome: any[],
         patientList: any[]
       ) => Promise<any>;
@@ -113,6 +120,10 @@ declare global {
       ) => Promise<any>;
 
       processDataLocallyDoctorP: (
+        mergedData: any[],
+        accessToken: string
+      ) => Promise<any>;
+      processDataLocallyDoctorP2: (
         mergedData: any[],
         accessToken: string
       ) => Promise<any>;
