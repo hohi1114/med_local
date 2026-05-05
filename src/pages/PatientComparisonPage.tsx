@@ -74,7 +74,7 @@ interface VisibleLayers {
 // ──────────────────────────────────────────────────────────
 // 상수 설정
 // ──────────────────────────────────────────────────────────
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://3.39.10.210:3001/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "https://htracker.org/api";
 
 const DEPARTMENT_COLORS: Record<string, string> = {
   치과: "#FFC0CB",

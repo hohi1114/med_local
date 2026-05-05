@@ -1,6 +1,11 @@
 import * as XLSX from "xlsx";
 import { normalizeAge } from "./ExcelParser";
 import { excelSerialToDate, calculateAge } from "./ExcelParser"
+import {
+  DailyIncomeSmartNC,
+  PatientAddressSmartNC,
+  PatientListSmartNC,
+} from "./excel/smartncExcel";
 
 export interface MergedData {
   chartNumber: number;
@@ -114,6 +119,15 @@ export interface MergedDataCchart {
   route: string;
 }
 
+export interface MergedDataSmartNC {
+  chartNumber: number;
+  visitDate: string | Date;
+  totalCost: number;
+  age: number | null;
+  address: string;
+  route: string;
+}
+
 
 export interface VisitDataDoctorP {
   chartNumber: number;
@@ -124,6 +138,21 @@ export interface VisitDataDoctorP {
 export interface MergedDataDoctorP {
   chartNumber: number;
   visitDate: Date; // string 대신 Date로 변경
+  totalCost: number;
+  route: string;
+  age: number | null;
+  address: string;
+}
+
+export interface VisitDataDoctorP2 {
+  chartNumber: number;
+  visitDate: string;
+  totalCost: number;
+}
+
+export interface MergedDataDoctorP2 {
+  chartNumber: number;
+  visitDate: Date;
   totalCost: number;
   route: string;
   age: number | null;
@@ -178,6 +207,7 @@ import {
 } from "./excel/hanchartExcel";
 import { DailyIncomeDentweb, PatientDataDentWeb } from "./excel/dentwebExcel";
 import { DailyIncomeDoctorP, PatientListDoctorP } from "./excel/doctorpExcel";
+import { DailyIncomeDoctorP2, PatientListDoctorP2 } from "./excel/doctorpExcel2";
 import { DailyIncomeOrm,PatientListOrm } from "./excel/ormExcel";
 import { DailyIncomeCchart, PatientListCchart } from "./excel/cChartExcel";
 import {
@@ -382,76 +412,72 @@ export async function parseDailyIncomeNeo(
 }
 
 
-// For Neo data - visitType comes from patientList
+// For Neo data - visitType is determined dynamically
 export function mergeDataNeo(
   dailyIncome: DailyIncomeNeo[],
   patientList: PatientListNeo[]
 ): MergedDataNeo[] {
-  // Create a map for patient data: key = "chartNumber:visitDate"
-  const patientVisitMap = new Map<
-    string,
-    {
-      visitType: string;
-      age: number | null;
-      address: string;
-    }
-  >();
-
-  // Also create a map for chart-level data (age/address with values)
+  // Create a map for patient data: chartNumber -> { firstVisitDate, age, address }
   const patientChartMap = new Map<
     number,
     {
+      firstVisitDate: string;
       age: number | null;
       address: string;
     }
   >();
 
-  // First pass: build both maps
+  // Build patient chart map
   for (const pat of patientList) {
-    const visitKey = `${pat.chartNumber}:${pat.visitDate}`;
-    
-    // Store visit-specific data
-    patientVisitMap.set(visitKey, {
-      visitType: pat.visitType,
-      age: pat.age,
-      address: pat.address,
-    });
+    const existing = patientChartMap.get(pat.chartNumber);
 
-    // Store chart-level data only if age or address has meaningful values
-    if (pat.age !== null || (pat.address && pat.address !== "N/A" && pat.address !== "")) {
-      const existing = patientChartMap.get(pat.chartNumber);
-      
-      // Update if no existing data, or if current row has better data
-      if (!existing) {
-        patientChartMap.set(pat.chartNumber, {
-          age: pat.age,
-          address: pat.address,
-        });
-      } else {
-        // Prefer non-null age and non-empty address
-        patientChartMap.set(pat.chartNumber, {
-          age: pat.age !== null ? pat.age : existing.age,
-          address: pat.address && pat.address !== "N/A" && pat.address !== "" 
-            ? pat.address 
-            : existing.address,
-        });
-      }
+    if (!existing) {
+      patientChartMap.set(pat.chartNumber, {
+        firstVisitDate: String(pat.firstVisitDate),
+        age: pat.age,
+        address: pat.address,
+      });
+    } else {
+      // Prefer non-null age and non-empty address
+      patientChartMap.set(pat.chartNumber, {
+        firstVisitDate: existing.firstVisitDate,
+        age: pat.age !== null ? pat.age : existing.age,
+        address: pat.address && pat.address !== "N/A" && pat.address !== ""
+          ? pat.address
+          : existing.address,
+      });
     }
   }
 
+  // Helper function to normalize date string for comparison
+  const normalizeDate = (date: string | Date): string => {
+    const d = new Date(date);
+    return d.toISOString().split('T')[0]; // YYYY-MM-DD format
+  };
+
   // Create merged data from dailyIncome
   const df_merged: MergedDataNeo[] = dailyIncome.map((inc) => {
-    const visitKey = `${inc.chartNumber}:${inc.visitDate}`;
-    const visitData = patientVisitMap.get(visitKey);
     const chartData = patientChartMap.get(inc.chartNumber);
+
+    // Determine visitType dynamically:
+    // 신환: chartNumber exists in patientList AND visitDate equals firstVisitDate
+    // 재진: otherwise
+    let visitType = "재진";
+    if (chartData) {
+      const incVisitDate = normalizeDate(inc.visitDate);
+      const firstVisitDate = normalizeDate(chartData.firstVisitDate);
+      if (incVisitDate === firstVisitDate) {
+        visitType = "신환";
+      }
+    }
 
     return {
       chartNumber: inc.chartNumber,
-      visitDate: new Date(inc.visitDate as string), // Convert immediately
+      visitDate: new Date(inc.visitDate as string),
       totalCost: inc.totalCost,
-      visitType: visitData?.visitType || "",
-      age: visitData?.age ?? chartData?.age ?? null,
-      address: visitData?.address || chartData?.address || "N/D",
+      visitType,
+      age: chartData?.age ?? null,
+      address: chartData?.address || "N/D",
     };
   });
 
@@ -783,6 +809,43 @@ export function mergeDataDoctorP(
   return result;
 }
 
+export function mergeDataDoctorP2(
+  dailyIncome: DailyIncomeDoctorP2[],
+  patientList: PatientListDoctorP2[]
+): MergedDataDoctorP2[] {
+  const df_merged = dailyIncome.map((inc) => ({
+    chartNumber: inc.chartNumber,
+    visitDate: inc.visitDate,
+    totalCost: inc.totalCost,
+    route: "",
+    age: null as number | null,
+    address: "N/D",
+  }));
+
+  const patientMap = new Map<number, { address: string; age: number | null; route: string }>();
+  for (const pat of patientList) {
+    patientMap.set(pat.chartNumber, {
+      address: pat.address || "N/D",
+      age: pat.age ?? null,
+      route: pat.route || "",
+    });
+  }
+
+  df_merged.forEach((record) => {
+    const patientData = patientMap.get(record.chartNumber);
+    if (patientData) {
+      record.address = patientData.address;
+      record.age = patientData.age;
+      record.route = patientData.route;
+    }
+  });
+
+  return df_merged.map((record) => ({
+    ...record,
+    visitDate: new Date(record.visitDate),
+  }));
+}
+
 
 export function MergedDataCchart(
   dailyIncome: DailyIncomeCchart[],
@@ -931,7 +994,53 @@ export function mergeDataBit(
       doctor: patientData?.doctor ?? "N/D",
     };
   });
-  
-  
+
+
+  return df_merged;
+}
+
+
+export function mergeDataSmartNC(
+  dailyIncome: DailyIncomeSmartNC[],
+  patientAddress: PatientAddressSmartNC[],
+  patientList: PatientListSmartNC[]
+): MergedDataSmartNC[] {
+  // IPC 직렬화 시 숫자가 문자열로 올 수 있으므로 string 키로 통일
+  const toKey = (n: number | string) => String(Number(n));
+
+  // chartNumber → address
+  const addressMap = new Map<string, string>();
+  for (const p of patientAddress) {
+    const key = toKey(p.chartNumber);
+    if (!addressMap.has(key)) {
+      addressMap.set(key, p.address);
+    }
+  }
+
+  // chartNumber → age (첫 번째 유효한 값만)
+  const ageMap = new Map<string, number | null>();
+  for (const p of patientList) {
+    const key = toKey(p.chartNumber);
+    if (!ageMap.has(key) && p.age !== null) {
+      ageMap.set(key, p.age);
+    }
+  }
+
+  const df_merged: MergedDataSmartNC[] = dailyIncome.map((inc) => {
+    const key = toKey(inc.chartNumber);
+    return {
+      chartNumber: inc.chartNumber,
+      visitDate: inc.visitDate as string | Date,
+      totalCost: inc.totalCost,
+      age: ageMap.get(key) ?? null,
+      address: addressMap.get(key) ?? "N/D",
+      route: "N/D",
+    };
+  });
+
+  df_merged.forEach((record) => {
+    record.visitDate = new Date(record.visitDate as string);
+  });
+
   return df_merged;
 }

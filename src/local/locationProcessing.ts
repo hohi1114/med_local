@@ -7,11 +7,13 @@ import {
   MergedDataCchart,
   MergedDataDentWeb,
   MergedDataDoctorP,
+  MergedDataDoctorP2,
   MergedDataEgis,
   MergedDataHanChart,
   MergedDataVegas,
   MergedDataOrm,
-  MergedDataNeo
+  MergedDataNeo,
+  MergedDataSmartNC,
 } from "./dataMerge";
 import { StringNullableChain } from "lodash";
 
@@ -104,7 +106,7 @@ interface MappingResponse {
 
 export async function fetchRegionData(token: string): Promise<RegionResponse> {
   try {
-    const baseURL = "http://3.39.10.210:3001/api";
+    const baseURL = "https://htracker.org/api";
 
     const response = await axios.get<RegionResponse>(
       `${baseURL}/fetch/region_data`,
@@ -125,7 +127,7 @@ export async function fetchRegionData(token: string): Promise<RegionResponse> {
 
 export async function getMappingData(token: string): Promise<MappingResponse> {
   try {
-    const baseURL = "http://3.39.10.210:3001/api";
+    const baseURL = "https://htracker.org/api";
 
     const response = await axios.post<MappingResponse>(
       `${baseURL}/data/get_mapping`,
@@ -1050,6 +1052,14 @@ export async function processDataLocallyDoctorP(
 }
 
 
+export async function processDataLocallyDoctorP2(
+  mergedData: MergedDataDoctorP2[],
+  accessToken: string,
+  progressCallback?: (current: number, total: number) => void
+) {
+  return processDataLocallyDoctorP(mergedData as any, accessToken, progressCallback);
+}
+
 export async function processDataLocallyDentWeb(
   mergedData: MergedDataDentWeb[],
   accessToken: string,
@@ -1959,6 +1969,151 @@ export async function processDataLocallyBit(
     };
   } catch (error) {
     console.error("Error processing Bit data locally:", error);
+    throw error;
+  }
+}
+
+
+export async function processDataLocallySmartNC(
+  mergedData: MergedDataSmartNC[],
+  accessToken: string,
+  progressCallback?: (current: number, total: number) => void
+) {
+  try {
+    const chartNumberMapping = await getMappingData(accessToken);
+
+    const mappedData: MergedDataSmartNC[] = mergedData.map((record, index) => {
+      if (progressCallback) progressCallback(index + 1, mergedData.length);
+      return {
+        ...record,
+        chartNumber:
+          chartNumberMapping[record.chartNumber] != null
+            ? Number(chartNumberMapping[record.chartNumber])
+            : record.chartNumber,
+      };
+    });
+
+    const recordsWithLocationFlag = mappedData.map((record) => ({
+      ...record,
+      location_true: record.address !== "N/D",
+    }));
+
+    const addressesToGeocode = recordsWithLocationFlag
+      .filter((record) => record.location_true)
+      .map((record) => ({
+        chartNumber: record.chartNumber,
+        address: String(record.address),
+      }));
+
+    const geoLocations = await getLatLonForAddresses(
+      addressesToGeocode,
+      progressCallback
+    );
+
+    const geoMap = new Map(
+      geoLocations.map((g) => [
+        g.chartNumber,
+        {
+          latitude: g.latitude,
+          longitude: g.longitude,
+          geocoded: g.latitude !== null && g.longitude !== null,
+        },
+      ])
+    );
+
+    const recordsWithGeodata = recordsWithLocationFlag.map((record) => {
+      const geoData = geoMap.get(record.chartNumber);
+      return {
+        ...record,
+        latitude: geoData?.latitude ?? null,
+        longitude: geoData?.longitude ?? null,
+        location_true: geoData?.geocoded ?? false,
+      };
+    });
+
+    const regionData = await fetchRegionData(accessToken);
+
+    const smallRegions = regionData.smallRegions.map((region) => ({
+      id: region.id,
+      name: region.name,
+      coords: parsePolygon(region.polygon),
+    }));
+
+    const dongRegions = regionData.dongRegions.map((region) => ({
+      id: region.id,
+      name: region.name,
+      coords: parsePolygon(region.polygon),
+    }));
+
+    const guRegions = regionData.guRegions.map((region) => ({
+      id: region.id,
+      name: region.name,
+      coords: parsePolygon(region.polygon),
+    }));
+
+    const processedRecords: ProcessedPatientData[] = recordsWithGeodata.map(
+      (record) => {
+        const { latitude, longitude } = record;
+        let small_region_id = null;
+        let dong_region_id = null;
+        let gu_region_id = null;
+
+        if (record.location_true && latitude !== null && longitude !== null) {
+          small_region_id = findMatchingRegion(latitude, longitude, smallRegions);
+          dong_region_id = findMatchingRegion(latitude, longitude, dongRegions);
+          gu_region_id = findMatchingRegion(latitude, longitude, guRegions);
+        }
+
+        return {
+          chart_number: record.chartNumber,
+          age: record.age,
+          total_cost: record.totalCost,
+          visit_date: record.visitDate,
+          route: record.route,
+          location_true: record.location_true,
+          small_region_id,
+          dong_region_id,
+          gu_region_id,
+        };
+      }
+    );
+
+    const dateLocationMap = new Map<string, LocationPoint[]>();
+
+    recordsWithGeodata.forEach((record) => {
+      const { visitDate, latitude, longitude, location_true, totalCost, age, route } = record;
+      if (!location_true || latitude === null || longitude === null) return;
+
+      const dateStr =
+        typeof visitDate === "string"
+          ? visitDate
+          : new Date(visitDate).toISOString().split("T")[0];
+
+      if (!dateLocationMap.has(dateStr)) dateLocationMap.set(dateStr, []);
+
+      dateLocationMap.get(dateStr)!.push({
+        lat: latitude,
+        lng: longitude,
+        total_cost: totalCost,
+        visit_type: "",
+        route: route,
+        age: String(age),
+      });
+    });
+
+    const dateLocationGroups: DateLocationGroup[] = Array.from(
+      dateLocationMap.entries()
+    ).map(([date, locations]) => ({
+      date,
+      patient_locations: locations,
+    }));
+
+    return {
+      patient_records: processedRecords,
+      date_location_groups: dateLocationGroups,
+    };
+  } catch (error) {
+    console.error("Error processing SmartNC data locally:", error);
     throw error;
   }
 }

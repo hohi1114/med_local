@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import UpdateNotification from "./components/common/UpdateNotification";
 import DashBoardPage from "./pages/DashBoardPage";
 import BaseLayout from "./components/common/layout/BaseLayout";
 import StatisticsByRegionPage from "./pages/StatisticsByRegionPage";
@@ -40,7 +41,9 @@ function App() {
   }, []);
 
   return (
-    <BrowserRouter>
+    <>
+      <UpdateNotification />
+      <BrowserRouter>
       <Routes>
         {/* 일반 사용자 로그인 */}
         <Route path="/login" element={<LoginPage />} />
@@ -94,6 +97,7 @@ function App() {
         </Route>
       </Routes>
     </BrowserRouter>
+    </>
   );
 }
 

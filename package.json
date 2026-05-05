@@ -1,7 +1,7 @@
 {
   "name": "med_local",
   "private": true,
-  "version": "0.0.5",
+  "version": "1.2.5",
   "main": "dist-electron/electron/main.js",
   "scripts": {
     "dev": "cross-env NODE_ENV=development concurrently \"vite --mode development\" \"wait-on http://localhost:5173 && tsc -p tsconfig.electron.json && electron .\"",
@@ -27,7 +27,11 @@
     ],
     "win": {
       "target": "nsis",
-      "icon": "public/logo.ico"
+      "icon": "public/logo.ico",
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "artifactName": "${productName}-Setup-${version}.${ext}"
     },
     "mac": {
       "target": [
@@ -42,6 +46,11 @@
     },
     "linux": {
       "target": null
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "hohi1114",
+      "repo": "med_local"
     }
   },
   "dependencies": {
@@ -62,6 +71,7 @@
     "dotenv": "^16.4.7",
     "electron-is-dev": "^3.0.1",
     "electron-squirrel-startup": "^1.0.1",
+    "electron-updater": "^6.7.3",
     "exceljs": "^4.4.0",
     "express": "^4.21.2",
     "iconv-lite": "^0.7.0",

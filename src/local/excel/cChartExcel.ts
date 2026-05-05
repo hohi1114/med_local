@@ -56,6 +56,9 @@ export async function parseDailyIncomecChart(
     const bankAmountIndex = headers.findIndex(
       (col: any) => col === "통장수납액"
     );
+    const insuranceTypeIndex = headers.findIndex(
+      (col: any) => col === "보험유형"
+    );
 
     if (
       patientNumberIndex === -1 ||
@@ -101,6 +104,11 @@ export async function parseDailyIncomecChart(
         const month = visitDate.substr(4, 2);
         const day = visitDate.substr(6, 2);
         visitDate = `${year}-${month}-${day}`;
+      }
+
+      // Skip 일반 insurance type
+      if (insuranceTypeIndex !== -1 && String(row[insuranceTypeIndex] ?? "").trim() === "일반") {
+        continue;
       }
 
       // Process payment amounts

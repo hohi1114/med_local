@@ -68,6 +68,11 @@ contextBridge.exposeInMainWorld("electron", {
   parsePlaceFilesDoctorP: (fileBuffers: ArrayBuffer[]) =>
     ipcRenderer.invoke("parse-patient-list-doctorp", fileBuffers),
 
+  parseDaysFilesDoctorP2: (fileBuffers: ArrayBuffer[]) =>
+    ipcRenderer.invoke("parse-daily-income-doctorp2", fileBuffers),
+  parsePlaceFilesDoctorP2: (fileBuffers: ArrayBuffer[]) =>
+    ipcRenderer.invoke("parse-patient-list-doctorp2", fileBuffers),
+
   parseDailyIncomecChart: (fileBuffers: ArrayBuffer[]) =>
     ipcRenderer.invoke("parse-daily-income-cChart", fileBuffers),
   parsePatientListcChart: (fileBuffers: ArrayBuffer[]) =>
@@ -78,6 +83,14 @@ contextBridge.exposeInMainWorld("electron", {
     ipcRenderer.invoke("parse-daily-income-neo", fileBuffers),
   parsePatientListNeo: (fileBuffers: ArrayBuffer[]) =>
     ipcRenderer.invoke("parse-patient-list-neo", fileBuffers),
+
+  // File processing - SmartNC
+  parseDailyIncomeSmartNC: (fileBuffers: ArrayBuffer[]) =>
+    ipcRenderer.invoke("parse-daily-income-smartnc", fileBuffers),
+  parsePatientAddressSmartNC: (fileBuffers: ArrayBuffer[]) =>
+    ipcRenderer.invoke("parse-patient-address-smartnc", fileBuffers),
+  parsePatientListSmartNC: (fileBuffers: ArrayBuffer[]) =>
+    ipcRenderer.invoke("parse-patient-list-smartnc", fileBuffers),
 
   // Data merging
   mergeDataEuisarang: (visits: any[], patients: any[]) =>
@@ -94,6 +107,8 @@ contextBridge.exposeInMainWorld("electron", {
     ipcRenderer.invoke("merge-data-hanchart", dailyIncome, patientList),
   mergeDataDoctorP: (dailyIncome: any[], patientList: any[]) =>
     ipcRenderer.invoke("merge-data-doctorp", dailyIncome, patientList),
+  mergeDataDoctorP2: (dailyIncome: any[], patientList: any[]) =>
+    ipcRenderer.invoke("merge-data-doctorp2", dailyIncome, patientList),
   mergeDataBit: (dailyIncome: any[], patientList: any[]) =>
     ipcRenderer.invoke("merge-data-bit", dailyIncome, patientList),
 
@@ -102,6 +117,9 @@ contextBridge.exposeInMainWorld("electron", {
 
   mergeDataNeo: (dailyIncome: any[], patientList: any[]) =>
     ipcRenderer.invoke("merge-data-neo", dailyIncome, patientList),
+
+  mergeDataSmartNC: (dailyIncome: any[], patientAddress: any[], patientList: any[]) =>
+    ipcRenderer.invoke("merge-data-smartnc", dailyIncome, patientAddress, patientList),
 
   // Final data processing
   processDataLocally: (mergedData: any[], accessToken: string) =>
@@ -129,6 +147,8 @@ contextBridge.exposeInMainWorld("electron", {
 
   processDataLocallyDoctorP: (mergedData: any[], accessToken: string) =>
     ipcRenderer.invoke("process-data-locally-doctorp", mergedData, accessToken),
+  processDataLocallyDoctorP2: (mergedData: any[], accessToken: string) =>
+    ipcRenderer.invoke("process-data-locally-doctorp2", mergedData, accessToken),
 
   processDataLocallycChart: (mergedData: any[], accessToken: string) =>
     ipcRenderer.invoke("process-data-locally-cChart", mergedData, accessToken),
@@ -138,6 +158,9 @@ contextBridge.exposeInMainWorld("electron", {
 
   processDataLocallyNeo: (mergedData: any[], accessToken: string) =>
     ipcRenderer.invoke("process-data-locally-neo", mergedData, accessToken),
+
+  processDataLocallySmartNC: (mergedData: any[], accessToken: string) =>
+    ipcRenderer.invoke("process-data-locally-smartnc", mergedData, accessToken),
 
   onGeocodingProgress: (
     callback: (data: { current: number; total: number }) => void
@@ -156,4 +179,25 @@ contextBridge.exposeInMainWorld("electron", {
       ipcRenderer.removeListener("geocoding-progress", listener);
     };
   },
+
+  // 자동 업데이트 관련
+  onUpdateAvailable: (callback: () => void) => {
+    ipcRenderer.on("update-available", callback);
+    return () => ipcRenderer.removeListener("update-available", callback);
+  },
+
+  onUpdateProgress: (callback: (percent: number) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, percent: number) => {
+      callback(percent);
+    };
+    ipcRenderer.on("update-progress", listener);
+    return () => ipcRenderer.removeListener("update-progress", listener);
+  },
+
+  onUpdateDownloaded: (callback: () => void) => {
+    ipcRenderer.on("update-downloaded", callback);
+    return () => ipcRenderer.removeListener("update-downloaded", callback);
+  },
+
+  installUpdate: () => ipcRenderer.invoke("install-update"),
 });

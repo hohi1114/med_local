@@ -1,4 +1,5 @@
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, ipcMain, dialog } from "electron";
+import { autoUpdater } from "electron-updater";
 import path from "path";
 import si from "systeminformation";
 
@@ -42,6 +43,11 @@ import {
 } from "../src/local/excel/doctorpExcel";
 
 import {
+  parseDaysFilesDoctorP2,
+  parsePlaceFilesDoctorP2,
+} from "../src/local/excel/doctorpExcel2";
+
+import {
   parseDailyIncomeBit,
   parsePatientListBit,
 } from "../src/local/excel/bitExcel";
@@ -60,6 +66,12 @@ import{
 parseDailyIncomeNeo,parsePatientListNeo
 }from "../src/local/excel/neoExcel"
 
+import {
+  parseDailyIncomeSmartNC,
+  parsePatientAddressSmartNC,
+  parsePatientListSmartNC,
+} from "../src/local/excel/smartncExcel";
+
 
 import {
   mergeDataDentWeb,
@@ -69,9 +81,11 @@ import {
   mergeDataOrm,
   mergeDataVegas,
   mergeDataDoctorP,
+  mergeDataDoctorP2,
   MergedDataCchart,
   mergeDataBit,
-  mergeDataNeo
+  mergeDataNeo,
+  mergeDataSmartNC,
 } from "../src/local/dataMerge";
 import {
   processDataLocally,
@@ -80,10 +94,12 @@ import {
   processDataLocallyDentWeb,
   processDataLocallyEgis,
   processDataLocallyDoctorP,
+  processDataLocallyDoctorP2,
   processDataLocallycChart,
   processDataLocallyBit,
   processDataLocallyOrm,
-  processDataLocallyNeo
+  processDataLocallyNeo,
+  processDataLocallySmartNC,
 } from "../src/local/locationProcessing";
 
 const isDev = process.env.NODE_ENV === "development";
@@ -107,7 +123,7 @@ const createMainWindow = () => {
     mainWindow.loadURL("http://localhost:5173"); // React 앱 로드
     mainWindow.webContents.openDevTools();
   } else {
-    mainWindow.loadURL(`http://3.39.10.210:8000`);
+    mainWindow.loadURL(`https://htracker.org`);
   }
 
   mainWindow.on("closed", () => (mainWindow = null));
@@ -115,6 +131,73 @@ const createMainWindow = () => {
 
 app.whenReady().then(() => {
   createMainWindow();
+
+  // 자동 업데이트 설정 (Windows 전용)
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+
+  // Windows 프로덕션에서만 자동 업데이트 체크
+  if (!isDev && process.platform === "win32") {
+    autoUpdater.checkForUpdatesAndNotify();
+  }
+
+  // 업데이트 이벤트 핸들러 (디버깅용 로그 포함)
+  autoUpdater.on("checking-for-update", () => {
+    console.log("업데이트 확인 중...");
+  });
+
+  autoUpdater.on("update-available", (info) => {
+    console.log("업데이트 가능:", info.version);
+    mainWindow?.webContents.send("update-available");
+
+    // 네이티브 다이얼로그로 알림
+    dialog.showMessageBox(mainWindow!, {
+      type: "info",
+      title: "업데이트 알림",
+      message: `새 버전(${info.version})을 다운로드하고 있습니다.`,
+      detail: "다운로드가 완료되면 자동으로 설치됩니다.",
+      buttons: ["확인"],
+    });
+  });
+
+  autoUpdater.on("update-not-available", () => {
+    console.log("최신 버전입니다.");
+  });
+
+  autoUpdater.on("download-progress", (progress) => {
+    console.log(`다운로드 중: ${Math.round(progress.percent)}%`);
+    mainWindow?.webContents.send("update-progress", Math.round(progress.percent));
+  });
+
+  autoUpdater.on("update-downloaded", (info) => {
+    console.log("업데이트 다운로드 완료:", info.version);
+    mainWindow?.webContents.send("update-downloaded");
+
+    // 네이티브 다이얼로그로 재시작 확인
+    dialog
+      .showMessageBox(mainWindow!, {
+        type: "info",
+        title: "업데이트 준비 완료",
+        message: `새 버전(${info.version})이 준비되었습니다.`,
+        detail: "지금 재시작하여 업데이트를 적용하시겠습니까?",
+        buttons: ["지금 재시작", "나중에"],
+        defaultId: 0,
+      })
+      .then((result) => {
+        if (result.response === 0) {
+          autoUpdater.quitAndInstall();
+        }
+      });
+  });
+
+  autoUpdater.on("error", (err) => {
+    console.error("업데이트 오류:", err);
+  });
+
+  // 업데이트 설치 및 재시작 요청 처리
+  ipcMain.handle("install-update", () => {
+    autoUpdater.quitAndInstall();
+  });
 
   // 시스템 UUID를 가져오는 요청 처리
   ipcMain.handle("get-system-uuid", async () => {
@@ -315,6 +398,24 @@ ipcMain.handle("parse-daily-income-bit2", async (event, fileBuffers) => {
 ipcMain.handle("parse-patient-list-bit2", async (event, fileBuffers) => {
   return await parsePatientListBit2(fileBuffers);
 });
+  ipcMain.handle("parse-daily-income-doctorp2", async (_event, fileBuffers) => {
+    try {
+      return await parseDaysFilesDoctorP2(fileBuffers);
+    } catch (error) {
+      console.error("Error parsing daily income:", error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle("parse-patient-list-doctorp2", async (_event, fileBuffers) => {
+    try {
+      return await parsePlaceFilesDoctorP2(fileBuffers);
+    } catch (error) {
+      console.error("Error parsing patient list:", error);
+      throw error;
+    }
+  });
+
   ipcMain.handle("parse-daily-income-doctorp", async (event, fileBuffers) => {
     try {
       return await parseDaysFilesDoctorP(fileBuffers);
@@ -372,6 +473,42 @@ ipcMain.handle("parse-patient-list-bit2", async (event, fileBuffers) => {
     }
   });
 
+  ipcMain.handle("parse-daily-income-smartnc", async (event, fileBuffers) => {
+    try {
+      return await parseDailyIncomeSmartNC(fileBuffers);
+    } catch (error) {
+      console.error("Error parsing SmartNC daily income:", error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle("parse-patient-address-smartnc", async (event, fileBuffers) => {
+    try {
+      return await parsePatientAddressSmartNC(fileBuffers);
+    } catch (error) {
+      console.error("Error parsing SmartNC patient address:", error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle("parse-patient-list-smartnc", async (event, fileBuffers) => {
+    try {
+      return await parsePatientListSmartNC(fileBuffers);
+    } catch (error) {
+      console.error("Error parsing SmartNC patient list:", error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle("merge-data-smartnc", async (event, dailyIncome, patientAddress, patientList) => {
+    try {
+      return mergeDataSmartNC(dailyIncome, patientAddress, patientList);
+    } catch (error) {
+      console.error("Error merging SmartNC data:", error);
+      throw error;
+    }
+  });
+
 
   ipcMain.handle("merge-data-orm", async (event, visits, patients) => {
     try {
@@ -405,6 +542,15 @@ ipcMain.handle("parse-patient-list-bit2", async (event, fileBuffers) => {
       return mergeDataBit(visits, patients);
     } catch (error) {
       console.error("Error merging Euisarang data:", error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle("merge-data-doctorp2", async (_event, visits, patients) => {
+    try {
+      return mergeDataDoctorP2(visits, patients);
+    } catch (error) {
+      console.error("Error merging data:", error);
       throw error;
     }
   });
@@ -539,10 +685,46 @@ ipcMain.handle("parse-patient-list-bit2", async (event, fileBuffers) => {
   );
 
   ipcMain.handle(
+    "process-data-locally-smartnc",
+    async (event, mergedData, accessToken) => {
+      try {
+        return await processDataLocallySmartNC(
+          mergedData,
+          accessToken,
+          (current, total) => {
+            event.sender.send("geocoding-progress", { current, total });
+          }
+        );
+      } catch (error) {
+        console.error("Error processing SmartNC data:", error);
+        throw error;
+      }
+    }
+  );
+
+  ipcMain.handle(
     "process-data-locally-dentweb",
     async (event, mergedData, accessToken) => {
       try {
         return await processDataLocallyDentWeb(
+          mergedData,
+          accessToken,
+          (current, total) => {
+            event.sender.send("geocoding-progress", { current, total });
+          }
+        );
+      } catch (error) {
+        console.error("Error processing data:", error);
+        throw error;
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "process-data-locally-doctorp2",
+    async (event, mergedData, accessToken) => {
+      try {
+        return await processDataLocallyDoctorP2(
           mergedData,
           accessToken,
           (current, total) => {

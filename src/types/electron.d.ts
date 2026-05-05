@@ -35,6 +35,9 @@ declare global {
       parseDaysFilesDoctorP: (buffers: ArrayBuffer[]) => Promise<any>;
       parsePlaceFilesDoctorP: (buffers: ArrayBuffer[]) => Promise<any>;
 
+      parseDaysFilesDoctorP2: (buffers: ArrayBuffer[]) => Promise<any>;
+      parsePlaceFilesDoctorP2: (buffers: ArrayBuffer[]) => Promise<any>;
+
       parseDailyIncomecChart: (fileBuffers: ArrayBuffer[]) => Promise<any>;
       parsePatientListcChart: (fileBuffers: ArrayBuffer[]) => Promise<any>;
 
@@ -48,6 +51,11 @@ declare global {
 
       parseDailyIncomeNeo: (fileBuffers: ArrayBuffer[]) => Promise<any>;
       parsePatientListNeo: (fileBuffers: ArrayBuffer[]) => Promise<any>;
+
+      // File processing - SmartNC
+      parseDailyIncomeSmartNC: (fileBuffers: ArrayBuffer[]) => Promise<any>;
+      parsePatientAddressSmartNC: (fileBuffers: ArrayBuffer[]) => Promise<any>;
+      parsePatientListSmartNC: (fileBuffers: ArrayBuffer[]) => Promise<any>;
 
       // Data merging
       mergeDataEuisarang: (visits: any[], patients: any[]) => Promise<any>;
@@ -65,8 +73,14 @@ declare global {
         dailyIncome: any[],
         patientList: any[]
       ) => Promise<any>;
+      mergeDataDoctorP2: (
+        dailyIncome: any[],
+        patientList: any[]
+      ) => Promise<any>;
 
       mergeDataNeo: (dailyIncome: any[], patientList: any[]) => Promise<any>;
+
+      mergeDataSmartNC: (dailyIncome: any[], patientAddress: any[], patientList: any[]) => Promise<any>;
 
       mergeDatacChart: (dailyIncome: any[], patientList: any[]) => Promise<any>;
       // Final data processing
@@ -109,6 +123,10 @@ declare global {
         mergedData: any[],
         accessToken: string
       ) => Promise<any>;
+      processDataLocallyDoctorP2: (
+        mergedData: any[],
+        accessToken: string
+      ) => Promise<any>;
 
       processDataLocallycChart: (
         mergedData: any[],
@@ -120,9 +138,20 @@ declare global {
         accessToken: string
       ) => Promise<any>;
 
+      processDataLocallySmartNC: (
+        mergedData: any[],
+        accessToken: string
+      ) => Promise<any>;
+
       onGeocodingProgress: (
         callback: (data: { current: number; total: number }) => void
       ) => () => void;
+
+      // 자동 업데이트
+      onUpdateAvailable: (callback: () => void) => () => void;
+      onUpdateProgress: (callback: (percent: number) => void) => () => void;
+      onUpdateDownloaded: (callback: () => void) => () => void;
+      installUpdate: () => Promise<void>;
     };
   }
 }

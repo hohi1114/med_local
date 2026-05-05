@@ -11,10 +11,9 @@ export interface DailyIncomeNeo {
 // 환자 목록
 export interface PatientListNeo {
   chartNumber: number; // 차트번호
-  visitDate: string | Date; // 진료일자
+  firstVisitDate: string | Date; // 처음내원일자
   birthDate: string | Date; // 생년월일
   address: string; // 주소
-  visitType: string; // 초/재진
   age: number | null;
 }
 
@@ -150,18 +149,16 @@ export async function parsePatientListNeo(
     const headers = allData[2];
 
     // Find the index for each required column
-    const visitDateIndex = headers.findIndex((col: any) => col === "진료일자");
     const chartNumberIndex = headers.findIndex((col: any) => col === "챠트번호");
+    const firstVisitDateIndex = headers.findIndex((col: any) => col === "처음내원일자");
     const birthDateIndex = headers.findIndex((col: any) => col === "생년월일");
     const addressIndex = headers.findIndex((col: any) => col === "주소");
-    const visitTypeIndex = headers.findIndex((col: any) => col === "초/재진");
 
     if (
-      visitDateIndex === -1 ||
       chartNumberIndex === -1 ||
+      firstVisitDateIndex === -1 ||
       birthDateIndex === -1 ||
-      addressIndex === -1 ||
-      visitTypeIndex === -1
+      addressIndex === -1
     ) {
       console.error("❌ Required columns not found in the file");
       console.error("Available headers:", headers);
@@ -189,15 +186,15 @@ export async function parsePatientListNeo(
         continue;
       }
 
-      // Process visit date
-      let visitDate = row[visitDateIndex];
+      // Process first visit date
+      let firstVisitDate = row[firstVisitDateIndex];
       if (
-        typeof visitDate === "string" &&
-        visitDate.match(/^\d{4}\/\d{2}\/\d{2}$/)
+        typeof firstVisitDate === "string" &&
+        firstVisitDate.match(/^\d{4}\/\d{2}\/\d{2}$/)
       ) {
-        visitDate = visitDate.replace(/\//g, "-");
-      } else if (typeof visitDate === "number") {
-        visitDate = excelSerialToDate(visitDate);
+        firstVisitDate = firstVisitDate.replace(/\//g, "-");
+      } else if (typeof firstVisitDate === "number") {
+        firstVisitDate = excelSerialToDate(firstVisitDate);
       }
 
       // Process birth date
@@ -224,24 +221,11 @@ export async function parsePatientListNeo(
       // Get address
       const address = row[addressIndex] ? String(row[addressIndex]).trim() : "N/A";
 
-      // Get visit type and normalize it
-      let visitType = row[visitTypeIndex] ? String(row[visitTypeIndex]).replace(/\s/g, "") : "";
-      
-      // Normalize visit type: 초진 -> 신환, 재진 -> 재진, others -> 재진
-      if (visitType === "초진") {
-        visitType = "신환";
-      } else if (visitType === "재진") {
-        visitType = "재진";
-      } else {
-        visitType = "재진";
-      }
-
       const patientData: PatientListNeo = {
         chartNumber,
-        visitDate: String(visitDate),
+        firstVisitDate: String(firstVisitDate),
         birthDate: String(birthDate),
         address,
-        visitType,
         age,
       };
 
