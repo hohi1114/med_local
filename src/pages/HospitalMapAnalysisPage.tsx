@@ -1,5 +1,5 @@
 // src/pages/HospitalMapAnalysisPage.tsx
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   MapContainer,
@@ -355,16 +355,28 @@ const fetchPatientLocations = async (
 };
 
 // ──────────────────────────────────────────────────────────
-// 지도 중심 변경 컴포넌트
+// 지도 중심 변경 컴포넌트 (초기 로드 또는 center 변경 시에만 동작)
 // ──────────────────────────────────────────────────────────
 const ChangeMapView: React.FC<{ center: [number, number]; zoom: number }> = ({
   center,
   zoom,
 }) => {
   const map = useMap();
+  const prevCenterRef = useRef<[number, number] | null>(null);
+
   useEffect(() => {
-    map.setView(center, zoom);
+    // 초기 로드 또는 center가 실제로 변경된 경우에만 setView 호출
+    const prevCenter = prevCenterRef.current;
+    if (
+      !prevCenter ||
+      prevCenter[0] !== center[0] ||
+      prevCenter[1] !== center[1]
+    ) {
+      map.setView(center, zoom);
+      prevCenterRef.current = center;
+    }
   }, [center, zoom, map]);
+
   return null;
 };
 
@@ -400,40 +412,107 @@ const createCompetitorIcon = (color: string) => {
     className: "custom-competitor-marker",
     html: `
       <div style="
-        width: 28px;
-        height: 28px;
-        background: ${color}b3;
-        border-radius: 50%;
-        border: 2px solid ${color};
-        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 14px;
-      ">
-        🏥
-      </div>
+        width: 12px;
+        height: 12px;
+        background: ${color};
+        border: 2px solid #fff;
+        box-shadow: 0 0 0 1px ${color}, 0 2px 4px rgba(0,0,0,0.4);
+        transform: rotate(45deg);
+      "></div>
     `,
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
+    iconSize: [18, 18],
+    iconAnchor: [9, 9],
   });
 };
 
-const createApartmentIcon = (size: number) => {
+// 집행 여부에 따른 색상 (집행: 초록, 미집행: 주황)
+const getApartmentColors = (executed: string) => {
+  if (executed === "집행") {
+    return {
+      bg: "rgba(22, 163, 74, 0.7)",
+      border: "#15803d",
+      bgLight: "rgba(22, 163, 74, 0.5)",
+    };
+  } else {
+    return {
+      bg: "rgba(249, 115, 22, 0.7)",
+      border: "#ea580c",
+      bgLight: "rgba(249, 115, 22, 0.5)",
+    };
+  }
+};
+
+const createApartmentIcon = (size: number, executed: string) => {
+  const colors = getApartmentColors(executed);
   return L.divIcon({
     className: "custom-apartment-marker",
     html: `
       <div style="
         width: ${size}px;
         height: ${size}px;
-        background: rgba(139, 92, 246, 0.7);
+        background: ${colors.bg};
         border-radius: 50%;
-        border: 2px solid #7c3aed;
+        border: 2px solid ${colors.border};
         box-shadow: 0 2px 6px rgba(0,0,0,0.3);
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: ${Math.max(12, size / 2.5)}px;
+      ">
+        🏠
+      </div>
+    `,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+  });
+};
+
+// 선택된 아파트 마커 아이콘 (파란색 테두리 + 체크마크)
+const createSelectedApartmentIcon = (size: number) => {
+  return L.divIcon({
+    className: "custom-apartment-marker selected",
+    html: `
+      <div style="
+        width: ${size}px;
+        height: ${size}px;
+        background: rgba(37, 99, 235, 0.9);
+        border-radius: 50%;
+        border: 3px solid #1d4ed8;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.3), 0 2px 8px rgba(0,0,0,0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: ${Math.max(14, size / 2)}px;
+        cursor: pointer;
+        color: white;
+      ">
+        ✓
+      </div>
+    `,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+  });
+};
+
+// 선택 모드일 때 아파트 마커 아이콘 (클릭 유도, 집행 여부에 따른 색상)
+const createSelectableApartmentIcon = (size: number, executed: string) => {
+  const colors = getApartmentColors(executed);
+  return L.divIcon({
+    className: "custom-apartment-marker selectable",
+    html: `
+      <div style="
+        width: ${size}px;
+        height: ${size}px;
+        background: ${colors.bgLight};
+        border-radius: 50%;
+        border: 2px dashed ${colors.border};
+        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: ${Math.max(12, size / 2.5)}px;
+        cursor: pointer;
+        animation: pulse 1.5s infinite;
       ">
         🏠
       </div>
@@ -481,6 +560,10 @@ const HospitalMapAnalysisPage: React.FC = () => {
   const [selectedAgeGroup, setSelectedAgeGroup] = useState<string>("all");
   const [selectedDepartment, setSelectedDepartment] = useState<string>("all");
 
+  // 아파트 선택 모드
+  const [isSelectingApartments, setIsSelectingApartments] = useState(false);
+  const [selectedApartmentIndices, setSelectedApartmentIndices] = useState<number[]>([]);
+
   // 통계
   const [stats, setStats] = useState<Stats>({
     totalPatients: 0,
@@ -496,6 +579,7 @@ const HospitalMapAnalysisPage: React.FC = () => {
   // ──────────────────────────────────────────────────────────
   const createClusterIcon = useMemo(() => {
     const totalPatients = stats.totalPatients || 1;
+    const clusterOpacity = isSelectingApartments ? 0.25 : 0.7;
 
     return (cluster: any) => {
       const count = cluster.getChildCount();
@@ -509,28 +593,28 @@ const HospitalMapAnalysisPage: React.FC = () => {
       if (percentage >= 5) {
         size = 60;
         fontSize = 18;
-        bgColor = "rgba(220, 38, 38, 0.7)";
-        borderColor = "#b91c1c";
+        bgColor = `rgba(220, 38, 38, ${clusterOpacity})`;
+        borderColor = isSelectingApartments ? "rgba(185, 28, 28, 0.4)" : "#b91c1c";
       } else if (percentage >= 2.5) {
         size = 52;
         fontSize = 16;
-        bgColor = "rgba(234, 88, 12, 0.7)";
-        borderColor = "#c2410c";
+        bgColor = `rgba(234, 88, 12, ${clusterOpacity})`;
+        borderColor = isSelectingApartments ? "rgba(194, 65, 12, 0.4)" : "#c2410c";
       } else if (percentage >= 1.25) {
         size = 45;
         fontSize = 15;
-        bgColor = "rgba(234, 179, 8, 0.7)";
-        borderColor = "#ca8a04";
+        bgColor = `rgba(234, 179, 8, ${clusterOpacity})`;
+        borderColor = isSelectingApartments ? "rgba(202, 138, 4, 0.4)" : "#ca8a04";
       } else if (percentage >= 0.625) {
         size = 40;
         fontSize = 14;
-        bgColor = "rgba(34, 197, 94, 0.7)";
-        borderColor = "#15803d";
+        bgColor = `rgba(34, 197, 94, ${clusterOpacity})`;
+        borderColor = isSelectingApartments ? "rgba(21, 128, 61, 0.4)" : "#15803d";
       } else {
         size = 35;
         fontSize = 13;
-        bgColor = "rgba(59, 130, 246, 0.7)";
-        borderColor = "#1d4ed8";
+        bgColor = `rgba(59, 130, 246, ${clusterOpacity})`;
+        borderColor = isSelectingApartments ? "rgba(29, 78, 216, 0.4)" : "#1d4ed8";
       }
 
       return L.divIcon({
@@ -541,14 +625,15 @@ const HospitalMapAnalysisPage: React.FC = () => {
             background: ${bgColor};
             border-radius: 50%;
             border: 3px solid ${borderColor};
-            box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+            box-shadow: 0 3px 10px rgba(0,0,0,${isSelectingApartments ? 0.1 : 0.3});
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
+            color: ${isSelectingApartments ? "rgba(255,255,255,0.5)" : "white"};
             font-weight: bold;
             font-size: ${fontSize}px;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            text-shadow: 1px 1px 2px rgba(0,0,0,${isSelectingApartments ? 0.2 : 0.5});
+            pointer-events: ${isSelectingApartments ? "none" : "auto"};
           ">
             ${count}
           </div>
@@ -557,7 +642,7 @@ const HospitalMapAnalysisPage: React.FC = () => {
         iconSize: L.point(size, size),
       });
     };
-  }, [stats.totalPatients]);
+  }, [stats.totalPatients, isSelectingApartments]);
 
   // ──────────────────────────────────────────────────────────
   // 아파트 마커 크기 계산 (상대적)
@@ -1288,15 +1373,35 @@ const HospitalMapAnalysisPage: React.FC = () => {
                   필수 컬럼: 단지명, 주소, 4주금액, 집행 여부, 총 세대 수
                 </p>
                 {config.apartments.length > 0 && (
-                  <p
+                  <div
                     style={{
-                      fontSize: "14px",
-                      color: "#16a34a",
                       marginTop: "8px",
+                      padding: "12px",
+                      backgroundColor: "#f5f3ff",
+                      borderRadius: "8px",
+                      border: "1px solid #e9d5ff",
                     }}
                   >
-                    ✅ {config.apartments.length}개 단지 ({stats.totalHouseholds.toLocaleString()}세대) 로드됨
-                  </p>
+                    <p
+                      style={{
+                        fontSize: "14px",
+                        color: "#16a34a",
+                        margin: "0 0 8px 0",
+                        fontWeight: 600,
+                      }}
+                    >
+                      ✅ {config.apartments.length}개 단지 ({stats.totalHouseholds.toLocaleString()}세대) 로드됨
+                    </p>
+                    <p
+                      style={{
+                        fontSize: "12px",
+                        color: "#7c3aed",
+                        margin: 0,
+                      }}
+                    >
+                      💡 지도 페이지에서 아파트를 선택하여 비용을 계산할 수 있습니다
+                    </p>
+                  </div>
                 )}
               </div>
             </div>
@@ -1735,6 +1840,292 @@ const HospitalMapAnalysisPage: React.FC = () => {
                   </>
                 )}
               </div>
+
+              {/* 🏠 아파트 선택 패널 */}
+              {config.apartments.length > 0 && (
+                <div
+                  style={{
+                    borderTop: "1px solid #e5e7eb",
+                    paddingTop: "16px",
+                    marginTop: "16px",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: "12px",
+                    }}
+                  >
+                    <h4
+                      style={{
+                        fontWeight: 600,
+                        fontSize: "14px",
+                        color: "#374151",
+                        margin: 0,
+                      }}
+                    >
+                      🏠 아파트 선택
+                    </h4>
+                    <button
+                      onClick={() => setIsSelectingApartments(!isSelectingApartments)}
+                      style={{
+                        padding: "6px 12px",
+                        backgroundColor: isSelectingApartments ? "#dc2626" : "#7c3aed",
+                        color: "#fff",
+                        border: "none",
+                        borderRadius: "6px",
+                        fontSize: "12px",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                      }}
+                    >
+                      {isSelectingApartments ? "✕ 종료" : "선택 모드"}
+                    </button>
+                  </div>
+
+                  {isSelectingApartments && (
+                    <p
+                      style={{
+                        fontSize: "12px",
+                        color: "#7c3aed",
+                        backgroundColor: "#f5f3ff",
+                        padding: "8px 12px",
+                        borderRadius: "6px",
+                        marginBottom: "12px",
+                      }}
+                    >
+                      💡 지도에서 아파트를 클릭하여 선택/해제하세요
+                    </p>
+                  )}
+
+                  {/* 선택된 아파트 통계 */}
+                  {selectedApartmentIndices.length > 0 && (
+                    <div
+                      style={{
+                        backgroundColor: "#f0fdf4",
+                        borderRadius: "8px",
+                        padding: "12px",
+                        border: "1px solid #bbf7d0",
+                        marginBottom: "12px",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          marginBottom: "10px",
+                        }}
+                      >
+                        <span style={{ fontSize: "13px", fontWeight: 600, color: "#15803d" }}>
+                          ✅ {selectedApartmentIndices.length}개 선택됨
+                        </span>
+                        <button
+                          onClick={() => setSelectedApartmentIndices([])}
+                          style={{
+                            padding: "4px 8px",
+                            backgroundColor: "#fee2e2",
+                            color: "#dc2626",
+                            border: "none",
+                            borderRadius: "4px",
+                            fontSize: "11px",
+                            cursor: "pointer",
+                          }}
+                        >
+                          전체 해제
+                        </button>
+                      </div>
+
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "1fr 1fr",
+                          gap: "8px",
+                          marginBottom: "10px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            padding: "10px",
+                            backgroundColor: "#fff",
+                            borderRadius: "6px",
+                            textAlign: "center",
+                          }}
+                        >
+                          <p style={{ margin: 0, fontSize: "10px", color: "#6b7280" }}>총 세대 수</p>
+                          <p style={{ margin: "4px 0 0 0", fontSize: "16px", fontWeight: "bold", color: "#7c3aed" }}>
+                            {selectedApartmentIndices
+                              .reduce((sum, idx) => sum + (config.apartments[idx]?.totalHouseholds || 0), 0)
+                              .toLocaleString()}
+                          </p>
+                        </div>
+                        <div
+                          style={{
+                            padding: "10px",
+                            backgroundColor: "#fff",
+                            borderRadius: "6px",
+                            textAlign: "center",
+                          }}
+                        >
+                          <p style={{ margin: 0, fontSize: "10px", color: "#6b7280" }}>총 비용</p>
+                          <p style={{ margin: "4px 0 0 0", fontSize: "16px", fontWeight: "bold", color: "#2563eb" }}>
+                            {selectedApartmentIndices
+                              .reduce((sum, idx) => {
+                                const price = config.apartments[idx]?.price || "0";
+                                const numericPrice = parseInt(price.replace(/[^0-9]/g, "")) || 0;
+                                return sum + numericPrice;
+                              }, 0)
+                              .toLocaleString()}원
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* 선택된 아파트 목록 */}
+                      <div
+                        style={{
+                          maxHeight: "180px",
+                          overflowY: "auto",
+                        }}
+                      >
+                        {selectedApartmentIndices.map((idx) => {
+                          const apartment = config.apartments[idx];
+                          if (!apartment) return null;
+                          return (
+                            <div
+                              key={idx}
+                              style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                padding: "8px",
+                                backgroundColor: "#fff",
+                                borderRadius: "6px",
+                                marginBottom: "4px",
+                                fontSize: "11px",
+                              }}
+                            >
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <p style={{ margin: 0, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                  {apartment.name}
+                                </p>
+                                <p style={{ margin: "2px 0 0 0", color: "#6b7280", fontSize: "10px" }}>
+                                  {apartment.totalHouseholds.toLocaleString()}세대 · {apartment.price}
+                                </p>
+                              </div>
+                              <button
+                                onClick={() =>
+                                  setSelectedApartmentIndices((prev) => prev.filter((i) => i !== idx))
+                                }
+                                style={{
+                                  padding: "3px 6px",
+                                  backgroundColor: "#fee2e2",
+                                  color: "#dc2626",
+                                  border: "none",
+                                  borderRadius: "4px",
+                                  fontSize: "10px",
+                                  cursor: "pointer",
+                                  flexShrink: 0,
+                                  marginLeft: "8px",
+                                }}
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* 엑셀 다운로드 버튼 */}
+                      <button
+                        onClick={() => {
+                          // 선택된 아파트 데이터 준비
+                          const exportData = selectedApartmentIndices.map((idx) => {
+                            const apt = config.apartments[idx];
+                            return {
+                              "단지명": apt?.name || "",
+                              "집행여부": apt?.executed || "",
+                              "4주금액": apt?.price || "",
+                              "세대수": apt?.totalHouseholds || 0,
+                            };
+                          });
+
+                          // 합계 행 추가
+                          const totalHouseholds = selectedApartmentIndices.reduce(
+                            (sum, idx) => sum + (config.apartments[idx]?.totalHouseholds || 0),
+                            0
+                          );
+                          const totalPrice = selectedApartmentIndices.reduce((sum, idx) => {
+                            const price = config.apartments[idx]?.price || "0";
+                            return sum + (parseInt(price.replace(/[^0-9]/g, "")) || 0);
+                          }, 0);
+
+                          exportData.push({
+                            "단지명": "합계",
+                            "집행여부": "",
+                            "4주금액": totalPrice.toLocaleString() + "원",
+                            "세대수": totalHouseholds,
+                          });
+
+                          // 엑셀 파일 생성
+                          const worksheet = XLSX.utils.json_to_sheet(exportData);
+                          const workbook = XLSX.utils.book_new();
+                          XLSX.utils.book_append_sheet(workbook, worksheet, "선택된 아파트");
+
+                          // 열 너비 설정
+                          worksheet["!cols"] = [
+                            { wch: 25 }, // 단지명
+                            { wch: 10 }, // 집행여부
+                            { wch: 15 }, // 4주금액
+                            { wch: 10 }, // 세대수
+                          ];
+
+                          // 다운로드
+                          const today = new Date().toISOString().split("T")[0];
+                          XLSX.writeFile(workbook, `선택된_아파트_${today}.xlsx`);
+                        }}
+                        style={{
+                          marginTop: "10px",
+                          padding: "8px 12px",
+                          backgroundColor: "#2563eb",
+                          color: "#fff",
+                          border: "none",
+                          borderRadius: "6px",
+                          fontSize: "12px",
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          width: "100%",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "6px",
+                        }}
+                      >
+                        📥 엑셀 다운로드
+                      </button>
+                    </div>
+                  )}
+
+                  {/* 아파트가 선택되지 않았을 때 */}
+                  {selectedApartmentIndices.length === 0 && (
+                    <p
+                      style={{
+                        fontSize: "12px",
+                        color: "#6b7280",
+                        textAlign: "center",
+                        padding: "16px",
+                        backgroundColor: "#f9fafb",
+                        borderRadius: "6px",
+                      }}
+                    >
+                      {isSelectingApartments
+                        ? "지도에서 아파트를 클릭하세요"
+                        : "선택된 아파트가 없습니다"}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Leaflet 지도 */}
@@ -1807,8 +2198,8 @@ const HospitalMapAnalysisPage: React.FC = () => {
                         fillColor={AGE_COLORS[patient.age_group || "Unknown"]}
                         color="#fff"
                         weight={2}
-                        opacity={1}
-                        fillOpacity={0.9}
+                        opacity={isSelectingApartments ? 0.3 : 1}
+                        fillOpacity={isSelectingApartments ? 0.2 : 0.9}
                       >
                         <Popup>
                           <div style={{ fontSize: "12px", minWidth: "140px" }}>
@@ -1887,53 +2278,103 @@ const HospitalMapAnalysisPage: React.FC = () => {
 
                 {/* 🏠 아파트 마커 */}
                 {visibleLayers.apartments &&
-                  config.apartments.map((apartment, index) => (
-                    <Marker
-                      key={`apartment-${index}`}
-                      position={[apartment.lat, apartment.lng]}
-                      icon={createApartmentIcon(getApartmentMarkerSize(apartment.totalHouseholds))}
-                    >
-                      <Popup>
-                        <div style={{ fontSize: "12px", minWidth: "180px" }}>
-                          <div style={{ fontWeight: "bold", marginBottom: "6px", fontSize: "13px" }}>
-                            🏠 {apartment.name}
-                          </div>
-                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
-                            <span style={{ color: "#666" }}>총 세대 수</span>
-                            <span style={{ fontWeight: 600, color: "#7c3aed" }}>
-                              {apartment.totalHouseholds.toLocaleString()}세대
-                            </span>
-                          </div>
-                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
-                            <span style={{ color: "#666" }}>4주 금액</span>
-                            <span>{apartment.price}</span>
-                          </div>
-                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
-                            <span style={{ color: "#666" }}>집행 여부</span>
-                            <span
+                  config.apartments.map((apartment, index) => {
+                    const isSelected = selectedApartmentIndices.includes(index);
+                    const markerSize = getApartmentMarkerSize(apartment.totalHouseholds);
+
+                    // 선택된 아파트는 파란색, 선택 모드에서는 점선 테두리, 일반 모드는 집행여부에 따른 색상
+                    const icon = isSelected
+                      ? createSelectedApartmentIcon(markerSize)
+                      : isSelectingApartments
+                      ? createSelectableApartmentIcon(markerSize, apartment.executed)
+                      : createApartmentIcon(markerSize, apartment.executed);
+
+                    return (
+                      <Marker
+                        key={`apartment-${index}`}
+                        position={[apartment.lat, apartment.lng]}
+                        icon={icon}
+                        zIndexOffset={isSelectingApartments ? 1000 : 0}
+                        eventHandlers={{
+                          click: () => {
+                            if (isSelectingApartments) {
+                              // 선택 모드일 때: 선택/해제 토글
+                              setSelectedApartmentIndices((prev) =>
+                                prev.includes(index)
+                                  ? prev.filter((i) => i !== index)
+                                  : [...prev, index]
+                              );
+                            }
+                          },
+                        }}
+                      >
+                        <Popup>
+                          <div style={{ fontSize: "12px", minWidth: "180px" }}>
+                            <div style={{ fontWeight: "bold", marginBottom: "6px", fontSize: "13px" }}>
+                              {isSelected ? "✅" : "🏠"} {apartment.name}
+                            </div>
+                            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
+                              <span style={{ color: "#666" }}>총 세대 수</span>
+                              <span style={{ fontWeight: 600, color: "#7c3aed" }}>
+                                {apartment.totalHouseholds.toLocaleString()}세대
+                              </span>
+                            </div>
+                            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
+                              <span style={{ color: "#666" }}>4주 금액</span>
+                              <span>{apartment.price}</span>
+                            </div>
+                            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
+                              <span style={{ color: "#666" }}>집행 여부</span>
+                              <span
+                                style={{
+                                  color: apartment.executed === "집행" ? "#16a34a" : "#dc2626",
+                                  fontWeight: 500,
+                                }}
+                              >
+                                {apartment.executed}
+                              </span>
+                            </div>
+                            <div
                               style={{
-                                color: apartment.executed === "집행" ? "#16a34a" : "#dc2626",
-                                fontWeight: 500,
+                                color: "#666",
+                                fontSize: "11px",
+                                marginTop: "6px",
+                                paddingTop: "6px",
+                                borderTop: "1px solid #eee",
                               }}
                             >
-                              {apartment.executed}
-                            </span>
+                              {apartment.address}
+                            </div>
+                            {isSelectingApartments && (
+                              <button
+                                onClick={() => {
+                                  setSelectedApartmentIndices((prev) =>
+                                    prev.includes(index)
+                                      ? prev.filter((i) => i !== index)
+                                      : [...prev, index]
+                                  );
+                                }}
+                                style={{
+                                  marginTop: "10px",
+                                  padding: "6px 12px",
+                                  backgroundColor: isSelected ? "#fee2e2" : "#f0fdf4",
+                                  color: isSelected ? "#dc2626" : "#16a34a",
+                                  border: `1px solid ${isSelected ? "#fecaca" : "#bbf7d0"}`,
+                                  borderRadius: "6px",
+                                  fontSize: "12px",
+                                  fontWeight: 600,
+                                  cursor: "pointer",
+                                  width: "100%",
+                                }}
+                              >
+                                {isSelected ? "✕ 선택 해제" : "✓ 선택하기"}
+                              </button>
+                            )}
                           </div>
-                          <div
-                            style={{
-                              color: "#666",
-                              fontSize: "11px",
-                              marginTop: "6px",
-                              paddingTop: "6px",
-                              borderTop: "1px solid #eee",
-                            }}
-                          >
-                            {apartment.address}
-                          </div>
-                        </div>
-                      </Popup>
-                    </Marker>
-                  ))}
+                        </Popup>
+                      </Marker>
+                    );
+                  })}
               </MapContainer>
             </div>
           </div>

@@ -25,6 +25,10 @@ interface ReportHeaderProps {
   onPeriodAEndChange: (value: string) => void;
   onPeriodBStartChange: (value: string) => void;
   onPeriodBEndChange: (value: string) => void;
+  excludedWeeksA: string[];
+  excludedWeeksB: string[];
+  onExcludedWeeksAChange: (weeks: string[]) => void;
+  onExcludedWeeksBChange: (weeks: string[]) => void;
 
   // Notion DB 관련
   notionDatabaseId: string;
@@ -58,6 +62,10 @@ export const ReportHeader: React.FC<ReportHeaderProps> = ({
   onPeriodAEndChange,
   onPeriodBStartChange,
   onPeriodBEndChange,
+  excludedWeeksA,
+  excludedWeeksB,
+  onExcludedWeeksAChange,
+  onExcludedWeeksBChange,
   notionDatabaseId,
   savedNotionDatabases,
   onNotionDbChange,
@@ -71,6 +79,64 @@ export const ReportHeader: React.FC<ReportHeaderProps> = ({
   onBlogSelection,
 }) => {
   const navigate = useNavigate();
+
+  const periodAWeeks = weeklyStats.filter(
+    (s) => periodAStart && periodAEnd && s.week_start >= periodAStart && s.week_start <= periodAEnd
+  );
+  const periodBWeeks = weeklyStats.filter(
+    (s) => periodBStart && periodBEnd && s.week_start >= periodBStart && s.week_start <= periodBEnd
+  );
+
+  const fmtChip = (dateStr: string) => {
+    const [, m, d] = dateStr.split('-');
+    return `${parseInt(m)}/${parseInt(d)}`;
+  };
+
+  const renderWeekChips = (
+    weeks: { week_start: string }[],
+    excluded: string[],
+    onChange: (w: string[]) => void
+  ) => {
+    if (weeks.length === 0) return null;
+    const excludedCount = weeks.filter((w) => excluded.includes(w.week_start)).length;
+    return (
+      <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+        <span style={{ fontSize: '11px', color: '#6b7280', whiteSpace: 'nowrap' }}>제외 주차:</span>
+        {weeks.map(({ week_start }) => {
+          const isExcluded = excluded.includes(week_start);
+          return (
+            <button
+              key={week_start}
+              type="button"
+              onClick={() =>
+                onChange(
+                  isExcluded
+                    ? excluded.filter((w) => w !== week_start)
+                    : [...excluded, week_start]
+                )
+              }
+              style={{
+                padding: '2px 8px',
+                fontSize: '11px',
+                border: `1px solid ${isExcluded ? '#d1d5db' : '#93c5fd'}`,
+                borderRadius: '4px',
+                cursor: 'pointer',
+                backgroundColor: isExcluded ? '#f3f4f6' : '#eff6ff',
+                color: isExcluded ? '#9ca3af' : '#1d4ed8',
+                textDecoration: isExcluded ? 'line-through' : 'none',
+                transition: 'all 0.15s',
+              }}
+            >
+              {fmtChip(week_start)}
+            </button>
+          );
+        })}
+        {excludedCount > 0 && (
+          <span style={{ fontSize: '11px', color: '#ef4444' }}>{excludedCount}주 제외</span>
+        )}
+      </div>
+    );
+  };
 
   const selectStyle = {
     flex: 1,
@@ -170,6 +236,7 @@ export const ReportHeader: React.FC<ReportHeaderProps> = ({
                 ))}
               </select>
             </div>
+            {renderWeekChips(periodAWeeks, excludedWeeksA, onExcludedWeeksAChange)}
           </div>
         </div>
 
@@ -206,6 +273,7 @@ export const ReportHeader: React.FC<ReportHeaderProps> = ({
                 ))}
               </select>
             </div>
+            {renderWeekChips(periodBWeeks, excludedWeeksB, onExcludedWeeksBChange)}
           </div>
 
           <div>

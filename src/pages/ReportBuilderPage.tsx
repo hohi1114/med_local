@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { adminAPI, BlogAccount } from '../utils/adminApi';
 import { getCookie } from '../utils/api/cookie';
-import { generateWeeklyTrendChart, generateAgeAnalysisChart, generateWeeklyAgeHeatmapChart, generateAreaComparisonChart, generateWeeklyRegionHeatmapChart, generateWeeklyAreaConcentrationChart } from '../utils/chartGenerator';
+import { generateWeeklyTrendChart, generateAgeAnalysisChart, generateWeeklyAgeHeatmapChart, generateAreaComparisonChart, generateWeeklyRegionHeatmapChart, generateWeeklyAreaConcentrationChart, generateRetentionRateChart } from '../utils/chartGenerator';
 import { generateSummaryInterpretation, generateAgeInterpretation, generateWeeklyAgeTrendInterpretation, generateRegionInterpretation, generateWeeklyRegionTrendInterpretation, generateWeeklyAreaConcentrationInterpretation, generateSmartplaceInterpretation, classifyKeywords } from '../utils/openai';
 import { getMarketingCalendar, MarketingCalendarEntry, getNotionDatabases, addNotionDatabase, deleteNotionDatabase, NotionDatabaseRecord } from '../utils/notionApi';
 import { NotionDbModal, ReportHeader, SectionList, SectionEditor } from '../components/report';
@@ -49,6 +49,11 @@ interface ReportSection {
   generated: boolean;
   includedInPdf: boolean;
   contentHtml: string;
+  useDailyAverage?: boolean;
+  showUnitPrice?: boolean;
+  retentionStart?: string;
+  retentionEnd?: string;
+  excludedWeeksRetention?: string[];
 }
 
 export const ReportBuilderPage: React.FC = () => {
@@ -66,6 +71,15 @@ export const ReportBuilderPage: React.FC = () => {
   const [periodAEnd, setPeriodAEnd] = useState('');
   const [periodBStart, setPeriodBStart] = useState('');
   const [periodBEnd, setPeriodBEnd] = useState('');
+
+  // 제외 주차
+  const [excludedWeeksA, setExcludedWeeksA] = useState<string[]>([]);
+  const [excludedWeeksB, setExcludedWeeksB] = useState<string[]>([]);
+
+  const handlePeriodAStartChange = (v: string) => { setPeriodAStart(v); setExcludedWeeksA([]); };
+  const handlePeriodAEndChange   = (v: string) => { setPeriodAEnd(v);   setExcludedWeeksA([]); };
+  const handlePeriodBStartChange = (v: string) => { setPeriodBStart(v); setExcludedWeeksB([]); };
+  const handlePeriodBEndChange   = (v: string) => { setPeriodBEnd(v);   setExcludedWeeksB([]); };
 
   // Notion Database ID (채널별 유입 성과용)
   const [notionDatabaseId, setNotionDatabaseId] = useState('');
@@ -96,6 +110,14 @@ export const ReportBuilderPage: React.FC = () => {
     {
       id: 'summary',
       title: '유입 추이 분석 - 요약',
+      enabled: false,
+      generated: false,
+      includedInPdf: false,
+      contentHtml: '',
+    },
+    {
+      id: 'retention_analysis',
+      title: '유입 추이 분석 - 신환 재방문율',
       enabled: false,
       generated: false,
       includedInPdf: false,
@@ -371,11 +393,13 @@ export const ReportBuilderPage: React.FC = () => {
     // Period A 데이터 집계
     const periodAStats = weeklyStats.filter(
       (stat) => stat.week_start >= periodAStart && stat.week_end <= actualPeriodAEnd
+        && !excludedWeeksA.includes(stat.week_start)
     );
 
     // Period B 데이터 집계
     const periodBStats = weeklyStats.filter(
       (stat) => stat.week_start >= periodBStart && stat.week_end <= actualPeriodBEnd
+        && !excludedWeeksB.includes(stat.week_start)
     );
 
     if (periodAStats.length === 0) {
@@ -423,25 +447,39 @@ export const ReportBuilderPage: React.FC = () => {
 
   // 요약 섹션 생성 (차트 포함)
   const generateSummaryWithChart = async (): Promise<string> => {
+    // 섹션별 설정 읽기
+    const summarySec = sections.find(s => s.id === 'summary');
+    const useDailyAverage = summarySec?.useDailyAverage ?? false;
+    const showUnitPrice = summarySec?.showUnitPrice ?? false;
+
     // 종료일을 해당 주의 week_end로 변환
     const actualPeriodAEnd = getWeekEnd(periodAEnd);
     const actualPeriodBEnd = getWeekEnd(periodBEnd);
 
     const periodAStats = weeklyStats.filter(
       (stat) => stat.week_start >= periodAStart && stat.week_end <= actualPeriodAEnd
+        && !excludedWeeksA.includes(stat.week_start)
     );
     const periodBStats = weeklyStats.filter(
       (stat) => stat.week_start >= periodBStart && stat.week_end <= actualPeriodBEnd
+        && !excludedWeeksB.includes(stat.week_start)
     );
 
     if (periodAStats.length === 0) {
       return '<p>선택한 기간에 데이터가 없습니다.</p>';
     }
 
-    const formatNumber = (num: number) => new Intl.NumberFormat('ko-KR').format(num);
+    const formatNumber = (num: number) =>
+      useDailyAverage
+        ? new Intl.NumberFormat('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(num)
+        : new Intl.NumberFormat('ko-KR').format(Math.round(num));
+
+    // 영업일 수 계산
+    const periodAWorkDays = periodAStats.reduce((sum, stat) => sum + (7 - stat.closed_days), 0);
+    const periodBWorkDays = periodBStats.reduce((sum, stat) => sum + (7 - stat.closed_days), 0);
 
     // 합계 계산
-    const periodA = {
+    const periodARaw = {
       revenue: periodAStats.reduce((sum, stat) => sum + stat.total_revenue, 0),
       newPatients: periodAStats.reduce((sum, stat) => sum + stat.new_patients, 0),
       firstVisit: periodAStats.reduce((sum, stat) => sum + stat.first_visit_patients, 0),
@@ -449,12 +487,32 @@ export const ReportBuilderPage: React.FC = () => {
       totalPatients: periodAStats.reduce((sum, stat) => sum + stat.total_patients, 0),
     };
 
-    const periodB = {
+    const periodBRaw = {
       revenue: periodBStats.reduce((sum, stat) => sum + stat.total_revenue, 0),
       newPatients: periodBStats.reduce((sum, stat) => sum + stat.new_patients, 0),
       firstVisit: periodBStats.reduce((sum, stat) => sum + stat.first_visit_patients, 0),
       returnPatients: periodBStats.reduce((sum, stat) => sum + stat.return_patients, 0),
       totalPatients: periodBStats.reduce((sum, stat) => sum + stat.total_patients, 0),
+    };
+
+    // 일평균 모드일 때 영업일 수로 나누기
+    const divA = useDailyAverage && periodAWorkDays > 0 ? periodAWorkDays : 1;
+    const divB = useDailyAverage && periodBWorkDays > 0 ? periodBWorkDays : 1;
+
+    const periodA = {
+      revenue: periodARaw.revenue / divA,
+      newPatients: periodARaw.newPatients / divA,
+      firstVisit: periodARaw.firstVisit / divA,
+      returnPatients: periodARaw.returnPatients / divA,
+      totalPatients: periodARaw.totalPatients / divA,
+    };
+
+    const periodB = {
+      revenue: periodBRaw.revenue / divB,
+      newPatients: periodBRaw.newPatients / divB,
+      firstVisit: periodBRaw.firstVisit / divB,
+      returnPatients: periodBRaw.returnPatients / divB,
+      totalPatients: periodBRaw.totalPatients / divB,
     };
 
     // 차이 계산
@@ -484,7 +542,8 @@ export const ReportBuilderPage: React.FC = () => {
       return '';
     };
 
-    let html = '<h2>2. 유입 추이 분석</h2><h3>a. 요약</h3>';
+    const dailyLabel = useDailyAverage ? ' (일평균)' : '';
+    let html = `<h2>2. 유입 추이 분석</h2><h3>a. 요약${dailyLabel}</h3>`;
 
     // 주별 데이터 테이블 - 모든 주를 보여줌 (A기간 + B기간)
     const allWeeks = [...periodBStats, ...periodAStats].sort((a, b) =>
@@ -529,6 +588,12 @@ export const ReportBuilderPage: React.FC = () => {
       `;
     }
 
+    // 객단가 계산 (매출 / 전체 방문수) - 비율이므로 일평균 나누기 불필요
+    const unitPriceA = periodARaw.totalPatients > 0 ? periodARaw.revenue / periodARaw.totalPatients : 0;
+    const unitPriceB = periodBRaw.totalPatients > 0 ? periodBRaw.revenue / periodBRaw.totalPatients : 0;
+    const unitPriceDiff = unitPriceA - unitPriceB;
+    const formatPrice = (n: number) => new Intl.NumberFormat('ko-KR').format(Math.round(n));
+
     // 기간 비교 테이블
     html += `
       <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%; margin: 16px 0;">
@@ -536,6 +601,7 @@ export const ReportBuilderPage: React.FC = () => {
           <tr style="background-color: #f3f4f6;">
             <th></th>
             <th>매출</th>
+            ${showUnitPrice ? '<th>객단가</th>' : ''}
             <th>신환</th>
             <th>초진</th>
             <th>재진</th>
@@ -544,16 +610,18 @@ export const ReportBuilderPage: React.FC = () => {
         </thead>
         <tbody>
           <tr>
-            <td style="background-color: #f3f4f6; font-weight: 600;">A(분석 기간)</td>
+            <td style="background-color: #f3f4f6; font-weight: 600;">A(분석 기간)${useDailyAverage ? `<div style="font-size: 11px; color: #6b7280; font-weight: 400;">영업일 ${periodAWorkDays}일</div>` : ''}</td>
             <td style="${getCellStyle(diff.revenue)}">${formatNumber(periodA.revenue)}</td>
+            ${showUnitPrice ? `<td style="${getCellStyle(unitPriceDiff)}">${formatPrice(unitPriceA)}</td>` : ''}
             <td style="${getCellStyle(diff.newPatients)}">${formatNumber(periodA.newPatients)}</td>
             <td style="${getCellStyle(diff.firstVisit)}">${formatNumber(periodA.firstVisit)}</td>
             <td style="${getCellStyle(diff.returnPatients)}">${formatNumber(periodA.returnPatients)}</td>
             <td style="${getCellStyle(diff.totalPatients)}">${formatNumber(periodA.totalPatients)}</td>
           </tr>
           <tr>
-            <td style="background-color: #f3f4f6; font-weight: 600;">B(비교 기간)</td>
+            <td style="background-color: #f3f4f6; font-weight: 600;">B(비교 기간)${useDailyAverage ? `<div style="font-size: 11px; color: #6b7280; font-weight: 400;">영업일 ${periodBWorkDays}일</div>` : ''}</td>
             <td>${formatNumber(periodB.revenue)}</td>
+            ${showUnitPrice ? `<td>${formatPrice(unitPriceB)}</td>` : ''}
             <td>${formatNumber(periodB.newPatients)}</td>
             <td>${formatNumber(periodB.firstVisit)}</td>
             <td>${formatNumber(periodB.returnPatients)}</td>
@@ -562,6 +630,7 @@ export const ReportBuilderPage: React.FC = () => {
           <tr>
             <td style="background-color: #f3f4f6; font-weight: 600;">A - B</td>
             <td style="vertical-align: middle;">${diff.revenue >= 0 ? '+' : ''}${formatNumber(diff.revenue)}<div style="font-size: 11px; color: ${diff.revenue >= 0 ? '#059669' : '#dc2626'}; margin-top: 4px;">(${calcChangeRate(periodA.revenue, periodB.revenue)})</div></td>
+            ${showUnitPrice ? `<td style="vertical-align: middle;">${unitPriceDiff >= 0 ? '+' : ''}${formatPrice(unitPriceDiff)}<div style="font-size: 11px; color: ${unitPriceDiff >= 0 ? '#059669' : '#dc2626'}; margin-top: 4px;">(${calcChangeRate(unitPriceA, unitPriceB)})</div></td>` : ''}
             <td style="vertical-align: middle;">${diff.newPatients >= 0 ? '+' : ''}${formatNumber(diff.newPatients)}<div style="font-size: 11px; color: ${diff.newPatients >= 0 ? '#059669' : '#dc2626'}; margin-top: 4px;">(${calcChangeRate(periodA.newPatients, periodB.newPatients)})</div></td>
             <td style="vertical-align: middle;">${diff.firstVisit >= 0 ? '+' : ''}${formatNumber(diff.firstVisit)}<div style="font-size: 11px; color: ${diff.firstVisit >= 0 ? '#059669' : '#dc2626'}; margin-top: 4px;">(${calcChangeRate(periodA.firstVisit, periodB.firstVisit)})</div></td>
             <td style="vertical-align: middle;">${diff.returnPatients >= 0 ? '+' : ''}${formatNumber(diff.returnPatients)}<div style="font-size: 11px; color: ${diff.returnPatients >= 0 ? '#059669' : '#dc2626'}; margin-top: 4px;">(${calcChangeRate(periodA.returnPatients, periodB.returnPatients)})</div></td>
@@ -572,14 +641,15 @@ export const ReportBuilderPage: React.FC = () => {
     `;
 
     // 주별 상세 테이블
-    html += '<h3 style="margin-top: 32px;">b. 주별 상세 데이터</h3>';
+    html += `<h3 style="margin-top: 32px;">b. 주별 상세 데이터${dailyLabel}</h3>`;
 
     html += `
       <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%; margin: 16px 0;">
         <thead>
           <tr style="background-color: #f3f4f6;">
-            <th>/day</th>
+            <th>Week</th>
             <th>매출</th>
+            ${showUnitPrice ? '<th>객단가</th>' : ''}
             <th>신환</th>
             <th>초진</th>
             <th>재진</th>
@@ -591,14 +661,14 @@ export const ReportBuilderPage: React.FC = () => {
 
     // 이전 주 대비 증감 색상 계산 함수
     const getChangeColorStyle = (currentValue: number, previousValue: number | null): string => {
-      if (previousValue === null) return ''; // 첫 주는 비교 대상 없음
+      if (previousValue === null) return 'font-weight: 600;'; // 첫 주는 비교 대상 없음
 
       if (currentValue > previousValue) {
         return 'background-color: #d1fae5; font-weight: 600;'; // 증가 - 초록
       } else if (currentValue < previousValue) {
         return 'background-color: #fee2e2; font-weight: 600;'; // 감소 - 빨강
       }
-      return ''; // 동일
+      return 'font-weight: 600;'; // 동일
     };
 
     allWeeks.forEach((stat, idx) => {
@@ -614,39 +684,59 @@ export const ReportBuilderPage: React.FC = () => {
         rowStyle = 'background-color: #fee2e2 ;'; // 연한 핑크
       }
 
+      // 일평균 모드일 때 해당 주 영업일 수로 나누기
+      const weekWorkDays = 7 - stat.closed_days;
+      const weekDiv = useDailyAverage && weekWorkDays > 0 ? weekWorkDays : 1;
+
+      const revenue = stat.total_revenue / weekDiv;
+      const newPatients = stat.new_patients / weekDiv;
+      const firstVisit = stat.first_visit_patients / weekDiv;
+      const returnPatients = stat.return_patients / weekDiv;
+      const totalPatients = stat.total_patients / weekDiv;
+
       // 이전 주 데이터
       const prevStat = idx > 0 ? allWeeks[idx - 1] : null;
+      const prevWorkDays = prevStat ? (7 - prevStat.closed_days) : 1;
+      const prevDiv = useDailyAverage && prevWorkDays > 0 ? prevWorkDays : 1;
 
       // 각 셀의 증감 스타일 (주/day 컬럼은 제외)
       const revenueStyle = getChangeColorStyle(
-        stat.total_revenue,
-        prevStat?.total_revenue || null
+        revenue,
+        prevStat ? prevStat.total_revenue / prevDiv : null
       );
       const newPatientsStyle = getChangeColorStyle(
-        stat.new_patients,
-        prevStat?.new_patients || null
+        newPatients,
+        prevStat ? prevStat.new_patients / prevDiv : null
       );
       const firstVisitStyle = getChangeColorStyle(
-        stat.first_visit_patients,
-        prevStat?.first_visit_patients || null
+        firstVisit,
+        prevStat ? prevStat.first_visit_patients / prevDiv : null
       );
       const returnPatientsStyle = getChangeColorStyle(
-        stat.return_patients,
-        prevStat?.return_patients || null
+        returnPatients,
+        prevStat ? prevStat.return_patients / prevDiv : null
       );
       const totalPatientsStyle = getChangeColorStyle(
-        stat.total_patients,
-        prevStat?.total_patients || null
+        totalPatients,
+        prevStat ? prevStat.total_patients / prevDiv : null
       );
+
+      const weekDaysInfo = useDailyAverage ? ` <span style="font-size: 10px; color: #6b7280;">(${weekWorkDays}일)</span>` : '';
+
+      // 객단가: 해당 주 매출 / 전체 방문수 (비율이므로 일평균 나누기 불필요)
+      const weekUnitPrice = stat.total_patients > 0 ? stat.total_revenue / stat.total_patients : 0;
+      const prevUnitPrice = prevStat && prevStat.total_patients > 0 ? prevStat.total_revenue / prevStat.total_patients : null;
+      const unitPriceStyle = getChangeColorStyle(weekUnitPrice, prevUnitPrice);
 
       html += `
         <tr style="${rowStyle}">
-          <td style="font-weight: 600;">${weekLabel}</td>
-          <td style="${revenueStyle}">${formatNumber(stat.total_revenue)}</td>
-          <td style="${newPatientsStyle}">${formatNumber(stat.new_patients)}</td>
-          <td style="${firstVisitStyle}">${formatNumber(stat.first_visit_patients)}</td>
-          <td style="${returnPatientsStyle}">${formatNumber(stat.return_patients)}</td>
-          <td style="${totalPatientsStyle}">${formatNumber(stat.total_patients)}</td>
+          <td style="font-weight: 600;">${weekLabel}${weekDaysInfo}</td>
+          <td style="${revenueStyle}">${formatNumber(revenue)}</td>
+          ${showUnitPrice ? `<td style="${unitPriceStyle}">${formatPrice(weekUnitPrice)}</td>` : ''}
+          <td style="${newPatientsStyle}">${formatNumber(newPatients)}</td>
+          <td style="${firstVisitStyle}">${formatNumber(firstVisit)}</td>
+          <td style="${returnPatientsStyle}">${formatNumber(returnPatients)}</td>
+          <td style="${totalPatientsStyle}">${formatNumber(totalPatients)}</td>
         </tr>
       `;
     });
@@ -685,10 +775,10 @@ export const ReportBuilderPage: React.FC = () => {
         })),
       });
 
-      html += `<p style="background-color: #f0f9ff; padding: 12px; border-radius: 8px; border-left: 4px solid #3b82f6; margin-top: 16px; line-height: 1.8;">${formatInterpretation(summaryInterpretation)}</p>`;
+      html += `<p data-interpretation="summary" data-raw="${encodeURIComponent(summaryInterpretation)}" style="background-color: #f0f9ff; padding: 12px; border-radius: 8px; border-left: 4px solid #3b82f6; margin-top: 16px; line-height: 1.8;">${formatInterpretation(summaryInterpretation)}</p>`;
     } catch (error) {
       console.error('AI 해석 생성 오류:', error);
-      html += '<p style="margin-top: 16px;"><em>주별 추이에 대한 해석을 여기에 작성하세요...</em></p>';
+      html += '<p data-interpretation="summary" data-raw="" style="margin-top: 16px;"><em>주별 추이에 대한 해석을 여기에 작성하세요...</em></p>';
     }
 
     return html;
@@ -696,22 +786,37 @@ export const ReportBuilderPage: React.FC = () => {
 
   // 연령대별 분석 생성
   const generateAgeAnalysis = async (): Promise<string> => {
+    // 섹션별 일평균 설정 읽기
+    const useDailyAverage = sections.find(s => s.id === 'age_analysis')?.useDailyAverage ?? false;
+
     // 종료일을 해당 주의 week_end로 변환
     const actualPeriodAEnd = getWeekEnd(periodAEnd);
     const actualPeriodBEnd = getWeekEnd(periodBEnd);
 
     const periodAStats = weeklyStats.filter(
       (stat) => stat.week_start >= periodAStart && stat.week_end <= actualPeriodAEnd
+        && !excludedWeeksA.includes(stat.week_start)
     );
     const periodBStats = weeklyStats.filter(
       (stat) => stat.week_start >= periodBStart && stat.week_end <= actualPeriodBEnd
+        && !excludedWeeksB.includes(stat.week_start)
     );
 
     if (periodAStats.length === 0) {
       return '<p>선택한 기간에 데이터가 없습니다.</p>';
     }
 
-    const formatNumber = (num: number) => new Intl.NumberFormat('ko-KR').format(num);
+    const formatNumber = (num: number) =>
+      useDailyAverage
+        ? new Intl.NumberFormat('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(num)
+        : new Intl.NumberFormat('ko-KR').format(Math.round(num));
+
+    // 영업일 수 계산
+    const periodAWorkDays = periodAStats.reduce((sum, stat) => sum + (7 - (stat.closed_days || 0)), 0);
+    const periodBWorkDays = periodBStats.reduce((sum, stat) => sum + (7 - (stat.closed_days || 0)), 0);
+    const divA = useDailyAverage && periodAWorkDays > 0 ? periodAWorkDays : 1;
+    const divB = useDailyAverage && periodBWorkDays > 0 ? periodBWorkDays : 1;
+    const dailyLabel = useDailyAverage ? ' (일평균)' : '';
 
     // 연령대별 합계
     const ageGroups = ['0', '10', '20', '30', '40', '50', '60', '70+'];
@@ -719,11 +824,11 @@ export const ReportBuilderPage: React.FC = () => {
     const periodBAge: Record<string, number> = {};
 
     ageGroups.forEach(age => {
-      periodAAge[age] = periodAStats.reduce((sum, stat) => sum + (stat.age_groups?.[age] || 0), 0);
-      periodBAge[age] = periodBStats.reduce((sum, stat) => sum + (stat.age_groups?.[age] || 0), 0);
+      periodAAge[age] = periodAStats.reduce((sum, stat) => sum + (stat.age_groups?.[age] || 0), 0) / divA;
+      periodBAge[age] = periodBStats.reduce((sum, stat) => sum + (stat.age_groups?.[age] || 0), 0) / divB;
     });
 
-    let html = '<h3>b. 연령대별 신환 유입 추이 분석</h3>';
+    let html = `<h3>b. 연령대별 신환 유입 추이 분석${dailyLabel}</h3>`;
 
     // 차트 생성
     try {
@@ -796,14 +901,14 @@ export const ReportBuilderPage: React.FC = () => {
         </thead>
         <tbody>
           <tr>
-            <td style="background-color: #f3f4f6; font-weight: 600;">A(분석 기간)</td>
+            <td style="background-color: #f3f4f6; font-weight: 600;">A(분석 기간)${useDailyAverage ? `<div style="font-size: 11px; color: #6b7280; font-weight: 400;">영업일 ${periodAWorkDays}일</div>` : ''}</td>
             ${ageGroups.map(age => {
               const style = getCompareStyle(periodAAge[age], periodBAge[age]);
               return `<td style="${style}">${formatNumber(periodAAge[age])}</td>`;
             }).join('')}
           </tr>
           <tr>
-            <td style="background-color: #f3f4f6; font-weight: 600;">B(비교 기간)</td>
+            <td style="background-color: #f3f4f6; font-weight: 600;">B(비교 기간)${useDailyAverage ? `<div style="font-size: 11px; color: #6b7280; font-weight: 400;">영업일 ${periodBWorkDays}일</div>` : ''}</td>
             ${ageGroups.map(age => {
               const style = getCompareStyle(periodBAge[age], periodAAge[age]);
               return `<td style="${style}">${formatNumber(periodBAge[age])}</td>`;
@@ -832,10 +937,10 @@ export const ReportBuilderPage: React.FC = () => {
         periodB: periodBAge,
       });
 
-      html += `<p style="background-color: #f0f9ff; padding: 12px; border-radius: 8px; border-left: 4px solid #3b82f6; line-height: 1.8;">${formatInterpretation(ageInterpretation)}</p>`;
+      html += `<p data-interpretation="age" data-raw="${encodeURIComponent(ageInterpretation)}" style="background-color: #f0f9ff; padding: 12px; border-radius: 8px; border-left: 4px solid #3b82f6; line-height: 1.8;">${formatInterpretation(ageInterpretation)}</p>`;
     } catch (error) {
       console.error('AI 해석 생성 오류:', error);
-      html += '<p><em>연령대별 분석 해석 및 드라이버 분석을 여기에 작성하세요...</em></p>';
+      html += '<p data-interpretation="age" data-raw="" style="background-color: #f0f9ff; padding: 12px; border-radius: 8px; border-left: 4px solid #3b82f6; line-height: 1.8;"><em>연령대별 분석 해석 및 드라이버 분석을 여기에 작성하세요...</em></p>';
     }
 
     // 주별 신환 추이 Heatmap 추가
@@ -911,12 +1016,15 @@ export const ReportBuilderPage: React.FC = () => {
 
     allPeriodStats.forEach((stat) => {
       const weekLabel = formatWeekLabel(stat.week_start);
+      const weekWorkDays = 7 - (stat.closed_days || 0);
+      const weekDiv = useDailyAverage && weekWorkDays > 0 ? weekWorkDays : 1;
+      const weekDaysInfo = useDailyAverage ? ` <span style="font-size: 10px; color: #6b7280;">(${weekWorkDays}일)</span>` : '';
 
       html += `
         <tr>
-          <td style="background-color: #f3f4f6; font-weight: 600;">${weekLabel}</td>
+          <td style="background-color: #f3f4f6; font-weight: 600;">${weekLabel}${weekDaysInfo}</td>
           ${ages.map(age => {
-            const value = stat.age_groups?.[age] || 0;
+            const value = (stat.age_groups?.[age] || 0) / weekDiv;
             return `<td>${formatNumber(value)}</td>`;
           }).join('')}
         </tr>
@@ -945,10 +1053,10 @@ export const ReportBuilderPage: React.FC = () => {
         weeklyData: weeklyAgeTrendData,
       });
 
-      html += `<p style="background-color: #f0f9ff; padding: 12px; border-radius: 8px; border-left: 4px solid #3b82f6; margin-top: 16px; line-height: 1.8;">${formatInterpretation(weeklyAgeTrendInterpretation)}</p>`;
+      html += `<p data-interpretation="weeklyAgeTrend" data-raw="${encodeURIComponent(weeklyAgeTrendInterpretation)}" style="background-color: #f0f9ff; padding: 12px; border-radius: 8px; border-left: 4px solid #3b82f6; margin-top: 16px; line-height: 1.8;">${formatInterpretation(weeklyAgeTrendInterpretation)}</p>`;
     } catch (error) {
       console.error('AI 해석 생성 오류:', error);
-      html += '<p style="margin-top: 16px;"><em>주별 신환 추이에 대한 해석을 여기에 작성하세요...</em></p>';
+      html += '<p data-interpretation="weeklyAgeTrend" data-raw="" style="margin-top: 16px;"><em>주별 신환 추이에 대한 해석을 여기에 작성하세요...</em></p>';
     }
 
     return html;
@@ -956,31 +1064,46 @@ export const ReportBuilderPage: React.FC = () => {
 
   // 지역별 분석 생성
   const generateRegionAnalysis = async (): Promise<string> => {
+    // 섹션별 일평균 설정 읽기
+    const useDailyAverage = sections.find(s => s.id === 'region_analysis')?.useDailyAverage ?? false;
+
     // 종료일을 해당 주의 week_end로 변환
     const actualPeriodAEnd = getWeekEnd(periodAEnd);
     const actualPeriodBEnd = getWeekEnd(periodBEnd);
 
     const periodAStats = weeklyStats.filter(
       (stat) => stat.week_start >= periodAStart && stat.week_end <= actualPeriodAEnd
+        && !excludedWeeksA.includes(stat.week_start)
     );
     const periodBStats = weeklyStats.filter(
       (stat) => stat.week_start >= periodBStart && stat.week_end <= actualPeriodBEnd
+        && !excludedWeeksB.includes(stat.week_start)
     );
 
     if (periodAStats.length === 0) {
       return '<p>선택한 기간에 데이터가 없습니다.</p>';
     }
 
-    const formatNumber = (num: number) => new Intl.NumberFormat('ko-KR').format(num);
+    const formatNumber = (num: number) =>
+      useDailyAverage
+        ? new Intl.NumberFormat('ko-KR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(num)
+        : new Intl.NumberFormat('ko-KR').format(Math.round(num));
+
+    // 영업일 수 계산
+    const periodAWorkDays = periodAStats.reduce((sum, stat) => sum + (7 - (stat.closed_days || 0)), 0);
+    const periodBWorkDays = periodBStats.reduce((sum, stat) => sum + (7 - (stat.closed_days || 0)), 0);
+    const divA = useDailyAverage && periodAWorkDays > 0 ? periodAWorkDays : 1;
+    const divB = useDailyAverage && periodBWorkDays > 0 ? periodBWorkDays : 1;
+    const dailyLabel = useDailyAverage ? ' (일평균)' : '';
 
     // 동별 데이터 집계
-    const districtsA: Record<string, number> = {};
-    const districtsB: Record<string, number> = {};
+    const districtsARaw: Record<string, number> = {};
+    const districtsBRaw: Record<string, number> = {};
 
     periodAStats.forEach(stat => {
       if (stat.top_districts_data) {
         Object.entries(stat.top_districts_data).forEach(([district, count]) => {
-          districtsA[district] = (districtsA[district] || 0) + (count as number);
+          districtsARaw[district] = (districtsARaw[district] || 0) + (count as number);
         });
       }
     });
@@ -988,31 +1111,31 @@ export const ReportBuilderPage: React.FC = () => {
     periodBStats.forEach(stat => {
       if (stat.top_districts_data) {
         Object.entries(stat.top_districts_data).forEach(([district, count]) => {
-          districtsB[district] = (districtsB[district] || 0) + (count as number);
+          districtsBRaw[district] = (districtsBRaw[district] || 0) + (count as number);
         });
       }
     });
 
-    // TOP 7 동 추출
-    const allDistricts = new Set([...Object.keys(districtsA), ...Object.keys(districtsB)]);
+    // TOP 7 동 추출 (일평균 적용)
+    const allDistricts = new Set([...Object.keys(districtsARaw), ...Object.keys(districtsBRaw)]);
     const sortedDistricts = Array.from(allDistricts)
       .map(district => ({
         name: district,
-        countA: districtsA[district] || 0,
-        countB: districtsB[district] || 0,
+        countA: (districtsARaw[district] || 0) / divA,
+        countB: (districtsBRaw[district] || 0) / divB,
       }))
       .sort((a, b) => b.countA - a.countA)
       .slice(0, 7);
 
-    // 전체 신환 환자 수 계산
-    const totalA = periodAStats.reduce((sum, stat) => sum + stat.new_patients, 0);
-    const totalB = periodBStats.reduce((sum, stat) => sum + stat.new_patients, 0);
-    
-    // TOP3, TOP7 합계
+    // 전체 신환 환자 수 계산 (일평균 적용)
+    const totalA = periodAStats.reduce((sum, stat) => sum + stat.new_patients, 0) / divA;
+    const totalB = periodBStats.reduce((sum, stat) => sum + stat.new_patients, 0) / divB;
+
+    // TOP3, Sub4 합계
     const top3A = sortedDistricts.slice(0, 3).reduce((sum, d) => sum + d.countA, 0);
     const top3B = sortedDistricts.slice(0, 3).reduce((sum, d) => sum + d.countB, 0);
-    const top7A = sortedDistricts.reduce((sum, d) => sum + d.countA, 0);
-    const top7B = sortedDistricts.reduce((sum, d) => sum + d.countB, 0);
+    const sub4A = sortedDistricts.slice(3, 7).reduce((sum, d) => sum + d.countA, 0);
+    const sub4B = sortedDistricts.slice(3, 7).reduce((sum, d) => sum + d.countB, 0);
 
     // 증감률 계산 함수
     const calcChangeRate = (a: number, b: number): string => {
@@ -1022,13 +1145,13 @@ export const ReportBuilderPage: React.FC = () => {
       return `${sign}${rate.toFixed(1)}%`;
     };
 
-    let html = '<h3>c. 지역별 유입 추이 분석</h3>';
+    let html = `<h3>c. 지역별 유입 추이 분석${dailyLabel}</h3>`;
 
     // 분석 기간 전체 신규 환자 수 표시
     html += `
       <div style="margin: 16px 0; padding: 16px; background-color: #f9fafb; border-radius: 8px; display: flex; gap: 32px;">
         <div>
-          <span style="font-size: 13px; color: #6b7280;">분석 기간 (A) 전체 신규 환자 수:</span>
+          <span style="font-size: 13px; color: #6b7280;">분석 기간 (A) 전체 신규 환자 수${dailyLabel}:</span>
           <span style="font-size: 15px; font-weight: 600; color: #059669; margin-left: 8px;">${formatNumber(totalA)}명</span>
         </div>
         <div>
@@ -1069,8 +1192,8 @@ export const ReportBuilderPage: React.FC = () => {
         <thead>
           <tr style="background-color: #f3f4f6;">
             <th>동</th>
-            <th>분석 기간 (A)</th>
-            <th>비교 기간 (B)</th>
+            <th>분석 기간 (A)${useDailyAverage ? `<div style="font-size: 11px; color: #6b7280; font-weight: 400;">영업일 ${periodAWorkDays}일</div>` : ''}</th>
+            <th>비교 기간 (B)${useDailyAverage ? `<div style="font-size: 11px; color: #6b7280; font-weight: 400;">영업일 ${periodBWorkDays}일</div>` : ''}</th>
             <th>A - B</th>
           </tr>
         </thead>
@@ -1099,9 +1222,9 @@ export const ReportBuilderPage: React.FC = () => {
         <td>-</td>
       </tr>
       <tr style="background-color: #f9fafb; font-weight: 600;">
-        <td>TOP7 합계 (비율)</td>
-        <td>${formatNumber(top7A)} (${((top7A / totalA) * 100).toFixed(0)}%)</td>
-        <td>${formatNumber(top7B)} (${((top7B / totalB) * 100).toFixed(0)}%)</td>
+        <td>Sub4 합계 (비율)</td>
+        <td>${formatNumber(sub4A)} (${((sub4A / totalA) * 100).toFixed(0)}%)</td>
+        <td>${formatNumber(sub4B)} (${((sub4B / totalB) * 100).toFixed(0)}%)</td>
         <td>-</td>
       </tr>
     `;
@@ -1122,10 +1245,10 @@ export const ReportBuilderPage: React.FC = () => {
         totalB,
       });
 
-      html += `<p style="background-color: #f0f9ff; padding: 12px; border-radius: 8px; border-left: 4px solid #3b82f6; line-height: 1.8;">${formatInterpretation(regionInterpretation)}</p>`;
+      html += `<p data-interpretation="region" data-raw="${encodeURIComponent(regionInterpretation)}" style="background-color: #f0f9ff; padding: 12px; border-radius: 8px; border-left: 4px solid #3b82f6; line-height: 1.8;">${formatInterpretation(regionInterpretation)}</p>`;
     } catch (error) {
       console.error('AI 해석 생성 오류:', error);
-      html += '<p><em>지역별 분석 해석 및 집중도 변화에 대한 분석을 여기에 작성하세요...</em></p>';
+      html += '<p data-interpretation="region" data-raw="" style="background-color: #f0f9ff; padding: 12px; border-radius: 8px; border-left: 4px solid #3b82f6; line-height: 1.8;"><em>지역별 분석 해석 및 집중도 변화에 대한 분석을 여기에 작성하세요...</em></p>';
     }
 
     // 주별 지역별 신환 추이 섹션 추가
@@ -1155,9 +1278,9 @@ export const ReportBuilderPage: React.FC = () => {
       });
     });
 
-    // 히트맵 차트 생성
+    // 멀티 라인 차트 생성 (TOP3 / 4~7위 별도 스케일)
     try {
-      const regionHeatmapImageBase64 = await generateWeeklyRegionHeatmapChart({
+      const [regionTop3ImageBase64, regionRestImageBase64] = await generateWeeklyRegionHeatmapChart({
         weeks,
         regions: topRegionNames,
         matrix: regionWeeklyMatrix,
@@ -1165,7 +1288,10 @@ export const ReportBuilderPage: React.FC = () => {
 
       html += `
         <div style="margin: 24px 0; text-align: center;">
-          <img src="${regionHeatmapImageBase64}" alt="주별 지역별 신환 추이" style="max-width: 100%; height: auto; border: 1px solid #e5e7eb; border-radius: 8px;">
+          <img src="${regionTop3ImageBase64}" alt="TOP3 지역 주별 신환 추이" style="max-width: 100%; height: auto; border: 1px solid #e5e7eb; border-radius: 8px;">
+        </div>
+        <div style="margin: 24px 0; text-align: center;">
+          <img src="${regionRestImageBase64}" alt="4~7위 지역 주별 신환 추이" style="max-width: 100%; height: auto; border: 1px solid #e5e7eb; border-radius: 8px;">
         </div>
       `;
     } catch (error) {
@@ -1194,12 +1320,15 @@ export const ReportBuilderPage: React.FC = () => {
     // 최신 주부터 역순으로 표시
     [...allPeriodStats].reverse().forEach((stat) => {
       const weekLabel = formatWeekLabel(stat.week_start);
+      const weekWorkDays = 7 - (stat.closed_days || 0);
+      const weekDiv = useDailyAverage && weekWorkDays > 0 ? weekWorkDays : 1;
+      const weekDaysInfo = useDailyAverage ? ` <span style="font-size: 10px; color: #6b7280;">(${weekWorkDays}일)</span>` : '';
 
       html += `
         <tr>
-          <td style="background-color: #f3f4f6; font-weight: 600;">${weekLabel}</td>
+          <td style="background-color: #f3f4f6; font-weight: 600;">${weekLabel}${weekDaysInfo}</td>
           ${sortedDistricts.map(district => {
-            const value = stat.top_districts_data?.[district.name] || 0;
+            const value = (stat.top_districts_data?.[district.name] || 0) / weekDiv;
             return `<td>${formatNumber(value)}</td>`;
           }).join('')}
         </tr>
@@ -1234,10 +1363,10 @@ export const ReportBuilderPage: React.FC = () => {
         weeklyData: weeklyRegionTrendData,
       });
 
-      html += `<p style="background-color: #f0f9ff; padding: 12px; border-radius: 8px; border-left: 4px solid #3b82f6; margin-top: 16px; line-height: 1.8;">${formatInterpretation(weeklyRegionTrendInterpretation)}</p>`;
+      html += `<p data-interpretation="weeklyRegionTrend" data-raw="${encodeURIComponent(weeklyRegionTrendInterpretation)}" style="background-color: #f0f9ff; padding: 12px; border-radius: 8px; border-left: 4px solid #3b82f6; margin-top: 16px; line-height: 1.8;">${formatInterpretation(weeklyRegionTrendInterpretation)}</p>`;
     } catch (error) {
       console.error('AI 해석 생성 오류:', error);
-      html += '<p style="margin-top: 16px;"><em>주별 지역별 신환 추이에 대한 해석을 여기에 작성하세요...</em></p>';
+      html += '<p data-interpretation="weeklyRegionTrend" data-raw="" style="margin-top: 16px;"><em>주별 지역별 신환 추이에 대한 해석을 여기에 작성하세요...</em></p>';
     }
 
     // e. 주별 유입 추이 (TOP3 vs Sub4 + 집중도)
@@ -1253,12 +1382,14 @@ export const ReportBuilderPage: React.FC = () => {
     const weeklySub4Ratios: number[] = [];
 
     allPeriodStats.forEach(stat => {
+      const weekWorkDays = 7 - (stat.closed_days || 0);
+      const weekDiv = useDailyAverage && weekWorkDays > 0 ? weekWorkDays : 1;
       // TOP3 합계
-      const top3Sum = top3Districts.reduce((sum, d) => sum + (stat.top_districts_data?.[d.name] || 0), 0);
+      const top3Sum = top3Districts.reduce((sum, d) => sum + (stat.top_districts_data?.[d.name] || 0), 0) / weekDiv;
       // Sub4 합계 (4~7위)
-      const sub4Sum = sub4Districts.reduce((sum, d) => sum + (stat.top_districts_data?.[d.name] || 0), 0);
+      const sub4Sum = sub4Districts.reduce((sum, d) => sum + (stat.top_districts_data?.[d.name] || 0), 0) / weekDiv;
       // 해당 주의 전체 신환 수
-      const weeklyTotal = stat.new_patients;
+      const weeklyTotal = stat.new_patients / weekDiv;
 
       weeklyTop3Counts.push(top3Sum);
       weeklySub4Counts.push(sub4Sum);
@@ -1353,12 +1484,158 @@ export const ReportBuilderPage: React.FC = () => {
         weeklyData: weeklyConcentrationData,
       });
 
-      html += `<p style="background-color: #f0f9ff; padding: 12px; border-radius: 8px; border-left: 4px solid #3b82f6; margin-top: 16px; line-height: 1.8;">${formatInterpretation(concentrationInterpretation)}</p>`;
+      html += `<p data-interpretation="concentration" data-raw="${encodeURIComponent(concentrationInterpretation)}" style="background-color: #f0f9ff; padding: 12px; border-radius: 8px; border-left: 4px solid #3b82f6; margin-top: 16px; line-height: 1.8;">${formatInterpretation(concentrationInterpretation)}</p>`;
     } catch (error) {
       console.error('AI 해석 생성 오류:', error);
-      html += '<p style="margin-top: 16px;"><em>주별 TOP3/Sub4 집중도 추이에 대한 해석을 여기에 작성하세요...</em></p>';
+      html += '<p data-interpretation="concentration" data-raw="" style="margin-top: 16px;"><em>주별 TOP3/Sub4 집중도 추이에 대한 해석을 여기에 작성하세요...</em></p>';
     }
 
+    return html;
+  };
+
+  // 신환 2주 내 재방문율 분석 생성
+  const generateRetentionAnalysis = async (): Promise<string> => {
+    const retentionSec = sections.find(s => s.id === 'retention_analysis');
+    const retStart = retentionSec?.retentionStart || '';
+    const retEnd = retentionSec?.retentionEnd || '';
+    const excludedRetention = retentionSec?.excludedWeeksRetention || [];
+
+    if (!selectedHospital || !retStart || !retEnd) {
+      return '<p>신환 재방문율 분석을 위한 기간을 설정해주세요.</p>';
+    }
+
+    const actualRetEnd = getWeekEnd(retEnd);
+
+    const retentionStats = weeklyStats.filter(
+      (s) => s.week_start >= retStart && s.week_end <= actualRetEnd
+        && !excludedRetention.includes(s.week_start)
+    );
+
+    if (retentionStats.length === 0) {
+      return '<p>선택한 기간에 데이터가 없습니다.</p>';
+    }
+
+    // 시간 순 정렬 (단일 기간이므로 period 구분 없이 'A'로 통일)
+    type StatWithPeriod = (typeof weeklyStats[0]) & { period: 'A' | 'B' };
+    const allStats: StatWithPeriod[] = retentionStats
+      .map(s => ({ ...s, period: 'A' as const }))
+      .sort((a, b) => a.week_start.localeCompare(b.week_start));
+
+    // API 조회 범위: B+A 전체 중 가장 이른 날 ~ 가장 늦은 날
+    const queryStart = allStats[0].week_start;
+    const queryEnd = allStats[allStats.length - 1].week_end;
+
+    let visits: { chart_number: number; visit_date: string; visittype: string }[] = [];
+    try {
+      visits = await adminAPI.getPatientVisits(selectedHospital, queryStart, queryEnd);
+    } catch (e) {
+      console.error('환자 방문 데이터 로드 오류:', e);
+      return '<p style="color:#ef4444;">⚠️ 환자 방문 데이터를 불러오지 못했습니다.</p>';
+    }
+    if (visits.length === 0) {
+      return '<p style="color:#ef4444;">⚠️ 해당 기간의 환자 데이터가 없습니다.</p>';
+    }
+
+    const addDays = (dateStr: string, days: number): string => {
+      const d = new Date(dateStr);
+      d.setDate(d.getDate() + days);
+      return d.toISOString().split('T')[0];
+    };
+
+    const visitsByChart = new Map<number, string[]>();
+    for (const row of visits) {
+      if (!visitsByChart.has(row.chart_number)) visitsByChart.set(row.chart_number, []);
+      visitsByChart.get(row.chart_number)!.push(row.visit_date);
+    }
+
+    const lastDataDate = visits.reduce((max, r) => (r.visit_date > max ? r.visit_date : max), '');
+
+    const weekLabels: string[] = [];
+    const rates: (number | null)[] = [];
+    const newCounts: number[] = [];
+    const returnCounts: (number | null)[] = [];
+    const periods: ('A' | 'B')[] = [];
+
+    for (const stat of allStats) {
+      const [, m, d] = stat.week_start.split('-');
+      weekLabels.push(`${parseInt(m)}/${parseInt(d)}`);
+      periods.push(stat.period);
+
+      const newPatientNums = new Set<number>();
+      for (const row of visits) {
+        if (row.visittype === '신환' && row.visit_date >= stat.week_start && row.visit_date <= stat.week_end) {
+          newPatientNums.add(row.chart_number);
+        }
+      }
+      newCounts.push(newPatientNums.size);
+
+      const cutoff = addDays(stat.week_end, 14);
+      if (cutoff > lastDataDate) {
+        rates.push(null);
+        returnCounts.push(null);
+        continue;
+      }
+
+      let returning = 0;
+      for (const chartNum of newPatientNums) {
+        const chartVisits = visitsByChart.get(chartNum) ?? [];
+        if (chartVisits.some(v => v > stat.week_end && v <= cutoff)) returning++;
+      }
+      returnCounts.push(returning);
+      rates.push(newPatientNums.size > 0 ? (returning / newPatientNums.size) * 100 : 0);
+    }
+
+    let html = '<h2>2-3. 유입 추이 분석 - 신환 2주 내 재방문율</h2>';
+    html += `
+      <p style="font-size:13px; color:#6b7280; margin-bottom:16px;">
+        각 주차에 신환으로 내원한 환자가 <strong>2주(14일) 이내</strong>에 재방문한 비율입니다.
+        마지막 데이터 기준일로부터 2주가 지나지 않은 주차는 집계중으로 표시됩니다.
+      </p>`;
+
+    try {
+      const chartImg = await generateRetentionRateChart({ weeks: weekLabels, rates, newCounts, returnCounts, periods });
+      html += `
+        <div style="margin: 24px 0; text-align: center;">
+          <img src="${chartImg}" alt="신환 2주 내 재방문율" style="max-width: 100%; height: auto; border: 1px solid #e5e7eb; border-radius: 8px;">
+        </div>`;
+    } catch (e) {
+      console.error('재방문율 차트 생성 오류:', e);
+    }
+
+    html += `
+      <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%; margin: 16px 0; font-size: 13px;">
+        <thead>
+          <tr style="background-color: #f9fafb;">
+            <th style="text-align: center; padding: 10px;">기간</th>
+            <th style="text-align: center; padding: 10px;">주차</th>
+            <th style="text-align: center; padding: 10px;">신환 수</th>
+            <th style="text-align: center; padding: 10px;">2주 내 재방문</th>
+            <th style="text-align: center; padding: 10px;">재방문율</th>
+          </tr>
+        </thead>
+        <tbody>`;
+
+    allStats.forEach((stat, i) => {
+      const r = rates[i];
+      const rc = returnCounts[i];
+      const nc = newCounts[i];
+      const periodLabel = stat.period === 'A'
+        ? '<span style="color:#3b82f6; font-weight:600;">A</span>'
+        : '<span style="color:#ef4444; font-weight:600;">B</span>';
+      const rateCell = r === null
+        ? '<span style="color:#9ca3af;">집계중</span>'
+        : `<span style="color:${r < 20 ? '#ef4444' : r < 40 ? '#b45309' : '#059669'}; font-weight:600;">${r.toFixed(1)}%</span>`;
+      html += `
+          <tr style="background:${stat.period === 'A' ? '#f0f9ff' : '#fff5f5'}">
+            <td style="text-align: center;">${periodLabel}</td>
+            <td style="text-align: center;">${stat.week_start} ~ ${stat.week_end}</td>
+            <td style="text-align: center;">${nc}명</td>
+            <td style="text-align: center;">${rc === null ? '–' : `${rc}명`}</td>
+            <td style="text-align: center;">${rateCell}</td>
+          </tr>`;
+    });
+
+    html += `</tbody></table>`;
     return html;
   };
 
@@ -1857,10 +2134,10 @@ export const ReportBuilderPage: React.FC = () => {
 
       try {
         const gptInterpretation = await generateSmartplaceInterpretation(gptData);
-        html += `<p style="background-color: #f0f9ff; padding: 12px; border-radius: 8px; border-left: 4px solid #3b82f6; margin-top: 16px; line-height: 1.8;">${formatInterpretation(gptInterpretation)}</p>`;
+        html += `<p data-interpretation="smartplace" data-raw="${encodeURIComponent(gptInterpretation)}" style="background-color: #f0f9ff; padding: 12px; border-radius: 8px; border-left: 4px solid #3b82f6; margin-top: 16px; line-height: 1.8;">${formatInterpretation(gptInterpretation)}</p>`;
       } catch (gptError) {
         console.error('GPT 해석 생성 오류:', gptError);
-        html += '<p style="margin-top: 16px;"><em>유입 통계 분석에 대한 해석을 여기에 작성하세요...</em></p>';
+        html += '<p data-interpretation="smartplace" data-raw="" style="margin-top: 16px;"><em>유입 통계 분석에 대한 해석을 여기에 작성하세요...</em></p>';
       }
 
       return html;
@@ -2275,12 +2552,12 @@ export const ReportBuilderPage: React.FC = () => {
 
     if (sortedTypes.length === 0) return '';
 
-    let html = '<h3 style="margin-top: 32px;">컨텐츠 종류별 활동 현황</h3>';
+    let html = '<h3 style="margin-top: 32px;">업무분야별 활동 현황</h3>';
     html += `
       <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%; margin: 16px 0;">
         <thead>
           <tr style="background-color: #f3f4f6;">
-            <th style="width: 200px;">컨텐츠 종류</th>
+            <th style="width: 200px;">업무 분야</th>
             <th style="width: 100px;">활동 수</th>
           </tr>
         </thead>
@@ -2356,6 +2633,9 @@ export const ReportBuilderPage: React.FC = () => {
         case 'region_analysis':
           content = await generateRegionAnalysis();
           break;
+        case 'retention_analysis':
+          content = await generateRetentionAnalysis();
+          break;
         case 'channel_performance':
           content = await generateChannelPerformance();
           break;
@@ -2372,6 +2652,17 @@ export const ReportBuilderPage: React.FC = () => {
               ...section,
               generated: true,
               contentHtml: content
+            }
+          : section
+      ));
+    } catch (err) {
+      console.error(`섹션 생성 오류 [${id}]:`, err);
+      setSections(prev => prev.map(section =>
+        section.id === id
+          ? {
+              ...section,
+              generated: true,
+              contentHtml: `<p style="color:#ef4444;">⚠️ 생성 중 오류가 발생했습니다: ${err instanceof Error ? err.message : String(err)}</p>`
             }
           : section
       ));
@@ -2401,6 +2692,32 @@ export const ReportBuilderPage: React.FC = () => {
         ? { ...section, contentHtml: content }
         : section
     ));
+  };
+
+  const handleDailyAverageChange = (id: string, checked: boolean) => {
+    setSections(sections.map(section =>
+      section.id === id
+        ? { ...section, useDailyAverage: checked }
+        : section
+    ));
+  };
+
+  const handleUnitPriceChange = (id: string, checked: boolean) => {
+    setSections(sections.map(section =>
+      section.id === id
+        ? { ...section, showUnitPrice: checked }
+        : section
+    ));
+  };
+
+  const handleRetentionPeriodChange = (id: string, start: string, end: string) => {
+    setSections(sections.map(s =>
+      s.id === id ? { ...s, retentionStart: start, retentionEnd: end, excludedWeeksRetention: [] } : s
+    ));
+  };
+
+  const handleRetentionExcludedWeeksChange = (id: string, weeks: string[]) => {
+    setSections(sections.map(s => s.id === id ? { ...s, excludedWeeksRetention: weeks } : s));
   };
 
   // PDF 생성 함수
@@ -2570,10 +2887,14 @@ export const ReportBuilderPage: React.FC = () => {
         periodAEnd={periodAEnd}
         periodBStart={periodBStart}
         periodBEnd={periodBEnd}
-        onPeriodAStartChange={setPeriodAStart}
-        onPeriodAEndChange={setPeriodAEnd}
-        onPeriodBStartChange={setPeriodBStart}
-        onPeriodBEndChange={setPeriodBEnd}
+        onPeriodAStartChange={handlePeriodAStartChange}
+        onPeriodAEndChange={handlePeriodAEndChange}
+        onPeriodBStartChange={handlePeriodBStartChange}
+        onPeriodBEndChange={handlePeriodBEndChange}
+        excludedWeeksA={excludedWeeksA}
+        excludedWeeksB={excludedWeeksB}
+        onExcludedWeeksAChange={setExcludedWeeksA}
+        onExcludedWeeksBChange={setExcludedWeeksB}
         notionDatabaseId={notionDatabaseId}
         savedNotionDatabases={savedNotionDatabases}
         onNotionDbChange={setNotionDatabaseId}
@@ -2623,6 +2944,11 @@ export const ReportBuilderPage: React.FC = () => {
             generatingSections={generatingSections}
             onContentChange={handleContentChange}
             onGenerateDraft={handleGenerateDraft}
+            onDailyAverageChange={handleDailyAverageChange}
+            onUnitPriceChange={handleUnitPriceChange}
+            weeklyStats={weeklyStats}
+            onRetentionPeriodChange={handleRetentionPeriodChange}
+            onRetentionExcludedWeeksChange={handleRetentionExcludedWeeksChange}
           />
         </div>
       </div>
