@@ -26,6 +26,7 @@ import { AdminDashboard } from "./pages/AdminDashboard";
 import { ReportBuilderPage } from "./pages/ReportBuilderPage";
 import { ReviewCoachingPage } from "./pages/ReviewCoachingPage";
 import { HospitalProfilePage } from "./pages/HospitalProfilePage";
+import PostingManagerPage from "./pages/PostingManagerPage";
 
 function App() {
   const { fetchUserInfo } = useUpdateUserInfo();
@@ -55,6 +56,7 @@ function App() {
         <Route path="/admin/patient-comparison" element={<PatientComparisonPage />} />
         <Route path="/admin/review-coaching" element={<ReviewCoachingPage />} />
         <Route path="/admin/hospital-profile" element={<HospitalProfilePage />} />
+        <Route path="/admin/posting" element={<PostingManagerPage />} />
         <Route path="/admin/hospital-map" element={
           <NaverScriptLoader>
             <HospitalMapAnalysisPage />
