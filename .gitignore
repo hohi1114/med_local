@@ -34,5 +34,3 @@ out/
 .vercel
 .env.local
 .env.*.local
-
-dist/
