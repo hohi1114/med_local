@@ -148,6 +148,17 @@ class AdminAPI {
     return response.data || [];
   }
 
+  async getPatientVisits(
+    hospitalName: string,
+    startDate: string,
+    endDate: string
+  ): Promise<{ chart_number: number; visit_date: string; visittype: string }[]> {
+    const response = await apiRequest(
+      'get',
+      `/stats/admin/patient-visits/${encodeURIComponent(hospitalName)}?startDate=${startDate}&endDate=${endDate}`
+    );
+    return response.data || [];
+  }
 
   async getHospitalList(): Promise<Hospital[]> {
     const response = await apiRequest('get', '/stats/admin/hospitals');

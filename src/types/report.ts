@@ -44,6 +44,11 @@ export interface ReportSection {
   generated: boolean;
   includedInPdf: boolean;
   contentHtml: string;
+  useDailyAverage?: boolean;
+  showUnitPrice?: boolean;
+  retentionStart?: string;
+  retentionEnd?: string;
+  excludedWeeksRetention?: string[];
 }
 
 export interface PeriodConfig {
@@ -68,6 +73,7 @@ export type SectionId =
   | 'summary'
   | 'age_analysis'
   | 'region_analysis'
+  | 'retention_analysis'
   | 'channel_performance'
   | 'key_events'
   | 'conclusion';
@@ -101,6 +107,14 @@ export const INITIAL_SECTIONS: ReportSection[] = [
   {
     id: 'region_analysis',
     title: '유입 추이 분석 - 지역별',
+    enabled: false,
+    generated: false,
+    includedInPdf: false,
+    contentHtml: '',
+  },
+  {
+    id: 'retention_analysis',
+    title: '유입 추이 분석 - 신환 재방문율',
     enabled: false,
     generated: false,
     includedInPdf: false,

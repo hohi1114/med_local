@@ -684,6 +684,27 @@ export const AdminDashboard: React.FC = () => {
               💬 리뷰 코칭
             </button>
 
+            {/* 📝 포스팅 매니저 버튼 */}
+            <button
+              onClick={() => navigate('/admin/posting')}
+              style={{
+                padding: '8px 16px',
+                fontSize: '13px',
+                fontWeight: 500,
+                color: '#fff',
+                backgroundColor: '#8b5cf6',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              📝 포스팅 매니저
+            </button>
+
             {/* HTracker 버튼 */}
             <button
               onClick={() => window.open('https://htracker-xi.vercel.app/', '_blank')}
