@@ -190,6 +190,7 @@ export const postRefreshToken = async () => {
   const refreshToken = await getCookie("refreshToken");
   if (!refreshToken) {
     logout();
+    throw new Error("No refresh token available");
   }
   const data = await apiRequest("post", "/auth/refresh", {
     refresh_token: refreshToken

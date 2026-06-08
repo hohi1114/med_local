@@ -67,50 +67,71 @@ authApi.interceptors.response.use(
     return response;
   },
   async (error) => {
-    const {
-      config,
-      response: { status }
-    } = error;
-    const accessToken = getCookie("accessToken");
-    if (window.location.pathname !== "/login" && !accessToken) {
+    const status = error.response?.status;
+    const originalRequest = error.config as typeof error.config & {
+      _retry?: boolean;
+    };
+
+    // 401이 아니거나 이미 한 번 재시도한 요청이면 그대로 에러 전달
+    if (status !== 401 || originalRequest?._retry) {
+      return Promise.reject(error);
+    }
+
+    // refresh 토큰이 없으면 복구 불가 → 로그아웃
+    const refreshToken = getCookie("refreshToken");
+    if (!refreshToken) {
       logout();
+      return Promise.reject(error);
     }
 
-    if (status === 401) {
-      const originalRequest = config;
-      if (isTokenExpired(accessToken)) {
-        if (!isRefreshing) {
-          isRefreshing = true;
-
-          refreshTokenPromise = postRefreshToken()
-            .then((newAccessToken) => {
-              refreshSubscribers.forEach((callback) =>
-                callback(newAccessToken)
-              );
-              refreshSubscribers = [];
-              return newAccessToken;
-            })
-            .catch((error) => {
-              logout();
-              throw error;
-            })
-            .finally(() => {
-              isRefreshing = false;
-            });
-        }
-      }
-      return new Promise((resolve) => {
-        refreshSubscribers.push((newAccessToken) => {
-          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-
-          resolve(authApi(originalRequest)); // 새 토큰으로 요청 재시도
+    // access 토큰이 없거나 만료된 경우에만 갱신 (refresh 토큰은 살아있음)
+    originalRequest._retry = true;
+    if (!isRefreshing) {
+      isRefreshing = true;
+      refreshTokenPromise = postRefreshToken()
+        .then((newAccessToken) => {
+          refreshSubscribers.forEach((callback) => callback(newAccessToken));
+          refreshSubscribers = [];
+          return newAccessToken;
+        })
+        .catch((refreshError) => {
+          refreshSubscribers = [];
+          logout();
+          throw refreshError;
+        })
+        .finally(() => {
+          isRefreshing = false;
         });
-      });
     }
 
-    return Promise.reject(error);
+    return new Promise((resolve, reject) => {
+      refreshSubscribers.push((newAccessToken) => {
+        if (!newAccessToken) {
+          reject(error);
+          return;
+        }
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+        resolve(authApi(originalRequest)); // 새 토큰으로 요청 재시도
+      });
+    });
   }
 );
+
+// 앱 시작 시 세션 복원: refresh 토큰이 살아있으면 access 토큰을 미리 갱신
+export const ensureValidSession = async (): Promise<boolean> => {
+  const refreshToken = getCookie("refreshToken");
+  if (!refreshToken) return false;
+
+  const accessToken = getCookie("accessToken");
+  if (accessToken && !isTokenExpired(accessToken)) return true;
+
+  try {
+    await postRefreshToken();
+    return true;
+  } catch {
+    return false;
+  }
+};
 
 export const apiRequest = async (
   method: "get" | "post" | "put" | "delete",

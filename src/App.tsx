@@ -11,6 +11,7 @@ import LoginPage from "./pages/LoginPage.tsx";
 import ComingSoonPage from "./pages/ComingSoonPage.tsx";
 import MembershipPage from "./pages/MembershipPage.tsx";
 import useUpdateUserInfo from "./hooks/useUpdateUserInfo.tsx";
+import { ensureValidSession } from "./utils/api/apihelper.ts";
 import MembershipChangePage from "./pages/MembershipChangePage.tsx";
 import CardManagementPage from "./pages/CardManagementPage.tsx";
 import PaymentHistoryPage from "./pages/PaymentHistoryPage.tsx";
@@ -32,12 +33,21 @@ function App() {
 
   useEffect(() => {
     // Admin 페이지와 일반 로그인 페이지는 제외
-    if (
-      !window.location.pathname.startsWith("/login") &&
-      !window.location.pathname.startsWith("/admin")
-    ) {
-      fetchUserInfo();
+    const path = window.location.pathname;
+    if (path.startsWith("/login") || path.startsWith("/admin")) {
+      return;
     }
+
+    // 컴퓨터를 껐다 켜도 refresh 토큰이 살아있으면 자동 로그인
+    const restoreSession = async () => {
+      const isValid = await ensureValidSession();
+      if (isValid) {
+        fetchUserInfo();
+      } else {
+        window.location.href = "/login";
+      }
+    };
+    restoreSession();
   }, []);
 
   return (
