@@ -26,8 +26,7 @@ export const postLogin = async (loginData: LoginParams) => {
   const data = await apiRequest("post", `/auth/login`, loginData);
   await saveTokensToCookie({
     access_token: data.access_token,
-    refresh_token: data.refresh_token,
-    expires_in: data.expires_in
+    refresh_token: data.refresh_token
   });
 
   return data;
@@ -322,8 +321,7 @@ export const postAdminLogin = async (email: string, password: string) => {
 
   await saveTokensToCookie({
     access_token: data.access_token,
-    refresh_token: data.refresh_token,
-    expires_in: data.expires_in
+    refresh_token: data.refresh_token
   });
 
   return data;

@@ -210,7 +210,7 @@ const AutoLoginLabel = styled.label`
   gap: 0.5rem;
   align-self: flex-start;
   font-size: 0.95rem;
-  color: ${(props) => props.theme.colors.gray700 || "#444"};
+  color: ${(props) => props.theme.colors.gray06};
   cursor: pointer;
   input {
     width: 1.1rem;

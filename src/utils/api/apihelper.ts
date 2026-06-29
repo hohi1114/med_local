@@ -58,8 +58,14 @@ authApi.interceptors.request.use(
 );
 
 let isRefreshing = false;
-let refreshSubscribers: ((token: string) => void)[] = []; // 새 토큰을 받았을 때 실행할 콜백들
-let refreshTokenPromise = null;
+// 새 토큰을 받았을 때 실행할 콜백들 (실패 시 null이 전달되어 펜딩 요청을 reject)
+let refreshSubscribers: ((token: string | null) => void)[] = [];
+
+// 인증 엔드포인트는 인터셉터의 토큰 갱신 로직에서 제외한다.
+// - /auth/refresh: 여기서 갱신을 다시 트리거하면 무한 재귀/데드락 발생
+// - /auth/login: 잘못된 자격증명(401)이 로그아웃·리다이렉트로 이어져 에러 메시지가 사라지는 것을 방지
+const isAuthEndpoint = (url?: string) =>
+  !!url && (url.includes("/auth/refresh") || url.includes("/auth/login"));
 
 //응답 interceptor
 authApi.interceptors.response.use(
@@ -72,8 +78,12 @@ authApi.interceptors.response.use(
       _retry?: boolean;
     };
 
-    // 401이 아니거나 이미 한 번 재시도한 요청이면 그대로 에러 전달
-    if (status !== 401 || originalRequest?._retry) {
+    // 401이 아니거나, 이미 재시도한 요청이거나, 인증 엔드포인트면 그대로 에러 전달
+    if (
+      status !== 401 ||
+      originalRequest?._retry ||
+      isAuthEndpoint(originalRequest?.url)
+    ) {
       return Promise.reject(error);
     }
 
@@ -88,18 +98,17 @@ authApi.interceptors.response.use(
     originalRequest._retry = true;
     if (!isRefreshing) {
       isRefreshing = true;
-      refreshTokenPromise = postRefreshToken()
+      postRefreshToken()
         .then((newAccessToken) => {
           refreshSubscribers.forEach((callback) => callback(newAccessToken));
-          refreshSubscribers = [];
-          return newAccessToken;
         })
-        .catch((refreshError) => {
-          refreshSubscribers = [];
+        .catch(() => {
+          // 갱신 실패: 펜딩 요청들을 깨워서 reject시키고 로그아웃
+          refreshSubscribers.forEach((callback) => callback(null));
           logout();
-          throw refreshError;
         })
         .finally(() => {
+          refreshSubscribers = [];
           isRefreshing = false;
         });
     }
