@@ -6,6 +6,10 @@ import {
   PatientAddressSmartNC,
   PatientListSmartNC,
 } from "./excel/smartncExcel";
+import {
+  DailyVisitSimEmr,
+  PatientListSimEmr,
+} from "./excel/simEmrExcel";
 
 export interface MergedData {
   chartNumber: number;
@@ -120,6 +124,15 @@ export interface MergedDataCchart {
 }
 
 export interface MergedDataSmartNC {
+  chartNumber: number;
+  visitDate: string | Date;
+  totalCost: number;
+  age: number | null;
+  address: string;
+  route: string;
+}
+
+export interface MergedDataSimEmr {
   chartNumber: number;
   visitDate: string | Date;
   totalCost: number;
@@ -1034,6 +1047,42 @@ export function mergeDataSmartNC(
       totalCost: inc.totalCost,
       age: ageMap.get(key) ?? null,
       address: addressMap.get(key) ?? "N/D",
+      route: "N/D",
+    };
+  });
+
+  df_merged.forEach((record) => {
+    record.visitDate = new Date(record.visitDate as string);
+  });
+
+  return df_merged;
+}
+
+export function mergeDataSimEmr(
+  dailyVisit: DailyVisitSimEmr[],
+  patientList: PatientListSimEmr[]
+): MergedDataSimEmr[] {
+  // IPC 직렬화 시 숫자가 문자열로 올 수 있으므로 string 키로 통일
+  const toKey = (n: number | string) => String(Number(n));
+
+  // chartNumber → age (환자 목록 파일에서만 제공됨)
+  const ageMap = new Map<string, number | null>();
+  for (const p of patientList) {
+    const key = toKey(p.chartNumber);
+    if (!ageMap.has(key) && p.age !== null) {
+      ageMap.set(key, p.age);
+    }
+  }
+
+  const df_merged: MergedDataSimEmr[] = dailyVisit.map((visit) => {
+    const key = toKey(visit.chartNumber);
+    return {
+      chartNumber: visit.chartNumber,
+      visitDate: visit.visitDate as string | Date,
+      totalCost: visit.totalCost,
+      age: ageMap.get(key) ?? null,
+      // 방문 기록 자체에 주소가 있으므로 우선 사용, 없으면 N/D
+      address: visit.address && visit.address !== "N/D" ? visit.address : "N/D",
       route: "N/D",
     };
   });

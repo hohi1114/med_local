@@ -57,6 +57,10 @@ declare global {
       parsePatientAddressSmartNC: (fileBuffers: ArrayBuffer[]) => Promise<any>;
       parsePatientListSmartNC: (fileBuffers: ArrayBuffer[]) => Promise<any>;
 
+      // File processing - SimEMR
+      parseDailyVisitSimEmr: (fileBuffers: ArrayBuffer[]) => Promise<any>;
+      parsePatientListSimEmr: (fileBuffers: ArrayBuffer[]) => Promise<any>;
+
       // Data merging
       mergeDataEuisarang: (visits: any[], patients: any[]) => Promise<any>;
       mergeDataDentWeb: (visits: any[], patients: any[]) => Promise<any>;
@@ -81,6 +85,8 @@ declare global {
       mergeDataNeo: (dailyIncome: any[], patientList: any[]) => Promise<any>;
 
       mergeDataSmartNC: (dailyIncome: any[], patientAddress: any[], patientList: any[]) => Promise<any>;
+
+      mergeDataSimEmr: (dailyVisit: any[], patientList: any[]) => Promise<any>;
 
       mergeDatacChart: (dailyIncome: any[], patientList: any[]) => Promise<any>;
       // Final data processing
@@ -139,6 +145,11 @@ declare global {
       ) => Promise<any>;
 
       processDataLocallySmartNC: (
+        mergedData: any[],
+        accessToken: string
+      ) => Promise<any>;
+
+      processDataLocallySimEmr: (
         mergedData: any[],
         accessToken: string
       ) => Promise<any>;

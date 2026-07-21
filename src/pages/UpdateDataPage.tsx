@@ -260,6 +260,41 @@ export async function uploadDataToBackendcChart(
 
 
 
+export async function uploadDataToBackendSimEmr(
+  token: string,
+  processedData: ProcessDataPayload
+): Promise<ProcessDataResponse> {
+  try {
+    const baseURL = "https://htracker.org/api";
+    const payload = {
+      processedRecords: processedData.patient_records,
+      date_location_groups: processedData.date_location_groups,
+    };
+    const response = await axios.post<ProcessDataResponse>(
+      `${baseURL}/data/simemr`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    console.log("✅ SimEMR data processed successfully:", response.data);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      console.error("❌ Error processing SimEMR data:", error.response.data);
+      throw new Error(
+        error.response.data.error || "Failed to process SimEMR data"
+      );
+    } else {
+      throw new Error("An unexpected error occurred while processing SimEMR data");
+    }
+  }
+}
+
+
 export async function uploadDataToBackendSmartNC(
   token: string,
   processedData: ProcessDataPayload
@@ -511,7 +546,7 @@ export async function uploadDataToBackendDoctorP(
 }
 
 const UpdateDataPage = () => {
-  const [dataType, setDataType] = useState<"euisarang" | "egis" | "dentweb" | "orm" | "vegas" | "vegas2" | "hanchart" | "doctorp" | "doctorp2" | "cChart" | "bit" | "bit2" | "neo" | "smartnc">(
+  const [dataType, setDataType] = useState<"euisarang" | "egis" | "dentweb" | "orm" | "vegas" | "vegas2" | "hanchart" | "doctorp" | "doctorp2" | "cChart" | "bit" | "bit2" | "neo" | "smartnc" | "simemr">(
     "euisarang"
   ); // Track data type
   const [daysFiles, setDaysFiles] = useState<FileList | null>(null); // Euisarang
@@ -562,7 +597,8 @@ const UpdateDataPage = () => {
           emrType === "bit" ||
           emrType === "bit2" ||
           emrType === "neo" ||
-          emrType === "smartnc"
+          emrType === "smartnc" ||
+          emrType === "simemr"
         ) {
           setDataType(emrType);
         }
@@ -1994,6 +2030,89 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
 
 
 
+  const handleProcessDataSimEmr = async (): Promise<void> => {
+    if (!dailyIncome || !placeFiles) {
+      openNotification("warning", "파일 누락", "모든 파일을 업로드해주세요.");
+      return;
+    }
+
+    setProgress(1);
+
+    const removeProgressListener = window.electron.onGeocodingProgress(
+      ({ current, total }) => {
+        const geocodingProgress = (current / total) * 80;
+        setProgress(10 + geocodingProgress);
+      }
+    );
+
+    try {
+      const visitBuffers = await Promise.all(
+        Array.from(dailyIncome).map((file) => file.arrayBuffer())
+      );
+      const patientBuffers = await Promise.all(
+        Array.from(placeFiles).map((file) => file.arrayBuffer())
+      );
+
+      const visits = await window.electron.parseDailyVisitSimEmr(visitBuffers);
+      console.log("SimEMR visits:", visits);
+
+      const patients = await window.electron.parsePatientListSimEmr(patientBuffers);
+      console.log("SimEMR patients:", patients);
+
+      const mergedData = await window.electron.mergeDataSimEmr(visits, patients);
+      console.log("SimEMR merged:", mergedData);
+
+      setProgress(10);
+
+      const processedData = await window.electron.processDataLocallySimEmr(
+        mergedData,
+        getCookie("accessToken")
+      );
+
+      removeProgressListener();
+      setProgress(90);
+
+      console.log("SimEMR processed:", processedData);
+
+      const uploadPromise = uploadDataToBackendSimEmr(
+        getCookie("accessToken"),
+        processedData
+      );
+
+      setProgress(95);
+
+      openNotification(
+        "success",
+        "데이터 업로드 중",
+        "데이터가 처리되어 업로드 중입니다. 업로드가 완료되면 알려드립니다. 프로그램을 종료하지 마세요."
+      );
+
+      setProgress(100);
+
+      uploadPromise
+        .then(() => {
+          fetchUploadedDates();
+          openNotification("success", "데이터 업로드 완료", "모든 데이터가 성공적으로 처리되었습니다.");
+        })
+        .catch((error) => {
+          console.error("❌ Background upload error:", error);
+          openNotification(
+            "error",
+            "업로드 실패",
+            error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다."
+          );
+        });
+    } catch (error) {
+      console.error("❌ Error processing SimEMR data:", error);
+      openNotification(
+        "error",
+        "데이터 처리 실패",
+        error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다."
+      );
+      setProgress(0);
+    }
+  };
+
   const handleProcessDataSmartNC = async (): Promise<void> => {
     if (!dailyIncome || !placeFiles || !patientFiles) {
       openNotification("warning", "파일 누락", "모든 파일을 업로드해주세요.");
@@ -2110,6 +2229,8 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
         handleProcessDataNeo()
     } else if (dataType === "smartnc") {
       handleProcessDataSmartNC();
+    } else if (dataType === "simemr") {
+      handleProcessDataSimEmr();
     } else if (dataType === "doctorp2") {
       handleProcessDataDoctorP2();
     } else {
@@ -2277,6 +2398,19 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
               <FileUpload
                 title="내원일별 환자명부"
                 onFilesUploaded={(files) => setPatientFiles(files)}
+              />
+            </>
+          )}
+
+          {dataType === "simemr" && (
+            <>
+              <FileUpload
+                title="일별 방문/수납 현황 (환자번호, 주소, 진료기간, 총진료비)"
+                onFilesUploaded={(files) => setDailyIncome(files)}
+              />
+              <FileUpload
+                title="환자 목록 (진료과목, 환자번호, 나이, 주소)"
+                onFilesUploaded={(files) => setPlaceFiles(files)}
               />
             </>
           )}

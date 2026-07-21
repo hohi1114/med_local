@@ -72,6 +72,11 @@ import {
   parsePatientListSmartNC,
 } from "../src/local/excel/smartncExcel";
 
+import {
+  parseDailyVisitSimEmr,
+  parsePatientListSimEmr,
+} from "../src/local/excel/simEmrExcel";
+
 
 import {
   mergeDataDentWeb,
@@ -86,6 +91,7 @@ import {
   mergeDataBit,
   mergeDataNeo,
   mergeDataSmartNC,
+  mergeDataSimEmr,
 } from "../src/local/dataMerge";
 import {
   processDataLocally,
@@ -100,6 +106,7 @@ import {
   processDataLocallyOrm,
   processDataLocallyNeo,
   processDataLocallySmartNC,
+  processDataLocallySimEmr,
 } from "../src/local/locationProcessing";
 
 const isDev = process.env.NODE_ENV === "development";
@@ -509,6 +516,33 @@ ipcMain.handle("parse-patient-list-bit2", async (event, fileBuffers) => {
     }
   });
 
+  ipcMain.handle("parse-daily-visit-simemr", async (event, fileBuffers) => {
+    try {
+      return await parseDailyVisitSimEmr(fileBuffers);
+    } catch (error) {
+      console.error("Error parsing SimEMR daily visit:", error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle("parse-patient-list-simemr", async (event, fileBuffers) => {
+    try {
+      return await parsePatientListSimEmr(fileBuffers);
+    } catch (error) {
+      console.error("Error parsing SimEMR patient list:", error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle("merge-data-simemr", async (event, dailyVisit, patientList) => {
+    try {
+      return mergeDataSimEmr(dailyVisit, patientList);
+    } catch (error) {
+      console.error("Error merging SimEMR data:", error);
+      throw error;
+    }
+  });
+
 
   ipcMain.handle("merge-data-orm", async (event, visits, patients) => {
     try {
@@ -697,6 +731,24 @@ ipcMain.handle("parse-patient-list-bit2", async (event, fileBuffers) => {
         );
       } catch (error) {
         console.error("Error processing SmartNC data:", error);
+        throw error;
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "process-data-locally-simemr",
+    async (event, mergedData, accessToken) => {
+      try {
+        return await processDataLocallySimEmr(
+          mergedData,
+          accessToken,
+          (current, total) => {
+            event.sender.send("geocoding-progress", { current, total });
+          }
+        );
+      } catch (error) {
+        console.error("Error processing SimEMR data:", error);
         throw error;
       }
     }

@@ -92,6 +92,12 @@ contextBridge.exposeInMainWorld("electron", {
   parsePatientListSmartNC: (fileBuffers: ArrayBuffer[]) =>
     ipcRenderer.invoke("parse-patient-list-smartnc", fileBuffers),
 
+  // File processing - SimEMR
+  parseDailyVisitSimEmr: (fileBuffers: ArrayBuffer[]) =>
+    ipcRenderer.invoke("parse-daily-visit-simemr", fileBuffers),
+  parsePatientListSimEmr: (fileBuffers: ArrayBuffer[]) =>
+    ipcRenderer.invoke("parse-patient-list-simemr", fileBuffers),
+
   // Data merging
   mergeDataEuisarang: (visits: any[], patients: any[]) =>
     ipcRenderer.invoke("merge-data-euisarang", visits, patients),
@@ -120,6 +126,9 @@ contextBridge.exposeInMainWorld("electron", {
 
   mergeDataSmartNC: (dailyIncome: any[], patientAddress: any[], patientList: any[]) =>
     ipcRenderer.invoke("merge-data-smartnc", dailyIncome, patientAddress, patientList),
+
+  mergeDataSimEmr: (dailyVisit: any[], patientList: any[]) =>
+    ipcRenderer.invoke("merge-data-simemr", dailyVisit, patientList),
 
   // Final data processing
   processDataLocally: (mergedData: any[], accessToken: string) =>
@@ -161,6 +170,9 @@ contextBridge.exposeInMainWorld("electron", {
 
   processDataLocallySmartNC: (mergedData: any[], accessToken: string) =>
     ipcRenderer.invoke("process-data-locally-smartnc", mergedData, accessToken),
+
+  processDataLocallySimEmr: (mergedData: any[], accessToken: string) =>
+    ipcRenderer.invoke("process-data-locally-simemr", mergedData, accessToken),
 
   onGeocodingProgress: (
     callback: (data: { current: number; total: number }) => void
