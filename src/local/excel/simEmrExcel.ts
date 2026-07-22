@@ -55,8 +55,16 @@ function parseSimEmrDate(raw: any): string {
   return str;
 }
 
+// Postgres integer(int4) 컬럼 범위. 미등록/워크인 환자용 더미 번호(예: 9999999992)가
+// 이 범위를 넘어서면 DB insert가 실패하므로 파싱 단계에서 걸러낸다.
+const MAX_INT4 = 2147483647;
+
 function parseChartNumber(raw: any): number {
   return Number(String(raw).trim().replace(/^0+/, "") || "0");
+}
+
+function isValidChartNumber(chartNumber: number): boolean {
+  return !isNaN(chartNumber) && chartNumber > 0 && chartNumber <= MAX_INT4;
 }
 
 export async function parseDailyVisitSimEmr(
@@ -98,7 +106,10 @@ export async function parseDailyVisitSimEmr(
       if (!row[chartNumberIndex] || !row[visitDateIndex]) continue;
 
       const chartNumber = parseChartNumber(row[chartNumberIndex]);
-      if (isNaN(chartNumber)) continue;
+      if (!isValidChartNumber(chartNumber)) {
+        console.warn(`⚠️ Skipping row ${i}: chart number out of range: ${row[chartNumberIndex]}`);
+        continue;
+      }
 
       const visitDate = parseSimEmrDate(row[visitDateIndex]);
       const totalCost = parseAmount(row[totalCostIndex]);
@@ -148,7 +159,10 @@ export async function parsePatientListSimEmr(
       if (!row[chartNumberIndex]) continue;
 
       const chartNumber = parseChartNumber(row[chartNumberIndex]);
-      if (isNaN(chartNumber)) continue;
+      if (!isValidChartNumber(chartNumber)) {
+        console.warn(`⚠️ Skipping row ${i}: chart number out of range: ${row[chartNumberIndex]}`);
+        continue;
+      }
 
       const ageRaw = row[ageIndex];
       const age =
