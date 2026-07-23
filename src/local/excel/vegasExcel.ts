@@ -5,6 +5,7 @@ export interface DailyIncomeVegas {
   chartNumber: number;
   visitDate: string;
   totalCost: number;
+  nonTaxableNonInsuranceCost?: number; // Vegas1 파일에는 없음(서울뷰청주 Vegas2 전용)
   age: number;
   area: string;
   procedure: string;

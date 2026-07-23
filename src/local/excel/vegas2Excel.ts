@@ -8,7 +8,8 @@ import { normalizeAge } from "../ExcelParser";
 export interface DailyIncomeVegas {
   chartNumber: number;
   visitDate: string;
-  totalCost: number;
+  totalCost: number; // 과세총금액
+  nonTaxableNonInsuranceCost: number; // 비과세비급여 (위고비, 마운자로 등)
   age: number;
   area: string;
   procedure: string;
@@ -22,6 +23,13 @@ export interface PatientListVegas {
   firstDate: string;
   route: string;
   nationality: string;
+}
+
+// 오더판매내역및환자내역 파일의 "오더별환자리스트" 시트: 하루에 여러 오더가 찍히면 여러 행으로 나뉜다
+export interface OrderRecordVegas2 {
+  chartNumber: number;
+  visitDate: string;
+  orders: string[];
 }
 
 // 베가스의 경우 Income에서 1) 분야 2) 시술 3) 진료의를 string으로 추가적으로 받는다. default value는 " "이 되도록 주의한다
@@ -125,14 +133,12 @@ export async function parseDailyIncomeVegas2(
         continue;
       }
 
-      // Process costs - add taxable and non-taxable non-insurance costs
-      const taxableCost = Number(row[taxableCostIndex]) || 0;
+      // Process costs - 과세총금액과 비과세비급여를 별도로 유지 (합산하지 않음)
+      const totalCost = Number(row[taxableCostIndex]) || 0;
       const nonTaxableNonInsuranceCost =
         Number(row[nonTaxableNonInsuranceCostIndex]) || 0;
 
-      const totalCost = taxableCost + nonTaxableNonInsuranceCost;
-
-      if (totalCost <= 0) {
+      if (totalCost <= 0 && nonTaxableNonInsuranceCost <= 0) {
         console.log(`Skipping row ${i}: invalid total cost`);
         continue;
       }
@@ -188,6 +194,7 @@ export async function parseDailyIncomeVegas2(
         age: normalizedAge,
         visitDate: String(visitDate),
         totalCost,
+        nonTaxableNonInsuranceCost,
         area,
         procedure,
         doctor,
@@ -323,4 +330,99 @@ export async function parsePatientListVegas2(
     }
   }
   return data;
+}
+
+// "오더판매내역및환자내역" 파일의 "오더별환자리스트" 시트를 파싱해 (차트번호, 진료일)별 오더명 목록을 만든다.
+export async function parseOrderListVegas2(
+  fileBuffers: ArrayBuffer[]
+): Promise<OrderRecordVegas2[]> {
+  const grouped = new Map<string, OrderRecordVegas2>();
+
+  for (const buffer of fileBuffers) {
+    const workbook = XLSX.read(buffer, { type: "array" });
+
+    const sheetName = workbook.SheetNames.find((name) => {
+      const preview = XLSX.utils
+        .sheet_to_json<any[]>(workbook.Sheets[name], { header: 1, range: 0 })
+        .slice(0, 3);
+      return preview.some(
+        (row) => Array.isArray(row) && row.includes("핸드폰번호")
+      );
+    });
+
+    if (!sheetName) {
+      console.error("❌ 오더별환자리스트 시트를 찾을 수 없습니다");
+      continue;
+    }
+
+    const worksheet = workbook.Sheets[sheetName];
+    const allData = XLSX.utils.sheet_to_json<any[]>(worksheet, {
+      header: 1,
+      range: 0,
+    });
+
+    const headerRowIndex = allData.findIndex(
+      (row) => Array.isArray(row) && row.includes("핸드폰번호")
+    );
+    if (headerRowIndex === -1) continue;
+
+    const headers = allData[headerRowIndex];
+    const phoneNumberIndex = headers.findIndex(
+      (col: any) => col === "핸드폰번호"
+    );
+    const visitDateIndex = headers.findIndex((col: any) => col === "진료일");
+    const orderNameIndex = headers.findIndex((col: any) => col === "오더명");
+
+    if (
+      phoneNumberIndex === -1 ||
+      visitDateIndex === -1 ||
+      orderNameIndex === -1
+    ) {
+      console.error("❌ Required columns not found in order list file");
+      console.error("Available headers:", headers);
+      continue;
+    }
+
+    for (let i = headerRowIndex + 1; i < allData.length; i++) {
+      const row = allData[i];
+      if (!row || row.length === 0) {
+        continue;
+      }
+
+      const phoneNumberStr = String(row[phoneNumberIndex] || "").trim();
+      const phoneNumberDigits = phoneNumberStr.replace(/\D/g, "");
+      if (phoneNumberDigits.length < 6) {
+        continue;
+      }
+
+      const chartNumber = Number(phoneNumberDigits.slice(-6));
+      if (isNaN(chartNumber)) {
+        continue;
+      }
+
+      const orderName = String(row[orderNameIndex] || "").trim();
+      if (!orderName) {
+        continue;
+      }
+
+      // "20260721" -> "2026-07-21" (dailyIncome의 visitDate 포맷과 맞춤)
+      let visitDate = String(row[visitDateIndex] || "").trim();
+      if (/^\d{8}$/.test(visitDate)) {
+        visitDate = `${visitDate.slice(0, 4)}-${visitDate.slice(
+          4,
+          6
+        )}-${visitDate.slice(6, 8)}`;
+      }
+
+      const key = `${chartNumber}|${visitDate}`;
+      const existing = grouped.get(key);
+      if (existing) {
+        existing.orders.push(orderName);
+      } else {
+        grouped.set(key, { chartNumber, visitDate, orders: [orderName] });
+      }
+    }
+  }
+
+  return Array.from(grouped.values());
 }

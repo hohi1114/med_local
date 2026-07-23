@@ -8,7 +8,7 @@ import {
 } from "./excel/smartncExcel";
 import {
   DailyVisitSimEmr,
-  PatientListSimEmr,
+  PatientRouteSimEmr,
 } from "./excel/simEmrExcel";
 
 export interface MergedData {
@@ -23,6 +23,7 @@ interface VisitDataVegas {
   chartNumber: number;
   visitDate: string | Date;
   totalCost: number;
+  nonTaxableNonInsuranceCost: number;
   age: number | null;
   area: string;
   procedure: string;
@@ -44,6 +45,7 @@ export interface MergedDataVegas {
   chartNumber: number;
   visitDate: string | Date;
   totalCost: number;
+  nonTaxableNonInsuranceCost: number; // 비과세비급여 (위고비, 마운자로 등)
   age: number | null;
   address: string;
   area: string; //분야
@@ -138,7 +140,10 @@ export interface MergedDataSimEmr {
   totalCost: number;
   age: number | null;
   address: string;
-  route: string;
+  visitType: string; // 1번 파일 "구분"(초진/재진/신환) - 소스에서 직접 제공, 서버 재계산 안함
+  route: string; // 방문경로 사유 (1번 파일)
+  route1: string; // 방문경로 (2번 파일)
+  route2: string; // 방문사유 (2번 파일)
 }
 
 
@@ -214,6 +219,7 @@ import { PatientData, VisitData } from "./ExcelParser";
 
 import { DailyIncomeEgis, PatientListEgis } from "./excel/egisExcel";
 import { DailyIncomeVegas, PatientListVegas } from "./excel/vegasExcel";
+import { OrderRecordVegas2 } from "./excel/vegas2Excel";
 import {
   DailyIncomeHanChart,
   PatientListHanChart,
@@ -563,6 +569,7 @@ export function mergeDataVegas(
     chartNumber: inc.chartNumber,
     visitDate: inc.visitDate,
     totalCost: inc.totalCost,
+    nonTaxableNonInsuranceCost: inc.nonTaxableNonInsuranceCost ?? 0,
     age: inc?.age ?? null, // Vegas has age in daily income
     area: inc.area,
     procedure: inc.procedure,
@@ -575,6 +582,7 @@ export function mergeDataVegas(
     chartNumber: visit.chartNumber,
     visitDate: visit.visitDate,
     totalCost: visit.totalCost,
+    nonTaxableNonInsuranceCost: visit.nonTaxableNonInsuranceCost,
     age: visit?.age ?? null, // Age from daily income
     area: visit.area,
     procedure: visit.procedure,
@@ -1060,17 +1068,25 @@ export function mergeDataSmartNC(
 
 export function mergeDataSimEmr(
   dailyVisit: DailyVisitSimEmr[],
-  patientList: PatientListSimEmr[]
+  patientRoute: PatientRouteSimEmr[]
 ): MergedDataSimEmr[] {
   // IPC 직렬화 시 숫자가 문자열로 올 수 있으므로 string 키로 통일
   const toKey = (n: number | string) => String(Number(n));
 
-  // chartNumber → age (환자 목록 파일에서만 제공됨)
+  // chartNumber → age / 방문경로 / 방문사유 (2번 파일에서만 제공됨)
   const ageMap = new Map<string, number | null>();
-  for (const p of patientList) {
+  const route1Map = new Map<string, string>();
+  const route2Map = new Map<string, string>();
+  for (const p of patientRoute) {
     const key = toKey(p.chartNumber);
     if (!ageMap.has(key) && p.age !== null) {
       ageMap.set(key, p.age);
+    }
+    if (!route1Map.has(key) && p.route) {
+      route1Map.set(key, p.route);
+    }
+    if (!route2Map.has(key) && p.reason) {
+      route2Map.set(key, p.reason);
     }
   }
 
@@ -1083,7 +1099,10 @@ export function mergeDataSimEmr(
       age: ageMap.get(key) ?? null,
       // 방문 기록 자체에 주소가 있으므로 우선 사용, 없으면 N/D
       address: visit.address && visit.address !== "N/D" ? visit.address : "N/D",
-      route: "N/D",
+      visitType: visit.visitType,
+      route: visit.routeReason ?? "",
+      route1: route1Map.get(key) ?? "",
+      route2: route2Map.get(key) ?? "",
     };
   });
 

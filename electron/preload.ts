@@ -95,7 +95,7 @@ contextBridge.exposeInMainWorld("electron", {
   // File processing - SimEMR
   parseDailyVisitSimEmr: (fileBuffers: ArrayBuffer[]) =>
     ipcRenderer.invoke("parse-daily-visit-simemr", fileBuffers),
-  parsePatientListSimEmr: (fileBuffers: ArrayBuffer[]) =>
+  parsePatientRouteSimEmr: (fileBuffers: ArrayBuffer[]) =>
     ipcRenderer.invoke("parse-patient-list-simemr", fileBuffers),
 
   // Data merging

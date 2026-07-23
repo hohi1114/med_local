@@ -56,6 +56,7 @@ interface ProcessedPatientDataVegas extends ProcessedPatientData {
   staff: string;
   route: string;
   nationality: string;
+  non_taxable_non_insurance_cost: number; // 비과세비급여 (위고비, 마운자로 등)
 }
 
 interface ProcessedPatientDataHanChart extends ProcessedPatientData {
@@ -89,6 +90,8 @@ interface LocationPoint {
   visit_type: string;
   route: string;
   age: string;
+  route1?: string;
+  route2?: string;
 }
 
 export interface DateLocationGroup {
@@ -790,6 +793,7 @@ export async function processDataLocallyVegas(
           chart_number: record.chartNumber,
           age: record.age,
           total_cost: record.totalCost,
+          non_taxable_non_insurance_cost: record.nonTaxableNonInsuranceCost,
           visit_date: record.visitDate,
           area: record.area,
           procedure: record.procedure,
@@ -2119,6 +2123,13 @@ export async function processDataLocallySmartNC(
   }
 }
 
+export interface ProcessedPatientDataSimEmr extends ProcessedPatientData {
+  visitType: string;
+  route: string;
+  route1: string;
+  route2: string;
+}
+
 export async function processDataLocallySimEmr(
   mergedData: MergedDataSimEmr[],
   accessToken: string,
@@ -2196,7 +2207,7 @@ export async function processDataLocallySimEmr(
       coords: parsePolygon(region.polygon),
     }));
 
-    const processedRecords: ProcessedPatientData[] = recordsWithGeodata.map(
+    const processedRecords: ProcessedPatientDataSimEmr[] = recordsWithGeodata.map(
       (record) => {
         const { latitude, longitude } = record;
         let small_region_id = null;
@@ -2214,7 +2225,10 @@ export async function processDataLocallySimEmr(
           age: record.age,
           total_cost: record.totalCost,
           visit_date: record.visitDate,
+          visitType: record.visitType,
           route: record.route,
+          route1: record.route1,
+          route2: record.route2,
           location_true: record.location_true,
           small_region_id,
           dong_region_id,
@@ -2226,7 +2240,7 @@ export async function processDataLocallySimEmr(
     const dateLocationMap = new Map<string, LocationPoint[]>();
 
     recordsWithGeodata.forEach((record) => {
-      const { visitDate, latitude, longitude, location_true, totalCost, age, route } = record;
+      const { visitDate, latitude, longitude, location_true, totalCost, age, visitType, route, route1, route2 } = record;
       if (!location_true || latitude === null || longitude === null) return;
 
       const dateStr =
@@ -2240,8 +2254,10 @@ export async function processDataLocallySimEmr(
         lat: latitude,
         lng: longitude,
         total_cost: totalCost,
-        visit_type: "",
+        visit_type: visitType,
         route: route,
+        route1: route1,
+        route2: route2,
         age: String(age),
       });
     });

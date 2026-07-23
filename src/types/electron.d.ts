@@ -59,7 +59,7 @@ declare global {
 
       // File processing - SimEMR
       parseDailyVisitSimEmr: (fileBuffers: ArrayBuffer[]) => Promise<any>;
-      parsePatientListSimEmr: (fileBuffers: ArrayBuffer[]) => Promise<any>;
+      parsePatientRouteSimEmr: (fileBuffers: ArrayBuffer[]) => Promise<any>;
 
       // Data merging
       mergeDataEuisarang: (visits: any[], patients: any[]) => Promise<any>;

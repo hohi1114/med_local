@@ -74,7 +74,7 @@ import {
 
 import {
   parseDailyVisitSimEmr,
-  parsePatientListSimEmr,
+  parsePatientRouteSimEmr,
 } from "../src/local/excel/simEmrExcel";
 
 
@@ -527,7 +527,7 @@ ipcMain.handle("parse-patient-list-bit2", async (event, fileBuffers) => {
 
   ipcMain.handle("parse-patient-list-simemr", async (event, fileBuffers) => {
     try {
-      return await parsePatientListSimEmr(fileBuffers);
+      return await parsePatientRouteSimEmr(fileBuffers);
     } catch (error) {
       console.error("Error parsing SimEMR patient list:", error);
       throw error;

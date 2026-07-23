@@ -2056,7 +2056,7 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
       const visits = await window.electron.parseDailyVisitSimEmr(visitBuffers);
       console.log("SimEMR visits:", visits);
 
-      const patients = await window.electron.parsePatientListSimEmr(patientBuffers);
+      const patients = await window.electron.parsePatientRouteSimEmr(patientBuffers);
       console.log("SimEMR patients:", patients);
 
       const mergedData = await window.electron.mergeDataSimEmr(visits, patients);
