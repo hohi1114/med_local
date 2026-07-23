@@ -29,6 +29,7 @@ interface VisitDataVegas {
   procedure: string;
   doctor: string;
   staff: string;
+  procedures: string[];
 }
 
 export interface MergedDataNeo {
@@ -55,6 +56,7 @@ export interface MergedDataVegas {
   route: string; // 경로
   nationality: string; //국적
   visitType: string; //type
+  procedures: string[]; // 오더별환자리스트에서 매칭된 그날의 오더명 전체 (분야/시술 누락 보완용)
 }
 
 interface VisitDataHanChart {
@@ -562,8 +564,15 @@ export function mergeDataEgis(
 // For Vegas data
 export function mergeDataVegas(
   dailyIncome: DailyIncomeVegas[],
-  patientList: PatientListVegas[]
+  patientList: PatientListVegas[],
+  orderList: OrderRecordVegas2[] = []
 ): MergedDataVegas[] {
+  // 오더별환자리스트: (차트번호, 진료일)별로 그날 찍힌 오더명 전체를 lookup할 수 있도록 Map 구성
+  const orderMap = new Map<string, string[]>();
+  for (const order of orderList) {
+    orderMap.set(`${order.chartNumber}|${order.visitDate}`, order.orders);
+  }
+
   // Build "visits" array from dailyIncome (Vegas includes age in daily income)
   const visits: VisitDataVegas[] = dailyIncome.map((inc) => ({
     chartNumber: inc.chartNumber,
@@ -575,6 +584,7 @@ export function mergeDataVegas(
     procedure: inc.procedure,
     doctor: inc.doctor,
     staff: inc.staff,
+    procedures: orderMap.get(`${inc.chartNumber}|${inc.visitDate}`) ?? [],
   }));
 
   // Create merged data from visits
@@ -588,6 +598,7 @@ export function mergeDataVegas(
     procedure: visit.procedure,
     doctor: visit.doctor,
     staff: visit.staff,
+    procedures: visit.procedures,
     route: "",
     nationality: "",
     address: "N/D", // Will be filled in from patient list

@@ -57,6 +57,8 @@ contextBridge.exposeInMainWorld("electron", {
     ipcRenderer.invoke("parse-daily-income-vegas2", fileBuffers),
   parsePatientListVegas2: (fileBuffers: ArrayBuffer[]) =>
     ipcRenderer.invoke("parse-patient-list-vegas2", fileBuffers),
+  parseOrderListVegas2: (fileBuffers: ArrayBuffer[]) =>
+    ipcRenderer.invoke("parse-order-list-vegas2", fileBuffers),
 
   parseDailyIncomeHanChart: (fileBuffers: ArrayBuffer[]) =>
     ipcRenderer.invoke("parse-daily-income-hanchart", fileBuffers),
@@ -107,8 +109,8 @@ contextBridge.exposeInMainWorld("electron", {
     ipcRenderer.invoke("merge-data-egis", dailyIncome, patientList),
   mergeDataOrm: (visits: any[], patients: any[]) =>
     ipcRenderer.invoke("merge-data-orm", visits, patients),
-  mergeDataVegas: (dailyIncome: any[], patientList: any[]) =>
-    ipcRenderer.invoke("merge-data-vegas", dailyIncome, patientList),
+  mergeDataVegas: (dailyIncome: any[], patientList: any[], orderList?: any[]) =>
+    ipcRenderer.invoke("merge-data-vegas", dailyIncome, patientList, orderList),
   mergeDataHanChart: (dailyIncome: any[], patientList: any[]) =>
     ipcRenderer.invoke("merge-data-hanchart", dailyIncome, patientList),
   mergeDataDoctorP: (dailyIncome: any[], patientList: any[]) =>

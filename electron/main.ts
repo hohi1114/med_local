@@ -30,6 +30,7 @@ import {
 import {
   parseDailyIncomeVegas2,
   parsePatientListVegas2,
+  parseOrderListVegas2,
 } from "../src/local/excel/vegas2Excel";
 
 import {
@@ -361,6 +362,15 @@ app.whenReady().then(() => {
     }
   });
 
+  ipcMain.handle("parse-order-list-vegas2", async (event, fileBuffers) => {
+    try {
+      return await parseOrderListVegas2(fileBuffers);
+    } catch (error) {
+      console.error("Error parsing order list:", error);
+      throw error;
+    }
+  });
+
   ipcMain.handle("parse-daily-income-hanchart", async (event, fileBuffers) => {
     try {
       return await parseDailyIncomeHanChart(fileBuffers);
@@ -553,9 +563,9 @@ ipcMain.handle("parse-patient-list-bit2", async (event, fileBuffers) => {
     }
   });
 
-  ipcMain.handle("merge-data-vegas", async (event, visits, patients) => {
+  ipcMain.handle("merge-data-vegas", async (event, visits, patients, orderList) => {
     try {
-      return mergeDataVegas(visits, patients);
+      return mergeDataVegas(visits, patients, orderList ?? []);
     } catch (error) {
       console.error("Error merging Euisarang data:", error);
       throw error;

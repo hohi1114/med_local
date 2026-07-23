@@ -57,6 +57,7 @@ interface ProcessedPatientDataVegas extends ProcessedPatientData {
   route: string;
   nationality: string;
   non_taxable_non_insurance_cost: number; // 비과세비급여 (위고비, 마운자로 등)
+  procedures: string[]; // 오더별환자리스트에서 매칭된 그날의 오더명 전체
 }
 
 interface ProcessedPatientDataHanChart extends ProcessedPatientData {
@@ -92,6 +93,7 @@ interface LocationPoint {
   age: string;
   route1?: string;
   route2?: string;
+  procedures?: string[];
 }
 
 export interface DateLocationGroup {
@@ -806,6 +808,7 @@ export async function processDataLocallyVegas(
           small_region_id,
           dong_region_id,
           gu_region_id,
+          procedures: record.procedures,
         };
       });
 
@@ -822,6 +825,7 @@ export async function processDataLocallyVegas(
         visitType,
         route,
         age,
+        procedures,
       } = record;
 
       // Skip records without valid locations
@@ -846,6 +850,7 @@ export async function processDataLocallyVegas(
         visit_type: visitType,
         route: route,
         age: String(age),
+        procedures,
       });
     });
 

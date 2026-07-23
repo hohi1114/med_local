@@ -1728,8 +1728,18 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
       const patients = await window.electron.parsePatientListVegas2(placeBuffers);
       console.log(patients);
 
+      // 오더판매내역및환자내역 파일은 선택 사항 (오더명 리스트 보완용)
+      let orderList: any[] = [];
+      if (patientFiles) {
+        const orderBuffers = await Promise.all(
+          Array.from(patientFiles).map((file) => file.arrayBuffer())
+        );
+        orderList = await window.electron.parseOrderListVegas2(orderBuffers);
+        console.log(orderList);
+      }
+
       // Step 3: Merge data locally
-      const mergedData = await window.electron.mergeDataVegas(visits, patients);
+      const mergedData = await window.electron.mergeDataVegas(visits, patients, orderList);
 
       setProgress(10);
 
@@ -2333,7 +2343,7 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
             </>
           )}
 
-          {(dataType === "vegas" || dataType === "vegas2") && (
+          {dataType === "vegas" && (
             <>
               <FileUpload
                 title="환자별 집계"
@@ -2342,6 +2352,23 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
               <FileUpload
                 title="DM 주소록"
                 onFilesUploaded={(files) => setPlaceFiles(files)}
+              />
+            </>
+          )}
+
+          {dataType === "vegas2" && (
+            <>
+              <FileUpload
+                title="환자별 집계"
+                onFilesUploaded={(files) => setDailyIncome(files)}
+              />
+              <FileUpload
+                title="DM 주소록"
+                onFilesUploaded={(files) => setPlaceFiles(files)}
+              />
+              <FileUpload
+                title="오더판매내역및환자내역 (선택, 오더명 리스트)"
+                onFilesUploaded={(files) => setPatientFiles(files)}
               />
             </>
           )}

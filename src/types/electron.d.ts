@@ -26,6 +26,7 @@ declare global {
 
       parseDailyIncomeVegas2: (fileBuffers: ArrayBuffer[]) => Promise<any>;
       parsePatientListVegas2: (fileBuffers: ArrayBuffer[]) => Promise<any>;
+      parseOrderListVegas2: (fileBuffers: ArrayBuffer[]) => Promise<any>;
 
       parseDailyIncomeHanChart: (fileBuffers: ArrayBuffer[]) => Promise<any>;
       parsePatientListHanChart: (fileBuffers: ArrayBuffer[]) => Promise<any>;
@@ -67,7 +68,7 @@ declare global {
       mergeDataEgis: (dailyIncome: any[], patientList: any[]) => Promise<any>;
       mergeDataOrm: (visits: any[], patients: any[]) => Promise<any>;
       mergeDataBit: (visits: any[], patients: any[]) => Promise<any>;
-      mergeDataVegas: (dailyIncome: any[], patientList: any[]) => Promise<any>;
+      mergeDataVegas: (dailyIncome: any[], patientList: any[], orderList?: any[]) => Promise<any>;
       mergeDataHanChart: (
         dailyIncome: any[],
         patientList: any[]
