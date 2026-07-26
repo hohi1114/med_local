@@ -8,6 +8,7 @@ import { Progress, notification } from "antd";
 import UploadedCalendar from "../components/upload_data/UploadedCalendar.tsx";
 import Loading from "../components/common/Loading.tsx";
 import { getUserEMR } from "../utils/api/apis";
+import { API_BASE_URL } from "../utils/api/config";
 import ContentHeader from "../components/common/layout/ContentHeader.tsx";
 import RequireSubscribe from "../components/common/RequireSubscribe.tsx";
 import { getCookie } from "../utils/api/cookie.ts";
@@ -45,7 +46,7 @@ export async function uploadDataToBackend(
   processedData: ProcessDataPayload
 ): Promise<ProcessDataResponse> {
   try {
-    const baseURL = "https://htracker.org/api";
+    const baseURL = API_BASE_URL;
 
     // Prepare the request payload
     const payload = {
@@ -88,7 +89,7 @@ export async function uploadDataToBackendVegas(
   processedData: ProcessDataPayload
 ): Promise<ProcessDataResponse> {
   try {
-    const baseURL = "https://htracker.org/api";
+    const baseURL = API_BASE_URL;
 
     // Prepare the request payload
     const payload = {
@@ -132,7 +133,7 @@ export async function uploadDataToBackendNeo(
   processedData: ProcessDataPayload
 ): Promise<ProcessDataResponse> {
   try {
-    const baseURL = "https://htracker.org/api";
+    const baseURL = API_BASE_URL;
 
     // Prepare the request payload
     const payload = {
@@ -176,7 +177,7 @@ export async function uploadDataToBackendOrm(
   processedData: ProcessDataPayload
 ): Promise<ProcessDataResponse> {
   try {
-    const baseURL = "https://htracker.org/api";
+    const baseURL = API_BASE_URL;
 
     // Prepare the request payload
     const payload = {
@@ -221,7 +222,7 @@ export async function uploadDataToBackendcChart(
   processedData: ProcessDataPayload
 ): Promise<ProcessDataResponse> {
   try {
-    const baseURL = "https://htracker.org/api";
+    const baseURL = API_BASE_URL;
 
     // Prepare the request payload
     const payload = {
@@ -265,7 +266,7 @@ export async function uploadDataToBackendSimEmr(
   processedData: ProcessDataPayload
 ): Promise<ProcessDataResponse> {
   try {
-    const baseURL = "https://htracker.org/api";
+    const baseURL = API_BASE_URL;
     const payload = {
       processedRecords: processedData.patient_records,
       date_location_groups: processedData.date_location_groups,
@@ -300,7 +301,7 @@ export async function uploadDataToBackendSmartNC(
   processedData: ProcessDataPayload
 ): Promise<ProcessDataResponse> {
   try {
-    const baseURL = "https://htracker.org/api";
+    const baseURL = API_BASE_URL;
     const payload = {
       processedRecords: processedData.patient_records,
       date_location_groups: processedData.date_location_groups,
@@ -335,7 +336,7 @@ export async function uploadDataToBackendBit(
   processedData: ProcessDataPayload
 ): Promise<ProcessDataResponse> {
   try {
-    const baseURL = "https://htracker.org/api";
+    const baseURL = API_BASE_URL;
 
     // Prepare the request payload
     const payload = {
@@ -376,7 +377,7 @@ export async function uploadDataToBackendHanChart(
   processedData: ProcessDataPayload
 ): Promise<ProcessDataResponse> {
   try {
-    const baseURL = "https://htracker.org/api";
+    const baseURL = API_BASE_URL;
 
     // Prepare the request payload
     const payload = {
@@ -419,7 +420,7 @@ export async function uploadDataToBackendDentWeb(
   processedData: ProcessDataPayload
 ): Promise<ProcessDataResponse> {
   try {
-    const baseURL = "https://htracker.org/api";
+    const baseURL = API_BASE_URL;
 
     // Prepare the request payload
     const payload = {
@@ -464,7 +465,7 @@ export async function uploadDataToBackendEgis(
   processedData: ProcessDataPayload
 ): Promise<ProcessDataResponse> {
   try {
-    const baseURL = "https://htracker.org/api";
+    const baseURL = API_BASE_URL;
 
     // Prepare the request payload
     const payload = {
@@ -508,7 +509,7 @@ export async function uploadDataToBackendDoctorP(
   processedData: ProcessDataPayload
 ): Promise<ProcessDataResponse> {
   try {
-    const baseURL = "https://htracker.org/api";
+    const baseURL = API_BASE_URL;
 
     // Prepare the request payload
     const payload = {

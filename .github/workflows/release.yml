@@ -38,6 +38,9 @@ jobs:
         run: npm run dist -- --mac dmg zip --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # 빌드 타임에 번들로 인라인된다. 없으면 앱이 localhost 를 바라본다.
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_NAVER_MAPS_CLIENT_ID: ${{ secrets.VITE_NAVER_MAPS_CLIENT_ID }}
 
       # 🔒 확실히 첨부: outputDir = release/
       - name: Upload mac artifacts to Release (fallback)
@@ -79,6 +82,9 @@ jobs:
         run: npm run dist -- --win nsis --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # 빌드 타임에 번들로 인라인된다. 없으면 앱이 localhost 를 바라본다.
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_NAVER_MAPS_CLIENT_ID: ${{ secrets.VITE_NAVER_MAPS_CLIENT_ID }}
 
       # 🔒 확실히 첨부: outputDir = release/
       - name: Upload win artifacts to Release (fallback)

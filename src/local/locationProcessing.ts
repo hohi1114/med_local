@@ -1,6 +1,7 @@
 import { getLatLonForAddresses } from "./geolocation"; // Your geocoding function
 import { findMatchingRegion, parsePolygon } from "./geometry"; // Your region helpers
 import axios from "axios";
+import { API_BASE_URL } from "../utils/api/config";
 import {
   MergedData,
   MergedDataBit,
@@ -112,7 +113,7 @@ interface MappingResponse {
 
 export async function fetchRegionData(token: string): Promise<RegionResponse> {
   try {
-    const baseURL = "https://htracker.org/api";
+    const baseURL = API_BASE_URL;
 
     const response = await axios.get<RegionResponse>(
       `${baseURL}/fetch/region_data`,
@@ -133,7 +134,7 @@ export async function fetchRegionData(token: string): Promise<RegionResponse> {
 
 export async function getMappingData(token: string): Promise<MappingResponse> {
   try {
-    const baseURL = "https://htracker.org/api";
+    const baseURL = API_BASE_URL;
 
     const response = await axios.post<MappingResponse>(
       `${baseURL}/data/get_mapping`,

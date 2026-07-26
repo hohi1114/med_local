@@ -2,6 +2,7 @@ import { BackendData } from "../../types/medi-types";
 import { LoginParams } from "../../pages/LoginPage";
 import { saveTokensToCookie } from "./token";
 import { logout, apiRequest } from "./apihelper";
+import { API_BASE_URL } from "./config";
 import { getCookie } from "./cookie";
 import { DateRange } from "../../hooks/useRangeDurationDatePicker";
 import {
@@ -301,7 +302,7 @@ export const uploadDataToBackendDentWeb = async (
 
 // ⭐ Vite 환경변수 사용
 export const postAdminLogin = async (email: string, password: string) => {
-  const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/login`, {
+  const response = await fetch(`${API_BASE_URL}/auth/login`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

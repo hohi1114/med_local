@@ -10,6 +10,7 @@ import {
   useMap,
 } from "react-leaflet";
 import L from "leaflet";
+import { API_BASE_URL } from "../utils/api/config";
 import * as XLSX from "xlsx";
 import "leaflet/dist/leaflet.css";
 
@@ -74,8 +75,6 @@ interface VisibleLayers {
 // ──────────────────────────────────────────────────────────
 // 상수 설정
 // ──────────────────────────────────────────────────────────
-const API_BASE_URL = import.meta.env.VITE_API_URL || "https://htracker.org/api";
-
 const DEPARTMENT_COLORS: Record<string, string> = {
   치과: "#FFC0CB",
   정형외과: "#FFA500",

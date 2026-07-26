@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCookie } from '../utils/api/cookie';
+import { API_BASE_URL } from '../utils/api/config';
 
 interface SavedPlace {
   id: string;
@@ -79,8 +80,6 @@ const CATEGORY_OPTIONS = [
   { value: 'price', label: '의료진 언급', color: '#EF4444' },
   { value: 'other', label: '기타', color: '#6B7280' },
 ];
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 export const ReviewCoachingPage: React.FC = () => {
   const navigate = useNavigate();

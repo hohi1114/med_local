@@ -1,5 +1,6 @@
 // src/pages/HospitalMapAnalysisPage.tsx
 import React, { useState, useEffect, useMemo, useRef } from "react";
+import { API_BASE_URL } from "../utils/api/config";
 import { useNavigate } from "react-router-dom";
 import {
   MapContainer,
@@ -91,7 +92,6 @@ interface Stats {
 // ──────────────────────────────────────────────────────────
 // 상수 설정
 // ──────────────────────────────────────────────────────────
-const API_BASE_URL = import.meta.env.VITE_API_URL;
 // Naver API 키 (실제 키로 교체 필요)
 const DEPARTMENT_COLORS: Record<string, string> = {
   치과: "#FFC0CB",

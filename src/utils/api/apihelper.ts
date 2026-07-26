@@ -4,10 +4,11 @@ import { removeAuthTokens } from "./token";
 import { getCookie } from "./cookie";
 import { jwtDecode } from "jwt-decode";
 import { postRefreshToken } from "./apis";
+import { API_BASE_URL } from "./config";
 
 //axios instance
 export const authApi = axios.create({
-  baseURL: import.meta.env.VITE_API_URL
+  baseURL: API_BASE_URL
 });
 
 authApi.defaults.headers.common["Content-Type"] = "application/json";
