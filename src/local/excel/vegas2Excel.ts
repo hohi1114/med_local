@@ -32,6 +32,9 @@ export interface OrderRecordVegas2 {
   orders: string[];
   taxableCost: number; // 부가세 = "O"인 오더 금액 합
   nonTaxableCost: number; // 부가세가 빈칸인 오더 금액 합 (위고비, 마운자로 등)
+  age: number; // "이름" 컬럼 "이름(성별/나이)"에서 파싱
+  area: string; // 진료분야
+  procedure: string; // 시술
   doctor: string;
   staff: string;
   route: string;
@@ -386,6 +389,9 @@ export async function parseOrderListVegas2(
     const routeIndex = headers.findIndex((col: any) => col === "내원경로");
     const nationalityIndex = headers.findIndex((col: any) => col === "국적");
     const visitTypeIndex = headers.findIndex((col: any) => col === "진료구분");
+    const nameIndex = headers.findIndex((col: any) => col === "이름");
+    const areaIndex = headers.findIndex((col: any) => col === "진료분야");
+    const procedureIndex = headers.findIndex((col: any) => col === "시술");
 
     if (
       phoneNumberIndex === -1 ||
@@ -443,6 +449,19 @@ export async function parseOrderListVegas2(
           : "";
       const visitType =
         visitTypeIndex !== -1 ? String(row[visitTypeIndex] || "").trim() : "";
+      const area =
+        areaIndex !== -1 ? String(row[areaIndex] || "").trim() : "";
+      const procedure =
+        procedureIndex !== -1 ? String(row[procedureIndex] || "").trim() : "";
+
+      let age = 0;
+      if (nameIndex !== -1) {
+        const nameStr = String(row[nameIndex] || "").trim();
+        const ageMatch = nameStr.match(/\((?:남|여)\/(\d+)\)/);
+        if (ageMatch) {
+          age = normalizeAge(Number(ageMatch[1]));
+        }
+      }
 
       const key = `${chartNumber}|${visitDate}`;
       const existing = grouped.get(key);
@@ -453,6 +472,9 @@ export async function parseOrderListVegas2(
         } else {
           existing.nonTaxableCost += amount;
         }
+        if (!existing.age) existing.age = age;
+        if (!existing.area) existing.area = area;
+        if (!existing.procedure) existing.procedure = procedure;
         if (!existing.doctor) existing.doctor = doctor;
         if (!existing.staff) existing.staff = staff;
         if (!existing.route) existing.route = route;
@@ -465,6 +487,9 @@ export async function parseOrderListVegas2(
           orders: [orderName],
           taxableCost: isVat ? amount : 0,
           nonTaxableCost: isVat ? 0 : amount,
+          age,
+          area,
+          procedure,
           doctor,
           staff,
           route,
@@ -476,4 +501,22 @@ export async function parseOrderListVegas2(
   }
 
   return Array.from(grouped.values());
+}
+
+// "오더판매내역및환자내역" 파일 하나로 "환자별 집계"(일일수입) 파일을 대체할 때 사용.
+// 오더별환자리스트에서 이미 부가세 기준으로 과세/비과세 금액을 집계했으므로 그대로 DailyIncomeVegas로 변환한다.
+export function deriveDailyIncomeFromOrdersVegas2(
+  orderList: OrderRecordVegas2[]
+): DailyIncomeVegas[] {
+  return orderList.map((order) => ({
+    chartNumber: order.chartNumber,
+    visitDate: order.visitDate,
+    totalCost: order.taxableCost,
+    nonTaxableNonInsuranceCost: order.nonTaxableCost,
+    age: order.age,
+    area: order.area,
+    procedure: order.procedure,
+    doctor: order.doctor,
+    staff: order.staff,
+  }));
 }

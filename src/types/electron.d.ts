@@ -27,6 +27,7 @@ declare global {
       parseDailyIncomeVegas2: (fileBuffers: ArrayBuffer[]) => Promise<any>;
       parsePatientListVegas2: (fileBuffers: ArrayBuffer[]) => Promise<any>;
       parseOrderListVegas2: (fileBuffers: ArrayBuffer[]) => Promise<any>;
+      deriveDailyIncomeFromOrdersVegas2: (orderList: any[]) => Promise<any>;
 
       parseDailyIncomeHanChart: (fileBuffers: ArrayBuffer[]) => Promise<any>;
       parsePatientListHanChart: (fileBuffers: ArrayBuffer[]) => Promise<any>;

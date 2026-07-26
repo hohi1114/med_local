@@ -31,6 +31,7 @@ import {
   parseDailyIncomeVegas2,
   parsePatientListVegas2,
   parseOrderListVegas2,
+  deriveDailyIncomeFromOrdersVegas2,
 } from "../src/local/excel/vegas2Excel";
 
 import {
@@ -370,6 +371,18 @@ app.whenReady().then(() => {
       throw error;
     }
   });
+
+  ipcMain.handle(
+    "derive-daily-income-from-orders-vegas2",
+    async (event, orderList) => {
+      try {
+        return deriveDailyIncomeFromOrdersVegas2(orderList);
+      } catch (error) {
+        console.error("Error deriving daily income from order list:", error);
+        throw error;
+      }
+    }
+  );
 
   ipcMain.handle("parse-daily-income-hanchart", async (event, fileBuffers) => {
     try {

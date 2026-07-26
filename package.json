@@ -1,7 +1,7 @@
 {
   "name": "med_local",
   "private": true,
-  "version": "1.2.12",
+  "version": "1.2.13",
   "main": "dist-electron/electron/main.js",
   "scripts": {
     "dev": "cross-env NODE_ENV=development concurrently \"vite --mode development\" \"wait-on http://localhost:5173 && tsc -p tsconfig.electron.json && electron .\"",

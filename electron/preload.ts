@@ -59,6 +59,8 @@ contextBridge.exposeInMainWorld("electron", {
     ipcRenderer.invoke("parse-patient-list-vegas2", fileBuffers),
   parseOrderListVegas2: (fileBuffers: ArrayBuffer[]) =>
     ipcRenderer.invoke("parse-order-list-vegas2", fileBuffers),
+  deriveDailyIncomeFromOrdersVegas2: (orderList: unknown[]) =>
+    ipcRenderer.invoke("derive-daily-income-from-orders-vegas2", orderList),
 
   parseDailyIncomeHanChart: (fileBuffers: ArrayBuffer[]) =>
     ipcRenderer.invoke("parse-daily-income-hanchart", fileBuffers),

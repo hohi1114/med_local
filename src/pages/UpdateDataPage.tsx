@@ -1697,7 +1697,7 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
   };
 
   const handleProcessDataVegas2 = async (): Promise<void> => {
-    if (!placeFiles || !dailyIncome) {
+    if (!placeFiles || !patientFiles) {
       openNotification("warning", "파일 누락", "모든 파일을 업로드해주세요.");
       return;
     }
@@ -1714,30 +1714,23 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
     );
 
     try {
-      const daysBuffers = await Promise.all(
-        Array.from(dailyIncome).map((file) => file.arrayBuffer())
-      );
-
       const placeBuffers = await Promise.all(
         Array.from(placeFiles).map((file) => file.arrayBuffer())
       );
+      const orderBuffers = await Promise.all(
+        Array.from(patientFiles).map((file) => file.arrayBuffer())
+      );
 
       // Step 2: Parse files locally via Electron
-      const visits = await window.electron.parseDailyIncomeVegas2(daysBuffers);
-
+      // "환자별 집계"(일일수입) 파일 없이 "오더판매내역및환자내역"만으로 매출(과세/비과세)을 재현한다.
+      const orderList = await window.electron.parseOrderListVegas2(orderBuffers);
+      console.log(orderList);
+      const visits = await window.electron.deriveDailyIncomeFromOrdersVegas2(
+        orderList
+      );
       console.log(visits);
       const patients = await window.electron.parsePatientListVegas2(placeBuffers);
       console.log(patients);
-
-      // 오더판매내역및환자내역 파일은 선택 사항 (오더명 리스트 보완용)
-      let orderList: any[] = [];
-      if (patientFiles) {
-        const orderBuffers = await Promise.all(
-          Array.from(patientFiles).map((file) => file.arrayBuffer())
-        );
-        orderList = await window.electron.parseOrderListVegas2(orderBuffers);
-        console.log(orderList);
-      }
 
       // Step 3: Merge data locally
       const mergedData = await window.electron.mergeDataVegas(visits, patients, orderList);
@@ -2258,6 +2251,9 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
     if (dataType === "smartnc") {
       return !dailyIncome || !placeFiles || !patientFiles || progress > 0;
     }
+    if (dataType === "vegas2") {
+      return !placeFiles || !patientFiles || progress > 0;
+    }
     return !dailyIncome || !placeFiles || progress > 0;
   };
 
@@ -2360,15 +2356,11 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
           {dataType === "vegas2" && (
             <>
               <FileUpload
-                title="환자별 집계"
-                onFilesUploaded={(files) => setDailyIncome(files)}
-              />
-              <FileUpload
                 title="DM 주소록"
                 onFilesUploaded={(files) => setPlaceFiles(files)}
               />
               <FileUpload
-                title="오더판매내역및환자내역 (선택, 오더명 리스트)"
+                title="오더판매내역및환자내역"
                 onFilesUploaded={(files) => setPatientFiles(files)}
               />
             </>
