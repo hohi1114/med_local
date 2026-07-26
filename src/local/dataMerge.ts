@@ -567,10 +567,10 @@ export function mergeDataVegas(
   patientList: PatientListVegas[],
   orderList: OrderRecordVegas2[] = []
 ): MergedDataVegas[] {
-  // 오더별환자리스트: (차트번호, 진료일)별로 그날 찍힌 오더명 전체를 lookup할 수 있도록 Map 구성
-  const orderMap = new Map<string, string[]>();
+  // 오더별환자리스트: (차트번호, 진료일)별 오더 상세를 lookup할 수 있도록 Map 구성
+  const orderMap = new Map<string, OrderRecordVegas2>();
   for (const order of orderList) {
-    orderMap.set(`${order.chartNumber}|${order.visitDate}`, order.orders);
+    orderMap.set(`${order.chartNumber}|${order.visitDate}`, order);
   }
 
   // Build "visits" array from dailyIncome (Vegas includes age in daily income)
@@ -584,7 +584,8 @@ export function mergeDataVegas(
     procedure: inc.procedure,
     doctor: inc.doctor,
     staff: inc.staff,
-    procedures: orderMap.get(`${inc.chartNumber}|${inc.visitDate}`) ?? [],
+    procedures:
+      orderMap.get(`${inc.chartNumber}|${inc.visitDate}`)?.orders ?? [],
   }));
 
   // Create merged data from visits
@@ -639,6 +640,22 @@ export function mergeDataVegas(
         record.visitType = "재진"; // Follow-up visit
       }
     }
+  });
+
+  // 오더판매내역및환자내역(오더별환자리스트)이 있으면 부가세 기준 과세/비과세 금액이
+  // 일일수입 집계보다 신뢰도가 높으므로 덮어쓰고, doctor/staff/route/nationality는
+  // 다른 파일에서 비어있을 때만 보완한다.
+  df_merged.forEach((record) => {
+    const orderData = orderMap.get(`${record.chartNumber}|${record.visitDate}`);
+    if (!orderData) return;
+
+    record.totalCost = orderData.taxableCost;
+    record.nonTaxableNonInsuranceCost = orderData.nonTaxableCost;
+    if (!record.doctor && orderData.doctor) record.doctor = orderData.doctor;
+    if (!record.staff && orderData.staff) record.staff = orderData.staff;
+    if (!record.route && orderData.route) record.route = orderData.route;
+    if (!record.nationality && orderData.nationality)
+      record.nationality = orderData.nationality;
   });
 
   // NOW convert visitDate strings to Date objects

@@ -30,6 +30,13 @@ export interface OrderRecordVegas2 {
   chartNumber: number;
   visitDate: string;
   orders: string[];
+  taxableCost: number; // 부가세 = "O"인 오더 금액 합
+  nonTaxableCost: number; // 부가세가 빈칸인 오더 금액 합 (위고비, 마운자로 등)
+  doctor: string;
+  staff: string;
+  route: string;
+  nationality: string;
+  visitType: string; // 진료구분 (초진/재진/재초진)
 }
 
 // 베가스의 경우 Income에서 1) 분야 2) 시술 3) 진료의를 string으로 추가적으로 받는다. default value는 " "이 되도록 주의한다
@@ -372,6 +379,13 @@ export async function parseOrderListVegas2(
     );
     const visitDateIndex = headers.findIndex((col: any) => col === "진료일");
     const orderNameIndex = headers.findIndex((col: any) => col === "오더명");
+    const amountIndex = headers.findIndex((col: any) => col === "금액");
+    const vatIndex = headers.findIndex((col: any) => col === "부가세");
+    const doctorIndex = headers.findIndex((col: any) => col === "진료의명");
+    const staffIndex = headers.findIndex((col: any) => col === "담당직원");
+    const routeIndex = headers.findIndex((col: any) => col === "내원경로");
+    const nationalityIndex = headers.findIndex((col: any) => col === "국적");
+    const visitTypeIndex = headers.findIndex((col: any) => col === "진료구분");
 
     if (
       phoneNumberIndex === -1 ||
@@ -414,12 +428,49 @@ export async function parseOrderListVegas2(
         )}-${visitDate.slice(6, 8)}`;
       }
 
+      const amount =
+        amountIndex !== -1 ? Number(row[amountIndex]) || 0 : 0;
+      const isVat = vatIndex !== -1 && String(row[vatIndex] || "").trim() === "O";
+      const doctor =
+        doctorIndex !== -1 ? String(row[doctorIndex] || "").trim() : "";
+      const staff =
+        staffIndex !== -1 ? String(row[staffIndex] || "").trim() : "";
+      const route =
+        routeIndex !== -1 ? String(row[routeIndex] || "").trim() : "";
+      const nationality =
+        nationalityIndex !== -1
+          ? String(row[nationalityIndex] || "").trim()
+          : "";
+      const visitType =
+        visitTypeIndex !== -1 ? String(row[visitTypeIndex] || "").trim() : "";
+
       const key = `${chartNumber}|${visitDate}`;
       const existing = grouped.get(key);
       if (existing) {
         existing.orders.push(orderName);
+        if (isVat) {
+          existing.taxableCost += amount;
+        } else {
+          existing.nonTaxableCost += amount;
+        }
+        if (!existing.doctor) existing.doctor = doctor;
+        if (!existing.staff) existing.staff = staff;
+        if (!existing.route) existing.route = route;
+        if (!existing.nationality) existing.nationality = nationality;
+        if (!existing.visitType) existing.visitType = visitType;
       } else {
-        grouped.set(key, { chartNumber, visitDate, orders: [orderName] });
+        grouped.set(key, {
+          chartNumber,
+          visitDate,
+          orders: [orderName],
+          taxableCost: isVat ? amount : 0,
+          nonTaxableCost: isVat ? 0 : amount,
+          doctor,
+          staff,
+          route,
+          nationality,
+          visitType,
+        });
       }
     }
   }
