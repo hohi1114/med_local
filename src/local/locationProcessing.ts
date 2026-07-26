@@ -1,7 +1,6 @@
 import { getLatLonForAddresses } from "./geolocation"; // Your geocoding function
 import { findMatchingRegion, parsePolygon } from "./geometry"; // Your region helpers
 import axios from "axios";
-import { API_BASE_URL } from "../utils/api/config";
 import {
   MergedData,
   MergedDataBit,
@@ -18,6 +17,13 @@ import {
   MergedDataSimEmr,
 } from "./dataMerge";
 import { StringNullableChain } from "lodash";
+
+// 이 파일은 electron/main.ts 와 preload.ts 가 import 하므로
+// tsconfig.electron.json(module: "CommonJS")으로도 컴파일된다.
+// CommonJS 에서 import.meta 는 컴파일 에러(TS1343)라서
+// src/utils/api/config.ts 를 여기서 쓸 수 없다.
+// Electron 메인 프로세스는 Node 환경이므로 process.env 로 읽는다.
+const API_BASE_URL = process.env.VITE_API_URL || "https://api.htracker.org/api";
 
 interface RawRegion {
   id: number;
