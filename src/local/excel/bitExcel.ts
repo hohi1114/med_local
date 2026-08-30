@@ -110,6 +110,44 @@ export async function parseDailyIncomeBit(
 }
 
 
+// 📌 주민등록번호(예: 920221-1030314)에서 만 나이를 계산하는 헬퍼 함수
+function calculateAgeFromResidentId(residentId: string): number | null {
+  const digits = residentId.replace(/[^0-9]/g, "");
+  if (digits.length < 7) return null;
+
+  const yy = parseInt(digits.slice(0, 2), 10);
+  const mm = parseInt(digits.slice(2, 4), 10);
+  const dd = parseInt(digits.slice(4, 6), 10);
+  const genderDigit = digits[6];
+
+  let century: number;
+  if (["1", "2", "5", "6"].includes(genderDigit)) {
+    century = 1900;
+  } else if (["3", "4", "7", "8"].includes(genderDigit)) {
+    century = 2000;
+  } else if (["9", "0"].includes(genderDigit)) {
+    century = 1800;
+  } else {
+    return null;
+  }
+
+  if (isNaN(yy) || isNaN(mm) || isNaN(dd)) return null;
+
+  const birthYear = century + yy;
+  const today = new Date();
+  let age = today.getFullYear() - birthYear;
+
+  // 생일이 아직 안 지났으면 만 나이 1살 차감
+  const hasHadBirthdayThisYear =
+    today.getMonth() + 1 > mm ||
+    (today.getMonth() + 1 === mm && today.getDate() >= dd);
+  if (!hasHadBirthdayThisYear) {
+    age -= 1;
+  }
+
+  return age >= 0 ? age : null;
+}
+
 // 📌 날짜 문자열 파싱 헬퍼 함수
 function parseDateString(dateStr: string): string {
   dateStr = dateStr.trim();
@@ -211,24 +249,27 @@ export async function parsePatientListBit(
       (col: any) => col === "차트번호" || col === "챠트번호"
     );
     const ageIndex = headers.findIndex((col: any) => col === "나이");
-    const visitTypeIndex = headers.findIndex(
-      (col: any) => col === "초재진구분"
+    const residentIdIndex = headers.findIndex(
+      (col: any) => col === "주민등록번호"
     );
-    const visitDateIndex = headers.findIndex((col: any) => col === "내원날짜");
+    const visitTypeIndex = headers.findIndex(
+      (col: any) => col === "초재진구분" || col === "초/재진"
+    );
+    const visitDateIndex = headers.findIndex(
+      (col: any) => col === "내원날짜" || col === "내원/입원일시"
+    );
     const doctorIndex = headers.findIndex((col: any) => col === "담당의");
     const addressIndex = headers.findIndex((col: any) => col === "주소");
 
     if (
       chartNumberIndex === -1 ||
-      ageIndex === -1 ||
-      visitTypeIndex === -1 ||
+      (ageIndex === -1 && residentIdIndex === -1) ||
       visitDateIndex === -1 ||
-      doctorIndex === -1 ||
       addressIndex === -1
     ) {
       console.error("❌ Required columns not found in the file");
       console.error("Available headers:", headers);
-      console.error("Looking for: 차트번호, 나이, 초재진구분, 내원날짜, 담당의, 주소");
+      console.error("Looking for: 차트번호, (나이 또는 주민등록번호), 내원날짜(또는 내원/입원일시), 주소");
       continue;
     }
 
@@ -240,7 +281,7 @@ export async function parsePatientListBit(
         continue;
       }
 
-      if (!row[chartNumberIndex] || !row[ageIndex] || !row[visitTypeIndex] || !row[visitDateIndex]) {
+      if (!row[chartNumberIndex] || !row[visitDateIndex]) {
         continue;
       }
 
@@ -251,6 +292,7 @@ export async function parsePatientListBit(
 
       let age: number | null = null;
       if (
+        ageIndex !== -1 &&
         row[ageIndex] !== undefined &&
         row[ageIndex] !== null &&
         row[ageIndex] !== ""
@@ -272,10 +314,17 @@ export async function parsePatientListBit(
             age = normalizeAge(ageValue);
           }
         }
+      } else if (residentIdIndex !== -1 && row[residentIdIndex]) {
+        const yearsFromResidentId = calculateAgeFromResidentId(
+          String(row[residentIdIndex])
+        );
+        if (yearsFromResidentId !== null) {
+          age = normalizeAge(yearsFromResidentId);
+        }
       }
 
       let visitType = "재진";
-      if (row[visitTypeIndex]) {
+      if (visitTypeIndex !== -1 && row[visitTypeIndex]) {
         const rawVisitType = String(row[visitTypeIndex])
           .trim()
           .replace(/\s/g, "");
@@ -284,10 +333,14 @@ export async function parsePatientListBit(
         }
       }
 
-      // 📌 날짜 파싱
-      const visitDate = parseDateString(String(row[visitDateIndex]));
+      // 📌 날짜 파싱 (시간이 붙어있는 "YYYY-MM-DD  HH:MM" 형식은 날짜만 추출)
+      const visitDateRaw = String(row[visitDateIndex]).trim().split(/\s+/)[0];
+      const visitDate = parseDateString(visitDateRaw);
 
-      const doctor = row[doctorIndex] ? String(row[doctorIndex]).trim() : "";
+      const doctor =
+        doctorIndex !== -1 && row[doctorIndex]
+          ? String(row[doctorIndex]).trim()
+          : "";
       const address = row[addressIndex]
         ? String(row[addressIndex]).trim()
         : "N/A";

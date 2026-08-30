@@ -66,5 +66,13 @@ export interface DashBoard {
   chojin_rejin_visit_count_by_day_of_week: AverageCostPerVisitByDate;
   diff_rates: DiffRates;
   average_growths: AverageGrowth;
+  // vegas 계열 EMR에서만 내려온다 (비과세 매출 분리 보기용)
+  total_non_taxable_cost?: number;
+  prev_total_non_taxable_cost?: number;
+  prev_total_cost?: number;
+  non_taxable_cost_by_date?: CostByDate;
+  non_taxable_cost_by_day_of_week?: AverageCostPerVisitByDate;
+  non_taxable_sinhwan_cost_by_date?: AverageCostPerVisitByDate;
+  non_taxable_chojin_rejin_cost_by_date?: AverageCostPerVisitByDate;
 }
 export type RangeDateMapKey = "1주일" | "1개월" | "3개월" | "1년";

@@ -29,6 +29,7 @@ import { Radio } from "antd";
 import BaseMultipleLineChart from "../components/medi_map/chart/BaseMultipleLineChart";
 import { usePrivateDataChart } from "../hooks/usePrivateDataChart";
 import AgeSummaryStrip from "../components/dashboard/AgeSummaryStrip";
+import { useCostBasis } from "../hooks/useCostBasis";
 
 const LOADING_CONTENT = "데이터를 불러오는 중입니다.";
 
@@ -58,9 +59,13 @@ export default function DashBoardPage() {
     needFreeTrial
   } = userStore();
 
-  const dashboardInfoData = startTutorial
+  const rawDashboardInfoData = startTutorial
     ? mockDashboard
     : dashboardInfo ?? mockDashboard;
+
+  const { costBasis, setCostBasis, hasNonTaxableCost, dashboardData } =
+    useCostBasis(rawDashboardInfoData);
+  const dashboardInfoData = dashboardData;
 
   const {
     chartType,
@@ -197,6 +202,26 @@ export default function DashBoardPage() {
           {renderGuideDescription(1)}
 
           <SectionContainer>
+            {hasNonTaxableCost && (
+              <CostBasisContainer>
+                <CostBasisLabel>매출 기준</CostBasisLabel>
+                <Radio.Group
+                  onChange={(e) => setCostBasis(e.target.value)}
+                  value={costBasis}
+                  options={[
+                    {
+                      value: "taxable",
+                      label: <div style={{ color: "#52555A" }}>과세만</div>
+                    },
+                    {
+                      value: "all",
+                      label: <div style={{ color: "#52555A" }}>과세+비과세</div>
+                    }
+                  ]}
+                />
+              </CostBasisContainer>
+            )}
+
             <CardGrid
               ref={tutorialRefs.tutorialRef2}
               className={
@@ -441,6 +466,21 @@ const DateLabel = styled.div`
   justify-content: center;
   align-items: center;
   background-color: ${(props) => props.theme.colors.primary};
+`;
+
+const CostBasisContainer = styled.div`
+  background-color: ${(props) => props.theme.colors.white};
+  padding: 1rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+`;
+
+const CostBasisLabel = styled.div`
+  font-weight: bold;
+  color: ${(props) => props.theme.colors.black};
 `;
 
 const CloseGuideButton = styled(BaseButton)`
