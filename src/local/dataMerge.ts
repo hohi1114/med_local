@@ -194,6 +194,9 @@ export interface MergedDataBit {
   address: string;
   visitType: string; // 신환/재진
   doctor: string; // 담당의
+  primaryDiagnosis: string; // 주상병
+  dayNightHoliday: string; // 주야공휴
+  procedures: string[]; // 검사/촬영/PT/주사/원외/처치/US/CT/중증 중 시행된 항목
 }
 
 export interface MergedDataOrm {
@@ -977,6 +980,9 @@ export function mergeDataBit(
     address: string;
     visitType: string;
     doctor: string;
+    primaryDiagnosis: string;
+    dayNightHoliday: string;
+    procedures: string[];
   }>();
 
   const patientFirstVisitByChart = new Map<string, {
@@ -985,18 +991,24 @@ export function mergeDataBit(
     address: string;
     visitType: string;
     doctor: string;
+    primaryDiagnosis: string;
+    dayNightHoliday: string;
+    procedures: string[];
   }>();
 
   for (const pat of patientList) {
     const normalizedDate = normalizeDate(pat.visitDate);
     const normalizedChart = normalizeChartNumber(pat.chartNumber);
     const key = `${normalizedChart}_${normalizedDate}`;
-    
+
     const patientData = {
       age: pat.age,
       address: pat.address || "N/D",
       visitType: pat.visitType,
       doctor: pat.doctor || "N/D",
+      primaryDiagnosis: pat.primaryDiagnosis || "",
+      dayNightHoliday: pat.dayNightHoliday || "",
+      procedures: pat.procedures || [],
     };
 
     patientMapByDateAndChart.set(key, patientData);
@@ -1028,8 +1040,11 @@ export function mergeDataBit(
           address: firstVisit.address,
           visitType: "재진",
           doctor: firstVisit.doctor,
+          primaryDiagnosis: firstVisit.primaryDiagnosis,
+          dayNightHoliday: firstVisit.dayNightHoliday,
+          procedures: firstVisit.procedures,
         };
-      
+
       }
     }
 
@@ -1041,6 +1056,9 @@ export function mergeDataBit(
       address: patientData?.address ?? "N/D",
       visitType: patientData?.visitType ?? "재진",
       doctor: patientData?.doctor ?? "N/D",
+      primaryDiagnosis: patientData?.primaryDiagnosis ?? "",
+      dayNightHoliday: patientData?.dayNightHoliday ?? "",
+      procedures: patientData?.procedures ?? [],
     };
   });
 

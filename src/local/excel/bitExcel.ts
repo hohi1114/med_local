@@ -15,6 +15,9 @@ export interface PatientListBit {
   visitDate: string | Date; // 내원날짜 추가!
   doctor: string; // 담당의
   address: string; // 주소
+  primaryDiagnosis?: string; // 주상병
+  dayNightHoliday?: string; // 주야공휴
+  procedures?: string[]; // 시행된 검사/촬영/PT/주사/원외/처치/US/CT/중증 항목
 }
 
 export async function parseDailyIncomeBit(
@@ -109,6 +112,25 @@ export async function parseDailyIncomeBit(
   return data;
 }
 
+
+// 📌 "46세11개월", "F/46세11개월" 같은 문자열에서 나이(년)를 추출하는 헬퍼 함수
+function parseKoreanAgeString(ageString: string): number | null {
+  const trimmed = ageString.trim();
+  const koreanAgeMatch = trimmed.match(/(\d+)세(?:(\d+)개월)?/);
+
+  if (koreanAgeMatch) {
+    const years = parseInt(koreanAgeMatch[1]);
+    const months = koreanAgeMatch[2] ? parseInt(koreanAgeMatch[2]) : 0;
+    if (isNaN(years) || years < 0) return null;
+    return Math.round(years + months / 12);
+  }
+
+  const ageValue = Number(trimmed);
+  if (!isNaN(ageValue) && ageValue >= 0) {
+    return ageValue;
+  }
+  return null;
+}
 
 // 📌 주민등록번호(예: 920221-1030314)에서 만 나이를 계산하는 헬퍼 함수
 function calculateAgeFromResidentId(residentId: string): number | null {
@@ -217,6 +239,18 @@ function parseDateString(dateStr: string): string {
 }
 
 
+const PROCEDURE_COLUMNS = [
+  "검사",
+  "촬영",
+  "PT",
+  "주사",
+  "원외",
+  "처치",
+  "US",
+  "CT",
+  "중증",
+];
+
 export async function parsePatientListBit(
   fileBuffers: ArrayBuffer[]
 ): Promise<PatientListBit[]> {
@@ -249,27 +283,39 @@ export async function parsePatientListBit(
       (col: any) => col === "차트번호" || col === "챠트번호"
     );
     const ageIndex = headers.findIndex((col: any) => col === "나이");
+    const saIndex = headers.findIndex((col: any) => col === "S/A"); // "F/46세11개월" (성별/나이)
     const residentIdIndex = headers.findIndex(
-      (col: any) => col === "주민등록번호"
+      (col: any) => col === "주민등록번호" || col === "주민번호"
     );
     const visitTypeIndex = headers.findIndex(
-      (col: any) => col === "초재진구분" || col === "초/재진"
+      (col: any) =>
+        col === "초재진구분" || col === "초/재진" || col === "초/재"
     );
     const visitDateIndex = headers.findIndex(
-      (col: any) => col === "내원날짜" || col === "내원/입원일시"
+      (col: any) =>
+        col === "내원날짜" || col === "내원/입원일시" || col === "내원일"
     );
     const doctorIndex = headers.findIndex((col: any) => col === "담당의");
     const addressIndex = headers.findIndex((col: any) => col === "주소");
+    const diagnosisIndex = headers.findIndex((col: any) => col === "주상병");
+    const dayNightHolidayIndex = headers.findIndex(
+      (col: any) => col === "주야공휴"
+    );
+    const procedureIndices = PROCEDURE_COLUMNS.map((name) => ({
+      name,
+      idx: headers.findIndex((col: any) => col === name),
+    })).filter((p) => p.idx !== -1);
 
     if (
       chartNumberIndex === -1 ||
-      (ageIndex === -1 && residentIdIndex === -1) ||
-      visitDateIndex === -1 ||
-      addressIndex === -1
+      (ageIndex === -1 && saIndex === -1 && residentIdIndex === -1) ||
+      visitDateIndex === -1
     ) {
       console.error("❌ Required columns not found in the file");
       console.error("Available headers:", headers);
-      console.error("Looking for: 차트번호, (나이 또는 주민등록번호), 내원날짜(또는 내원/입원일시), 주소");
+      console.error(
+        "Looking for: 차트번호, (나이 또는 S/A 또는 주민등록번호/주민번호), 내원날짜(또는 내원/입원일시, 내원일)"
+      );
       continue;
     }
 
@@ -291,28 +337,16 @@ export async function parsePatientListBit(
       }
 
       let age: number | null = null;
-      if (
-        ageIndex !== -1 &&
-        row[ageIndex] !== undefined &&
-        row[ageIndex] !== null &&
-        row[ageIndex] !== ""
-      ) {
-        const ageString = String(row[ageIndex]).trim();
-        const koreanAgeMatch = ageString.match(/(\d+)세(?:(\d+)개월)?/);
-
-        if (koreanAgeMatch) {
-          const years = parseInt(koreanAgeMatch[1]);
-          const months = koreanAgeMatch[2] ? parseInt(koreanAgeMatch[2]) : 0;
-
-          if (!isNaN(years) && years >= 0) {
-            const totalAge = years + months / 12;
-            age = normalizeAge(Math.round(totalAge));
-          }
-        } else {
-          const ageValue = Number(ageString);
-          if (!isNaN(ageValue) && ageValue >= 0) {
-            age = normalizeAge(ageValue);
-          }
+      const rawAgeCell =
+        ageIndex !== -1 && row[ageIndex]
+          ? row[ageIndex]
+          : saIndex !== -1 && row[saIndex]
+          ? row[saIndex]
+          : null;
+      if (rawAgeCell !== null) {
+        const years = parseKoreanAgeString(String(rawAgeCell));
+        if (years !== null) {
+          age = normalizeAge(years);
         }
       } else if (residentIdIndex !== -1 && row[residentIdIndex]) {
         const yearsFromResidentId = calculateAgeFromResidentId(
@@ -328,13 +362,22 @@ export async function parsePatientListBit(
         const rawVisitType = String(row[visitTypeIndex])
           .trim()
           .replace(/\s/g, "");
-        if (rawVisitType === "초진" || rawVisitType === "신환") {
+        if (rawVisitType.includes("산정안함")) {
+          // 진찰료 산정안함: 실제 진료가 아니므로 재진으로 집계하지 않고 통째로 제외
+          continue;
+        } else if (rawVisitType.includes("신환")) {
           visitType = "신환";
+        } else if (rawVisitType.includes("초진")) {
+          // "30일초진" 등 신환과 별개로 초진으로 분류 (신환에 합치지 않음)
+          visitType = "초진";
         }
       }
 
-      // 📌 날짜 파싱 (시간이 붙어있는 "YYYY-MM-DD  HH:MM" 형식은 날짜만 추출)
-      const visitDateRaw = String(row[visitDateIndex]).trim().split(/\s+/)[0];
+      // 📌 날짜 파싱: "YYYY-MM-DD  HH:MM"은 시간 제거, "YYYYMMDDHHmm"(12자리)은 앞 8자리(날짜)만 사용
+      let visitDateRaw = String(row[visitDateIndex]).trim().split(/\s+/)[0];
+      if (/^\d{12}$/.test(visitDateRaw)) {
+        visitDateRaw = visitDateRaw.slice(0, 8);
+      }
       const visitDate = parseDateString(visitDateRaw);
 
       const doctor =
@@ -345,6 +388,20 @@ export async function parsePatientListBit(
         ? String(row[addressIndex]).trim()
         : "N/A";
 
+      const primaryDiagnosis =
+        diagnosisIndex !== -1 && row[diagnosisIndex]
+          ? String(row[diagnosisIndex]).trim()
+          : "";
+
+      const dayNightHoliday =
+        dayNightHolidayIndex !== -1 && row[dayNightHolidayIndex]
+          ? String(row[dayNightHolidayIndex]).trim()
+          : "";
+
+      const procedures = procedureIndices
+        .filter(({ idx }) => row[idx] && String(row[idx]).trim() !== "")
+        .map(({ name }) => name);
+
       const patientData: PatientListBit = {
         chartNumber,
         age,
@@ -352,6 +409,9 @@ export async function parsePatientListBit(
         visitDate,
         doctor,
         address,
+        primaryDiagnosis,
+        dayNightHoliday,
+        procedures,
       };
 
       data.push(patientData);

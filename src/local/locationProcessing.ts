@@ -87,6 +87,9 @@ interface ProcessedPatientDataEgis extends ProcessedPatientData {
 export interface ProcessedPatientDataBit extends ProcessedPatientData {
   visitType: string;
   doctor: string;
+  primaryDiagnosis: string;
+  dayNightHoliday: string;
+  procedures: string[];
 }
 
 
@@ -1924,6 +1927,9 @@ export async function processDataLocallyBit(
           visit_date: record.visitDate,
           visitType: record.visitType,
           doctor: record.doctor,
+          primaryDiagnosis: record.primaryDiagnosis,
+          dayNightHoliday: record.dayNightHoliday,
+          procedures: record.procedures,
           location_true: record.location_true,
           small_region_id,
           dong_region_id,
