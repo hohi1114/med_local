@@ -2,6 +2,7 @@ import { BackendData } from "../../types/medi-types";
 import { LoginParams } from "../../pages/LoginPage";
 import { saveTokensToCookie } from "./token";
 import { logout, apiRequest } from "./apihelper";
+import { API_BASE_URL } from "./config";
 import { getCookie } from "./cookie";
 import { DateRange } from "../../hooks/useRangeDurationDatePicker";
 import {
@@ -10,15 +11,15 @@ import {
   regionAnalysisParams,
   RegisterCardParams,
   StartSubscriptionParams,
+  MultiRegionPrivateParams
 } from "../../types/params";
 import {
   VisitData,
   PatientData,
   DailyIncomeEgis,
   PatientListEgis,
-  PatientIncomeEgis,
   BackendResponse,
-  PatientDataDentWeb,
+  PatientDataDentWeb
 } from "../ExcelParser";
 
 /**로그인 */
@@ -26,8 +27,7 @@ export const postLogin = async (loginData: LoginParams) => {
   const data = await apiRequest("post", `/auth/login`, loginData);
   await saveTokensToCookie({
     access_token: data.access_token,
-    refresh_token: data.refresh_token,
-    expires_in: data.expires_in,
+    refresh_token: data.refresh_token
   });
 
   return data;
@@ -42,7 +42,7 @@ export const postActiveLicense = async (
 
 export const postVerifyCode = async (hardwareNumber: string) => {
   const data = await apiRequest("post", "/auth/verify", {
-    hardwareFingerprint: hardwareNumber,
+    hardwareFingerprint: hardwareNumber
   });
   return data;
 };
@@ -87,7 +87,7 @@ export const getCardInfo = async () => {
 
 export const postBilling = async (membershipType: string) => {
   const data = await apiRequest("post", "/payment/billing", {
-    membershipType: membershipType,
+    membershipType: membershipType
   });
   return data;
 };
@@ -99,7 +99,7 @@ export const postManageCancelSubscription = async () => {
 
 export const changeSubscription = async (membershipType: string) => {
   const data = await apiRequest("post", "/payment/update", {
-    membershipType: membershipType,
+    membershipType: membershipType
   });
   return data;
 };
@@ -142,7 +142,11 @@ export const getAllRegionsEtc = async (rangeDate: DateRange) => {
     "/fetch/all_region_patient_cost",
     rangeDate
   );
+  return data;
+};
 
+export const getPatientLocations = async (rangeDate: DateRange) => {
+  const data = await apiRequest("post", "/fetch/patient_locations", rangeDate);
   return data;
 };
 
@@ -153,6 +157,17 @@ export const getRegionPrivateData = async (
     "post",
     "/fetch/region_date_patient_info",
     regionprivateParams
+  );
+  return data;
+};
+
+export const postMultiRegionPrivateData = async (
+  multiRegionPrivateParams: MultiRegionPrivateParams
+) => {
+  const data = await apiRequest(
+    "post",
+    "/fetch/multi_region_date_patient_info",
+    multiRegionPrivateParams
   );
 
   return data;
@@ -175,13 +190,14 @@ export const postRefreshToken = async () => {
   const refreshToken = await getCookie("refreshToken");
   if (!refreshToken) {
     logout();
+    throw new Error("No refresh token available");
   }
   const data = await apiRequest("post", "/auth/refresh", {
-    refresh_token: refreshToken,
+    refresh_token: refreshToken
   });
   await saveTokensToCookie({
     access_token: data.access_token,
-    refresh_token: data.refresh_token,
+    refresh_token: data.refresh_token
   });
 
   return data.access_token;
@@ -244,7 +260,7 @@ export const uploadDataToBackendEgis = async (
 ): Promise<BackendResponse> => {
   const dataToUpload = {
     dailyIncome: dailyIncomeData,
-    patientList: patientListData,
+    patientList: patientListData
   };
 
   try {
@@ -279,4 +295,35 @@ export const uploadDataToBackendDentWeb = async (
     console.error("Error in uploadDataToBackend:", error);
     throw error; // Re-throw to handle in the component
   }
+};
+
+// ⭐ Admin 로그인 (기존 postLogin과 거의 동일)
+// ⭐ Admin 로그인은 apiRequest 대신 직접 fetch 사용
+
+// ⭐ Vite 환경변수 사용
+export const postAdminLogin = async (email: string, password: string) => {
+  const response = await fetch(`${API_BASE_URL}/auth/login`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      email,
+      password,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Login failed');
+  }
+
+  const data = await response.json();
+
+  await saveTokensToCookie({
+    access_token: data.access_token,
+    refresh_token: data.refresh_token
+  });
+
+  return data;
 };

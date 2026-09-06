@@ -24,7 +24,7 @@ export interface PatientData {
 
 export interface PatientDataDentWeb {
   chartNumber: number;
-  age: number;
+  age: number | null;
   address: string;
   latitude: number | null;
   longitude: number | null;
@@ -236,7 +236,6 @@ export async function parsePatientListEgis(
       // Calculate age from resident registration number
       let age = 0;
       const idNumber = row[2] ? String(row[2]).trim() : "";
-      console.log(idNumber);
 
       if (idNumber && idNumber.length >= 8) {
         // Extract birth year (first two digits)
@@ -357,7 +356,7 @@ export const parseDaysFilesDentweb = async (
   return data.filter((item) => !isNaN(item.chartNumber));
 };
 
-export const parsePlaceFilesDentWeb = async (
+export const parsePlaceFFilesDentWeb = async (
   files: FileList
 ): Promise<PatientDataDentWeb[]> => {
   let data: PatientDataDentWeb[] = [];
@@ -386,7 +385,7 @@ export const parsePlaceFilesDentWeb = async (
       if (!row[3]) {
         continue;
       }
-      let age = 0;
+      let age = null;
       const birthDateValue = row[3];
 
       if (birthDateValue) {

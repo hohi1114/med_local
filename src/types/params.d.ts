@@ -28,3 +28,10 @@ export type RegisterCardParams = {
 export type StartSubscriptionParams = {
   membershipType: string;
 };
+
+export type MultiRegionPrivateParams = {
+  startDate: string;
+  endDate: string;
+  regionType: string;
+  regions: string[];
+};

@@ -33,7 +33,40 @@ const createDatabase = async (
 
     return db;
   } catch (error) {
-    console.error("Error creating database:", error);
+    console.error("❌ Failed to open DB initially:", error);
+
+    // 에러가 UnknownError일 때만 삭제
+    if (error instanceof DOMException && error.name === "UnknownError") {
+      console.warn("⚠️ IndexedDB appears corrupted. Deleting...");
+
+      // DB 삭제
+      await new Promise((resolve, reject) => {
+        const req = window.indexedDB.deleteDatabase(REGION_DB_NAME);
+        req.onsuccess = () => {
+          console.log("✅ IndexedDB deleted successfully");
+          resolve(null);
+        };
+        req.onerror = () => {
+          console.error("❌ Failed to delete corrupted DB");
+          reject(req.error);
+        };
+      });
+
+      return await openDB(REGION_DB_NAME, version, {
+        upgrade(db) {
+          if (!db.objectStoreNames.contains("metadata")) {
+            db.createObjectStore("metadata", { keyPath: "id" });
+          }
+          if (!db.objectStoreNames.contains("small_regions")) {
+            db.createObjectStore("small_regions", {
+              keyPath: "id",
+              autoIncrement: true,
+            });
+          }
+        },
+      });
+    }
+
     throw error;
   }
 };

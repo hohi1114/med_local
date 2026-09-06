@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import UpdateNotification from "./components/common/UpdateNotification";
 import DashBoardPage from "./pages/DashBoardPage";
 import BaseLayout from "./components/common/layout/BaseLayout";
 import StatisticsByRegionPage from "./pages/StatisticsByRegionPage";
@@ -10,33 +11,77 @@ import LoginPage from "./pages/LoginPage.tsx";
 import ComingSoonPage from "./pages/ComingSoonPage.tsx";
 import MembershipPage from "./pages/MembershipPage.tsx";
 import useUpdateUserInfo from "./hooks/useUpdateUserInfo.tsx";
+import { ensureValidSession } from "./utils/api/apihelper.ts";
 import MembershipChangePage from "./pages/MembershipChangePage.tsx";
 import CardManagementPage from "./pages/CardManagementPage.tsx";
 import PaymentHistoryPage from "./pages/PaymentHistoryPage.tsx";
 import CompareAvenuePage from "./pages/CompareAvenuePage.tsx";
 import MapByRegionPage from "./pages/MapByRegionPage.tsx";
+import HospitalMapAnalysisPage from "./pages/HospitalMapAnalysisPage.tsx";
+import PatientComparisonPage from "./pages/PatientComparisonPage";
+
+
+// ⭐ Admin 페이지 import
+import { AdminLogin } from "./pages/AdminLogin";
+import { AdminDashboard } from "./pages/AdminDashboard";
+import { ReportBuilderPage } from "./pages/ReportBuilderPage";
+import { ReviewCoachingPage } from "./pages/ReviewCoachingPage";
+import { HospitalProfilePage } from "./pages/HospitalProfilePage";
+import PostingManagerPage from "./pages/PostingManagerPage";
 
 function App() {
   const { fetchUserInfo } = useUpdateUserInfo();
 
   useEffect(() => {
-    if (!window.location.pathname.startsWith("/login")) {
-      fetchUserInfo();
+    // Admin 페이지와 일반 로그인 페이지는 제외
+    const path = window.location.pathname;
+    if (path.startsWith("/login") || path.startsWith("/admin")) {
+      return;
     }
+
+    // 컴퓨터를 껐다 켜도 refresh 토큰이 살아있으면 자동 로그인
+    const restoreSession = async () => {
+      const isValid = await ensureValidSession();
+      if (isValid) {
+        fetchUserInfo();
+      } else {
+        window.location.href = "/login";
+      }
+    };
+    restoreSession();
   }, []);
 
   return (
-    <BrowserRouter>
+    <>
+      <UpdateNotification />
+      <BrowserRouter>
       <Routes>
+        {/* 일반 사용자 로그인 */}
         <Route path="/login" element={<LoginPage />} />
 
+        {/* ⭐ Admin 라우트 (BaseLayout 없이 독립적으로) */}
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/admin/report-builder" element={<ReportBuilderPage />} />
+        <Route path="/admin/patient-comparison" element={<PatientComparisonPage />} />
+        <Route path="/admin/review-coaching" element={<ReviewCoachingPage />} />
+        <Route path="/admin/hospital-profile" element={<HospitalProfilePage />} />
+        <Route path="/admin/posting" element={<PostingManagerPage />} />
+        <Route path="/admin/hospital-map" element={
+          <NaverScriptLoader>
+            <HospitalMapAnalysisPage />
+          </NaverScriptLoader>
+        }
+        />
+
+
+
+        {/* 일반 사용자 페이지 (BaseLayout 적용) */}
         <Route path="/" element={<BaseLayout />}>
           <Route index element={<Navigate to="dashboard" replace />} />
 
           <Route path="dashboard" element={<DashBoardPage />} />
-          <Route
-            path="map"
-            element={
+          <Route path="map"  element={
               <NaverScriptLoader>
                 <MapByRegionPage />
               </NaverScriptLoader>
@@ -64,6 +109,7 @@ function App() {
         </Route>
       </Routes>
     </BrowserRouter>
+    </>
   );
 }
 

@@ -1,8 +1,10 @@
 import { create } from "zustand";
 import { RegionStatistics } from "../types/region-analysis";
 import { LocalSectionKey } from "../hooks/useRegionAnalysis";
+import { DateRange } from "../hooks/useRangeDurationDatePicker";
 
 type RegionAnalysisStore = {
+  selectedDateRange: DateRange | null;
   searchWord: string;
   localSection: LocalSectionKey;
   smallSectionData: RegionStatistics[];
@@ -10,6 +12,8 @@ type RegionAnalysisStore = {
   guSectionData: RegionStatistics[];
   data: RegionStatistics[];
   filteredData: RegionStatistics[];
+
+  setSelectedDateRange: (dateRange: DateRange) => void;
   setSmallSectionData: (data: RegionStatistics[]) => void;
   setDongSectionData: (data: RegionStatistics[]) => void;
   setGuSectionData: (data: RegionStatistics[]) => void;
@@ -20,6 +24,7 @@ type RegionAnalysisStore = {
 };
 
 export const useRegionAnalysisStore = create<RegionAnalysisStore>((set) => ({
+  selectedDateRange: null,
   localSection: "소구역",
   smallSectionData: [],
   dongSectionData: [],
@@ -27,6 +32,9 @@ export const useRegionAnalysisStore = create<RegionAnalysisStore>((set) => ({
   searchWord: "",
   data: [],
   filteredData: [],
+
+  setSelectedDateRange: (dateRange: DateRange) =>
+    set({ selectedDateRange: dateRange }),
   setSmallSectionData: (data) => set({ smallSectionData: data }),
   setDongSectionData: (data) => set({ dongSectionData: data }),
   setGuSectionData: (data) => set({ guSectionData: data }),

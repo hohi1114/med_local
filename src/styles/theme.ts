@@ -17,6 +17,7 @@ const colors = {
   green01: "#96E2D6",
   green02: "#94E9B8",
   green03: "#30bf78",
+  macGreen: "#00C41E",
 
   white: "#ffffff",
   white01: "#FAFAFB",

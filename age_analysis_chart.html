@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>연령대별 신환 유입 추이 분석</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background-color: #f8fafc;
+      padding: 40px 20px;
+      color: #1f2937;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background-color: #fff;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #111827;
+      margin-bottom: 40px;
+      text-align: center;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 400px;
+      margin-bottom: 40px;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 32px;
+      font-size: 14px;
+    }
+
+    thead {
+      background-color: #f3f4f6;
+    }
+
+    th {
+      padding: 12px 16px;
+      text-align: center;
+      font-weight: 600;
+      color: #374151;
+      border: 1px solid #d1d5db;
+    }
+
+    td {
+      padding: 10px 16px;
+      text-align: center;
+      border: 1px solid #e5e7eb;
+    }
+
+    tbody tr:nth-child(even) {
+      background-color: #f9fafb;
+    }
+
+    tbody tr:first-child td {
+      background-color: #f3f4f6;
+      font-weight: 600;
+    }
+
+    .diff-positive {
+      color: #2E7D32;
+      background-color: rgba(46, 125, 50, 0.1);
+      font-weight: 600;
+    }
+
+    .diff-negative {
+      color: #C62828;
+      background-color: rgba(198, 40, 40, 0.1);
+      font-weight: 600;
+    }
+
+    .diff-zero {
+      color: #666;
+      background-color: rgba(102, 102, 102, 0.05);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>연령대별 신환 유입 추이</h1>
+    
+    <div class="chart-container">
+      <canvas id="ageChart"></canvas>
+    </div>
+
+    <table id="dataTable">
+      <thead>
+        <tr>
+          <th>연령대</th>
+          <th>0대</th>
+          <th>10대</th>
+          <th>20대</th>
+          <th>30대</th>
+          <th>40대</th>
+          <th>50대</th>
+          <th>60대</th>
+          <th>70대</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        <!-- 데이터가 동적으로 추가됩니다 -->
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    // 샘플 데이터 (실제 사용 시 이 부분을 데이터로 교체)
+    const ageGroups = ['0', '10', '20', '30', '40', '50', '60', '70+'];
+    
+    // Period A 데이터 (분석 기간)
+    const periodAData = {
+      '0': 15,
+      '10': 32,
+      '20': 78,
+      '30': 125,
+      '40': 156,
+      '50': 142,
+      '60': 98,
+      '70+': 45
+    };
+
+    // Period B 데이터 (비교 기간)
+    const periodBData = {
+      '0': 12,
+      '10': 28,
+      '20': 85,
+      '30': 118,
+      '40': 148,
+      '50': 135,
+      '60': 92,
+      '70+': 42
+    };
+
+    // 차트 데이터 준비
+    const chartLabels = ageGroups.map(age => age === '70+' ? '70+' : `${age}대`);
+    const chartDataA = ageGroups.map(age => periodAData[age] || 0);
+    const chartDataB = ageGroups.map(age => periodBData[age] || 0);
+
+    // 최대값 계산 및 여유 공간 추가
+    const maxValue = Math.max(...chartDataA, ...chartDataB);
+    let yAxisMax;
+    if (maxValue < 100) {
+      yAxisMax = Math.ceil(maxValue * 1.2 / 10) * 10; // 10명 단위로 반올림
+    } else if (maxValue < 1000) {
+      yAxisMax = Math.ceil(maxValue * 1.2 / 50) * 50; // 50명 단위로 반올림
+    } else if (maxValue < 10000) {
+      yAxisMax = Math.ceil(maxValue * 1.2 / 100) * 100; // 100명 단위로 반올림
+    } else {
+      yAxisMax = Math.ceil(maxValue * 1.2 / 500) * 500; // 500명 단위로 반올림
+    }
+
+    // Chart.js 설정
+    const ctx = document.getElementById('ageChart').getContext('2d');
+    
+    const chart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: chartLabels,
+        datasets: [
+          {
+            label: 'B(비교 기간)',
+            data: chartDataB,
+            backgroundColor: '#D9D9D9',
+            borderColor: '#D9D9D9',
+            borderWidth: 1
+          },
+          {
+            label: 'A(분석 기간)',
+            data: chartDataA,
+            backgroundColor: '#A7D3F2',
+            borderColor: '#A7D3F2',
+            borderWidth: 1
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: 'New Patients by Age Group (A vs B)',
+            font: {
+              size: 16,
+              weight: 'bold'
+            },
+            padding: {
+              bottom: 20
+            }
+          },
+          legend: {
+            position: 'top',
+            align: 'end',
+            labels: {
+              padding: 15,
+              font: {
+                size: 13
+              }
+            }
+          },
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+            callbacks: {
+              label: function(context) {
+                return context.dataset.label + ': ' + context.parsed.y.toLocaleString() + '명';
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: {
+              display: false
+            },
+            ticks: {
+              font: {
+                size: 12
+              }
+            }
+          },
+          y: {
+            type: 'linear',
+            title: {
+              display: true,
+              text: 'Patient Count',
+              font: {
+                size: 13,
+                weight: 'bold'
+              }
+            },
+            min: 0,
+            max: yAxisMax,
+            grid: {
+              display: true,
+              drawBorder: false,
+              borderDash: [5, 5],
+              color: '#e5e7eb'
+            },
+            ticks: {
+              font: {
+                size: 12
+              },
+              callback: function(value) {
+                return value.toLocaleString();
+              }
+            },
+            beginAtZero: true
+          }
+        },
+        categoryPercentage: 0.8,
+        barPercentage: 0.7
+      }
+    });
+
+    // 테이블 생성 함수
+    function formatNumber(num) {
+      return new Intl.NumberFormat('ko-KR').format(num);
+    }
+
+    function getDiffClass(diff) {
+      if (diff > 0) return 'diff-positive';
+      if (diff < 0) return 'diff-negative';
+      return 'diff-zero';
+    }
+
+    function createTable() {
+      const tableBody = document.getElementById('tableBody');
+      
+      // A 행
+      let rowA = '<tr><td style="background-color: #f3f4f6; font-weight: 600;">A(분석 기간)</td>';
+      ageGroups.forEach(age => {
+        rowA += `<td>${formatNumber(periodAData[age] || 0)}</td>`;
+      });
+      rowA += '</tr>';
+      
+      // B 행
+      let rowB = '<tr><td style="background-color: #f3f4f6; font-weight: 600;">B(비교 기간)</td>';
+      ageGroups.forEach(age => {
+        rowB += `<td>${formatNumber(periodBData[age] || 0)}</td>`;
+      });
+      rowB += '</tr>';
+      
+      // A - B 행
+      let rowDiff = '<tr><td style="background-color: #f3f4f6; font-weight: 600;">A - B</td>';
+      ageGroups.forEach(age => {
+        const diff = (periodAData[age] || 0) - (periodBData[age] || 0);
+        const diffClass = getDiffClass(diff);
+        const sign = diff > 0 ? '+' : '';
+        rowDiff += `<td class="${diffClass}">${sign}${formatNumber(diff)}</td>`;
+      });
+      rowDiff += '</tr>';
+      
+      tableBody.innerHTML = rowA + rowB + rowDiff;
+    }
+
+    // 테이블 생성
+    createTable();
+  </script>
+</body>
+</html>

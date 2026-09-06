@@ -1,4 +1,5 @@
-import { Bar } from "@ant-design/plots";
+import { Bar } from "@ant-design/charts";
+import styled from "styled-components";
 
 interface SexHorizantalBarProps {
   type: string;
@@ -7,29 +8,40 @@ interface SexHorizantalBarProps {
 
 interface SexHorizantalBarComponentProps {
   data: SexHorizantalBarProps[];
+  height: number;
 }
-const SexHorizantalBar = ({ data }: SexHorizantalBarComponentProps) => {
+const SexHorizantalBar = ({ data, height }: SexHorizantalBarComponentProps) => {
   const config = {
     data,
-    height: 250,
-    width: 340,
+    height: height,
     xField: "type",
     yField: "value",
     colorField: "type",
     autoFit: true,
     legend: {
-      color: { size: 20, autoWrap: true, maxRows: 3, cols: 3 }
+      position: "top"
     },
     style: {
       maxWidth: 20
     },
     scale: {
       color: {
-        range: ["#3897f0", "#F4A7B9"]
+        range: ["#92BFFF", "#FFB6C1"]
       }
+    },
+    tooltip: ({ type, value }) => {
+      return { type, value };
     }
   };
-  return <Bar {...config} />;
+  return (
+    <BarChartContainer>
+      <Bar {...config} />
+    </BarChartContainer>
+  );
 };
 
 export default SexHorizantalBar;
+const BarChartContainer = styled.div`
+  width: 100%;
+  height: 100%;
+`;

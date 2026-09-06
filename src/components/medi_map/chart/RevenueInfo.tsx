@@ -1,4 +1,5 @@
-import dayjs from "dayjs";
+import styled from "styled-components";
+import DashboardGrowthStats from "../../dashboard/DashboardGrowthStats";
 import {
   GridWrapper,
   GraphContainer,
@@ -7,28 +8,37 @@ import {
 } from "../StatisticsDrawer";
 import StatsBox, { STATSTYPE } from "../StatsBox";
 import BarChart from "./BarChart";
-import BaseLineChart from "./BaseLineChart";
 
-interface RegionStatisticsProps {
+import mapStore from "../../../store/mapStore";
+import BaseMultipleLineChart from "./BaseMultipleLineChart";
+import { usePrivateDataChart } from "../../../hooks/usePrivateDataChart";
+import { RegionPrivateData } from "../../../types/naver-maps";
+import { Radio } from "antd";
+
+interface RevenuInfoProps {
   statsData: { [key: number]: { data: string; diffRate: number | null } };
-  revenueTrend: any;
-  dailyRevenue: any;
-  ageGroups: any;
-  formatDataForRevenueTrend: (data: any) => any;
-  formatDataForAverageRevenue: (data: any) => any;
-  barFormatData: () => any;
   disabledCompare?: boolean;
+  costRank?: number;
+  data: RegionPrivateData;
 }
-const RevenuInfo: React.FC<RegionStatisticsProps> = ({
+const RevenuInfo: React.FC<RevenuInfoProps> = ({
   statsData,
-  revenueTrend,
-  dailyRevenue,
-  ageGroups,
-  formatDataForRevenueTrend,
-  formatDataForAverageRevenue,
-  barFormatData,
-  disabledCompare = false
+  disabledCompare = false,
+  costRank,
+  data
 }) => {
+  const { isChangedDateRange, isAnalyzeMultiRegion } = mapStore();
+  const {
+    formatPatientCountBarData,
+    formatWeeklyDataForBarChart,
+    formatTotalCostBarData,
+    formatDataForAverageRevenue,
+    formatYAxisLabelForLineChart,
+    chartType,
+    handleChartRadioChange,
+    formatLineChartData
+  } = usePrivateDataChart(data);
+
   return (
     <>
       <GridWrapper>
@@ -44,42 +54,95 @@ const RevenuInfo: React.FC<RegionStatisticsProps> = ({
           );
         })}
       </GridWrapper>
+      {!disabledCompare &&
+        costRank &&
+        !isChangedDateRange &&
+        !isAnalyzeMultiRegion && (
+          <GrowthCommentContainer>
+            <DashboardGrowthStats
+              data={data?.growth_metrics}
+              costRank={costRank}
+            />
+          </GrowthCommentContainer>
+        )}
+
       <GraphContainer>
         <GrapWrapper>
-          <ChartTitleStyle>매출액 변화 추이</ChartTitleStyle>
-          <BaseLineChart
-            height={330}
-            width={350}
-            data={revenueTrend}
+          <div
+            style={{
+              display: "flex",
+              gap: "3rem",
+              alignItems: "center"
+            }}
+          >
+            <ChartTitleStyle>일자별 매출/환자 수 통계</ChartTitleStyle>
+            <Radio.Group
+              onChange={handleChartRadioChange}
+              value={chartType}
+              options={[
+                {
+                  value: 1,
+                  label: <div style={{ color: "#52555A" }}>매출</div>
+                },
+                {
+                  value: 2,
+                  label: <div style={{ color: "#52555A" }}>환자 수</div>
+                }
+              ]}
+            />
+          </div>
+          <BaseMultipleLineChart
             xField="date"
-            yField="매출액"
-            labelFormatterY={(v: number) => `${v / 1000}K`}
-            // labelFormatterX={(v: string) => dayjs(v).format("MM/DD")}
-            formatData={formatDataForRevenueTrend}
+            yField="value"
+            colorField="category"
+            labelFormatterY={formatYAxisLabelForLineChart}
+            height={500}
+            data={formatLineChartData(chartType)}
+            valueXSymbol={chartType === 1 ? " ₩" : " 명"}
           />
         </GrapWrapper>
         <GrapWrapper>
           <ChartTitleStyle>연령대 별 환자 분포</ChartTitleStyle>
           <BarChart
             height={280}
-            width={350}
-            data={ageGroups}
-            xField="연령"
-            yField="세"
-            formatData={barFormatData}
+            xField="age"
+            yField="value"
+            data={formatPatientCountBarData()}
+            valueXSymbol=" 명"
           />
         </GrapWrapper>
         <GrapWrapper>
           <ChartTitleStyle>1인당 평균 매출액</ChartTitleStyle>
-          <BaseLineChart
-            width={350}
-            data={dailyRevenue}
+          <BaseMultipleLineChart
             xField="date"
             yField="매출액"
-            labelFormatterY={(v: number) => `${v / 1000}K`}
-            // labelFormatterX={(v: string) => dayjs(v).format("MM/DD")}
-            formatData={formatDataForAverageRevenue}
+            data={formatDataForAverageRevenue()}
             height={350}
+          />
+        </GrapWrapper>
+        <GrapWrapper>
+          <ChartTitleStyle>요일별 매출 통계</ChartTitleStyle>
+          <BarChart
+            xField="day"
+            yField="value"
+            data={formatTotalCostBarData()}
+            height={380}
+            colors={"#96E2D6"}
+            valueXSymbol=" ₩"
+          />
+        </GrapWrapper>
+        <GrapWrapper>
+          <ChartTitleStyle>요일별 신규/재방문 환자 비율</ChartTitleStyle>
+          <BarChart
+            data={formatWeeklyDataForBarChart()}
+            xField="day"
+            yField="value"
+            height={380}
+            isGrouped={true}
+            seriesField="type"
+            legend={true}
+            colors={["#FFB6C1", "#92BFFF"]}
+            valueXSymbol=" 명"
           />
         </GrapWrapper>
       </GraphContainer>
@@ -88,3 +151,10 @@ const RevenuInfo: React.FC<RegionStatisticsProps> = ({
 };
 
 export default RevenuInfo;
+
+const GrowthCommentContainer = styled.div`
+  padding: 1rem 0;
+  border-style: solid;
+  border-width: 1px 0px;
+  border-color: ${(props) => props.theme.colors.gray02};
+`;
