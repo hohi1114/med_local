@@ -120,9 +120,10 @@ function parseKoreanAgeString(ageString: string): number | null {
 
   if (koreanAgeMatch) {
     const years = parseInt(koreanAgeMatch[1]);
-    const months = koreanAgeMatch[2] ? parseInt(koreanAgeMatch[2]) : 0;
+    // 개월수는 반영하지 않는다: normalizeAge가 10년 단위로 버림 처리하므로
+    // 반올림하면 예) "49세9개월"이 50대로 잘못 집계된다.
     if (isNaN(years) || years < 0) return null;
-    return Math.round(years + months / 12);
+    return years;
   }
 
   const ageValue = Number(trimmed);
@@ -248,8 +249,27 @@ const PROCEDURE_COLUMNS = [
   "처치",
   "US",
   "CT",
+  "마취",
   "중증",
+  "만성질환",
+  "MRI",
 ];
+
+// 📌 "진료내역 조회" 계열 파일은 실제 헤더 앞에 검색조건 메타데이터 행이 여러 줄 붙어있을 수 있어
+// 차트번호 헤더가 나오는 행을 찾아서 그 행을 헤더로 사용한다.
+function findHeaderRowIndex(allData: any[][]): number {
+  const searchLimit = Math.min(allData.length, 20);
+  for (let i = 0; i < searchLimit; i++) {
+    const row = allData[i];
+    if (
+      Array.isArray(row) &&
+      row.some((cell: any) => cell === "차트번호" || cell === "챠트번호")
+    ) {
+      return i;
+    }
+  }
+  return 0; // 못 찾으면 기존 동작대로 첫 행을 헤더로 사용
+}
 
 export async function parsePatientListBit(
   fileBuffers: ArrayBuffer[]
@@ -277,7 +297,8 @@ export async function parsePatientListBit(
       continue;
     }
 
-    const headers = allData[0];
+    const headerRowIndex = findHeaderRowIndex(allData);
+    const headers = allData[headerRowIndex];
 
     const chartNumberIndex = headers.findIndex(
       (col: any) => col === "차트번호" || col === "챠트번호"
@@ -320,7 +341,7 @@ export async function parsePatientListBit(
     }
 
 
-    for (let i = 1; i < allData.length; i++) {
+    for (let i = headerRowIndex + 1; i < allData.length; i++) {
       const row = allData[i];
 
       if (!row || row.length === 0) {

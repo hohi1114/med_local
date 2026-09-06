@@ -215,11 +215,11 @@ export async function parsePatientListBit2(
 
         if (koreanAgeMatch) {
           const years = parseInt(koreanAgeMatch[1]);
-          const months = koreanAgeMatch[2] ? parseInt(koreanAgeMatch[2]) : 0;
 
+          // 개월수는 반영하지 않는다: normalizeAge가 10년 단위로 버림 처리하므로
+          // 반올림하면 예) "49세9개월"이 50대로 잘못 집계된다.
           if (!isNaN(years) && years >= 0) {
-            const totalAge = years + months / 12;
-            age = normalizeAge(Math.round(totalAge));
+            age = normalizeAge(years);
           }
         } else {
           const ageValue = Number(ageString);
