@@ -62,7 +62,6 @@ const ButtonContainer = styled.button.withConfig({
   text-align: center;
   cursor: pointer;
   font-weight: 600;
-  /* font-weight: bold; */
   background-color: ${({ color }) => color};
   transition: background-color 0.3s ease, opacity 0.3s ease;
 

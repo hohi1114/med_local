@@ -1,7 +1,9 @@
 import { create } from "zustand";
 import { DashBoard } from "../types/dashboard";
+import { DateRange } from "../hooks/useRangeDurationDatePicker";
 
 interface DashboardStore {
+  selectedDateRange: DateRange | null;
   todayData: DashBoard | null;
   threeDaysData: DashBoard | null;
   weekData: DashBoard | null;
@@ -9,6 +11,7 @@ interface DashboardStore {
   threeMonthData: DashBoard | null;
   oneYearData: DashBoard | null;
 
+  setSelectedDateRange: (dateRange: DateRange) => void;
   setTodayData: (data: DashBoard) => void;
   setThreeDaysData: (data: DashBoard) => void;
   setWeekData: (data: DashBoard) => void;
@@ -18,12 +21,15 @@ interface DashboardStore {
 }
 
 const useDashboardStore = create<DashboardStore>((set) => ({
+  selectedDateRange: null,
   todayData: null,
   threeDaysData: null,
   weekData: null,
   monthData: null,
   threeMonthData: null,
   oneYearData: null,
+  setSelectedDateRange: (dateRange: DateRange) =>
+    set({ selectedDateRange: dateRange }),
   setTodayData: (data: DashBoard) => set({ todayData: data }),
   setThreeDaysData: (data: DashBoard) => set({ threeDaysData: data }),
   setWeekData: (data: DashBoard) => set({ weekData: data }),

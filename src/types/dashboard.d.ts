@@ -28,6 +28,20 @@ export type Region = {
   total_cost: number;
 };
 
+export type TopAgeGrowth = {
+  age: number;
+  change_percent: number;
+};
+
+export type AverageGrowth = {
+  data_available: boolean;
+  message?: string;
+  avg_growth_total_cost?: number;
+  avg_growth_sinhwan?: number;
+  avg_growth_revisit?: number;
+  top_age_growth: TopAgeGrowth[];
+};
+
 type TopRegion = Region[];
 
 export interface DashBoard {
@@ -39,14 +53,26 @@ export interface DashBoard {
   average_cost_per_patient: number;
   cost_by_date: CostByDate;
   average_cost_per_visit_by_date: AverageCostPerVisitByDate;
+  sinhwan_cost_by_date: AverageCostPerVisitByDate;
+  chojin_rejin_cost_by_date: AverageCostPerVisitByDate;
+  sinhwan_patient_count_by_age?: Record<string, number>;
+  sinhwan_patient_count_by_age_diff_rates?: Record<string, number | null>;
   patient_count_by_age_group: PatientCountByAgeGroup;
+  visit_count_by_date: AverageCostPerVisitByDate;
+  sinhwan_visit_count_by_date: AverageCostPerVisitByDate;
+  chojin_rejin_visit_count_by_date: AverageCostPerVisitByDate;
+  total_cost_by_day_of_week: AverageCostPerVisitByDate;
+  sinhwan_visit_count_by_day_of_week: AverageCostPerVisitByDate;
+  chojin_rejin_visit_count_by_day_of_week: AverageCostPerVisitByDate;
   diff_rates: DiffRates;
-  topRegions: TopRegion;
+  average_growths: AverageGrowth;
+  // vegas 계열 EMR에서만 내려온다 (비과세 매출 분리 보기용)
+  total_non_taxable_cost?: number;
+  prev_total_non_taxable_cost?: number;
+  prev_total_cost?: number;
+  non_taxable_cost_by_date?: CostByDate;
+  non_taxable_cost_by_day_of_week?: AverageCostPerVisitByDate;
+  non_taxable_sinhwan_cost_by_date?: AverageCostPerVisitByDate;
+  non_taxable_chojin_rejin_cost_by_date?: AverageCostPerVisitByDate;
 }
-export type RangeDateMapKey =
-  | "오늘"
-  | "3일"
-  | "7일"
-  | "1개월"
-  | "3개월"
-  | "1년";
+export type RangeDateMapKey = "1주일" | "1개월" | "3개월" | "1년";

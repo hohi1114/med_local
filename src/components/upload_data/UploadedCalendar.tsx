@@ -22,16 +22,17 @@ const UploadedCalendar = ({ progress }: UploadedCalendarProps) => {
 
   /** Find updated dates for disabled */
   const isDisabledDate = useMemo(() => {
-    if (!updatedDates) return;
-    const updatedDateStrings = updatedDates.slice(1);
+    if (!updatedDates) return () => false;
+
+    const updatedDateStrings = updatedDates
+      .slice(0, -1)
+      .map((date) => dayjs(date).format("YYYY-MM-DD"));
 
     return (currentDate: Dayjs) => {
-      return updatedDateStrings.some((date) =>
-        dayjs(date).isSame(dayjs(currentDate), "day")
-      );
+      const currStr = currentDate.format("YYYY-MM-DD");
+      return updatedDateStrings.includes(currStr);
     };
   }, [updatedDates]);
-
   return (
     <UploadedCalendarContainer>
       <Calendar fullscreen={false} showWeek disabledDate={isDisabledDate} />

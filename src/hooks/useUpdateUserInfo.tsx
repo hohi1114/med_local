@@ -9,7 +9,6 @@ import usePaymentStore from "../store/usePaymenyStore";
 import dayjs from "dayjs";
 import userStore from "../store/userStore";
 import { User } from "../types/auth";
-import { getCookie } from "../utils/api/cookie";
 
 const useUpdateUserInfo = () => {
   const {
@@ -57,7 +56,13 @@ const useUpdateUserInfo = () => {
         fetchUploadedDates();
       }
     }
-  }, [user.user_id]);
+  }, [
+    user.user_id,
+    memberships,
+    lastedUpdatedDate,
+    membershipFetch,
+    fetchUploadedDates
+  ]);
 
   useEffect(() => {
     if (membershipsRes) {

@@ -100,6 +100,8 @@ const DashBoardContainer = styled.div`
   flex-direction: column;
 `;
 
-const DashBoardTableContainer = styled.div<{ isTutorial: boolean }>`
+const DashBoardTableContainer = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop != "isTutorial"
+})<{ isTutorial: boolean }>`
   padding: ${(props) => (props.isTutorial ? "0rem" : "1rem")};
 `;

@@ -32,9 +32,9 @@ const TutorialStartModal = () => {
               alt="information"
               style={{ width: "6rem", height: "6rem" }}
             />
-            <TutorialTitle>오비스는 처음이신가요?</TutorialTitle>
+            <TutorialTitle>에이치트래커는 처음이신가요?</TutorialTitle>
             <TutorialDescription>
-              오비스 튜토리얼을 통해 오비스의 다양한 기능을 알려드리겠습니다.
+              에이치트래커 튜토리얼을 통해 에이치트래커의 다양한 기능을 알려드리겠습니다.
             </TutorialDescription>
           </div>
 

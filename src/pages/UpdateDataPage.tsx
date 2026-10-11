@@ -1,13 +1,5 @@
 import { useState } from "react";
 import FileUpload from "../components/upload_data/FileUpload.tsx";
-import {
-  parseDaysFilesEuisarang,
-  parsePlaceFilesEuisarang,
-  parseDailyIncomeEgis,
-  parsePatientListEgis,
-  parseDaysFilesDentweb,
-  parsePlaceFilesDentWeb
-} from "../utils/ExcelParser.ts";
 import styled from "styled-components";
 import BaseButton from "../components/common/button/BaseButton";
 import { loadNaverMapsScript } from "../utils/NaverGeocode";
@@ -15,26 +7,556 @@ import { useEffect } from "react";
 import { Progress, notification } from "antd";
 import UploadedCalendar from "../components/upload_data/UploadedCalendar.tsx";
 import Loading from "../components/common/Loading.tsx";
-import {
-  uploadDataToBackendEgis,
-  uploadDataToBackendEuisarang,
-  getUserEMR,
-  uploadDataToBackendDentWeb
-} from "../utils/api/apis";
+import { getUserEMR } from "../utils/api/apis";
+import { API_BASE_URL } from "../utils/api/config";
 import ContentHeader from "../components/common/layout/ContentHeader.tsx";
 import RequireSubscribe from "../components/common/RequireSubscribe.tsx";
-import userStore from "../store/userStore.tsx";
+import { getCookie } from "../utils/api/cookie.ts";
+import {
+  ProcessedPatientData,
+  DateLocationGroup,
+} from "../local/locationProcessing.ts";
+import axios from "axios";
+import useUpdateUserInfo from "../hooks/useUpdateUserInfo.tsx";
+
+interface ProcessDataResponse {
+  status: string;
+  message: string;
+  mergedRecordCount: number;
+  filteredRecordCount: number;
+  uniqueDatesCount: number;
+  totalDatesCount: number;
+  locationGroupsCount: number;
+}
+
+interface ProcessDataPayload {
+  patient_records: ProcessedPatientData[];
+  date_location_groups: DateLocationGroup[];
+}
+
+/**
+ * Processes patient data by sending it to the backend for processing
+ * @param token Authentication token
+ * @param processedRecords Array of processed patient records
+ * @param dateLocationGroups Array of date and location group data
+ * @returns Promise with the processing results
+ */
+export async function uploadDataToBackend(
+  token: string,
+  processedData: ProcessDataPayload
+): Promise<ProcessDataResponse> {
+  try {
+    const baseURL = API_BASE_URL;
+
+    // Prepare the request payload
+    const payload = {
+      processedRecords: processedData.patient_records,
+      date_location_groups: processedData.date_location_groups
+    };
+
+    // Send the request to the backend
+    const response = await axios.post<ProcessDataResponse>(
+      `${baseURL}/data/process`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+
+    console.log("✅ Patient data processed successfully:", response.data);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      console.error("❌ Error processing patient data:", error.response.data);
+      throw new Error(
+        error.response.data.error || "Failed to process patient data"
+      );
+    } else {
+      console.error("❌ Unexpected error processing patient data:", error);
+      throw new Error(
+        "An unexpected error occurred while processing patient data"
+      );
+    }
+  }
+}
+
+
+export async function uploadDataToBackendVegas(
+  token: string,
+  processedData: ProcessDataPayload
+): Promise<ProcessDataResponse> {
+  try {
+    const baseURL = API_BASE_URL;
+
+    // Prepare the request payload
+    const payload = {
+      processedRecords: processedData.patient_records,
+      date_location_groups: processedData.date_location_groups
+    };
+
+    // Send the request to the backend
+    const response = await axios.post<ProcessDataResponse>(
+      `${baseURL}/data/vegas`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+
+    console.log("✅ Patient data processed successfully:", response.data);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      console.error("❌ Error processing patient data:", error.response.data);
+      throw new Error(
+        error.response.data.error || "Failed to process patient data"
+      );
+    } else {
+      console.error("❌ Unexpected error processing patient data:", error);
+      throw new Error(
+        "An unexpected error occurred while processing patient data"
+      );
+    }
+  }
+}
+
+
+
+export async function uploadDataToBackendNeo(
+  token: string,
+  processedData: ProcessDataPayload
+): Promise<ProcessDataResponse> {
+  try {
+    const baseURL = API_BASE_URL;
+
+    // Prepare the request payload
+    const payload = {
+      processedRecords: processedData.patient_records,
+      date_location_groups: processedData.date_location_groups
+    };
+
+    // Send the request to the backend
+    const response = await axios.post<ProcessDataResponse>(
+      `${baseURL}/data/neo`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+
+    console.log("✅ Patient data processed successfully:", response.data);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      console.error("❌ Error processing patient data:", error.response.data);
+      throw new Error(
+        error.response.data.error || "Failed to process patient data"
+      );
+    } else {
+      console.error("❌ Unexpected error processing patient data:", error);
+      throw new Error(
+        "An unexpected error occurred while processing patient data"
+      );
+    }
+  }
+}
+
+
+
+export async function uploadDataToBackendOrm(
+  token: string,
+  processedData: ProcessDataPayload
+): Promise<ProcessDataResponse> {
+  try {
+    const baseURL = API_BASE_URL;
+
+    // Prepare the request payload
+    const payload = {
+      processedRecords: processedData.patient_records,
+      date_location_groups: processedData.date_location_groups
+    };
+
+    // Send the request to the backend
+    const response = await axios.post<ProcessDataResponse>(
+      `${baseURL}/data/orm`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+
+    console.log("✅ Patient data processed successfully:", response.data);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      console.error("❌ Error processing patient data:", error.response.data);
+      throw new Error(
+        error.response.data.error || "Failed to process patient data"
+      );
+    } else {
+      console.error("❌ Unexpected error processing patient data:", error);
+      throw new Error(
+        "An unexpected error occurred while processing patient data"
+      );
+    }
+  }
+}
+
+
+
+
+export async function uploadDataToBackendcChart(
+  token: string,
+  processedData: ProcessDataPayload
+): Promise<ProcessDataResponse> {
+  try {
+    const baseURL = API_BASE_URL;
+
+    // Prepare the request payload
+    const payload = {
+      processedRecords: processedData.patient_records,
+      date_location_groups: processedData.date_location_groups
+    };
+
+    // Send the request to the backend
+    const response = await axios.post<ProcessDataResponse>(
+      `${baseURL}/data/cChart`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+
+    console.log("✅ Patient data processed successfully:", response.data);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      console.error("❌ Error processing patient data:", error.response.data);
+      throw new Error(
+        error.response.data.error || "Failed to process patient data"
+      );
+    } else {
+      console.error("❌ Unexpected error processing patient data:", error);
+      throw new Error(
+        "An unexpected error occurred while processing patient data"
+      );
+    }
+  }
+}
+
+
+
+export async function uploadDataToBackendSimEmr(
+  token: string,
+  processedData: ProcessDataPayload
+): Promise<ProcessDataResponse> {
+  try {
+    const baseURL = API_BASE_URL;
+    const payload = {
+      processedRecords: processedData.patient_records,
+      date_location_groups: processedData.date_location_groups,
+    };
+    const response = await axios.post<ProcessDataResponse>(
+      `${baseURL}/data/simemr`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    console.log("✅ SimEMR data processed successfully:", response.data);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      console.error("❌ Error processing SimEMR data:", error.response.data);
+      throw new Error(
+        error.response.data.error || "Failed to process SimEMR data"
+      );
+    } else {
+      throw new Error("An unexpected error occurred while processing SimEMR data");
+    }
+  }
+}
+
+
+export async function uploadDataToBackendSmartNC(
+  token: string,
+  processedData: ProcessDataPayload
+): Promise<ProcessDataResponse> {
+  try {
+    const baseURL = API_BASE_URL;
+    const payload = {
+      processedRecords: processedData.patient_records,
+      date_location_groups: processedData.date_location_groups,
+    };
+    const response = await axios.post<ProcessDataResponse>(
+      `${baseURL}/data/smartnc`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    console.log("✅ SmartNC data processed successfully:", response.data);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      console.error("❌ Error processing SmartNC data:", error.response.data);
+      throw new Error(
+        error.response.data.error || "Failed to process SmartNC data"
+      );
+    } else {
+      throw new Error("An unexpected error occurred while processing SmartNC data");
+    }
+  }
+}
+
+
+export async function uploadDataToBackendBit(
+  token: string,
+  processedData: ProcessDataPayload
+): Promise<ProcessDataResponse> {
+  try {
+    const baseURL = API_BASE_URL;
+
+    // Prepare the request payload
+    const payload = {
+      processedRecords: processedData.patient_records,
+      date_location_groups: processedData.date_location_groups
+    };
+
+    // Send the request to the backend
+    const response = await axios.post<ProcessDataResponse>(
+      `${baseURL}/data/bit`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+
+    console.log("✅ Patient data processed successfully:", response.data);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      console.error("❌ Error processing patient data:", error.response.data);
+      throw new Error(
+        error.response.data.error || "Failed to process patient data"
+      );
+    } else {
+      console.error("❌ Unexpected error processing patient data:", error);
+      throw new Error(
+        "An unexpected error occurred while processing patient data"
+      );
+    }
+  }
+}
+export async function uploadDataToBackendHanChart(
+  token: string,
+  processedData: ProcessDataPayload
+): Promise<ProcessDataResponse> {
+  try {
+    const baseURL = API_BASE_URL;
+
+    // Prepare the request payload
+    const payload = {
+      processedRecords: processedData.patient_records,
+      date_location_groups: processedData.date_location_groups
+    };
+
+    // Send the request to the backend
+    const response = await axios.post<ProcessDataResponse>(
+      `${baseURL}/data/hanchart`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+
+    console.log("✅ Patient data processed successfully:", response.data);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      console.error("❌ Error processing patient data:", error.response.data);
+      throw new Error(
+        error.response.data.error || "Failed to process patient data"
+      );
+    } else {
+      console.error("❌ Unexpected error processing patient data:", error);
+      throw new Error(
+        "An unexpected error occurred while processing patient data"
+      );
+    }
+  }
+}
+
+
+export async function uploadDataToBackendDentWeb(
+  token: string,
+  processedData: ProcessDataPayload
+): Promise<ProcessDataResponse> {
+  try {
+    const baseURL = API_BASE_URL;
+
+    // Prepare the request payload
+    const payload = {
+      processedRecords: processedData.patient_records,
+      date_location_groups: processedData.date_location_groups
+    };
+
+    // Send the request to the backend
+    const response = await axios.post<ProcessDataResponse>(
+      `${baseURL}/data/dentweb`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+
+    console.log("✅ Patient data processed successfully:", response.data);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      console.error("❌ Error processing patient data:", error.response.data);
+      throw new Error(
+        error.response.data.error || "Failed to process patient data"
+      );
+    } else {
+      console.error("❌ Unexpected error processing patient data:", error);
+      throw new Error(
+        "An unexpected error occurred while processing patient data"
+      );
+    }
+  }
+}
+
+
+
+
+export async function uploadDataToBackendEgis(
+  token: string,
+  processedData: ProcessDataPayload
+): Promise<ProcessDataResponse> {
+  try {
+    const baseURL = API_BASE_URL;
+
+    // Prepare the request payload
+    const payload = {
+      processedRecords: processedData.patient_records,
+      date_location_groups: processedData.date_location_groups
+    };
+
+    // Send the request to the backend
+    const response = await axios.post<ProcessDataResponse>(
+      `${baseURL}/data/egis`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+
+    console.log("✅ Patient data processed successfully:", response.data);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      console.error("❌ Error processing patient data:", error.response.data);
+      throw new Error(
+        error.response.data.error || "Failed to process patient data"
+      );
+    } else {
+      console.error("❌ Unexpected error processing patient data:", error);
+      throw new Error(
+        "An unexpected error occurred while processing patient data"
+      );
+    }
+  }
+}
+
+
+
+export async function uploadDataToBackendDoctorP(
+  token: string,
+  processedData: ProcessDataPayload
+): Promise<ProcessDataResponse> {
+  try {
+    const baseURL = API_BASE_URL;
+
+    // Prepare the request payload
+    const payload = {
+      processedRecords: processedData.patient_records,
+      date_location_groups: processedData.date_location_groups
+    };
+
+    // Send the request to the backend
+    const response = await axios.post<ProcessDataResponse>(
+      `${baseURL}/data/process`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+
+    console.log("✅ Patient data processed successfully:", response.data);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      console.error("❌ Error processing patient data:", error.response.data);
+      throw new Error(
+        error.response.data.error || "Failed to process patient data"
+      );
+    } else {
+      console.error("❌ Unexpected error processing patient data:", error);
+      throw new Error(
+        "An unexpected error occurred while processing patient data"
+      );
+    }
+  }
+}
 
 const UpdateDataPage = () => {
-  const [dataType, setDataType] = useState<"euisarang" | "egis" | "dentweb">(
+  const [dataType, setDataType] = useState<"euisarang" | "egis" | "dentweb" | "orm" | "vegas" | "vegas2" | "hanchart" | "doctorp" | "doctorp2" | "cChart" | "bit" | "bit2" | "neo" | "smartnc" | "simemr">(
     "euisarang"
   ); // Track data type
   const [daysFiles, setDaysFiles] = useState<FileList | null>(null); // Euisarang
   const [placeFiles, setPlaceFiles] = useState<FileList | null>(null); // Euisarang & Egis
   const [dailyIncome, setDailyIncome] = useState<FileList | null>(null); // Egis
+  const [patientFiles, setPatientFiles] = useState<FileList | null>(null); // SmartNC (3rd file)
   const [progress, setProgress] = useState<number>(0);
   const [api, contextHolder] = notification.useNotification();
-  const { isInActiveUser, startTutorial } = userStore();
+  const { fetchUploadedDates } = useUpdateUserInfo();
 
   const openNotification = (
     type: "success" | "error" | "warning",
@@ -52,7 +574,7 @@ const UpdateDataPage = () => {
   // ✅ Load Naver Maps Script on Component Mount
   useEffect(() => {
     loadNaverMapsScript(import.meta.env.VITE_NAVER_MAPS_CLIENT_ID)
-      .then(() => {})
+      .then(() => { })
       .catch((error) =>
         console.error("❌ Failed to load Naver Maps script:", error)
       );
@@ -65,7 +587,19 @@ const UpdateDataPage = () => {
         if (
           emrType === "euisarang" ||
           emrType === "egis" ||
-          emrType === "dentweb"
+          emrType === "dentweb" ||
+          emrType === "orm" ||
+          emrType === "vegas" ||
+          emrType === "vegas2" ||
+          emrType === "hanchart" ||
+          emrType === "doctorp" ||
+          emrType === "doctorp2" ||
+          emrType === "cChart" ||
+          emrType === "bit" ||
+          emrType === "bit2" ||
+          emrType === "neo" ||
+          emrType === "smartnc" ||
+          emrType === "simemr"
         ) {
           setDataType(emrType);
         }
@@ -85,23 +619,68 @@ const UpdateDataPage = () => {
 
     setProgress(1); // Start progress
 
+    const removeProgressListener = window.electron.onGeocodingProgress(
+      ({ current, total }) => {
+        // Calculate overall progress (giving geocoding 60% of the total weight)
+        // First 20% for file processing and merging, last 20% for final processing and upload prep
+        const geocodingProgress = (current / total) * 80;
+        setProgress(10 + geocodingProgress);
+      }
+    );
+
     try {
-      const visits = await parseDaysFilesDentweb(daysFiles);
-      const patients = await parsePlaceFilesDentWeb(placeFiles);
-      setProgress(40);
+      // Step 1: Convert files to ArrayBuffers for local processing
+      const daysBuffers = await Promise.all(
+        Array.from(daysFiles).map((file) => file.arrayBuffer())
+      );
+
+      const placeBuffers = await Promise.all(
+        Array.from(placeFiles).map((file) => file.arrayBuffer())
+      );
+
+      // Step 2: Parse files locally via Electron
+      const visits = await window.electron.parseDaysFilesDentweb(daysBuffers);
+
+      const patients = await window.electron.parsePlaceFilesDentWeb(
+        placeBuffers
+      );
 
       console.log(visits);
       console.log(patients);
+      // Step 3: Merge data locally
+      const mergedData = await window.electron.mergeDataDentWeb(
+        visits,
+        patients
+      );
 
+      setProgress(10);
+
+      // Step 4: Process the merged data (geocoding, region assignment, etc.)
+      const processedData = await window.electron.processDataLocallyDentWeb(
+        mergedData,
+        getCookie("accessToken")
+      );
+
+      removeProgressListener();
+
+      setProgress(90);
+
+      console.log("Processed data:", processedData);
+
+      // Step 5: Send only the processed data to the backend
       // Start the upload but don't await it
-      // This way we can continue execution without waiting
-      const uploadPromise = uploadDataToBackendDentWeb(visits, patients);
+      const uploadPromise = uploadDataToBackendDentWeb(
+        getCookie("accessToken"),
+        processedData
+      );
+
+      setProgress(95);
 
       // Inform the user that data is being processed in the background
       openNotification(
         "success",
         "데이터 업로드 중",
-        "데이터 처리중입니다. 처리가 완료되면 알려드립니다. 프로그램을 종료하지 마세요"
+        "데이터가 처리되어 업로드 중입니다. 업로드가 완료되면 알려드립니다. 프로그램을 종료하지 마세요."
       );
 
       // Set progress to 100% since from the user's perspective, the task is complete
@@ -109,6 +688,7 @@ const UpdateDataPage = () => {
 
       uploadPromise
         .then((backendResponse) => {
+          fetchUploadedDates();
           // Handle successful upload (when it eventually completes)
           openNotification(
             "success",
@@ -131,7 +711,7 @@ const UpdateDataPage = () => {
           );
         });
     } catch (error) {
-      // This catch block handles errors in the initial parsing phase
+      // This catch block handles errors in the processing phase
       console.error("❌ Error processing data:", error);
       openNotification(
         "error",
@@ -144,7 +724,6 @@ const UpdateDataPage = () => {
     }
   };
 
-  // Process and upload data
   const handleProcessDataEuisarang = async (): Promise<void> => {
     if (!placeFiles || !daysFiles) {
       openNotification("warning", "파일 누락", "모든 파일을 업로드해주세요.");
@@ -153,26 +732,77 @@ const UpdateDataPage = () => {
 
     setProgress(1); // Start progress
 
-    try {
-      // Parse files
-      const visits = await parseDaysFilesEuisarang(daysFiles);
-      const patients = await parsePlaceFilesEuisarang(placeFiles);
-      setProgress(40);
+    const removeProgressListener = window.electron.onGeocodingProgress(
+      ({ current, total }) => {
+        // Calculate overall progress (giving geocoding 60% of the total weight)
+        // First 20% for file processing and merging, last 20% for final processing and upload prep
+        const geocodingProgress = (current / total) * 80;
+        setProgress(10 + geocodingProgress);
+      }
+    );
 
-      // Upload to backend (token is handled by authApi interceptor)
-      const uploadPromise = uploadDataToBackendEuisarang(visits, patients);
+    try {
+      // Step 1: Convert files to ArrayBuffers for local processing
+      const daysBuffers = await Promise.all(
+        Array.from(daysFiles).map((file) => file.arrayBuffer())
+      );
+
+      const placeBuffers = await Promise.all(
+        Array.from(placeFiles).map((file) => file.arrayBuffer())
+      );
+
+      // Step 2: Parse files locally via Electron
+      const visits = await window.electron.parseDaysFilesEuisarang(daysBuffers);
+
+      const patients = await window.electron.parsePlaceFilesEuisarang(
+        placeBuffers
+      );
+
+      console.log(visits);
+      console.log(patients);
+
+      // Step 3: Merge data locally
+      const mergedData = await window.electron.mergeDataEuisarang(
+        visits,
+        patients
+      );
+
+      setProgress(10);
+
+      // Step 4: Process the merged data (geocoding, region assignment, etc.)
+      const processedData = await window.electron.processDataLocally(
+        mergedData,
+        getCookie("accessToken")
+      );
+
+      console.log("Processed data:", processedData);
+
+      removeProgressListener();
+
+      setProgress(90);
+
+      // Step 5: Send only the processed data to the backend
+      // Start the upload but don't await it
+      const uploadPromise = uploadDataToBackend(
+        getCookie("accessToken"),
+        processedData
+      );
+
+      setProgress(95);
 
       // Inform the user that data is being processed in the background
       openNotification(
         "success",
         "데이터 업로드 중",
-        "데이터 처리중입니다. 처리가 완료되면 알려드립니다,프로그램을 종료하지 마세요."
+        "데이터가 처리되어 업로드 중입니다. 업로드가 완료되면 알려드립니다. 프로그램을 종료하지 마세요."
       );
 
+      // Set progress to 100% since from the user's perspective, the task is complete
       setProgress(100);
 
       uploadPromise
         .then((backendResponse) => {
+          fetchUploadedDates();
           // Handle successful upload (when it eventually completes)
           openNotification(
             "success",
@@ -195,7 +825,7 @@ const UpdateDataPage = () => {
           );
         });
     } catch (error) {
-      // This catch block handles errors in the initial parsing phase
+      // This catch block handles errors in the processing phase
       console.error("❌ Error processing data:", error);
       openNotification(
         "error",
@@ -207,6 +837,418 @@ const UpdateDataPage = () => {
       setProgress(0); // Reset progress on error
     }
   };
+
+
+
+  const handleProcessDataOrm = async (): Promise<void> => {
+    if (!placeFiles || !daysFiles) {
+      openNotification("warning", "파일 누락", "모든 파일을 업로드해주세요.");
+      return;
+    }
+
+    setProgress(1); // Start progress
+
+    const removeProgressListener = window.electron.onGeocodingProgress(
+      ({ current, total }) => {
+        // Calculate overall progress (giving geocoding 60% of the total weight)
+        // First 20% for file processing and merging, last 20% for final processing and upload prep
+        const geocodingProgress = (current / total) * 80;
+        setProgress(10 + geocodingProgress);
+      }
+    );
+
+    try {
+      // Step 1: Convert files to ArrayBuffers for local processing
+      const daysBuffers = await Promise.all(
+        Array.from(daysFiles).map((file) => file.arrayBuffer())
+      );
+
+      const placeBuffers = await Promise.all(
+        Array.from(placeFiles).map((file) => file.arrayBuffer())
+      );
+
+      // Step 2: Parse files locally via Electron
+      const visits = await window.electron.parseDailyIncomeOrm(daysBuffers);
+
+      const patients = await window.electron.parsePatientListOrm(
+        placeBuffers
+      );
+
+
+      // Step 3: Merge data locally
+      const mergedData = await window.electron.mergeDataOrm(
+        visits,
+        patients
+      );
+
+
+      setProgress(10);
+
+      // Step 4: Process the merged data (geocoding, region assignment, etc.)
+      const processedData = await window.electron.processDataLocallyOrm(
+        mergedData,
+        getCookie("accessToken")
+      );
+
+      console.log("Processed data:", processedData);
+
+      removeProgressListener();
+
+      setProgress(90);
+
+      // Step 5: Send only the processed data to the backend
+      // Start the upload but don't await it
+      const uploadPromise = uploadDataToBackendOrm(
+        getCookie("accessToken"),
+        processedData
+      );
+
+      setProgress(95);
+
+      // Inform the user that data is being processed in the background
+      openNotification(
+        "success",
+        "데이터 업로드 중",
+        "데이터가 처리되어 업로드 중입니다. 업로드가 완료되면 알려드립니다. 프로그램을 종료하지 마세요."
+      );
+
+      // Set progress to 100% since from the user's perspective, the task is complete
+      setProgress(100);
+
+      uploadPromise
+        .then((backendResponse) => {
+          fetchUploadedDates();
+          // Handle successful upload (when it eventually completes)
+          openNotification(
+            "success",
+            "데이터 업로드 완료",
+            "모든 데이터가 성공적으로 처리되었습니다."
+          );
+
+          // Update any UI components that should reflect the successful upload
+          // updateDataCount(backendResponse);
+        })
+        .catch((error) => {
+          // Handle error in the background
+          console.error("❌ Background upload error:", error);
+          openNotification(
+            "error",
+            "업로드 실패",
+            error instanceof Error
+              ? error.message
+              : "알 수 없는 오류가 발생했습니다."
+          );
+        });
+    } catch (error) {
+      // This catch block handles errors in the processing phase
+      console.error("❌ Error processing data:", error);
+      openNotification(
+        "error",
+        "데이터 처리 실패",
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다."
+      );
+      setProgress(0); // Reset progress on error
+    }
+  };
+
+
+
+
+
+  const handleProcessDataNeo = async (): Promise<void> => {
+    if (!placeFiles || !dailyIncome) {
+      openNotification("warning", "파일 누락", "모든 파일을 업로드해주세요.");
+      return;
+    }
+
+    setProgress(1); // Start progress
+
+    const removeProgressListener = window.electron.onGeocodingProgress(
+      ({ current, total }) => {
+        // Calculate overall progress (giving geocoding 60% of the total weight)
+        // First 20% for file processing and merging, last 20% for final processing and upload prep
+        const geocodingProgress = (current / total) * 80;
+        setProgress(10 + geocodingProgress);
+      }
+    );
+
+    try {
+      const daysBuffers = await Promise.all(
+        Array.from(dailyIncome).map((file) => file.arrayBuffer())
+      );
+
+      const placeBuffers = await Promise.all(
+        Array.from(placeFiles).map((file) => file.arrayBuffer())
+      );
+
+      // Step 2: Parse files locally via Electron
+      const visits = await window.electron.parseDailyIncomeNeo(daysBuffers);
+
+      console.log(visits);
+      const patients = await window.electron.parsePatientListNeo(placeBuffers);
+      console.log(patients);
+
+      // Step 3: Merge data locally
+      const mergedData = await window.electron.mergeDataNeo(visits, patients);
+      console.log(mergedData);
+
+      setProgress(10);
+
+      // Step 4: Process the merged data (geocoding, region assignment, etc.)
+      const processedData = await window.electron.processDataLocallyNeo(
+        mergedData,
+        getCookie("accessToken")
+      );
+
+
+      removeProgressListener();
+
+      setProgress(90);
+
+      console.log("Processed data:", processedData);
+
+      // Step 5: Send only the processed data to the backend
+      // Start the upload but don't await it
+      const uploadPromise = uploadDataToBackendNeo(
+        getCookie("accessToken"),
+        processedData
+      );
+
+      setProgress(95);
+
+      // Inform the user that data is being processed in the background
+      openNotification(
+        "success",
+        "데이터 업로드 중",
+        "데이터가 처리되어 업로드 중입니다. 업로드가 완료되면 알려드립니다. 프로그램을 종료하지 마세요."
+      );
+
+      // Set progress to 100% since from the user's perspective, the task is complete
+      setProgress(100);
+
+      uploadPromise
+        .then((backendResponse) => {
+          fetchUploadedDates();
+          // Handle successful upload (when it eventually completes)
+          openNotification(
+            "success",
+            "데이터 업로드 완료",
+            "모든 데이터가 성공적으로 처리되었습니다."
+          );
+
+          // Update any UI components that should reflect the successful upload
+          // updateDataCount(backendResponse);
+        })
+        .catch((error) => {
+          // Handle error in the background
+          console.error("❌ Background upload error:", error);
+          openNotification(
+            "error",
+            "업로드 실패",
+            error instanceof Error
+              ? error.message
+              : "알 수 없는 오류가 발생했습니다."
+          );
+        });
+    } catch (error) {
+      // This catch block handles errors in the processing phase
+      console.error("❌ Error processing data:", error);
+      openNotification(
+        "error",
+        "데이터 처리 실패",
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다."
+      );
+      setProgress(0); // Reset progress on error
+    }
+  };
+
+
+const handleProcessDataDoctorP = async (): Promise<void> => {
+  if (!placeFiles || !dailyIncome) {
+    openNotification("warning", "파일 누락", "모든 파일을 업로드해주세요.");
+    return;
+  }
+
+  setProgress(1); // Start progress
+
+  const removeProgressListener = window.electron.onGeocodingProgress(
+    ({ current, total }) => {
+      // Calculate overall progress (giving geocoding 60% of the total weight)
+      // First 20% for file processing and merging, last 20% for final processing and upload prep
+      const geocodingProgress = (current / total) * 80;
+      setProgress(10 + geocodingProgress);
+    }
+  );
+
+  try {
+    // Step 1: Convert files to ArrayBuffers
+    const daysBuffers = await Promise.all(
+      Array.from(dailyIncome).map((file) => file.arrayBuffer())
+    );
+
+    const placeBuffers = await Promise.all(
+      Array.from(placeFiles).map((file) => file.arrayBuffer())
+    );
+
+    // Step 2: Parse files locally via Electron
+    const visits = await window.electron.parseDaysFilesDoctorP(daysBuffers);
+    console.log("Parsed visits:", visits);
+
+    const patients = await window.electron.parsePlaceFilesDoctorP(placeBuffers);
+    console.log("Parsed patients:", patients);
+
+    // Step 3: Merge data locally
+    const mergedData = await window.electron.mergeDataDoctorP(visits, patients);
+    console.log("Merged data:", mergedData);
+
+    setProgress(10);
+
+    // Step 4: Process the merged data (geocoding, region assignment, etc.)
+    const processedData = await window.electron.processDataLocallyDoctorP(
+      mergedData,
+      getCookie("accessToken")
+    );
+
+    removeProgressListener();
+
+    setProgress(90);
+
+    console.log("Processed data:", processedData);
+
+    // Step 5: Send only the processed data to the backend
+    // Start the upload but don't await it
+    const uploadPromise = uploadDataToBackendDoctorP(
+      getCookie("accessToken"),
+      processedData
+    );
+
+    setProgress(95);
+
+    // Inform the user that data is being processed in the background
+    openNotification(
+      "success",
+      "데이터 업로드 중",
+      "데이터가 처리되어 업로드 중입니다. 업로드가 완료되면 알려드립니다. 프로그램을 종료하지 마세요."
+    );
+
+    // Set progress to 100% since from the user's perspective, the task is complete
+    setProgress(100);
+
+    // Handle the upload promise in the background
+    uploadPromise
+      .then((backendResponse) => {
+        fetchUploadedDates();
+        // Handle successful upload (when it eventually completes)
+        openNotification(
+          "success",
+          "데이터 업로드 완료",
+          "모든 Doctor P 시스템 데이터가 성공적으로 처리되었습니다."
+        );
+
+        // Update any UI components that should reflect the successful upload
+        // updateDataCount(backendResponse);
+      })
+      .catch((error) => {
+        // Handle error in the background
+        console.error("❌ Background upload error:", error);
+        openNotification(
+          "error",
+          "업로드 실패",
+          error instanceof Error
+            ? error.message
+            : "알 수 없는 오류가 발생했습니다."
+        );
+      });
+  } catch (error) {
+    // This catch block handles errors in the processing phase
+    console.error("❌ Error processing Doctor P data:", error);
+    openNotification(
+      "error",
+      "데이터 처리 실패",
+      error instanceof Error
+        ? error.message
+        : "알 수 없는 오류가 발생했습니다."
+    );
+    setProgress(0); // Reset progress on error
+  }
+};
+
+const handleProcessDataDoctorP2 = async (): Promise<void> => {
+  if (!placeFiles || !dailyIncome) {
+    openNotification("warning", "파일 누락", "모든 파일을 업로드해주세요.");
+    return;
+  }
+
+  setProgress(1);
+
+  const removeProgressListener = window.electron.onGeocodingProgress(
+    ({ current, total }) => {
+      const geocodingProgress = (current / total) * 80;
+      setProgress(10 + geocodingProgress);
+    }
+  );
+
+  try {
+    const daysBuffers = await Promise.all(
+      Array.from(dailyIncome).map((file) => file.arrayBuffer())
+    );
+    const placeBuffers = await Promise.all(
+      Array.from(placeFiles).map((file) => file.arrayBuffer())
+    );
+
+    const visits = await window.electron.parseDaysFilesDoctorP2(daysBuffers);
+    console.log("Parsed day files:", visits);
+
+    const patients = await window.electron.parsePlaceFilesDoctorP2(placeBuffers);
+    console.log("Parsed patient list:", patients);
+
+    const mergedData = await window.electron.mergeDataDoctorP2(visits, patients);
+    console.log("Merged data:", mergedData);
+
+    setProgress(10);
+
+    const processedData = await window.electron.processDataLocallyDoctorP2(
+      mergedData,
+      getCookie("accessToken")
+    );
+
+    removeProgressListener();
+    setProgress(90);
+
+    const uploadPromise = uploadDataToBackendDoctorP(
+      getCookie("accessToken"),
+      processedData
+    );
+
+    setProgress(95);
+
+    openNotification(
+      "success",
+      "데이터 업로드 중",
+      "데이터가 처리되어 업로드 중입니다. 업로드가 완료되면 알려드립니다. 프로그램을 종료하지 마세요."
+    );
+
+    setProgress(100);
+
+    uploadPromise
+      .then(() => {
+        fetchUploadedDates();
+        openNotification("success", "데이터 업로드 완료", "모든 DoctorP2 데이터가 성공적으로 처리되었습니다.");
+      })
+      .catch((error) => {
+        console.error("❌ Background upload error:", error);
+        openNotification("error", "업로드 실패", error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다.");
+      });
+  } catch (error) {
+    console.error("❌ Error processing DoctorP2 data:", error);
+    openNotification("error", "데이터 처리 실패", error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다.");
+    setProgress(0);
+  }
+};
 
   const handleProcessDataEgis = async (): Promise<void> => {
     if (!placeFiles || !dailyIncome) {
@@ -216,31 +1258,75 @@ const UpdateDataPage = () => {
 
     setProgress(1); // Start progress
 
+    const removeProgressListener = window.electron.onGeocodingProgress(
+      ({ current, total }) => {
+        // Calculate overall progress (giving geocoding 60% of the total weight)
+        // First 20% for file processing and merging, last 20% for final processing and upload prep
+        const geocodingProgress = (current / total) * 80;
+        setProgress(10 + geocodingProgress);
+      }
+    );
+
     try {
-      // New parsing logic for Version 2 (assuming new parser functions exist)
-      const dailyIncomeData = await parseDailyIncomeEgis(dailyIncome);
-      const patientListData = await parsePatientListEgis(placeFiles);
-      //const patientIncomeData = await parsePatientIncomeEgis(patient);
-
-      console.log(patientListData);
-
-      setProgress(40);
-
-      const uploadPromise = uploadDataToBackendEgis(
-        dailyIncomeData,
-        patientListData
+      const daysBuffers = await Promise.all(
+        Array.from(dailyIncome).map((file) => file.arrayBuffer())
       );
 
+      const placeBuffers = await Promise.all(
+        Array.from(placeFiles).map((file) => file.arrayBuffer())
+      );
+
+      // Step 2: Parse files locally via Electron
+      const visits = await window.electron.parseDailyIncomeEgis(daysBuffers);
+
+      console.log(visits);
+      const patients = await window.electron.parsePatientListEgis(placeBuffers);
+      console.log(patients);
+
+
+
+
+      // Step 3: Merge data locally
+      const mergedData = await window.electron.mergeDataEgis(visits, patients);
+      console.log(mergedData);
+
+      setProgress(10);
+
+      // Step 4: Process the merged data (geocoding, region assignment, etc.)
+      const processedData = await window.electron.processDataLocallyEgis(
+        mergedData,
+        getCookie("accessToken")
+      );
+
+
+      removeProgressListener();
+
+      setProgress(90);
+
+      console.log("Processed data:", processedData);
+
+      // Step 5: Send only the processed data to the backend
+      // Start the upload but don't await it
+      const uploadPromise = uploadDataToBackendEgis(
+        getCookie("accessToken"),
+        processedData
+      );
+
+      setProgress(95);
+
+      // Inform the user that data is being processed in the background
       openNotification(
         "success",
         "데이터 업로드 중",
-        "데이터 처리중입니다. 처리가 완료되면 알려드립니다,프로그램을 종료하지 마세요."
+        "데이터가 처리되어 업로드 중입니다. 업로드가 완료되면 알려드립니다. 프로그램을 종료하지 마세요."
       );
 
+      // Set progress to 100% since from the user's perspective, the task is complete
       setProgress(100);
 
       uploadPromise
         .then((backendResponse) => {
+          fetchUploadedDates();
           // Handle successful upload (when it eventually completes)
           openNotification(
             "success",
@@ -263,7 +1349,7 @@ const UpdateDataPage = () => {
           );
         });
     } catch (error) {
-      // This catch block handles errors in the initial parsing phase
+      // This catch block handles errors in the processing phase
       console.error("❌ Error processing data:", error);
       openNotification(
         "error",
@@ -276,19 +1362,897 @@ const UpdateDataPage = () => {
     }
   };
 
+
+  const handleProcessDataBit = async (): Promise<void> => {
+    if (!placeFiles || !dailyIncome) {
+      openNotification("warning", "파일 누락", "모든 파일을 업로드해주세요.");
+      return;
+    }
+
+    setProgress(1); // Start progress
+
+    const removeProgressListener = window.electron.onGeocodingProgress(
+      ({ current, total }) => {
+        // Calculate overall progress (giving geocoding 60% of the total weight)
+        // First 20% for file processing and merging, last 20% for final processing and upload prep
+        const geocodingProgress = (current / total) * 80;
+        setProgress(10 + geocodingProgress);
+      }
+    );
+
+    try {
+      // Step 1: Convert files to ArrayBuffers
+      const daysBuffers = await Promise.all(
+        Array.from(dailyIncome).map((file) => file.arrayBuffer())
+      );
+
+      const placeBuffers = await Promise.all(
+        Array.from(placeFiles).map((file) => file.arrayBuffer())
+      );
+
+      // Step 2: Parse files locally via Electron
+      const visits = await window.electron.parseDailyIncomeBit(daysBuffers);
+      console.log("Parsed visits:", visits);
+
+      const patients = await window.electron.parsePatientListBit(placeBuffers);
+      console.log("Parsed patients:", patients);
+
+      // Step 3: Merge data locally
+      const mergedData = await window.electron.mergeDataBit(visits, patients);
+      console.log("Merged data:", mergedData);
+
+
+      setProgress(10);
+
+      // Step 4: Process the merged data (geocoding, region assignment, etc.)
+      const processedData = await window.electron.processDataLocallyBit(
+        mergedData,
+        getCookie("accessToken")
+      );
+
+      removeProgressListener();
+
+      setProgress(90);
+
+      console.log("Processed data:", processedData);
+
+      // Step 5: Send only the processed data to the backend
+      // Start the upload but don't await it
+      const uploadPromise = uploadDataToBackendBit(
+        getCookie("accessToken"),
+        processedData
+      );
+
+      setProgress(95);
+
+      // Inform the user that data is being processed in the background
+      openNotification(
+        "success",
+        "데이터 업로드 중",
+        "데이터가 처리되어 업로드 중입니다. 업로드가 완료되면 알려드립니다. 프로그램을 종료하지 마세요."
+      );
+
+      // Set progress to 100% since from the user's perspective, the task is complete
+      setProgress(100);
+
+      // Handle the upload promise in the background
+      uploadPromise
+        .then((backendResponse) => {
+          fetchUploadedDates();
+          // Handle successful upload (when it eventually completes)
+          openNotification(
+            "success",
+            "데이터 업로드 완료",
+            "모든 Bit 시스템 데이터가 성공적으로 처리되었습니다."
+          );
+
+          // Update any UI components that should reflect the successful upload
+          // updateDataCount(backendResponse);
+        })
+        .catch((error) => {
+          // Handle error in the background
+          console.error("❌ Background upload error:", error);
+          openNotification(
+            "error",
+            "업로드 실패",
+            error instanceof Error
+              ? error.message
+              : "알 수 없는 오류가 발생했습니다."
+          );
+        });
+    } catch (error) {
+      // This catch block handles errors in the processing phase
+      console.error("❌ Error processing Bit data:", error);
+      openNotification(
+        "error",
+        "데이터 처리 실패",
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다."
+      );
+      setProgress(0); // Reset progress on error
+    }
+  };
+
+
+
+  const handleProcessDataBit2 = async (): Promise<void> => {
+    if (!placeFiles || !dailyIncome) {
+      openNotification("warning", "파일 누락", "모든 파일을 업로드해주세요.");
+      return;
+    }
+
+    setProgress(1); // Start progress
+
+    const removeProgressListener = window.electron.onGeocodingProgress(
+      ({ current, total }) => {
+        // Calculate overall progress (giving geocoding 60% of the total weight)
+        // First 20% for file processing and merging, last 20% for final processing and upload prep
+        const geocodingProgress = (current / total) * 80;
+        setProgress(10 + geocodingProgress);
+      }
+    );
+
+    try {
+      // Step 1: Convert files to ArrayBuffers
+      const daysBuffers = await Promise.all(
+        Array.from(dailyIncome).map((file) => file.arrayBuffer())
+      );
+
+      const placeBuffers = await Promise.all(
+        Array.from(placeFiles).map((file) => file.arrayBuffer())
+      );
+
+      // Step 2: Parse files locally via Electron
+      const visits = await window.electron.parseDailyIncomeBit2(daysBuffers);
+      console.log("Parsed visits:", visits);
+
+      const patients = await window.electron.parsePatientListBit2(placeBuffers);
+      console.log("Parsed patients:", patients);
+
+      // Step 3: Merge data locally
+      const mergedData = await window.electron.mergeDataBit(visits, patients);
+      console.log("Merged data:", mergedData);
+
+
+      setProgress(10);
+
+      // Step 4: Process the merged data (geocoding, region assignment, etc.)
+      const processedData = await window.electron.processDataLocallyBit(
+        mergedData,
+        getCookie("accessToken")
+      );
+
+      removeProgressListener();
+
+      setProgress(90);
+
+      console.log("Processed data:", processedData);
+
+      // Step 5: Send only the processed data to the backend
+      // Start the upload but don't await it
+      const uploadPromise = uploadDataToBackendBit(
+        getCookie("accessToken"),
+        processedData
+      );
+
+      setProgress(95);
+
+      // Inform the user that data is being processed in the background
+      openNotification(
+        "success",
+        "데이터 업로드 중",
+        "데이터가 처리되어 업로드 중입니다. 업로드가 완료되면 알려드립니다. 프로그램을 종료하지 마세요."
+      );
+
+      // Set progress to 100% since from the user's perspective, the task is complete
+      setProgress(100);
+
+      // Handle the upload promise in the background
+      uploadPromise
+        .then((backendResponse) => {
+          fetchUploadedDates();
+          // Handle successful upload (when it eventually completes)
+          openNotification(
+            "success",
+            "데이터 업로드 완료",
+            "모든 Bit 시스템 데이터가 성공적으로 처리되었습니다."
+          );
+
+          // Update any UI components that should reflect the successful upload
+          // updateDataCount(backendResponse);
+        })
+        .catch((error) => {
+          // Handle error in the background
+          console.error("❌ Background upload error:", error);
+          openNotification(
+            "error",
+            "업로드 실패",
+            error instanceof Error
+              ? error.message
+              : "알 수 없는 오류가 발생했습니다."
+          );
+        });
+    } catch (error) {
+      // This catch block handles errors in the processing phase
+      console.error("❌ Error processing Bit data:", error);
+      openNotification(
+        "error",
+        "데이터 처리 실패",
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다."
+      );
+      setProgress(0); // Reset progress on error
+    }
+  };
+
+  const handleProcessDataVegas = async (): Promise<void> => {
+    if (!placeFiles || !dailyIncome) {
+      openNotification("warning", "파일 누락", "모든 파일을 업로드해주세요.");
+      return;
+    }
+
+    setProgress(1); // Start progress
+
+    const removeProgressListener = window.electron.onGeocodingProgress(
+      ({ current, total }) => {
+        // Calculate overall progress (giving geocoding 60% of the total weight)
+        // First 20% for file processing and merging, last 20% for final processing and upload prep
+        const geocodingProgress = (current / total) * 80;
+        setProgress(10 + geocodingProgress);
+      }
+    );
+
+    try {
+      const daysBuffers = await Promise.all(
+        Array.from(dailyIncome).map((file) => file.arrayBuffer())
+      );
+
+      const placeBuffers = await Promise.all(
+        Array.from(placeFiles).map((file) => file.arrayBuffer())
+      );
+
+      // Step 2: Parse files locally via Electron
+      const visits = await window.electron.parseDailyIncomeVegas(daysBuffers);
+
+      console.log(visits);
+      const patients = await window.electron.parsePatientListVegas(placeBuffers);
+      console.log(patients);
+
+
+      // Step 3: Merge data locally
+      const mergedData = await window.electron.mergeDataVegas(visits, patients);
+
+      setProgress(10);
+
+      // Step 4: Process the merged data (geocoding, region assignment, etc.)
+      const processedData = await window.electron.processDataLocallyVegas(
+        mergedData,
+        getCookie("accessToken")
+      );
+
+
+      removeProgressListener();
+
+      setProgress(90);
+
+      console.log("Processed data:", processedData);
+
+      // Step 5: Send only the processed data to the backend
+      // Start the upload but don't await it
+      const uploadPromise = uploadDataToBackendVegas(
+        getCookie("accessToken"),
+        processedData
+      );
+
+      setProgress(95);
+
+      // Inform the user that data is being processed in the background
+      openNotification(
+        "success",
+        "데이터 업로드 중",
+        "데이터가 처리되어 업로드 중입니다. 업로드가 완료되면 알려드립니다. 프로그램을 종료하지 마세요."
+      );
+
+      // Set progress to 100% since from the user's perspective, the task is complete
+      setProgress(100);
+
+      uploadPromise
+        .then((backendResponse) => {
+          fetchUploadedDates();
+          // Handle successful upload (when it eventually completes)
+          openNotification(
+            "success",
+            "데이터 업로드 완료",
+            "모든 데이터가 성공적으로 처리되었습니다."
+          );
+
+          // Update any UI components that should reflect the successful upload
+          // updateDataCount(backendResponse);
+        })
+        .catch((error) => {
+          // Handle error in the background
+          console.error("❌ Background upload error:", error);
+          openNotification(
+            "error",
+            "업로드 실패",
+            error instanceof Error
+              ? error.message
+              : "알 수 없는 오류가 발생했습니다."
+          );
+        });
+    } catch (error) {
+      // This catch block handles errors in the processing phase
+      console.error("❌ Error processing data:", error);
+      openNotification(
+        "error",
+        "데이터 처리 실패",
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다."
+      );
+      setProgress(0); // Reset progress on error
+    }
+  };
+
+  const handleProcessDataVegas2 = async (): Promise<void> => {
+    if (!placeFiles || !patientFiles) {
+      openNotification("warning", "파일 누락", "모든 파일을 업로드해주세요.");
+      return;
+    }
+
+    setProgress(1); // Start progress
+
+    const removeProgressListener = window.electron.onGeocodingProgress(
+      ({ current, total }) => {
+        // Calculate overall progress (giving geocoding 60% of the total weight)
+        // First 20% for file processing and merging, last 20% for final processing and upload prep
+        const geocodingProgress = (current / total) * 80;
+        setProgress(10 + geocodingProgress);
+      }
+    );
+
+    try {
+      const placeBuffers = await Promise.all(
+        Array.from(placeFiles).map((file) => file.arrayBuffer())
+      );
+      const orderBuffers = await Promise.all(
+        Array.from(patientFiles).map((file) => file.arrayBuffer())
+      );
+
+      // Step 2: Parse files locally via Electron
+      // "환자별 집계"(일일수입) 파일 없이 "오더판매내역및환자내역"만으로 매출(과세/비과세)을 재현한다.
+      const orderList = await window.electron.parseOrderListVegas2(orderBuffers);
+      console.log(orderList);
+      const visits = await window.electron.deriveDailyIncomeFromOrdersVegas2(
+        orderList
+      );
+      console.log(visits);
+      const patients = await window.electron.parsePatientListVegas2(placeBuffers);
+      console.log(patients);
+
+      // Step 3: Merge data locally
+      const mergedData = await window.electron.mergeDataVegas(visits, patients, orderList);
+
+      setProgress(10);
+
+      // Step 4: Process the merged data (geocoding, region assignment, etc.)
+      const processedData = await window.electron.processDataLocallyVegas(
+        mergedData,
+        getCookie("accessToken")
+      );
+
+
+      removeProgressListener();
+
+      setProgress(90);
+
+      console.log("Processed data:", processedData);
+
+      // Step 5: Send only the processed data to the backend
+      // Start the upload but don't await it
+      const uploadPromise = uploadDataToBackendVegas(
+        getCookie("accessToken"),
+        processedData
+      );
+
+      setProgress(95);
+
+      // Inform the user that data is being processed in the background
+      openNotification(
+        "success",
+        "데이터 업로드 중",
+        "데이터가 처리되어 업로드 중입니다. 업로드가 완료되면 알려드립니다. 프로그램을 종료하지 마세요."
+      );
+
+      // Set progress to 100% since from the user's perspective, the task is complete
+      setProgress(100);
+
+      uploadPromise
+        .then((backendResponse) => {
+          fetchUploadedDates();
+          // Handle successful upload (when it eventually completes)
+          openNotification(
+            "success",
+            "데이터 업로드 완료",
+            "모든 데이터가 성공적으로 처리되었습니다."
+          );
+
+          // Update any UI components that should reflect the successful upload
+          // updateDataCount(backendResponse);
+        })
+        .catch((error) => {
+          // Handle error in the background
+          console.error("❌ Background upload error:", error);
+          openNotification(
+            "error",
+            "업로드 실패",
+            error instanceof Error
+              ? error.message
+              : "알 수 없는 오류가 발생했습니다."
+          );
+        });
+    } catch (error) {
+      // This catch block handles errors in the processing phase
+      console.error("❌ Error processing data:", error);
+      openNotification(
+        "error",
+        "데이터 처리 실패",
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다."
+      );
+      setProgress(0); // Reset progress on error
+    }
+  };
+
+  const handleProcessDatacChart = async (): Promise<void> => {
+    if (!placeFiles || !daysFiles) {
+      openNotification("warning", "파일 누락", "모든 파일을 업로드해주세요.");
+      return;
+    }
+
+    setProgress(1); // Start progress
+
+    const removeProgressListener = window.electron.onGeocodingProgress(
+      ({ current, total }) => {
+        // Calculate overall progress (giving geocoding 60% of the total weight)
+        // First 20% for file processing and merging, last 20% for final processing and upload prep
+        const geocodingProgress = (current / total) * 80;
+        setProgress(10 + geocodingProgress);
+      }
+    );
+
+    try {
+      // Step 1: Convert files to ArrayBuffers for local processing
+      const daysBuffers = await Promise.all(
+        Array.from(daysFiles).map((file) => file.arrayBuffer())
+      );
+
+      const placeBuffers = await Promise.all(
+        Array.from(placeFiles).map((file) => file.arrayBuffer())
+      );
+
+      // Step 2: Parse files locally via Electron
+      const visits = await window.electron.parseDailyIncomecChart(daysBuffers);
+
+      const patients = await window.electron.parsePatientListcChart(
+        placeBuffers
+      );
+
+      console.log(visits);
+      console.log(patients);
+      // Step 3: Merge data locally
+      const mergedData = await window.electron.mergeDatacChart(
+        visits,
+        patients
+      );
+
+      setProgress(10);
+
+      // Step 4: Process the merged data (geocoding, region assignment, etc.)
+      const processedData = await window.electron.processDataLocallycChart(
+        mergedData,
+        getCookie("accessToken")
+      );
+
+      removeProgressListener();
+
+      setProgress(90);
+
+      console.log("Processed data:", processedData);
+
+      // Step 5: Send only the processed data to the backend
+      // Start the upload but don't await it
+      const uploadPromise = uploadDataToBackendcChart(
+        getCookie("accessToken"),
+        processedData
+      );
+
+      setProgress(95);
+
+      // Inform the user that data is being processed in the background
+      openNotification(
+        "success",
+        "데이터 업로드 중",
+        "데이터가 처리되어 업로드 중입니다. 업로드가 완료되면 알려드립니다. 프로그램을 종료하지 마세요."
+      );
+
+      // Set progress to 100% since from the user's perspective, the task is complete
+      setProgress(100);
+
+      uploadPromise
+        .then((backendResponse) => {
+          fetchUploadedDates();
+          // Handle successful upload (when it eventually completes)
+          openNotification(
+            "success",
+            "데이터 업로드 완료",
+            "모든 데이터가 성공적으로 처리되었습니다."
+          );
+
+          // Update any UI components that should reflect the successful upload
+          // updateDataCount(backendResponse);
+        })
+        .catch((error) => {
+          // Handle error in the background
+          console.error("❌ Background upload error:", error);
+          openNotification(
+            "error",
+            "업로드 실패",
+            error instanceof Error
+              ? error.message
+              : "알 수 없는 오류가 발생했습니다."
+          );
+        });
+    } catch (error) {
+      // This catch block handles errors in the processing phase
+      console.error("❌ Error processing data:", error);
+      openNotification(
+        "error",
+        "데이터 처리 실패",
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다."
+      );
+      setProgress(0); // Reset progress on error
+    }
+  };
+
+
+
+
+  const handleProcessDataHanChart = async (): Promise<void> => {
+    if (!placeFiles || !dailyIncome) {
+      openNotification("warning", "파일 누락", "모든 파일을 업로드해주세요.");
+      return;
+    }
+
+    setProgress(1); // Start progress
+
+    const removeProgressListener = window.electron.onGeocodingProgress(
+      ({ current, total }) => {
+        // Calculate overall progress (giving geocoding 60% of the total weight)
+        // First 20% for file processing and merging, last 20% for final processing and upload prep
+        const geocodingProgress = (current / total) * 80;
+        setProgress(10 + geocodingProgress);
+      }
+    );
+
+    try {
+      const daysBuffers = await Promise.all(
+        Array.from(dailyIncome).map((file) => file.arrayBuffer())
+      );
+
+      const placeBuffers = await Promise.all(
+        Array.from(placeFiles).map((file) => file.arrayBuffer())
+      );
+
+      // Step 2: Parse files locally via Electron
+      const visits = await window.electron.parseDailyIncomeHanChart(daysBuffers);
+
+      console.log(visits);
+      const patients = await window.electron.parsePatientListHanChart(placeBuffers);
+      console.log(patients);
+
+
+      // Step 3: Merge data locally
+      const mergedData = await window.electron.mergeDataHanChart(visits, patients);
+
+      setProgress(10);
+
+      // Step 4: Process the merged data (geocoding, region assignment, etc.)
+      const processedData = await window.electron.processDataLocallyHanChart(
+        mergedData,
+        getCookie("accessToken")
+      );
+
+
+      removeProgressListener();
+
+      setProgress(90);
+
+      console.log("Processed data:", processedData);
+
+      // Step 5: Send only the processed data to the backend
+      // Start the upload but don't await it
+      const uploadPromise = uploadDataToBackendHanChart(
+        getCookie("accessToken"),
+        processedData
+      );
+
+      setProgress(95);
+
+      // Inform the user that data is being processed in the background
+      openNotification(
+        "success",
+        "데이터 업로드 중",
+        "데이터가 처리되어 업로드 중입니다. 업로드가 완료되면 알려드립니다. 프로그램을 종료하지 마세요."
+      );
+
+      // Set progress to 100% since from the user's perspective, the task is complete
+      setProgress(100);
+
+      uploadPromise
+        .then((backendResponse) => {
+          fetchUploadedDates();
+          // Handle successful upload (when it eventually completes)
+          openNotification(
+            "success",
+            "데이터 업로드 완료",
+            "모든 데이터가 성공적으로 처리되었습니다."
+          );
+
+          // Update any UI components that should reflect the successful upload
+          // updateDataCount(backendResponse);
+        })
+        .catch((error) => {
+          // Handle error in the background
+          console.error("❌ Background upload error:", error);
+          openNotification(
+            "error",
+            "업로드 실패",
+            error instanceof Error
+              ? error.message
+              : "알 수 없는 오류가 발생했습니다."
+          );
+        });
+    } catch (error) {
+      // This catch block handles errors in the processing phase
+      console.error("❌ Error processing data:", error);
+      openNotification(
+        "error",
+        "데이터 처리 실패",
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다."
+      );
+      setProgress(0); // Reset progress on error
+    }
+  };
+
+
+
+  const handleProcessDataSimEmr = async (): Promise<void> => {
+    if (!dailyIncome || !placeFiles) {
+      openNotification("warning", "파일 누락", "모든 파일을 업로드해주세요.");
+      return;
+    }
+
+    setProgress(1);
+
+    const removeProgressListener = window.electron.onGeocodingProgress(
+      ({ current, total }) => {
+        const geocodingProgress = (current / total) * 80;
+        setProgress(10 + geocodingProgress);
+      }
+    );
+
+    try {
+      const visitBuffers = await Promise.all(
+        Array.from(dailyIncome).map((file) => file.arrayBuffer())
+      );
+      const patientBuffers = await Promise.all(
+        Array.from(placeFiles).map((file) => file.arrayBuffer())
+      );
+
+      const visits = await window.electron.parseDailyVisitSimEmr(visitBuffers);
+      console.log("SimEMR visits:", visits);
+
+      const patients = await window.electron.parsePatientRouteSimEmr(patientBuffers);
+      console.log("SimEMR patients:", patients);
+
+      const mergedData = await window.electron.mergeDataSimEmr(visits, patients);
+      console.log("SimEMR merged:", mergedData);
+
+      setProgress(10);
+
+      const processedData = await window.electron.processDataLocallySimEmr(
+        mergedData,
+        getCookie("accessToken")
+      );
+
+      removeProgressListener();
+      setProgress(90);
+
+      console.log("SimEMR processed:", processedData);
+
+      const uploadPromise = uploadDataToBackendSimEmr(
+        getCookie("accessToken"),
+        processedData
+      );
+
+      setProgress(95);
+
+      openNotification(
+        "success",
+        "데이터 업로드 중",
+        "데이터가 처리되어 업로드 중입니다. 업로드가 완료되면 알려드립니다. 프로그램을 종료하지 마세요."
+      );
+
+      setProgress(100);
+
+      uploadPromise
+        .then(() => {
+          fetchUploadedDates();
+          openNotification("success", "데이터 업로드 완료", "모든 데이터가 성공적으로 처리되었습니다.");
+        })
+        .catch((error) => {
+          console.error("❌ Background upload error:", error);
+          openNotification(
+            "error",
+            "업로드 실패",
+            error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다."
+          );
+        });
+    } catch (error) {
+      console.error("❌ Error processing SimEMR data:", error);
+      openNotification(
+        "error",
+        "데이터 처리 실패",
+        error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다."
+      );
+      setProgress(0);
+    }
+  };
+
+  const handleProcessDataSmartNC = async (): Promise<void> => {
+    if (!dailyIncome || !placeFiles || !patientFiles) {
+      openNotification("warning", "파일 누락", "모든 파일을 업로드해주세요.");
+      return;
+    }
+
+    setProgress(1);
+
+    const removeProgressListener = window.electron.onGeocodingProgress(
+      ({ current, total }) => {
+        const geocodingProgress = (current / total) * 80;
+        setProgress(10 + geocodingProgress);
+      }
+    );
+
+    try {
+      const incomeBuffers = await Promise.all(
+        Array.from(dailyIncome).map((file) => file.arrayBuffer())
+      );
+      const addressBuffers = await Promise.all(
+        Array.from(placeFiles).map((file) => file.arrayBuffer())
+      );
+      const patientBuffers = await Promise.all(
+        Array.from(patientFiles).map((file) => file.arrayBuffer())
+      );
+
+      const visits = await window.electron.parseDailyIncomeSmartNC(incomeBuffers);
+      console.log("SmartNC visits:", visits);
+
+      const patientAddress = await window.electron.parsePatientAddressSmartNC(addressBuffers);
+      console.log("SmartNC address:", patientAddress);
+
+      const patients = await window.electron.parsePatientListSmartNC(patientBuffers);
+      console.log("SmartNC patients:", patients);
+
+      const mergedData = await window.electron.mergeDataSmartNC(visits, patientAddress, patients);
+      console.log("SmartNC merged:", mergedData);
+
+      setProgress(10);
+
+      const processedData = await window.electron.processDataLocallySmartNC(
+        mergedData,
+        getCookie("accessToken")
+      );
+
+      removeProgressListener();
+      setProgress(90);
+
+      console.log("SmartNC processed:", processedData);
+
+      const uploadPromise = uploadDataToBackendSmartNC(
+        getCookie("accessToken"),
+        processedData
+      );
+
+      setProgress(95);
+
+      openNotification(
+        "success",
+        "데이터 업로드 중",
+        "데이터가 처리되어 업로드 중입니다. 업로드가 완료되면 알려드립니다. 프로그램을 종료하지 마세요."
+      );
+
+      setProgress(100);
+
+      uploadPromise
+        .then(() => {
+          fetchUploadedDates();
+          openNotification("success", "데이터 업로드 완료", "모든 데이터가 성공적으로 처리되었습니다.");
+        })
+        .catch((error) => {
+          console.error("❌ Background upload error:", error);
+          openNotification(
+            "error",
+            "업로드 실패",
+            error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다."
+          );
+        });
+    } catch (error) {
+      console.error("❌ Error processing SmartNC data:", error);
+      openNotification(
+        "error",
+        "데이터 처리 실패",
+        error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다."
+      );
+      setProgress(0);
+    }
+  };
+
   const handleProcessData = () => {
     if (dataType === "euisarang") {
       handleProcessDataEuisarang();
     } else if (dataType === "egis") {
       handleProcessDataEgis();
-    } else {
+    } else if (dataType === "dentweb") {
       handleProcessDataDentweb();
+    } else if (dataType === "orm") {
+      handleProcessDataOrm();
+    } else if (dataType === "hanchart") {
+      handleProcessDataHanChart();
+    } else if (dataType === "vegas") {
+      handleProcessDataVegas();
+    } else if (dataType === "vegas2") {
+      handleProcessDataVegas2();
+    } else if (dataType === "cChart") {
+      handleProcessDatacChart();
+    } else if (dataType === "bit") {
+      handleProcessDataBit();
     }
-  };
+      else if (dataType === "bit2"){
+        handleProcessDataBit2();
+    }
+      else if(dataType === "neo"){
+        handleProcessDataNeo()
+    } else if (dataType === "smartnc") {
+      handleProcessDataSmartNC();
+    } else if (dataType === "simemr") {
+      handleProcessDataSimEmr();
+    } else if (dataType === "doctorp2") {
+      handleProcessDataDoctorP2();
+    } else {
+      handleProcessDataDoctorP();
+    }
+
+  }
+
 
   const isButtonDisabled = () => {
-    if (dataType === "euisarang" || dataType === "dentweb") {
+    if (dataType === "euisarang" || dataType === "dentweb" || dataType === "orm" || dataType === "cChart") {
       return !daysFiles || !placeFiles || progress > 0;
+    }
+    if (dataType === "smartnc") {
+      return !dailyIncome || !placeFiles || !patientFiles || progress > 0;
+    }
+    if (dataType === "vegas2") {
+      return !placeFiles || !patientFiles || progress > 0;
     }
     return !dailyIncome || !placeFiles || progress > 0;
   };
@@ -311,7 +2275,7 @@ const UpdateDataPage = () => {
 
         {/* Conditional File Uploads */}
         <ContentContainer>
-          {dataType === "euisarang" && (
+          {(dataType === "euisarang" || dataType === "cChart") && (
             <>
               <FileUpload
                 title="일일 수입 데이터 업로드"
@@ -337,7 +2301,7 @@ const UpdateDataPage = () => {
             </>
           )}
 
-          {dataType === "egis" && (
+          {(dataType === "egis" || dataType === "bit" || dataType === "bit2") && (
             <>
               <FileUpload
                 title="일자별 수입 현황 업로드"
@@ -349,6 +2313,128 @@ const UpdateDataPage = () => {
               />
             </>
           )}
+
+          {dataType === "orm" && (
+            <>
+              <FileUpload
+                title="일일 수입 데이터 업로드 (환자 집계)"
+                onFilesUploaded={(files) => setDaysFiles(files)}
+              />
+              <FileUpload
+                title="장소별 환자 데이터 업로드 (환자 정보 자료 생성)"
+                onFilesUploaded={(files) => setPlaceFiles(files)}
+              />
+            </>
+          )}
+
+          {dataType === "neo" && (
+            <>
+              <FileUpload
+                title="진료비 통계(환자별)"
+                onFilesUploaded={(files) => setDailyIncome(files)}
+              />
+              <FileUpload
+                title="외래 환자 현황"
+                onFilesUploaded={(files) => setPlaceFiles(files)}
+              />
+            </>
+          )}
+
+          {dataType === "vegas" && (
+            <>
+              <FileUpload
+                title="환자별 집계"
+                onFilesUploaded={(files) => setDailyIncome(files)}
+              />
+              <FileUpload
+                title="DM 주소록"
+                onFilesUploaded={(files) => setPlaceFiles(files)}
+              />
+            </>
+          )}
+
+          {dataType === "vegas2" && (
+            <>
+              <FileUpload
+                title="DM 주소록"
+                onFilesUploaded={(files) => setPlaceFiles(files)}
+              />
+              <FileUpload
+                title="오더판매내역및환자내역"
+                onFilesUploaded={(files) => setPatientFiles(files)}
+              />
+            </>
+          )}
+
+          {dataType === "hanchart" && (
+            <>
+              <FileUpload
+                title="한차트 (일일 수입 현황)"
+                onFilesUploaded={(files) => setDailyIncome(files)}
+              />
+              <FileUpload
+                title="DM 주소록"
+                onFilesUploaded={(files) => setPlaceFiles(files)}
+              />
+            </>
+          )}
+
+          {dataType === "doctorp" && (
+            <>
+              <FileUpload
+                title="닥터팔레트 일일수입"
+                onFilesUploaded={(files) => setDailyIncome(files)}
+              />
+              <FileUpload
+                title="닥터팔레트 환자주소"
+                onFilesUploaded={(files) => setPlaceFiles(files)}
+              />
+            </>
+          )}
+
+          {dataType === "doctorp2" && (
+            <>
+              <FileUpload
+                title="닥터팔레트2 일일수입"
+                onFilesUploaded={(files) => setDailyIncome(files)}
+              />
+              <FileUpload
+                title="닥터팔레트2 환자주소"
+                onFilesUploaded={(files) => setPlaceFiles(files)}
+              />
+            </>
+          )}
+
+          {dataType === "smartnc" && (
+            <>
+              <FileUpload
+                title="일일진료수입통계"
+                onFilesUploaded={(files) => setDailyIncome(files)}
+              />
+              <FileUpload
+                title="고객주소통계"
+                onFilesUploaded={(files) => setPlaceFiles(files)}
+              />
+              <FileUpload
+                title="내원일별 환자명부"
+                onFilesUploaded={(files) => setPatientFiles(files)}
+              />
+            </>
+          )}
+
+          {dataType === "simemr" && (
+            <>
+              <FileUpload
+                title="일별 방문/수납 현황 (환자번호, 주소, 진료기간, 총진료비)"
+                onFilesUploaded={(files) => setDailyIncome(files)}
+              />
+              <FileUpload
+                title="환자 목록 (진료과목, 환자번호, 나이, 주소)"
+                onFilesUploaded={(files) => setPlaceFiles(files)}
+              />
+            </>
+          )}
+
         </ContentContainer>
 
         {/* Button and Progress Bar */}

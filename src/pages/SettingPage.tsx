@@ -6,7 +6,6 @@ import { logout } from "../utils/api/apihelper";
 import BaseInput from "../components/common/input/BaseInput";
 import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
-import packageJson from "../../package.json";
 
 import usePaymentStore from "../store/usePaymenyStore";
 
@@ -99,14 +98,6 @@ export default function SettingPage() {
               </MembershipInfo>
             </CardWrapper>
           )}
-
-          <CardWrapper>
-            <CardTitle>소프트웨어 버전</CardTitle>
-            <Divider />
-            <span style={{ fontSize: "1.2rem", fontWeight: "bold" }}>
-              v {packageJson.version}
-            </span>
-          </CardWrapper>
 
           <LogoutButton type="submit" onClick={handleLogout}>
             로그아웃

@@ -178,7 +178,7 @@ function MembershipPage() {
                 <PaymentInfoWrapper>
                   <TitleStyle>
                     멤버십을{" "}
-                    {user.status === "canceled" ? "갱신하여" : "가입하여"} Orbis
+                    {user.status === "canceled" ? "갱신하여" : "가입하여"} HTRACKER
                     서비스를 이용해보세요!
                   </TitleStyle>
                   {user.status === "canceled" && (

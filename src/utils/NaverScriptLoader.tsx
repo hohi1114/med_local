@@ -16,9 +16,8 @@ export default function NaverScriptLoader({
       return;
     }
     const script = document.createElement("script");
-    script.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpClientId=${
-      import.meta.env.VITE_NAVER_MAPS_CLIENT_ID
-    }`; // No &submodules=geometry anymore
+    script.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${import.meta.env.VITE_NAVER_MAPS_CLIENT_ID
+      }&submodules=geocoder`; // NaverGeocode.ts 와 스크립트를 공유하므로 geocoder 포함
     script.async = true;
 
     script.addEventListener("load", () => {

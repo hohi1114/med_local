@@ -2,7 +2,6 @@ import { JSX, useState } from "react";
 import BarChart from "./chart/BarChart";
 import SexHorizantalBar from "./chart/SexHorizantalBar";
 import SexPieChart from "./chart/SexPieChart";
-import BaseLineChart from "./chart/BaseLineChart";
 import StatsBox from "./StatsBox";
 import {
   ChartTitleStyle,
@@ -12,6 +11,7 @@ import {
 } from "./StatisticsDrawer";
 import { RegionData } from "../../types/naver-maps";
 import BaseToggle from "../common/toggle/BaseToggle";
+import BaseMultipleLineChart from "./chart/BaseMultipleLineChart";
 
 const STATS_BOXES = [
   { id: 1, title: "월 평균 소득" },
@@ -37,7 +37,7 @@ const RegionInfo = ({ data, region }: RegionInfoProps) => {
         (3 *
           (region === "small" ? data?.dong_population ?? 1 : data?.population))
     ).toLocaleString()} ₩`,
-    3: `${data.total_avg_age}세`,
+    3: `${data.total_avg_age}대`,
     4: `${Math.ceil(data.population)?.toLocaleString()}명`
   };
 
@@ -51,26 +51,32 @@ const RegionInfo = ({ data, region }: RegionInfoProps) => {
     { type: "여성", value: data.female_avg_age }
   ];
 
-  const ageGroupData = Object.entries(data.age_group_population || {}).map(
-    ([age, value]) => ({
-      연령: age,
-      세: value
-    })
-  );
+  const ageGroupData = () => {
+    return Object.entries(data.age_group_population || {}).map(
+      ([age, value]) => ({
+        연령: age,
+        대: value
+      })
+    );
+  };
 
-  const timePopulationData = data.population_by_time
-    ? Object.entries(data.population_by_time || {}).map(([key, value]) => ({
-        time: `${key}시`,
-        "유동 인구 수": value // 올바른 문자열 키 사용
-      }))
-    : [];
+  const timePopulationData = () => {
+    return data.population_by_time
+      ? Object.entries(data.population_by_time || {}).map(([key, value]) => ({
+          time: `${key}시`,
+          "유동 인구 수": value // 올바른 문자열 키 사용
+        }))
+      : [];
+  };
 
-  const dayPopulationData = data.population_by_day
-    ? data.population_by_day.map((item) => ({
-        day: item.day,
-        value: item.value
-      }))
-    : [];
+  const dayPopulationData = () => {
+    return data.population_by_day
+      ? data.population_by_day.map((item) => ({
+          day: item.day,
+          value: item.value
+        }))
+      : [];
+  };
 
   const renderGraphWrapper = (title: string, chart: JSX.Element) => (
     <GraphContainer>
@@ -104,57 +110,56 @@ const RegionInfo = ({ data, region }: RegionInfoProps) => {
   return (
     <>
       <GridWrapper>
-        {STATS_BOXES.map((content) => (
-          <StatsBox
-            key={content.id}
-            title={content.title}
-            data={statsData[content.id]}
-          />
-        ))}
+        {/**월 평균 소득과 월 평균 1인당 의료비 지출액은 데이터가 없다면 숨기기 */}
+        {STATS_BOXES.map((content) =>
+          (content.id === 1 || content.id === 2) &&
+          statsData[content.id] === "0 ₩" ? null : (
+            <StatsBox
+              key={content.id}
+              title={content.title}
+              data={statsData[content.id]}
+            />
+          )
+        )}
       </GridWrapper>
 
       {renderGraphWrapper(
         "성별 인구 수",
-        <SexHorizantalBar data={horizontalBarData} />
+        <SexHorizantalBar data={horizontalBarData} height={200} />
       )}
 
       {renderGraphWrapper(
         "성별 평균 연령",
-        <SexPieChart data={pieChartData} />
+        <SexPieChart data={pieChartData} height={250} />
       )}
 
       {renderGraphWrapper(
-        "연령대별 인구 수",
+        "연령대 별 인구 수",
         <BarChart
-          width={350}
           height={280}
-          data={data.age_group_population}
+          data={ageGroupData()}
           xField="연령"
-          yField="세"
-          formatData={() => ageGroupData}
+          yField="대"
+          valueXSymbol={" 명"}
         />
       )}
 
       {renderGraphWrapper(
         "시간대별/요일 유동인구 수",
         footTrafficToggle === "시간대" ? (
-          <BaseLineChart
-            width={350}
+          <BaseMultipleLineChart
             height={280}
-            data={data.population_by_time}
+            data={timePopulationData()}
             xField="time"
             yField="유동 인구 수"
-            valueXSymbol={"명"}
-            formatData={() => timePopulationData}
+            valueXSymbol={" 명"}
           />
         ) : (
           <BarChart
-            width={350}
             height={280}
-            data={data.population_by_day}
+            data={dayPopulationData()}
             xField="day"
             yField="value"
-            formatData={() => dayPopulationData}
           />
         )
       )}

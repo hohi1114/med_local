@@ -22,10 +22,10 @@ const CompletePayment = () => {
         <img className="check" src={"/images/check_white.svg"} />
       </CheckIconWrapper>
 
-      <MainText>Orbis 멤버십 가입을 완료했어요!</MainText>
+      <MainText>HTRACKER 멤버십 가입을 완료했어요!</MainText>
       <ContentWrapper>
         <div>
-          Orbis 서비스를 제대로 이용하기 위해 <br />
+          HTRACKER 서비스를 제대로 이용하기 위해 <br />
           먼저 데이터 업데이트 페이지에서 데이터를 업데이트 해주세요.
         </div>
       </ContentWrapper>

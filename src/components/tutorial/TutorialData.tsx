@@ -127,8 +127,8 @@ export const DashboardSteps = (refs: any) => [
   {
     description: (
       <>
-        <b>일자별 매출 추이</b>를 그래프로 확인해보세요. 한눈에 매출 흐름을
-        파악하고, 특정 날짜를 비교할 수 있습니다.
+        <b>일자별 매출/환자 수 통계</b>를 그래프로 확인해보세요. 한눈에 매출
+        흐름을 파악하고, 특정 날짜를 비교할 수 있습니다.
       </>
     ),
     targetRef: refs.tutorialRef3
@@ -136,8 +136,12 @@ export const DashboardSteps = (refs: any) => [
   {
     description: (
       <>
-        <b>지역별 매출 순위</b>와 <b>연령대별 환자 분포</b>를 통해 어떤 지역,
-        어떤 연령대가 핵심 타겟인지 확인해보세요.
+        <b>최근 3개월 월평균 성장률</b>은 업데이트한 데이터의 마지막 날짜 기준
+        3개월의 대한 분석표입니다.
+        <br />
+        또한 <b>연령대 별 환자 분포</b>, <b>요일별 매출 통계</b> 그리고{" "}
+        <b>요일별 신규/재방문 환자 비율</b> 을 통해 어떤 지역, 어떤 연령대가
+        핵심 타겟인지 확인해보세요.
       </>
     ),
     targetRef: refs.tutorialRef4
@@ -149,7 +153,7 @@ export const StatisticsByRegionPageSteps = (refs: any) => [
     description: (
       <>
         기본 날짜는 <b>최근 업데이트일 기준으로 1개월 전</b>이며, 지역은{" "}
-        <b>소구역, 군, 구</b> 단위로 자유롭게 선택할 수 있어요.
+        <b>소구역, 동, 구</b> 단위로 자유롭게 선택할 수 있어요.
       </>
     ),
     targetRef: refs.tutorialRef1

@@ -11,7 +11,6 @@ node_modules
 release
 dist-ssr
 *.local
-package-lock.json
 
 # Editor directories and files
 .vscode/*
@@ -32,5 +31,9 @@ node_modules/
 *.env.*
 
 out/
-package-lock.json
 .vercel
+.env.local
+.env.*.local
+
+# 환경변수 문서용 템플릿은 커밋한다 (실제 값 없음)
+!.env.example

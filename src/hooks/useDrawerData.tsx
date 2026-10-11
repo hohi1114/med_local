@@ -1,11 +1,13 @@
 import { useState, useEffect, useMemo } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { getRegionPrivateData } from "../utils/api/apis";
+import {
+  getRegionPrivateData,
+  postMultiRegionPrivateData
+} from "../utils/api/apis";
 import { findContainingDong } from "../components/medi_map/util/mapUtil";
 import mapStore from "../store/mapStore";
 import { RegionPrivateParams } from "../types/params";
-import { RegionPrivateData } from "../types/naver-maps";
-
+import { RegionData } from "../types/naver-maps";
 /**
  * For Drawer
  * 1. 지도에서 보길 원하는 구역 클릭
@@ -14,13 +16,16 @@ import { RegionPrivateData } from "../types/naver-maps";
  */
 export const useDrawerData = (twoType: boolean) => {
   const {
+    selectedMultiRegion,
+    isAnalyzeMultiRegion,
+    isOpenDrawer,
     areaName,
     drawerDate,
     drawerDate1,
     drawerDate2,
     region,
     selectedRegionData,
-    dongNmaeFroSmall,
+    dongNameFroSmall,
     boundArea,
     loading,
     handleIsDrawerOpen
@@ -31,7 +36,7 @@ export const useDrawerData = (twoType: boolean) => {
     first: {},
     second: {}
   });
-  const [regionInfo, setRegionInfo] = useState(null);
+  const [regionInfo, setRegionInfo] = useState<RegionData | null>(null);
   const [population, setPopulation] = useState(0);
 
   useEffect(() => {
@@ -40,14 +45,39 @@ export const useDrawerData = (twoType: boolean) => {
 
   // 단일 날짜 파라미터
   const singleDateParams = useMemo(() => {
-    if (!areaName || !region || !drawerDate || loading) return null;
-    return {
-      name: areaName,
+    if (
+      !drawerDate ||
+      loading ||
+      (isAnalyzeMultiRegion && selectedMultiRegion.length === 0) ||
+      (!isAnalyzeMultiRegion && !areaName)
+    )
+      return null;
+
+    const baseParams = {
       regionType: region,
       startDate: drawerDate.startDate,
       endDate: drawerDate.endDate
     };
-  }, [areaName, region, drawerDate, loading]);
+
+    if (isAnalyzeMultiRegion) {
+      return {
+        ...baseParams,
+        regions: selectedMultiRegion
+      };
+    }
+
+    return {
+      ...baseParams,
+      name: areaName
+    };
+  }, [
+    areaName,
+    region,
+    drawerDate,
+    loading,
+    selectedMultiRegion,
+    isAnalyzeMultiRegion
+  ]);
 
   // 비교 날짜 파라미터 (첫 번째)
   const firstDateParams = useMemo(() => {
@@ -97,39 +127,75 @@ export const useDrawerData = (twoType: boolean) => {
     mutationFn: (params: RegionPrivateParams) => getRegionPrivateData(params)
   });
 
+  //지역 통계 종합 보기
+  const {
+    mutate: multiRegionPrivateMutation,
+    data: multiRegionPrivate,
+    isPending: multiRegionPending
+  } = useMutation({
+    mutationFn: postMultiRegionPrivateData
+  });
+
   // 첫번째 날짜 요청
   useEffect(() => {
-    if (twoType && firstDateParams) {
+    if (twoType && firstDateParams && isOpenDrawer) {
       firstDateMutation(firstDateParams);
     }
-  }, [twoType, firstDateParams]);
+  }, [twoType, firstDateParams, isOpenDrawer]);
 
   // 두 번째 날짜 요청
   useEffect(() => {
-    if (twoType && secondDateParams) {
+    if (twoType && secondDateParams && isOpenDrawer) {
       secondDateMutation(secondDateParams);
     }
-  }, [twoType, secondDateParams]);
+  }, [twoType, secondDateParams, isOpenDrawer]);
 
   // 단일 날짜 요청
   useEffect(() => {
-    if (!twoType && singleDateParams) {
-      regionPrivateMutation(singleDateParams);
+    if (isOpenDrawer) {
+      const params = singleDateParams;
+      if (params) {
+        if (isAnalyzeMultiRegion) {
+          multiRegionPrivateMutation(params);
+        } else if (!twoType) {
+          regionPrivateMutation(params);
+        }
+      }
     }
-  }, [twoType, singleDateParams]);
+  }, [
+    twoType,
+    isOpenDrawer,
+    isAnalyzeMultiRegion,
+    selectedMultiRegion,
+    areaName,
+    region,
+    drawerDate,
+    loading
+  ]);
 
   useEffect(() => {
     if (boundArea && boundArea.length > 0) {
-      const selectedArea = boundArea.filter((area) => area.name === areaName);
-      setPopulation(selectedArea[0]?.population ?? 0);
+      if (isAnalyzeMultiRegion) {
+        let population = 0;
+        selectedMultiRegion.forEach((areaName) => {
+          const selectedArea = boundArea.filter(
+            (area) => area.name === areaName
+          );
+          population += selectedArea[0]?.population ?? 0;
+        });
+        setPopulation(population);
+      } else {
+        const selectedArea = boundArea.filter((area) => area.name === areaName);
+        setPopulation(selectedArea[0]?.population ?? 0);
+      }
     }
-  }, [boundArea]);
+  }, [boundArea, selectedMultiRegion, isAnalyzeMultiRegion, areaName]);
 
   // small 지역 데이터 = dong 데이터와 매치
   useEffect(() => {
     const fetchRegionInfo = async () => {
-      if (region === "small" && dongNmaeFroSmall) {
-        const containingDong = await findContainingDong(dongNmaeFroSmall);
+      if (region === "small" && dongNameFroSmall) {
+        const containingDong = await findContainingDong(dongNameFroSmall);
 
         if (containingDong && selectedRegionData) {
           const newSmallRegion = {
@@ -154,14 +220,14 @@ export const useDrawerData = (twoType: boolean) => {
       }
     };
     fetchRegionInfo();
-  }, [areaName, region, dongNmaeFroSmall, selectedRegionData]);
+  }, [areaName, region, dongNameFroSmall, selectedRegionData]);
 
   // set STATS DATA
   useEffect(() => {
     if (!twoType && regionPrivate) {
       setStatsData({
         1: {
-          data: `${regionPrivate?.total_visit_count || 0}명`,
+          data: `${regionPrivate?.total_visit_count || 0}회`,
           diffRate: regionPrivate?.diff_rates?.total_visit_count
         },
         2: {
@@ -200,18 +266,68 @@ export const useDrawerData = (twoType: boolean) => {
                 ).toFixed(3)
               : 0
           } %`,
-          diffRate: regionPrivate?.diff_rates?.total_patient_count
+          diffRate: regionPrivate?.diff_rates?.total_visit_count
         }
       });
     }
   }, [population, regionPrivate, twoType]);
+
+  // set STATS DATA
+  useEffect(() => {
+    if (isAnalyzeMultiRegion && multiRegionPrivate) {
+      setStatsData({
+        1: {
+          data: `${multiRegionPrivate?.total_visit_count || 0}회`,
+          diffRate: multiRegionPrivate?.diff_rates?.total_visit_count
+        },
+        2: {
+          data: `${Math.ceil(
+            multiRegionPrivate?.total_cost || 0
+          )?.toLocaleString()} ₩`,
+          diffRate: multiRegionPrivate?.diff_rates?.total_cost
+        },
+        3: {
+          data: `${Math.ceil(
+            multiRegionPrivate?.average_cost_per_visit || 0
+          )?.toLocaleString()} ₩`,
+          diffRate: multiRegionPrivate?.diff_rates?.average_cost_per_visit
+        },
+        4: {
+          data: `${Math.ceil(
+            multiRegionPrivate?.average_cost_per_patient || 0
+          )?.toLocaleString()} ₩`,
+          diffRate: multiRegionPrivate?.diff_rates?.average_cost_per_patient
+        },
+        5: {
+          data: `${multiRegionPrivate?.chojin_rejin_visit_count || 0}명`,
+          diffRate: multiRegionPrivate?.diff_rates?.chojin_rejin_visit_count
+        },
+        6: {
+          data: `${multiRegionPrivate?.sinhwan_visit_count || 0}명`,
+          diffRate: multiRegionPrivate?.diff_rates?.sinhwan_visit_count
+        },
+        7: { data: `준비중`, diffRate: null },
+        8: {
+          data: `${
+            population && multiRegionPrivate?.total_patient_count
+              ? (
+                  (multiRegionPrivate?.total_patient_count / population) *
+                  100
+                ).toFixed(3)
+              : 0
+          } %`,
+          diffRate: multiRegionPrivate?.diff_rates?.total_visit_count
+        }
+      });
+    }
+  }, [multiRegionPrivate, isAnalyzeMultiRegion]);
 
   useEffect(() => {
     if (twoType && firstRegionPrivate && secondRegionPrivate) {
       // 첫 번째 날짜 데이터
       const firstStats = {
         1: {
-          data: `${firstRegionPrivate?.total_visit_count || 0}명`
+          data: `${firstRegionPrivate?.total_visit_count || 0}회`
         },
         2: {
           data: `${Math.ceil(
@@ -308,8 +424,8 @@ export const useDrawerData = (twoType: boolean) => {
               : 0
           } %`,
           diffRate: calculateDiff(
-            secondRegionPrivate?.total_patient_count,
-            firstRegionPrivate?.total_patient_count
+            secondRegionPrivate?.total_visit_count,
+            firstRegionPrivate?.total_visit_count
           )
         }
       };
@@ -328,43 +444,19 @@ export const useDrawerData = (twoType: boolean) => {
     return parseFloat((((current - previous) / previous) * 100).toFixed(2));
   };
 
-  // Format data for charts
-  const formatDataForAverageRevenue = (data: RegionPrivateData) => {
-    return Object.entries(data?.average_cost_per_visit_by_date).map(
-      ([date, value]) => ({
-        date,
-        매출액: value
-      })
-    );
-  };
-
-  const formatDataForRevenueTrend = (data: RegionPrivateData) => {
-    return Object.entries(data?.cost_by_date).map(([date, value]) => ({
-      date,
-      매출액: value
-    }));
-  };
-
-  const barFormatData = (data: RegionPrivateData) => {
-    return Object.entries(data?.patient_count_by_age_group).map(
-      ([age, value]) => ({
-        연령: age,
-        세: value
-      })
-    );
-  };
-
   return {
     regionInfo,
     statsData,
-    regionPrivate,
+    regionPrivate: !isOpenDrawer
+      ? null
+      : isAnalyzeMultiRegion
+      ? multiRegionPrivate
+      : regionPrivate,
     firstRegionPrivate,
     secondRegionPrivate,
-    isPending: isPending || firstDatePending || secondDatePending,
+    isPending:
+      isPending || firstDatePending || secondDatePending || multiRegionPending,
     areaName,
-    comparisonStatsData,
-    formatDataForAverageRevenue,
-    formatDataForRevenueTrend,
-    barFormatData
+    comparisonStatsData
   };
 };

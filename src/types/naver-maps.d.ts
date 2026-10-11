@@ -1,4 +1,4 @@
-import { DashBoard } from "./dashboard";
+import { AverageGrowth, DashBoard } from "./dashboard";
 
 declare global {
   interface Window {
@@ -69,6 +69,8 @@ type RegionData = {
   dong?: string;
   total_costA?: number;
   total_costB?: number;
+  cost_rank?: number;
+  growth_metrics: AverageGrowth;
 };
 
 export interface AgeGroupPopulation {
@@ -89,6 +91,7 @@ export interface RegionEtcData {
   dong_region_name: string;
   total_cost: number;
   patient_location: Point[];
+  growth_metrics: AverageGrowth | null;
 }
 
 export interface RegionPrivateData extends DashBoard {

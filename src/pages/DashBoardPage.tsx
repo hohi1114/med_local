@@ -6,8 +6,6 @@ import DurationDatePicker from "../components/common/datepicker/DurationDatePick
 import useDashBoard from "../hooks/useDashBoard";
 import BarChart from "../components/medi_map/chart/BarChart";
 import dayjs from "dayjs";
-import BaseLineChart from "../components/medi_map/chart/BaseLineChart";
-import BaseTable from "../components/medi_map/chart/BaseTable";
 import DashboardStats from "../components/dashboard/DashboardStats";
 import Loading from "../components/common/Loading";
 import Error from "../components/common/Error";
@@ -25,10 +23,20 @@ import TutorialStartModal from "../components/tutorial/TutorialStartModal";
 import useTutorial from "../hooks/useTutorial";
 import { DashboardSteps } from "../components/tutorial/TutorialData";
 import { RangeDateMapKey } from "../types/dashboard";
+import DashboardGrowthStats from "../components/dashboard/DashboardGrowthStats";
+import useDashboardStore from "../store/useDashboardStore";
+import { Radio } from "antd";
+import BaseMultipleLineChart from "../components/medi_map/chart/BaseMultipleLineChart";
+import { usePrivateDataChart } from "../hooks/usePrivateDataChart";
+import AgeSummaryStrip from "../components/dashboard/AgeSummaryStrip";
+import { useCostBasis } from "../hooks/useCostBasis";
 
 const LOADING_CONTENT = "데이터를 불러오는 중입니다.";
 
 export default function DashBoardPage() {
+  const navigate = useNavigate();
+  const { selectedDateRange, setSelectedDateRange } = useDashboardStore();
+
   const {
     dateRange,
     handleDateFilterButton,
@@ -39,7 +47,8 @@ export default function DashBoardPage() {
     dashboardInfo,
     buttonType,
     AVAILABLE_DATE_RANGES,
-    setDateChanged
+    setDateChanged,
+    latestDateRangeRef
   } = useDashBoard();
 
   const {
@@ -50,8 +59,25 @@ export default function DashBoardPage() {
     needFreeTrial
   } = userStore();
 
-  const navigate = useNavigate();
+  const rawDashboardInfoData = startTutorial
+    ? mockDashboard
+    : dashboardInfo ?? mockDashboard;
 
+  const { costBasis, setCostBasis, hasNonTaxableCost, dashboardData } =
+    useCostBasis(rawDashboardInfoData);
+  const dashboardInfoData = dashboardData;
+
+  const {
+    chartType,
+    formatPatientCountBarData,
+    formatTotalCostBarData,
+    formatLineChartData,
+    formatYAxisLabelForLineChart,
+    formatWeeklyDataForBarChart,
+    handleChartRadioChange
+  } = usePrivateDataChart(dashboardInfoData);
+
+  //Tutorial
   const tutorialRefs = {
     tutorialRef1: useRef(null),
     tutorialRef2: useRef(null),
@@ -67,40 +93,30 @@ export default function DashBoardPage() {
     onComplate: () => navigate("/compare-avenue")
   });
 
-  const dashboardInfoData = startTutorial
-    ? mockDashboard
-    : dashboardInfo ?? mockDashboard;
-
-  const formatBarData = () => {
-    if (!dashboardInfoData) return [];
-    return Object.entries(dashboardInfoData.patient_count_by_age_group).map(
-      ([age, value]) => ({ age, value })
-    );
-  };
-
-  const formatChartData = () => {
-    if (!dashboardInfoData) return [];
-    return Object.entries(dashboardInfoData?.cost_by_date).map(
-      ([date, value]) => ({ date, 매출액: value })
-    );
-  };
-
   useEffect(() => {
-    if (lastedUpdatedDate && lastedUpdatedDate.length > 0) {
-      const start = dayjs(lastedUpdatedDate)
-        .subtract(1, "month")
-        .format("YYYY-MM-DD");
-      const end = dayjs(lastedUpdatedDate).format("YYYY-MM-DD");
-      handleDateRangeChange({ startDate: start, endDate: end });
+    //처음 접근인가
+    if (selectedDateRange) {
+      handleDateRangeChange(selectedDateRange);
+    } else {
+      //데이터를 업데이트 한 적이 있는가
+      if (lastedUpdatedDate && lastedUpdatedDate.length > 0) {
+        const start = dayjs(lastedUpdatedDate)
+          .subtract(1, "month")
+          .format("YYYY-MM-DD");
+        const end = dayjs(lastedUpdatedDate).format("YYYY-MM-DD");
+        handleDateRangeChange({ startDate: start, endDate: end });
+      }
     }
   }, [lastedUpdatedDate]);
 
-  if (isError) {
-    return (
-      <Error status={error?.status ?? "Unknown"} message={error?.message} />
-    );
-  }
+  //다른 페이지 이동시 -> 날짜 저장
+  useEffect(() => {
+    return () => {
+      setSelectedDateRange(latestDateRangeRef.current);
+    };
+  }, []);
 
+  //Tutorial
   const renderGuideDescription = (step: number) => {
     if (startTutorial && tutorialStep === step) {
       return (
@@ -114,6 +130,15 @@ export default function DashBoardPage() {
     return null;
   };
 
+  if (isError) {
+    return (
+      <Error status={error?.status ?? "Unknown"} message={error?.message} />
+    );
+  }
+
+  //이미 Tutorial와 무관하고 DashboardInfo가 로드중일때
+  if (!startTutorial && hasGuided && !dashboardInfo) return <Loading />;
+
   return (
     <>
       {(startTutorial || !hasGuided) && <FullDimOverlay />}
@@ -125,7 +150,7 @@ export default function DashBoardPage() {
         <FreeTrialModal />
       )}
 
-      {isLoading && <Loading content={LOADING_CONTENT} />}
+      {!startTutorial && isLoading && <Loading content={LOADING_CONTENT} />}
 
       {dashboardInfoData && (
         <DashBoardContainer>
@@ -177,6 +202,26 @@ export default function DashBoardPage() {
           {renderGuideDescription(1)}
 
           <SectionContainer>
+            {hasNonTaxableCost && (
+              <CostBasisContainer>
+                <CostBasisLabel>매출 기준</CostBasisLabel>
+                <Radio.Group
+                  onChange={(e) => setCostBasis(e.target.value)}
+                  value={costBasis}
+                  options={[
+                    {
+                      value: "taxable",
+                      label: <div style={{ color: "#52555A" }}>과세만</div>
+                    },
+                    {
+                      value: "all",
+                      label: <div style={{ color: "#52555A" }}>과세+비과세</div>
+                    }
+                  ]}
+                />
+              </CostBasisContainer>
+            )}
+
             <CardGrid
               ref={tutorialRefs.tutorialRef2}
               className={
@@ -224,15 +269,32 @@ export default function DashBoardPage() {
               }
             >
               <Card>
-                <ChartTitle>일자별 매출 통계</ChartTitle>
-                <BaseLineChart
-                  data={dashboardInfoData.cost_by_date}
+                <div style={{ display: "flex", gap: "3rem" }}>
+                  <ChartTitle>일자별 매출/환자 수 통계</ChartTitle>
+                  <Radio.Group
+                    onChange={handleChartRadioChange}
+                    value={chartType}
+                    options={[
+                      {
+                        value: 1,
+                        label: <div style={{ color: "#52555A" }}>매출</div>
+                      },
+                      {
+                        value: 2,
+                        label: <div style={{ color: "#52555A" }}>환자 수</div>
+                      }
+                    ]}
+                  />
+                </div>
+
+                <BaseMultipleLineChart
+                  data={formatLineChartData(chartType)}
                   xField="date"
-                  yField="매출액"
-                  labelFormatterY={(v) => `${v / 1000}K`}
-                  formatData={formatChartData}
-                  height={350}
-                  limitDateXLength={30}
+                  yField="value"
+                  colorField="category"
+                  labelFormatterY={formatYAxisLabelForLineChart}
+                  height={500}
+                  valueXSymbol={chartType === 1 ? " ₩" : " 명"}
                 />
               </Card>
             </CardGrid>
@@ -248,17 +310,60 @@ export default function DashBoardPage() {
               }
             >
               <Card>
-                <ChartTitle>지역 별 매출 순위</ChartTitle>
-                <BaseTable data={dashboardInfoData.topRegions} />
+                <ChartTitle>최근 3개월 월평균 성장률</ChartTitle>
+                <DashboardGrowthStats
+                  data={dashboardInfoData?.average_growths}
+                  isDashboard
+                />
               </Card>
               <Card>
-                <ChartTitle>연령 별 환자 분포</ChartTitle>
+              <ChartTitle>연령대 별 환자 분포</ChartTitle>
+              <BarChart
+                xField="age"
+                yField="value"
+                data={formatPatientCountBarData()} // 기존 그대로
+                height={380}
+                valueXSymbol=" 명"
+              />
+    
+              {/* ▶︎ 차트 아래 가로 표 (대시보드 전용) */}
+            <AgeSummaryStrip
+              counts={(dashboardInfoData as any).sinhwan_patient_count_by_age ?? {}}
+              diffs={(dashboardInfoData as any).sinhwan_patient_count_by_age_diff_rates ?? {}}
+            />
+              </Card>
+            </CardGrid>
+          </SectionContainer>
+          <SectionContainer>
+            <CardGrid
+              ref={tutorialRefs.tutorialRef4}
+              className={
+                tutorialStep === 3 && startTutorial ? "tutorial-highlight" : ""
+              }
+            >
+              <Card>
+                <ChartTitle>요일별 매출 통계</ChartTitle>
                 <BarChart
-                  data={dashboardInfoData.patient_count_by_age_group}
-                  xField="age"
+                  xField="day"
                   yField="value"
-                  formatData={formatBarData}
-                  height={430}
+                  data={formatTotalCostBarData()}
+                  height={380}
+                  colors={"#96E2D6"}
+                  valueXSymbol=" ₩"
+                />
+              </Card>
+              <Card>
+                <ChartTitle>요일별 신규/재방문 환자 비율</ChartTitle>
+                <BarChart
+                  data={formatWeeklyDataForBarChart()}
+                  xField="day"
+                  yField="value"
+                  height={380}
+                  isGrouped={true}
+                  seriesField="type"
+                  legend={true}
+                  valueXSymbol=" 명"
+                  colors={["#FFB6C1", "#92BFFF"]}
                 />
               </Card>
             </CardGrid>
@@ -274,12 +379,10 @@ const DashBoardContainer = styled.div`
   display: flex;
   flex-direction: column;
   position: relative;
-  padding-bottom: 2rem;
 `;
 
 const SectionContainer = styled.div`
   position: relative;
-  margin-bottom: 24px;
 `;
 
 const ButtonWrapper = styled.div`
@@ -305,8 +408,8 @@ const FilterContainer = styled.div`
 const CardGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1rem;
-  padding: 1rem;
+  column-gap: 1rem;
+  padding: 0.5rem;
   position: relative;
   z-index: ${(props) => props.theme.zIndex.rank4};
 
@@ -363,6 +466,21 @@ const DateLabel = styled.div`
   justify-content: center;
   align-items: center;
   background-color: ${(props) => props.theme.colors.primary};
+`;
+
+const CostBasisContainer = styled.div`
+  background-color: ${(props) => props.theme.colors.white};
+  padding: 1rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+`;
+
+const CostBasisLabel = styled.div`
+  font-weight: bold;
+  color: ${(props) => props.theme.colors.black};
 `;
 
 const CloseGuideButton = styled(BaseButton)`
