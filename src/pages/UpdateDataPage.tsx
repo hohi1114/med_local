@@ -18,6 +18,7 @@ import {
 } from "../local/locationProcessing.ts";
 import axios from "axios";
 import useUpdateUserInfo from "../hooks/useUpdateUserInfo.tsx";
+import { startUploadDiagnostics } from "../utils/uploadDiagnostics.ts";
 
 interface ProcessDataResponse {
   status: string;
@@ -571,6 +572,10 @@ const UpdateDataPage = () => {
     });
   };
 
+  // 업로드 1회의 단계별 진단 로그 수집 시작 (실패/빈 결과 원인을 백엔드 upload_logs 에 남김)
+  const beginUploadDiagnostics = () =>
+    startUploadDiagnostics(dataType, [daysFiles, placeFiles, dailyIncome, patientFiles]);
+
   // ✅ Load Naver Maps Script on Component Mount
   useEffect(() => {
     loadNaverMapsScript(import.meta.env.VITE_NAVER_MAPS_CLIENT_ID)
@@ -619,7 +624,9 @@ const UpdateDataPage = () => {
 
     setProgress(1); // Start progress
 
-    const removeProgressListener = window.electron.onGeocodingProgress(
+    const diag = beginUploadDiagnostics();
+
+    const removeProgressListener = diag.electron.onGeocodingProgress(
       ({ current, total }) => {
         // Calculate overall progress (giving geocoding 60% of the total weight)
         // First 20% for file processing and merging, last 20% for final processing and upload prep
@@ -639,16 +646,16 @@ const UpdateDataPage = () => {
       );
 
       // Step 2: Parse files locally via Electron
-      const visits = await window.electron.parseDaysFilesDentweb(daysBuffers);
+      const visits = await diag.electron.parseDaysFilesDentweb(daysBuffers);
 
-      const patients = await window.electron.parsePlaceFilesDentWeb(
+      const patients = await diag.electron.parsePlaceFilesDentWeb(
         placeBuffers
       );
 
       console.log(visits);
       console.log(patients);
       // Step 3: Merge data locally
-      const mergedData = await window.electron.mergeDataDentWeb(
+      const mergedData = await diag.electron.mergeDataDentWeb(
         visits,
         patients
       );
@@ -656,7 +663,7 @@ const UpdateDataPage = () => {
       setProgress(10);
 
       // Step 4: Process the merged data (geocoding, region assignment, etc.)
-      const processedData = await window.electron.processDataLocallyDentWeb(
+      const processedData = await diag.electron.processDataLocallyDentWeb(
         mergedData,
         getCookie("accessToken")
       );
@@ -686,7 +693,7 @@ const UpdateDataPage = () => {
       // Set progress to 100% since from the user's perspective, the task is complete
       setProgress(100);
 
-      uploadPromise
+      diag.trackUpload(uploadPromise)
         .then((backendResponse) => {
           fetchUploadedDates();
           // Handle successful upload (when it eventually completes)
@@ -713,6 +720,7 @@ const UpdateDataPage = () => {
     } catch (error) {
       // This catch block handles errors in the processing phase
       console.error("❌ Error processing data:", error);
+      diag.fail(error);
       openNotification(
         "error",
         "데이터 처리 실패",
@@ -732,7 +740,9 @@ const UpdateDataPage = () => {
 
     setProgress(1); // Start progress
 
-    const removeProgressListener = window.electron.onGeocodingProgress(
+    const diag = beginUploadDiagnostics();
+
+    const removeProgressListener = diag.electron.onGeocodingProgress(
       ({ current, total }) => {
         // Calculate overall progress (giving geocoding 60% of the total weight)
         // First 20% for file processing and merging, last 20% for final processing and upload prep
@@ -752,9 +762,9 @@ const UpdateDataPage = () => {
       );
 
       // Step 2: Parse files locally via Electron
-      const visits = await window.electron.parseDaysFilesEuisarang(daysBuffers);
+      const visits = await diag.electron.parseDaysFilesEuisarang(daysBuffers);
 
-      const patients = await window.electron.parsePlaceFilesEuisarang(
+      const patients = await diag.electron.parsePlaceFilesEuisarang(
         placeBuffers
       );
 
@@ -762,7 +772,7 @@ const UpdateDataPage = () => {
       console.log(patients);
 
       // Step 3: Merge data locally
-      const mergedData = await window.electron.mergeDataEuisarang(
+      const mergedData = await diag.electron.mergeDataEuisarang(
         visits,
         patients
       );
@@ -770,7 +780,7 @@ const UpdateDataPage = () => {
       setProgress(10);
 
       // Step 4: Process the merged data (geocoding, region assignment, etc.)
-      const processedData = await window.electron.processDataLocally(
+      const processedData = await diag.electron.processDataLocally(
         mergedData,
         getCookie("accessToken")
       );
@@ -800,7 +810,7 @@ const UpdateDataPage = () => {
       // Set progress to 100% since from the user's perspective, the task is complete
       setProgress(100);
 
-      uploadPromise
+      diag.trackUpload(uploadPromise)
         .then((backendResponse) => {
           fetchUploadedDates();
           // Handle successful upload (when it eventually completes)
@@ -827,6 +837,7 @@ const UpdateDataPage = () => {
     } catch (error) {
       // This catch block handles errors in the processing phase
       console.error("❌ Error processing data:", error);
+      diag.fail(error);
       openNotification(
         "error",
         "데이터 처리 실패",
@@ -848,7 +859,9 @@ const UpdateDataPage = () => {
 
     setProgress(1); // Start progress
 
-    const removeProgressListener = window.electron.onGeocodingProgress(
+    const diag = beginUploadDiagnostics();
+
+    const removeProgressListener = diag.electron.onGeocodingProgress(
       ({ current, total }) => {
         // Calculate overall progress (giving geocoding 60% of the total weight)
         // First 20% for file processing and merging, last 20% for final processing and upload prep
@@ -868,15 +881,15 @@ const UpdateDataPage = () => {
       );
 
       // Step 2: Parse files locally via Electron
-      const visits = await window.electron.parseDailyIncomeOrm(daysBuffers);
+      const visits = await diag.electron.parseDailyIncomeOrm(daysBuffers);
 
-      const patients = await window.electron.parsePatientListOrm(
+      const patients = await diag.electron.parsePatientListOrm(
         placeBuffers
       );
 
 
       // Step 3: Merge data locally
-      const mergedData = await window.electron.mergeDataOrm(
+      const mergedData = await diag.electron.mergeDataOrm(
         visits,
         patients
       );
@@ -885,7 +898,7 @@ const UpdateDataPage = () => {
       setProgress(10);
 
       // Step 4: Process the merged data (geocoding, region assignment, etc.)
-      const processedData = await window.electron.processDataLocallyOrm(
+      const processedData = await diag.electron.processDataLocallyOrm(
         mergedData,
         getCookie("accessToken")
       );
@@ -915,7 +928,7 @@ const UpdateDataPage = () => {
       // Set progress to 100% since from the user's perspective, the task is complete
       setProgress(100);
 
-      uploadPromise
+      diag.trackUpload(uploadPromise)
         .then((backendResponse) => {
           fetchUploadedDates();
           // Handle successful upload (when it eventually completes)
@@ -942,6 +955,7 @@ const UpdateDataPage = () => {
     } catch (error) {
       // This catch block handles errors in the processing phase
       console.error("❌ Error processing data:", error);
+      diag.fail(error);
       openNotification(
         "error",
         "데이터 처리 실패",
@@ -965,7 +979,9 @@ const UpdateDataPage = () => {
 
     setProgress(1); // Start progress
 
-    const removeProgressListener = window.electron.onGeocodingProgress(
+    const diag = beginUploadDiagnostics();
+
+    const removeProgressListener = diag.electron.onGeocodingProgress(
       ({ current, total }) => {
         // Calculate overall progress (giving geocoding 60% of the total weight)
         // First 20% for file processing and merging, last 20% for final processing and upload prep
@@ -984,20 +1000,20 @@ const UpdateDataPage = () => {
       );
 
       // Step 2: Parse files locally via Electron
-      const visits = await window.electron.parseDailyIncomeNeo(daysBuffers);
+      const visits = await diag.electron.parseDailyIncomeNeo(daysBuffers);
 
       console.log(visits);
-      const patients = await window.electron.parsePatientListNeo(placeBuffers);
+      const patients = await diag.electron.parsePatientListNeo(placeBuffers);
       console.log(patients);
 
       // Step 3: Merge data locally
-      const mergedData = await window.electron.mergeDataNeo(visits, patients);
+      const mergedData = await diag.electron.mergeDataNeo(visits, patients);
       console.log(mergedData);
 
       setProgress(10);
 
       // Step 4: Process the merged data (geocoding, region assignment, etc.)
-      const processedData = await window.electron.processDataLocallyNeo(
+      const processedData = await diag.electron.processDataLocallyNeo(
         mergedData,
         getCookie("accessToken")
       );
@@ -1028,7 +1044,7 @@ const UpdateDataPage = () => {
       // Set progress to 100% since from the user's perspective, the task is complete
       setProgress(100);
 
-      uploadPromise
+      diag.trackUpload(uploadPromise)
         .then((backendResponse) => {
           fetchUploadedDates();
           // Handle successful upload (when it eventually completes)
@@ -1055,6 +1071,7 @@ const UpdateDataPage = () => {
     } catch (error) {
       // This catch block handles errors in the processing phase
       console.error("❌ Error processing data:", error);
+      diag.fail(error);
       openNotification(
         "error",
         "데이터 처리 실패",
@@ -1075,7 +1092,9 @@ const handleProcessDataDoctorP = async (): Promise<void> => {
 
   setProgress(1); // Start progress
 
-  const removeProgressListener = window.electron.onGeocodingProgress(
+  const diag = beginUploadDiagnostics();
+
+  const removeProgressListener = diag.electron.onGeocodingProgress(
     ({ current, total }) => {
       // Calculate overall progress (giving geocoding 60% of the total weight)
       // First 20% for file processing and merging, last 20% for final processing and upload prep
@@ -1095,20 +1114,20 @@ const handleProcessDataDoctorP = async (): Promise<void> => {
     );
 
     // Step 2: Parse files locally via Electron
-    const visits = await window.electron.parseDaysFilesDoctorP(daysBuffers);
+    const visits = await diag.electron.parseDaysFilesDoctorP(daysBuffers);
     console.log("Parsed visits:", visits);
 
-    const patients = await window.electron.parsePlaceFilesDoctorP(placeBuffers);
+    const patients = await diag.electron.parsePlaceFilesDoctorP(placeBuffers);
     console.log("Parsed patients:", patients);
 
     // Step 3: Merge data locally
-    const mergedData = await window.electron.mergeDataDoctorP(visits, patients);
+    const mergedData = await diag.electron.mergeDataDoctorP(visits, patients);
     console.log("Merged data:", mergedData);
 
     setProgress(10);
 
     // Step 4: Process the merged data (geocoding, region assignment, etc.)
-    const processedData = await window.electron.processDataLocallyDoctorP(
+    const processedData = await diag.electron.processDataLocallyDoctorP(
       mergedData,
       getCookie("accessToken")
     );
@@ -1139,7 +1158,7 @@ const handleProcessDataDoctorP = async (): Promise<void> => {
     setProgress(100);
 
     // Handle the upload promise in the background
-    uploadPromise
+    diag.trackUpload(uploadPromise)
       .then((backendResponse) => {
         fetchUploadedDates();
         // Handle successful upload (when it eventually completes)
@@ -1166,6 +1185,7 @@ const handleProcessDataDoctorP = async (): Promise<void> => {
   } catch (error) {
     // This catch block handles errors in the processing phase
     console.error("❌ Error processing Doctor P data:", error);
+    diag.fail(error);
     openNotification(
       "error",
       "데이터 처리 실패",
@@ -1185,7 +1205,9 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
 
   setProgress(1);
 
-  const removeProgressListener = window.electron.onGeocodingProgress(
+  const diag = beginUploadDiagnostics();
+
+  const removeProgressListener = diag.electron.onGeocodingProgress(
     ({ current, total }) => {
       const geocodingProgress = (current / total) * 80;
       setProgress(10 + geocodingProgress);
@@ -1200,18 +1222,18 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
       Array.from(placeFiles).map((file) => file.arrayBuffer())
     );
 
-    const visits = await window.electron.parseDaysFilesDoctorP2(daysBuffers);
+    const visits = await diag.electron.parseDaysFilesDoctorP2(daysBuffers);
     console.log("Parsed day files:", visits);
 
-    const patients = await window.electron.parsePlaceFilesDoctorP2(placeBuffers);
+    const patients = await diag.electron.parsePlaceFilesDoctorP2(placeBuffers);
     console.log("Parsed patient list:", patients);
 
-    const mergedData = await window.electron.mergeDataDoctorP2(visits, patients);
+    const mergedData = await diag.electron.mergeDataDoctorP2(visits, patients);
     console.log("Merged data:", mergedData);
 
     setProgress(10);
 
-    const processedData = await window.electron.processDataLocallyDoctorP2(
+    const processedData = await diag.electron.processDataLocallyDoctorP2(
       mergedData,
       getCookie("accessToken")
     );
@@ -1234,7 +1256,7 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
 
     setProgress(100);
 
-    uploadPromise
+    diag.trackUpload(uploadPromise)
       .then(() => {
         fetchUploadedDates();
         openNotification("success", "데이터 업로드 완료", "모든 DoctorP2 데이터가 성공적으로 처리되었습니다.");
@@ -1245,6 +1267,7 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
       });
   } catch (error) {
     console.error("❌ Error processing DoctorP2 data:", error);
+    diag.fail(error);
     openNotification("error", "데이터 처리 실패", error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다.");
     setProgress(0);
   }
@@ -1258,7 +1281,9 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
 
     setProgress(1); // Start progress
 
-    const removeProgressListener = window.electron.onGeocodingProgress(
+    const diag = beginUploadDiagnostics();
+
+    const removeProgressListener = diag.electron.onGeocodingProgress(
       ({ current, total }) => {
         // Calculate overall progress (giving geocoding 60% of the total weight)
         // First 20% for file processing and merging, last 20% for final processing and upload prep
@@ -1277,23 +1302,23 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
       );
 
       // Step 2: Parse files locally via Electron
-      const visits = await window.electron.parseDailyIncomeEgis(daysBuffers);
+      const visits = await diag.electron.parseDailyIncomeEgis(daysBuffers);
 
       console.log(visits);
-      const patients = await window.electron.parsePatientListEgis(placeBuffers);
+      const patients = await diag.electron.parsePatientListEgis(placeBuffers);
       console.log(patients);
 
 
 
 
       // Step 3: Merge data locally
-      const mergedData = await window.electron.mergeDataEgis(visits, patients);
+      const mergedData = await diag.electron.mergeDataEgis(visits, patients);
       console.log(mergedData);
 
       setProgress(10);
 
       // Step 4: Process the merged data (geocoding, region assignment, etc.)
-      const processedData = await window.electron.processDataLocallyEgis(
+      const processedData = await diag.electron.processDataLocallyEgis(
         mergedData,
         getCookie("accessToken")
       );
@@ -1324,7 +1349,7 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
       // Set progress to 100% since from the user's perspective, the task is complete
       setProgress(100);
 
-      uploadPromise
+      diag.trackUpload(uploadPromise)
         .then((backendResponse) => {
           fetchUploadedDates();
           // Handle successful upload (when it eventually completes)
@@ -1351,6 +1376,7 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
     } catch (error) {
       // This catch block handles errors in the processing phase
       console.error("❌ Error processing data:", error);
+      diag.fail(error);
       openNotification(
         "error",
         "데이터 처리 실패",
@@ -1371,7 +1397,9 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
 
     setProgress(1); // Start progress
 
-    const removeProgressListener = window.electron.onGeocodingProgress(
+    const diag = beginUploadDiagnostics();
+
+    const removeProgressListener = diag.electron.onGeocodingProgress(
       ({ current, total }) => {
         // Calculate overall progress (giving geocoding 60% of the total weight)
         // First 20% for file processing and merging, last 20% for final processing and upload prep
@@ -1391,21 +1419,21 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
       );
 
       // Step 2: Parse files locally via Electron
-      const visits = await window.electron.parseDailyIncomeBit(daysBuffers);
+      const visits = await diag.electron.parseDailyIncomeBit(daysBuffers);
       console.log("Parsed visits:", visits);
 
-      const patients = await window.electron.parsePatientListBit(placeBuffers);
+      const patients = await diag.electron.parsePatientListBit(placeBuffers);
       console.log("Parsed patients:", patients);
 
       // Step 3: Merge data locally
-      const mergedData = await window.electron.mergeDataBit(visits, patients);
+      const mergedData = await diag.electron.mergeDataBit(visits, patients);
       console.log("Merged data:", mergedData);
 
 
       setProgress(10);
 
       // Step 4: Process the merged data (geocoding, region assignment, etc.)
-      const processedData = await window.electron.processDataLocallyBit(
+      const processedData = await diag.electron.processDataLocallyBit(
         mergedData,
         getCookie("accessToken")
       );
@@ -1436,7 +1464,7 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
       setProgress(100);
 
       // Handle the upload promise in the background
-      uploadPromise
+      diag.trackUpload(uploadPromise)
         .then((backendResponse) => {
           fetchUploadedDates();
           // Handle successful upload (when it eventually completes)
@@ -1463,6 +1491,7 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
     } catch (error) {
       // This catch block handles errors in the processing phase
       console.error("❌ Error processing Bit data:", error);
+      diag.fail(error);
       openNotification(
         "error",
         "데이터 처리 실패",
@@ -1484,7 +1513,9 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
 
     setProgress(1); // Start progress
 
-    const removeProgressListener = window.electron.onGeocodingProgress(
+    const diag = beginUploadDiagnostics();
+
+    const removeProgressListener = diag.electron.onGeocodingProgress(
       ({ current, total }) => {
         // Calculate overall progress (giving geocoding 60% of the total weight)
         // First 20% for file processing and merging, last 20% for final processing and upload prep
@@ -1504,21 +1535,21 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
       );
 
       // Step 2: Parse files locally via Electron
-      const visits = await window.electron.parseDailyIncomeBit2(daysBuffers);
+      const visits = await diag.electron.parseDailyIncomeBit2(daysBuffers);
       console.log("Parsed visits:", visits);
 
-      const patients = await window.electron.parsePatientListBit2(placeBuffers);
+      const patients = await diag.electron.parsePatientListBit2(placeBuffers);
       console.log("Parsed patients:", patients);
 
       // Step 3: Merge data locally
-      const mergedData = await window.electron.mergeDataBit(visits, patients);
+      const mergedData = await diag.electron.mergeDataBit(visits, patients);
       console.log("Merged data:", mergedData);
 
 
       setProgress(10);
 
       // Step 4: Process the merged data (geocoding, region assignment, etc.)
-      const processedData = await window.electron.processDataLocallyBit(
+      const processedData = await diag.electron.processDataLocallyBit(
         mergedData,
         getCookie("accessToken")
       );
@@ -1549,7 +1580,7 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
       setProgress(100);
 
       // Handle the upload promise in the background
-      uploadPromise
+      diag.trackUpload(uploadPromise)
         .then((backendResponse) => {
           fetchUploadedDates();
           // Handle successful upload (when it eventually completes)
@@ -1576,6 +1607,7 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
     } catch (error) {
       // This catch block handles errors in the processing phase
       console.error("❌ Error processing Bit data:", error);
+      diag.fail(error);
       openNotification(
         "error",
         "데이터 처리 실패",
@@ -1595,7 +1627,9 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
 
     setProgress(1); // Start progress
 
-    const removeProgressListener = window.electron.onGeocodingProgress(
+    const diag = beginUploadDiagnostics();
+
+    const removeProgressListener = diag.electron.onGeocodingProgress(
       ({ current, total }) => {
         // Calculate overall progress (giving geocoding 60% of the total weight)
         // First 20% for file processing and merging, last 20% for final processing and upload prep
@@ -1614,20 +1648,20 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
       );
 
       // Step 2: Parse files locally via Electron
-      const visits = await window.electron.parseDailyIncomeVegas(daysBuffers);
+      const visits = await diag.electron.parseDailyIncomeVegas(daysBuffers);
 
       console.log(visits);
-      const patients = await window.electron.parsePatientListVegas(placeBuffers);
+      const patients = await diag.electron.parsePatientListVegas(placeBuffers);
       console.log(patients);
 
 
       // Step 3: Merge data locally
-      const mergedData = await window.electron.mergeDataVegas(visits, patients);
+      const mergedData = await diag.electron.mergeDataVegas(visits, patients);
 
       setProgress(10);
 
       // Step 4: Process the merged data (geocoding, region assignment, etc.)
-      const processedData = await window.electron.processDataLocallyVegas(
+      const processedData = await diag.electron.processDataLocallyVegas(
         mergedData,
         getCookie("accessToken")
       );
@@ -1658,7 +1692,7 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
       // Set progress to 100% since from the user's perspective, the task is complete
       setProgress(100);
 
-      uploadPromise
+      diag.trackUpload(uploadPromise)
         .then((backendResponse) => {
           fetchUploadedDates();
           // Handle successful upload (when it eventually completes)
@@ -1685,6 +1719,7 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
     } catch (error) {
       // This catch block handles errors in the processing phase
       console.error("❌ Error processing data:", error);
+      diag.fail(error);
       openNotification(
         "error",
         "데이터 처리 실패",
@@ -1704,7 +1739,9 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
 
     setProgress(1); // Start progress
 
-    const removeProgressListener = window.electron.onGeocodingProgress(
+    const diag = beginUploadDiagnostics();
+
+    const removeProgressListener = diag.electron.onGeocodingProgress(
       ({ current, total }) => {
         // Calculate overall progress (giving geocoding 60% of the total weight)
         // First 20% for file processing and merging, last 20% for final processing and upload prep
@@ -1723,22 +1760,22 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
 
       // Step 2: Parse files locally via Electron
       // "환자별 집계"(일일수입) 파일 없이 "오더판매내역및환자내역"만으로 매출(과세/비과세)을 재현한다.
-      const orderList = await window.electron.parseOrderListVegas2(orderBuffers);
+      const orderList = await diag.electron.parseOrderListVegas2(orderBuffers);
       console.log(orderList);
-      const visits = await window.electron.deriveDailyIncomeFromOrdersVegas2(
+      const visits = await diag.electron.deriveDailyIncomeFromOrdersVegas2(
         orderList
       );
       console.log(visits);
-      const patients = await window.electron.parsePatientListVegas2(placeBuffers);
+      const patients = await diag.electron.parsePatientListVegas2(placeBuffers);
       console.log(patients);
 
       // Step 3: Merge data locally
-      const mergedData = await window.electron.mergeDataVegas(visits, patients, orderList);
+      const mergedData = await diag.electron.mergeDataVegas(visits, patients, orderList);
 
       setProgress(10);
 
       // Step 4: Process the merged data (geocoding, region assignment, etc.)
-      const processedData = await window.electron.processDataLocallyVegas(
+      const processedData = await diag.electron.processDataLocallyVegas(
         mergedData,
         getCookie("accessToken")
       );
@@ -1769,7 +1806,7 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
       // Set progress to 100% since from the user's perspective, the task is complete
       setProgress(100);
 
-      uploadPromise
+      diag.trackUpload(uploadPromise)
         .then((backendResponse) => {
           fetchUploadedDates();
           // Handle successful upload (when it eventually completes)
@@ -1796,6 +1833,7 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
     } catch (error) {
       // This catch block handles errors in the processing phase
       console.error("❌ Error processing data:", error);
+      diag.fail(error);
       openNotification(
         "error",
         "데이터 처리 실패",
@@ -1815,7 +1853,9 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
 
     setProgress(1); // Start progress
 
-    const removeProgressListener = window.electron.onGeocodingProgress(
+    const diag = beginUploadDiagnostics();
+
+    const removeProgressListener = diag.electron.onGeocodingProgress(
       ({ current, total }) => {
         // Calculate overall progress (giving geocoding 60% of the total weight)
         // First 20% for file processing and merging, last 20% for final processing and upload prep
@@ -1835,16 +1875,16 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
       );
 
       // Step 2: Parse files locally via Electron
-      const visits = await window.electron.parseDailyIncomecChart(daysBuffers);
+      const visits = await diag.electron.parseDailyIncomecChart(daysBuffers);
 
-      const patients = await window.electron.parsePatientListcChart(
+      const patients = await diag.electron.parsePatientListcChart(
         placeBuffers
       );
 
       console.log(visits);
       console.log(patients);
       // Step 3: Merge data locally
-      const mergedData = await window.electron.mergeDatacChart(
+      const mergedData = await diag.electron.mergeDatacChart(
         visits,
         patients
       );
@@ -1852,7 +1892,7 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
       setProgress(10);
 
       // Step 4: Process the merged data (geocoding, region assignment, etc.)
-      const processedData = await window.electron.processDataLocallycChart(
+      const processedData = await diag.electron.processDataLocallycChart(
         mergedData,
         getCookie("accessToken")
       );
@@ -1882,7 +1922,7 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
       // Set progress to 100% since from the user's perspective, the task is complete
       setProgress(100);
 
-      uploadPromise
+      diag.trackUpload(uploadPromise)
         .then((backendResponse) => {
           fetchUploadedDates();
           // Handle successful upload (when it eventually completes)
@@ -1909,6 +1949,7 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
     } catch (error) {
       // This catch block handles errors in the processing phase
       console.error("❌ Error processing data:", error);
+      diag.fail(error);
       openNotification(
         "error",
         "데이터 처리 실패",
@@ -1931,7 +1972,9 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
 
     setProgress(1); // Start progress
 
-    const removeProgressListener = window.electron.onGeocodingProgress(
+    const diag = beginUploadDiagnostics();
+
+    const removeProgressListener = diag.electron.onGeocodingProgress(
       ({ current, total }) => {
         // Calculate overall progress (giving geocoding 60% of the total weight)
         // First 20% for file processing and merging, last 20% for final processing and upload prep
@@ -1950,20 +1993,20 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
       );
 
       // Step 2: Parse files locally via Electron
-      const visits = await window.electron.parseDailyIncomeHanChart(daysBuffers);
+      const visits = await diag.electron.parseDailyIncomeHanChart(daysBuffers);
 
       console.log(visits);
-      const patients = await window.electron.parsePatientListHanChart(placeBuffers);
+      const patients = await diag.electron.parsePatientListHanChart(placeBuffers);
       console.log(patients);
 
 
       // Step 3: Merge data locally
-      const mergedData = await window.electron.mergeDataHanChart(visits, patients);
+      const mergedData = await diag.electron.mergeDataHanChart(visits, patients);
 
       setProgress(10);
 
       // Step 4: Process the merged data (geocoding, region assignment, etc.)
-      const processedData = await window.electron.processDataLocallyHanChart(
+      const processedData = await diag.electron.processDataLocallyHanChart(
         mergedData,
         getCookie("accessToken")
       );
@@ -1994,7 +2037,7 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
       // Set progress to 100% since from the user's perspective, the task is complete
       setProgress(100);
 
-      uploadPromise
+      diag.trackUpload(uploadPromise)
         .then((backendResponse) => {
           fetchUploadedDates();
           // Handle successful upload (when it eventually completes)
@@ -2021,6 +2064,7 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
     } catch (error) {
       // This catch block handles errors in the processing phase
       console.error("❌ Error processing data:", error);
+      diag.fail(error);
       openNotification(
         "error",
         "데이터 처리 실패",
@@ -2042,7 +2086,9 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
 
     setProgress(1);
 
-    const removeProgressListener = window.electron.onGeocodingProgress(
+    const diag = beginUploadDiagnostics();
+
+    const removeProgressListener = diag.electron.onGeocodingProgress(
       ({ current, total }) => {
         const geocodingProgress = (current / total) * 80;
         setProgress(10 + geocodingProgress);
@@ -2057,18 +2103,18 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
         Array.from(placeFiles).map((file) => file.arrayBuffer())
       );
 
-      const visits = await window.electron.parseDailyVisitSimEmr(visitBuffers);
+      const visits = await diag.electron.parseDailyVisitSimEmr(visitBuffers);
       console.log("SimEMR visits:", visits);
 
-      const patients = await window.electron.parsePatientRouteSimEmr(patientBuffers);
+      const patients = await diag.electron.parsePatientRouteSimEmr(patientBuffers);
       console.log("SimEMR patients:", patients);
 
-      const mergedData = await window.electron.mergeDataSimEmr(visits, patients);
+      const mergedData = await diag.electron.mergeDataSimEmr(visits, patients);
       console.log("SimEMR merged:", mergedData);
 
       setProgress(10);
 
-      const processedData = await window.electron.processDataLocallySimEmr(
+      const processedData = await diag.electron.processDataLocallySimEmr(
         mergedData,
         getCookie("accessToken")
       );
@@ -2093,7 +2139,7 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
 
       setProgress(100);
 
-      uploadPromise
+      diag.trackUpload(uploadPromise)
         .then(() => {
           fetchUploadedDates();
           openNotification("success", "데이터 업로드 완료", "모든 데이터가 성공적으로 처리되었습니다.");
@@ -2108,6 +2154,7 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
         });
     } catch (error) {
       console.error("❌ Error processing SimEMR data:", error);
+      diag.fail(error);
       openNotification(
         "error",
         "데이터 처리 실패",
@@ -2125,7 +2172,9 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
 
     setProgress(1);
 
-    const removeProgressListener = window.electron.onGeocodingProgress(
+    const diag = beginUploadDiagnostics();
+
+    const removeProgressListener = diag.electron.onGeocodingProgress(
       ({ current, total }) => {
         const geocodingProgress = (current / total) * 80;
         setProgress(10 + geocodingProgress);
@@ -2143,21 +2192,21 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
         Array.from(patientFiles).map((file) => file.arrayBuffer())
       );
 
-      const visits = await window.electron.parseDailyIncomeSmartNC(incomeBuffers);
+      const visits = await diag.electron.parseDailyIncomeSmartNC(incomeBuffers);
       console.log("SmartNC visits:", visits);
 
-      const patientAddress = await window.electron.parsePatientAddressSmartNC(addressBuffers);
+      const patientAddress = await diag.electron.parsePatientAddressSmartNC(addressBuffers);
       console.log("SmartNC address:", patientAddress);
 
-      const patients = await window.electron.parsePatientListSmartNC(patientBuffers);
+      const patients = await diag.electron.parsePatientListSmartNC(patientBuffers);
       console.log("SmartNC patients:", patients);
 
-      const mergedData = await window.electron.mergeDataSmartNC(visits, patientAddress, patients);
+      const mergedData = await diag.electron.mergeDataSmartNC(visits, patientAddress, patients);
       console.log("SmartNC merged:", mergedData);
 
       setProgress(10);
 
-      const processedData = await window.electron.processDataLocallySmartNC(
+      const processedData = await diag.electron.processDataLocallySmartNC(
         mergedData,
         getCookie("accessToken")
       );
@@ -2182,7 +2231,7 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
 
       setProgress(100);
 
-      uploadPromise
+      diag.trackUpload(uploadPromise)
         .then(() => {
           fetchUploadedDates();
           openNotification("success", "데이터 업로드 완료", "모든 데이터가 성공적으로 처리되었습니다.");
@@ -2197,6 +2246,7 @@ const handleProcessDataDoctorP2 = async (): Promise<void> => {
         });
     } catch (error) {
       console.error("❌ Error processing SmartNC data:", error);
+      diag.fail(error);
       openNotification(
         "error",
         "데이터 처리 실패",

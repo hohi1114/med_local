@@ -45,6 +45,43 @@ interface SmartplaceStat {
   visitCount: number;
 }
 
+// 원내 업로드 진단 로그 (백엔드 upload_logs)
+interface UploadLogFile {
+  file_name: string;
+  file_size: number;
+  header_row?: number | null;
+  found_headers?: string[];
+  missing_required?: string[];
+  missing_optional?: string[];
+  error?: string | null;
+}
+
+interface UploadLogStep {
+  step: string;
+  kind: string;
+  file_role: string | null;
+  ok: boolean;
+  rows: number | null;
+  duration_ms: number;
+  error: string | null;
+  empty_fields: Record<string, number>;
+  files: UploadLogFile[];
+}
+
+interface UploadLog {
+  id: string;
+  created_at: string;
+  user_id: string;
+  hospital_name: string | null;
+  emr_type: string | null;
+  status: 'success' | 'warning' | 'empty' | 'failed';
+  summary: string | null;
+  app_version: string | null;
+  duration_ms: number | null;
+  steps: UploadLogStep[];
+  backend_response: unknown;
+}
+
 // Notion Cron Database 인터페이스
 interface NotionCronDatabase {
   id: string;
@@ -246,6 +283,12 @@ class AdminAPI {
     await apiRequest('delete', `/notion/cron-databases/${id}`);
   }
 
+  // 원내 업로드 진단 로그 조회 (statuses: "failed,empty,warning" 처럼 쉼표 구분, 빈 문자열이면 전체)
+  async getUploadLogs(statuses: string): Promise<UploadLog[]> {
+    const response = await apiRequest('get', `/data/admin/upload-logs?status=${statuses}&limit=200`);
+    return response.data || [];
+  }
+
   // 알림 크론 수동 실행
   async testNotionDeadlineCron(): Promise<any> {
     return await apiRequest('post', '/notion/test-deadline-cron');
@@ -254,4 +297,13 @@ class AdminAPI {
 
 export const adminAPI = new AdminAPI();
 
-export type { BlogAccount, BlogKeywordsData, RefererStat, VisitStat, NotionCronDatabase };
+export type {
+  BlogAccount,
+  BlogKeywordsData,
+  RefererStat,
+  VisitStat,
+  NotionCronDatabase,
+  UploadLog,
+  UploadLogStep,
+  UploadLogFile,
+};

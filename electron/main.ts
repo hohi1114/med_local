@@ -110,6 +110,7 @@ import {
   processDataLocallySmartNC,
   processDataLocallySimEmr,
 } from "../src/local/locationProcessing";
+import { inspectUploadFiles } from "../src/local/uploadFileInspector";
 
 const isDev = process.env.NODE_ENV === "development";
 
@@ -213,6 +214,13 @@ app.whenReady().then(() => {
     const uuid = await si.uuid(); // systeminformation 라이브러리로 UUID 가져오기
     return uuid;
   });
+
+  ipcMain.handle("get-app-version", () => app.getVersion());
+
+  // 업로드 실패 진단: 파일의 헤더 행만 읽어 기대 컬럼과 대조한다 (환자 데이터 미포함)
+  ipcMain.handle("inspect-upload-files", (_event, parserName, fileBuffers) =>
+    inspectUploadFiles(parserName, fileBuffers)
+  );
 
   ipcMain.handle("parse-days-files-euisarang", async (event, fileBuffers) => {
     try {

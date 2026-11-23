@@ -11,6 +11,9 @@ import { parseDailyIncomeOrm, parsePatientListOrm } from "../src/local/excel/orm
 contextBridge.exposeInMainWorld("electron", {
   ping: () => "pong",
   getSystemUUID: () => ipcRenderer.invoke("get-system-uuid"),
+  getAppVersion: () => ipcRenderer.invoke("get-app-version"),
+  inspectUploadFiles: (parserName: string, fileBuffers: ArrayBuffer[]) =>
+    ipcRenderer.invoke("inspect-upload-files", parserName, fileBuffers),
 
   // File processing - Euisarang
   parseDaysFilesEuisarang: (fileBuffers: ArrayBuffer[]) =>

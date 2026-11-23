@@ -3,6 +3,11 @@ declare global {
   interface Window {
     electron: {
       getSystemUUID: () => Promise<SystemUUID>;
+      getAppVersion: () => Promise<string>;
+      inspectUploadFiles: (
+        parserName: string,
+        fileBuffers: ArrayBuffer[]
+      ) => Promise<import("../local/uploadParserSpecs").FileInspection[]>;
 
       // File processing - Euisarang
       parseDaysFilesEuisarang: (fileBuffers: ArrayBuffer[]) => Promise<any>;

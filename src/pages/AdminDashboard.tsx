@@ -4,6 +4,7 @@ import { adminAPI } from '../utils/adminApi';
 import { logout } from "../utils/api/apihelper";
 import { getCookie } from "../utils/api/cookie";
 import NotionCronSettings from '../components/admin/NotionCronSettings';
+import UploadLogViewer from '../components/admin/UploadLogViewer';
 import {
   BarChart,
   Bar,
@@ -204,6 +205,7 @@ export const AdminDashboard: React.FC = () => {
 
   // 노션 설정 모달
   const [showNotionSettings, setShowNotionSettings] = useState(false);
+  const [showUploadLogs, setShowUploadLogs] = useState(false);
  
 
   useEffect(() => {
@@ -640,6 +642,26 @@ export const AdminDashboard: React.FC = () => {
               }}
             >
               📋 노션 알림 설정
+            </button>
+
+            {/* 🧾 원내 업로드 로그 버튼 */}
+            <button
+              onClick={() => setShowUploadLogs(true)}
+              style={{
+                padding: '8px 16px',
+                fontSize: '13px',
+                fontWeight: 500,
+                color: '#fff',
+                backgroundColor: '#1e293b',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              🧾 업로드 로그
             </button>
 
             {/* 🗺️ 위치 분석 버튼 */}
@@ -1401,6 +1423,54 @@ export const AdminDashboard: React.FC = () => {
               ✕
             </button>
             <NotionCronSettings />
+          </div>
+        </div>
+      )}
+      {/* 원내 업로드 로그 모달 */}
+      {showUploadLogs && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+          }}
+          onClick={() => setShowUploadLogs(false)}
+        >
+          <div
+            style={{
+              backgroundColor: '#fff',
+              borderRadius: '12px',
+              maxWidth: '1100px',
+              width: '90%',
+              maxHeight: '80vh',
+              overflow: 'auto',
+              position: 'relative',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowUploadLogs(false)}
+              style={{
+                position: 'absolute',
+                top: '12px',
+                right: '12px',
+                background: 'none',
+                border: 'none',
+                fontSize: '20px',
+                cursor: 'pointer',
+                color: '#64748b',
+              }}
+            >
+              ✕
+            </button>
+            <UploadLogViewer />
           </div>
         </div>
       )}
